@@ -1,7 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
 import io.ssafy.p.j14c103.homerun.api.dto.home.DashboardResponse;
-import io.ssafy.p.j14c103.homerun.domain.vo.Money;
+import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
 import org.springframework.stereotype.Service;
 

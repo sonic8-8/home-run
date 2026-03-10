@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.dto.home;
 
-import io.ssafy.p.j14c103.homerun.domain.vo.Money;
+import io.ssafy.p.j14c103.homerun.domain.money.Money;
 
 import java.math.BigDecimal;
 

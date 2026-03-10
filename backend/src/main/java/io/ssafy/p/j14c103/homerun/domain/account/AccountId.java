@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.domain.vo;
+package io.ssafy.p.j14c103.homerun.domain.account;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
