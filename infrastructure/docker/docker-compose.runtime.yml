@@ -2,10 +2,7 @@ name: homerun-runtime
 
 services:
   frontend:
-    build:
-      context: frontend
-      dockerfile: Dockerfile
-    image: homerun-frontend:develop
+    image: ${FRONTEND_IMAGE:-homerun-frontend:develop}
     container_name: homerun-frontend
     restart: unless-stopped
     ports:
