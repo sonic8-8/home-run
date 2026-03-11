@@ -13,6 +13,7 @@ pipeline {
         ENV_FILE = '.env.runtime'
         FRONTEND_HOST_PORT = '3000'
         BACKEND_HOST_PORT = '8081'
+        POSTGRES_HOST_PORT = '5432'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
         POSTGRES_PASSWORD = credentials('homerun-postgres-password')
@@ -38,6 +39,7 @@ pipeline {
                 writeFile file: env.ENV_FILE, text: """
 FRONTEND_HOST_PORT=${env.FRONTEND_HOST_PORT}
 BACKEND_HOST_PORT=${env.BACKEND_HOST_PORT}
+POSTGRES_HOST_PORT=${env.POSTGRES_HOST_PORT}
 POSTGRES_DB=${env.POSTGRES_DB}
 POSTGRES_USER=${env.POSTGRES_USER}
 POSTGRES_PASSWORD=${env.POSTGRES_PASSWORD}
