@@ -1,0 +1,62 @@
+name: homerun-runtime
+
+services:
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    image: homerun-frontend:develop
+    container_name: homerun-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-3000}:80"
+    networks:
+      - web_net
+
+  backend:
+    image: ${BACKEND_IMAGE:-homerun-backend:develop}
+    container_name: homerun-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-8081}:8080"
+    networks:
+      - web_net
+      - db_net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: homerun-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    expose:
+      - "5432"
+    volumes:
+      - homerun_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - db_net
+
+volumes:
+  homerun_postgres_data:
+
+networks:
+  web_net:
+  db_net:
+    internal: true
