@@ -88,10 +88,12 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
     post {
         always {
             sh '''
-                docker compose \
-                  --env-file ${ENV_FILE} \
-                  -f ${COMPOSE_FILE} \
-                  ps
+                if [ -f "${ENV_FILE}" ]; then
+                  docker compose \
+                    --env-file ${ENV_FILE} \
+                    -f ${COMPOSE_FILE} \
+                    ps
+                fi
             '''
             sh 'rm -f ${ENV_FILE}'
         }
