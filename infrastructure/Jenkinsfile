@@ -1,0 +1,86 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        BACKEND_IMAGE = 'homerun-backend:develop'
+        COMPOSE_FILE = 'infrastructure/docker/docker-compose.backend.runtime.yml'
+        ENV_FILE = '.env.backend.runtime'
+        BACKEND_HOST_PORT = '8081'
+        POSTGRES_DB = 'homerun'
+        POSTGRES_USER = 'homerun_user'
+        POSTGRES_PASSWORD = credentials('homerun-postgres-password')
+    }
+
+    stages {
+        stage('Checkout Info') {
+            steps {
+                sh 'git branch --show-current || true'
+                sh 'git rev-parse --short HEAD'
+            }
+        }
+
+        stage('Build Backend Image') {
+            steps {
+                sh 'docker build -t ${BACKEND_IMAGE} -f backend/Dockerfile backend'
+            }
+        }
+
+        stage('Deploy Backend') {
+            steps {
+                writeFile file: env.ENV_FILE, text: """
+BACKEND_HOST_PORT=${env.BACKEND_HOST_PORT}
+POSTGRES_DB=${env.POSTGRES_DB}
+POSTGRES_USER=${env.POSTGRES_USER}
+POSTGRES_PASSWORD=${env.POSTGRES_PASSWORD}
+""".trim() + "\n"
+
+                sh '''
+                    docker compose \
+                      --env-file ${ENV_FILE} \
+                      -f ${COMPOSE_FILE} \
+                      up -d postgres backend
+                '''
+            }
+        }
+
+        stage('Verify Backend Startup') {
+            steps {
+                sh '''
+                    for i in $(seq 1 60); do
+                      if docker logs homerun-backend 2>&1 | grep -q "Started HomerunApplication"; then
+                        exit 0
+                      fi
+
+                      if ! docker ps --format '{{.Names}}' | grep -qx homerun-backend; then
+                        docker logs --tail=200 homerun-backend || true
+                        exit 1
+                      fi
+
+                      sleep 2
+                    done
+
+                    docker logs --tail=200 homerun-backend || true
+                    exit 1
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            sh '''
+                docker compose \
+                  --env-file ${ENV_FILE} \
+                  -f ${COMPOSE_FILE} \
+                  ps
+            '''
+            sh 'rm -f ${ENV_FILE}'
+        }
+    }
+}
+
