@@ -7,9 +7,11 @@ pipeline {
     }
 
     environment {
+        FRONTEND_IMAGE = 'homerun-frontend:develop'
         BACKEND_IMAGE = 'homerun-backend:develop'
-        COMPOSE_FILE = 'infrastructure/docker/docker-compose.backend.runtime.yml'
-        ENV_FILE = '.env.backend.runtime'
+        COMPOSE_FILE = 'infrastructure/docker/docker-compose.runtime.yml'
+        ENV_FILE = '.env.runtime'
+        FRONTEND_HOST_PORT = '3000'
         BACKEND_HOST_PORT = '8081'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
@@ -24,47 +26,59 @@ pipeline {
             }
         }
 
-        stage('Build Backend Image') {
+        stage('Build Runtime Images') {
             steps {
+                sh 'docker build -t ${FRONTEND_IMAGE} -f frontend/Dockerfile frontend'
                 sh 'docker build -t ${BACKEND_IMAGE} -f backend/Dockerfile backend'
             }
         }
 
-        stage('Deploy Backend') {
+        stage('Deploy Runtime') {
             steps {
                 writeFile file: env.ENV_FILE, text: """
+FRONTEND_HOST_PORT=${env.FRONTEND_HOST_PORT}
 BACKEND_HOST_PORT=${env.BACKEND_HOST_PORT}
 POSTGRES_DB=${env.POSTGRES_DB}
 POSTGRES_USER=${env.POSTGRES_USER}
 POSTGRES_PASSWORD=${env.POSTGRES_PASSWORD}
+FRONTEND_IMAGE=${env.FRONTEND_IMAGE}
+BACKEND_IMAGE=${env.BACKEND_IMAGE}
 """.trim() + "\n"
 
                 sh '''
                     docker compose \
                       --env-file ${ENV_FILE} \
                       -f ${COMPOSE_FILE} \
-                      up -d postgres backend
+                      up -d postgres backend frontend
                 '''
             }
         }
 
-        stage('Verify Backend Startup') {
+        stage('Verify Runtime Startup') {
             steps {
                 sh '''
                     for i in $(seq 1 60); do
-                      if docker logs homerun-backend 2>&1 | grep -q "Started HomerunApplication"; then
-                        exit 0
-                      fi
-
                       if ! docker ps --format '{{.Names}}' | grep -qx homerun-backend; then
                         docker logs --tail=200 homerun-backend || true
                         exit 1
+                      fi
+
+                      if ! docker ps --format '{{.Names}}' | grep -qx homerun-frontend; then
+                        docker logs --tail=200 homerun-frontend || true
+                        exit 1
+                      fi
+
+                      if docker logs homerun-backend 2>&1 | grep -q "Started HomerunApplication"; then
+                        if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null"; then
+                          exit 0
+                        fi
                       fi
 
                       sleep 2
                     done
 
                     docker logs --tail=200 homerun-backend || true
+                    docker logs --tail=200 homerun-frontend || true
                     exit 1
                 '''
             }
@@ -83,4 +97,3 @@ POSTGRES_PASSWORD=${env.POSTGRES_PASSWORD}
         }
     }
 }
-
