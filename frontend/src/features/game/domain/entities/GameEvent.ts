@@ -2,11 +2,12 @@ export type GameEventId =
   | 'SANTA_GIFT'
   | 'STOCK_CRASH'
   | 'BONUS_SALARY'
-  | 'PROPERTY_TAX'; 
+  | 'PROPERTY_TAX'
+  | 'GOVERNMENT_SUBSIDY'; 
 
 export interface GameEventButton {
     readonly label: string;
-    readonly variant?: 'primary' | 'secondary' | 'danger';
+    readonly variant: 'primary' | 'secondary' ;
     readonly actionId: string;
 }
 
