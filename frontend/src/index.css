@@ -1,3 +1,25 @@
+/* =====================
+   @font-face 선언
+   ===================== */
+
+/* Pretendard */
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-Thin.subset.woff') format('woff'); font-weight: 100; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-ExtraLight.subset.woff') format('woff'); font-weight: 200; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-Light.subset.woff') format('woff'); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-Regular.subset.woff') format('woff'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-Medium.subset.woff') format('woff'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-SemiBold.subset.woff') format('woff'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-Bold.subset.woff') format('woff'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-ExtraBold.subset.woff') format('woff'); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Pretendard'; src: url('/assets/fonts/pretendard/Pretendard-Black.subset.woff') format('woff'); font-weight: 900; font-style: normal; font-display: swap; }
+
+/* Mona (픽셀 모노) */
+@font-face { font-family: 'Mona'; src: url('/assets/fonts/mona/Mona12.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Mona'; src: url('/assets/fonts/mona/Mona12-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+
+/* =====================
+   CSS 변수
+   ===================== */
 :root {
   /* Spacing */
   --spacing-xs: 4px;
@@ -10,6 +32,10 @@
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 16px;
+
+  /* Font families */
+  --font-sans: 'Pretendard', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Mona', monospace;
 
   /* Font sizes */
   --font-size-xs: 12px;
@@ -35,7 +61,7 @@
   --transition-normal: 0.2s ease;
 
   /* Base */
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
   color: var(--color-text-primary);

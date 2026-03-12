@@ -8,6 +8,10 @@ const AuthPage = lazy(() =>
   import('@features/auth').then((m) => ({ default: m.AuthPage }))
 );
 
+const HomePage = lazy(() =>
+  import('@features/home').then((m) => ({ default: m.HomePage }))
+);
+
 const TempPage = () => <div>준비 중</div>;
 
 const router = createBrowserRouter([
@@ -20,7 +24,7 @@ const router = createBrowserRouter([
   {
     element: <PrivateRoute />,
     children: [
-      { path: ROUTES.HOME,     element: <TempPage /> },
+      { path: ROUTES.HOME,     element: <Suspense fallback={null}><HomePage /></Suspense> },
       { path: ROUTES.GAME,     element: <TempPage /> },
       { path: ROUTES.LOAN,     element: <TempPage /> },
       { path: ROUTES.PROPERTY, element: <TempPage /> },
