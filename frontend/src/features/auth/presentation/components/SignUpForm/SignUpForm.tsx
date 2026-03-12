@@ -59,6 +59,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
+    
 
         <div className={styles.fieldGroup}>
           <label className={styles.label}>비밀번호</label>
