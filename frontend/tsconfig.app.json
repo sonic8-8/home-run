@@ -27,14 +27,13 @@
     "noUncheckedSideEffectImports": true,
 
     /* Path Alias */
-    "baseUrl": ".",
     "paths": {
-      "@/*":          ["src/*"],
-      "@app/*":       ["src/app/*"],
-      "@features/*":  ["src/features/*"],
-      "@shared/*":    ["src/shared/*"],
-      "@core/*":      ["src/core/*"],
-      "@assets/*":    ["src/assets/*"]
+      "@/*":          ["./src/*"],
+      "@app/*":       ["./src/app/*"],
+      "@features/*":  ["./src/features/*"],
+      "@shared/*":    ["./src/shared/*"],
+      "@core/*":      ["./src/core/*"],
+      "@assets/*":    ["./src/assets/*"]
     }
   },
   "include": ["src"]
