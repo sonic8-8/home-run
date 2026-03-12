@@ -1,3 +1,39 @@
+import groovy.json.JsonOutput
+
+def sendMattermostNotification(String status) {
+    def color = status == 'SUCCESS' ? '#2EB67D' : '#D24B4E'
+    def statusLabel = status == 'SUCCESS' ? '성공' : '실패'
+    def commitShort = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'unknown'
+    def payload = JsonOutput.toJson([
+        attachments: [[
+            color: color,
+            title: "${env.JOB_NAME} #${env.BUILD_NUMBER} 배포 ${statusLabel}",
+            title_link: env.BUILD_URL ?: '',
+            text: "커밋: ${commitShort}\n빌드 URL: ${env.BUILD_URL ?: 'N/A'}"
+        ]]
+    ])
+
+    writeFile file: 'mattermost-payload.json', text: payload
+
+    withCredentials([string(credentialsId: 'mattermost-webhook-url', variable: 'MM_WEBHOOK_URL')]) {
+        def exitCode = sh(
+            script: '''
+            curl -sS -X POST \
+              -H "Content-Type: application/json" \
+              --data @mattermost-payload.json \
+              "$MM_WEBHOOK_URL"
+            ''',
+            returnStatus: true
+        )
+
+        if (exitCode != 0) {
+            echo "Mattermost notification failed with exit code ${exitCode}"
+        }
+    }
+
+    sh 'rm -f mattermost-payload.json'
+}
+
 pipeline {
     agent any
 
@@ -88,6 +124,16 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
     }
 
     post {
+        success {
+            script {
+                sendMattermostNotification('SUCCESS')
+            }
+        }
+        failure {
+            script {
+                sendMattermostNotification('FAILURE')
+            }
+        }
         always {
             sh '''
                 if [ -f "${ENV_FILE}" ]; then
@@ -98,6 +144,7 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                 fi
             '''
             sh 'rm -f ${ENV_FILE}'
+            sh 'rm -f mattermost-payload.json'
         }
     }
 }
