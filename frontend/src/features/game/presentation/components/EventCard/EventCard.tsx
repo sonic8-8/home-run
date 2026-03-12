@@ -1,6 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
-import type { GameEvent } from '../../../domain/entities/GameEvent';
+import type { GameEvent } from '@features/game/domain/entities/GameEvent';
 import styles from './EventCard.module.css';
 
 interface EventCardProps {

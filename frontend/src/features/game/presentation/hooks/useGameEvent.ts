@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { GameEvent, GameEventId } from '../../domain/entities/GameEvent';
-import { GAME_EVENTS } from '../constants/gameEvents';
+import type { GameEvent, GameEventId } from '@features/game/domain/entities/GameEvent';
+import { GAME_EVENTS } from '@features/game/domain/constants/gameEvents';
 
 interface UseGameEventReturn {
   currentEvent: GameEvent | null;
