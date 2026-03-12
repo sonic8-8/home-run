@@ -72,6 +72,44 @@ public class SsafyDemandDepositClient {
     }
 
     @SuppressWarnings("unchecked")
+    public Map<String, Object> transferAccount(
+            final String userKey,
+            final String depositAccountNo,
+            final String withdrawalAccountNo,
+            final long transactionBalance) {
+        if (userKey == null || userKey.isBlank()) {
+            throw new IllegalArgumentException("userKey는 필수입니다.");
+        }
+        if (depositAccountNo == null || depositAccountNo.isBlank()) {
+            throw new IllegalArgumentException("입금 계좌번호는 필수입니다.");
+        }
+        if (withdrawalAccountNo == null || withdrawalAccountNo.isBlank()) {
+            throw new IllegalArgumentException("출금 계좌번호는 필수입니다.");
+        }
+        if (transactionBalance <= 0) {
+            throw new IllegalArgumentException("이체 금액은 0보다 커야 합니다.");
+        }
+
+        final String apiName = "updateDemandDepositAccountTransfer";
+        final String url = properties.getBaseUrl() + "/demandDeposit/" + apiName;
+
+        final Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("Header", headerGenerator.generate(apiName, userKey));
+        requestBody.put("depositAccountNo", depositAccountNo);
+        requestBody.put("depositTransactionSummary", "시드머니 저축");
+        requestBody.put("transactionBalance", String.valueOf(transactionBalance));
+        requestBody.put("withdrawalAccountNo", withdrawalAccountNo);
+        requestBody.put("withdrawalTransactionSummary", "PASS 저축");
+
+        final Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
+
+        if (response == null) {
+            throw new RuntimeException("SSAFY 이체 API 응답이 없습니다.");
+        }
+        return response;
+    }
+
+    @SuppressWarnings("unchecked")
     private List<Map<String, Object>> extractRecList(final Map<String, Object> response) {
         if (response == null) {
             return Collections.emptyList();
