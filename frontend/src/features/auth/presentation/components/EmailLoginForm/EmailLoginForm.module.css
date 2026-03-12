@@ -7,6 +7,12 @@
   justify-content: center;
 }
 
+.container form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
 .logo {
   width: 200px;
   align-self: center;
