@@ -24,7 +24,19 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Path Alias */
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@/*":          ["src/*"],
+      "@app/*":       ["src/app/*"],
+      "@features/*":  ["src/features/*"],
+      "@shared/*":    ["src/shared/*"],
+      "@core/*":      ["src/core/*"],
+      "@assets/*":    ["src/assets/*"]
+    }
   },
   "include": ["src"]
 }
