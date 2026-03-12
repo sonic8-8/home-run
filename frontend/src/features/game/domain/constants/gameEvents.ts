@@ -1,5 +1,5 @@
-import type { GameEvent } from "../../domain/entities/GameEvent";
-import type { GameEventId } from "../../domain/entities/GameEvent";
+import type { GameEvent } from '../entities/GameEvent';
+import type { GameEventId } from '../entities/GameEvent';
 
 export const GAME_EVENTS: Record<GameEventId, GameEvent> = {
   SANTA_GIFT: {
