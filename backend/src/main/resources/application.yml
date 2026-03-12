@@ -15,3 +15,8 @@ spring:
         format_sql: true
         jdbc:
           time_zone: Asia/Seoul
+
+ssafy:
+  api:
+    base-url: https://finopenapi.ssafy.io/ssafy/api/v1/edu
+    api-key: ${SSAFY_API_KEY:your-api-key-here}
