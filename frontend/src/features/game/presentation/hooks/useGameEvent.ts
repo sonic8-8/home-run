@@ -23,13 +23,19 @@ export const useGameEvent = (): UseGameEventReturn => {
   const handleAction = useCallback((actionId: string) => {
     switch (actionId) {
       case 'RECEIVE':
-        // TODO: 선물 수령 처리 (UseCase 연결)
+        // TODO: 선물/급여 수령 처리 (UseCase 연결)
         break;
       case 'APPLY':
         // TODO: 지원금 신청 처리 (UseCase 연결)
         break;
       case 'REJECT':
         // TODO: 거절 처리 (UseCase 연결)
+        break;
+      case 'CONFIRM':
+        // TODO: 확인 처리 (UseCase 연결)
+        break;
+      case 'PAY':
+        // TODO: 납부 처리 (UseCase 연결)
         break;
     }
     hideEvent();
