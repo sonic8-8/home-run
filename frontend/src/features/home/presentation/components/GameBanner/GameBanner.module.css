@@ -1,0 +1,38 @@
+.banner {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  cursor: pointer;
+  transition: opacity var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+}
+
+.banner:hover {
+  opacity: 0.9;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.text {
+  flex: 1;
+}
+
+.sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+  color: #dc2626;
+  letter-spacing: 1px;
+}
