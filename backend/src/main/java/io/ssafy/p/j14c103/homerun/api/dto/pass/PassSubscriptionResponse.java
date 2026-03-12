@@ -1,0 +1,75 @@
+package io.ssafy.p.j14c103.homerun.api.dto.pass;
+
+import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+public class PassSubscriptionResponse {
+
+    private final Long id;
+    private final String passName;
+    private final BigDecimal amountPerSave;
+    private final String sourceAccountNo;
+    private final boolean active;
+    private final LocalDateTime subscribedAt;
+
+    private PassSubscriptionResponse(
+            final Long id,
+            final String passName,
+            final BigDecimal amountPerSave,
+            final String sourceAccountNo,
+            final boolean active,
+            final LocalDateTime subscribedAt) {
+        this.id = id;
+        this.passName = passName;
+        this.amountPerSave = amountPerSave;
+        this.sourceAccountNo = sourceAccountNo;
+        this.active = active;
+        this.subscribedAt = subscribedAt;
+    }
+
+    public static PassSubscriptionResponse from(final PassSubscription subscription) {
+        if (subscription == null) {
+            throw new IllegalArgumentException("구독 정보는 null일 수 없습니다.");
+        }
+        return new PassSubscriptionResponse(
+                subscription.getId(),
+                subscription.getPassName(),
+                subscription.getPassProduct().getAmountPerSave(),
+                maskAccountNo(subscription.getSourceAccountNo()),
+                subscription.isActive(),
+                subscription.getSubscribedAt());
+    }
+
+    private static String maskAccountNo(final String accountNo) {
+        if (accountNo == null || accountNo.length() < 4) {
+            return accountNo;
+        }
+        return "****" + accountNo.substring(accountNo.length() - 4);
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getPassName() {
+        return passName;
+    }
+
+    public BigDecimal getAmountPerSave() {
+        return amountPerSave;
+    }
+
+    public String getSourceAccountNo() {
+        return sourceAccountNo;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public LocalDateTime getSubscribedAt() {
+        return subscribedAt;
+    }
+}
