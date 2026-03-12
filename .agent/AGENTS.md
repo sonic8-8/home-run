@@ -1,50 +1,71 @@
+## 범위
+- 이 규칙은 `backend`의 Java/Spring 코드에 적용한다.
+- `frontend`는 기존 프론트엔드 구조와 패턴을 우선 따른다.
+
 ## 라벨링
-- 기본 (라벨 없음): AGENTS.md 적용 안 함. 규칙이나 컨벤션 검토 없이 답변
-- [full]: 아래의 가이드라인과 컨벤션을 최대한 준수하여 상세하게 답변
+- 기본 (라벨 없음): `핵심 규칙`을 적용하고, 필요하면 `권장 사항`을 참고한다.
+- `[full]`: `핵심 규칙`, `권장 사항`, `도메인 용어 사전`을 최대한 반영해 상세하게 답변한다.
 
-## 코드 컨벤션 (BE)
-- indent depth는 가급적 2 이하로 유지
-- else, switch/case, 삼항 연산자 사용을 지양하고, Early return 패턴 활용을 권장
-- 가급적 1메서드 1기능 원칙을 지향
-- 핵심 도메인의 원시값과 문자열은 아래 조건일 경우 VO로 포장하는 것을 권장
-  - 도메인 의미가 분명하다.
-  - 불변 조건이나 생성 검증이 중요하다.
-  - 값 비교 규칙이 중요하다.
-- 단순 전달용 값이면 DTO, enum, 원시값을 유지한다.
+## 핵심 규칙
+- 패키지는 계층을 먼저 나누고, 계층 안에서 도메인별로 나눈다.
+- 최상위 패키지는 `api`, `domain`, `client`, `config`를 사용하고, 애플리케이션 시작 클래스는 루트 패키지에 둔다.
+- Controller는 `api/controller/{domain}`, Controller Request DTO는 `api/controller/{domain}/request`에 둔다.
+- Service는 `api/service/{domain}`, Service Request/Response DTO는 `api/service/{domain}/request`, `api/service/{domain}/response`에 둔다.
+- Entity / Enum / Repository는 `domain/{domain}`에 함께 두고, `entity`, `repository`, `enum` 같은 기술 분류용 하위 패키지는 기본적으로 만들지 않는다.
+- 외부 시스템 연동은 `client`에 두고, 스프링 설정만 `config`에 둔다.
+- 독립 의미의 연결 객체는 별도 도메인 패키지로 분리하고, 이력성 데이터나 보조 하위 도메인은 `domain/history/...`처럼 의미 단위로 묶는다.
+- Controller는 HTTP 요청 수신, 입력 검증, Service 호출, `ApiResponse` 반환만 담당한다.
+- Service는 유스케이스 실행, 트랜잭션 처리, Repository 조합, Domain과 DTO 연결을 담당한다.
+- Domain은 핵심 상태와 비즈니스 규칙을 가진다. Repository는 조회/저장 책임에 집중한다.
+- Controller Request DTO와 Service DTO는 분리한다.
+- API는 엔티티를 직접 반환하지 않고 Response DTO로 변환한 뒤 공통 `ApiResponse`로 감싼다.
+- 새 코드는 기존 구조와 네이밍을 우선 따르고, 과한 추상화보다 명확한 구현을 우선한다.
+- 이름은 `Controller`, `Service`, `Client`, `Repository`, `Request`, `ServiceRequest`, `Response`, `Config`, `Test`, `TestSupport` 접미사를 사용한다.
+- Value Object는 기본값으로 만들지 않고, 도메인 의미, 불변성/생성 검증, 값 비교 규칙이 분명할 때만 도입한다.
 
-- 비즈니스 로직이 포함된 컬렉션은 일급 컬렉션으로 포장을 권장
-- 객체 생성 시 가급적 정적 팩토리 메서드 패턴 활용을 권장
+## 권장 사항
 
-## 금융 도메인 규칙
-- 돈 계산: 정밀도 문제 방지를 위해 가급적 `BigDecimal` 사용 권장 (`double`/`float` 지양)
-- 금액 데이터는 `Money` VO로 포장하는 것을 권장
+### 코드 컨벤션 (BE)
+- indent depth는 가급적 2 이하로 유지한다.
+- `else`, `switch/case`, 삼항 연산자 사용은 지양하고 Early return 패턴을 우선 검토한다.
+- 가급적 1메서드 1기능 원칙을 지향한다.
+- 핵심 도메인의 원시값과 문자열은 VO 후보로 먼저 검토한다.
+- 비즈니스 로직이 포함된 컬렉션은 일급 컬렉션으로 포장할지 검토한다.
+- 객체 생성 시 정적 팩토리 메서드 패턴을 우선 검토한다.
+- Controller는 `@RestController`, `@RequiredArgsConstructor`, Service는 `@Service`, `@RequiredArgsConstructor`를 기본으로 검토한다.
+- 엔티티는 `@Getter`, `@Entity`, `@NoArgsConstructor(access = PROTECTED)` 패턴을 우선 검토하고, 생성은 Builder 또는 정적 팩토리 메서드를 우선 검토한다.
 
-## 빌드/테스트
-- 테스트 실행: `./gradlew test` 권장
-- 프론트엔드 패키지 매니저: `npm` 사용 권장
+### 금융 도메인 규칙
+- 돈 계산은 정밀도 문제 방지를 위해 `BigDecimal` 사용을 우선 검토한다. `double`/`float`는 지양한다.
+- 금액 데이터는 `Money` VO로 포장할지 우선 검토한다.
 
-## 커밋 메시지 (권장 포맷)
+### 빌드/테스트
+- 테스트 실행은 `./gradlew test`를 우선 사용한다.
+- 프론트엔드 패키지 매니저는 `npm` 사용을 우선한다.
+- 테스트는 JUnit 5, AssertJ를 사용하고, `@DisplayName` 한글 문장, `given / when / then`, Controller 슬라이스 테스트, Service 통합 테스트, `*TestSupport` 공통 설정, 저장소 테스트 후 상태 정리 규칙을 우선 따른다.
+
+### 커밋 메시지
 - 백엔드 형식: `[BE] type(scope): 설명 (Jira 티켓번호)`
 - 프론트엔드 형식: `[FE] type(scope): 설명 (Jira 티켓번호)`
 - type 목록: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
 
 ## 도메인 용어 사전
 
-> **[안내]** 코드에서 사용하는 클래스명, 메서드명, DB 컬럼명은 팀 내 원활한 소통을 위해 아래 사전에 정의된 영문(코드용) 명칭 사용을 강력히 권장합니다.
+> 코드에서 사용하는 클래스명, 메서드명, DB 컬럼명은 아래 영문 명칭을 우선 참고한다.
 
 ### 1. 게임 구조
 | 한글 | 영문 (코드용) | 설명 |
 | :--- | :--- | :--- |
 | 턴 | `Turn` | 게임 내 1개월. 슬롯 3개 포함 |
 | 슬롯 | `Slot` | 상순/중순/하순. 행동 1개 배치 |
-| 행동 | `Action` | 슬롯에 배치하는 활동 (공부, 운동 등) |
-| 정산 | `Settlement` | 턴 종료 시 13단계 처리 |
+| 행동 | `Action` | 슬롯에 배치하는 활동 |
+| 정산 | `Settlement` | 턴 종료 시 처리 |
 | 게임 세션 | `GameSession` | 1회 플레이 전체 상태 |
 
 ### 2. 캐릭터
 | 한글 | 영문 (코드용) | 설명 |
 | :--- | :--- | :--- |
-| 체력 | `Health` | `0~100` (0~9 트리거 시 강제 퇴사) |
+| 체력 | `Health` | `0~100` |
 | 피로도 | `Fatigue` | `0~100` |
 | 스트레스 | `Stress` | `0~100` |
 | 지식 | `Knowledge` | `0~100` |
@@ -54,7 +75,7 @@
 ### 3. 커리어
 | 한글 | 영문 (코드용) | 설명 |
 | :--- | :--- | :--- |
-| 직장 유형 | `JobType` | `SMALL_BIZ`, `MID_BIZ`, `LARGE_BIZ`, `FREELANCER` |
+| 직장 유형 | `JobType` | `SMALL_BIZ`, `MID_BIZ`, `LARGE_BIZ`, `CIVIL`, `FREELANCER` |
 | 직함 | `JobTitle` | 근속 기반 자동 부여 |
 | 연봉 협상 | `SalaryNegotiation` | 연 1회, 슬롯 소모 |
 | 협상 준비도 | `NegotiationPreparation` | 공부/네트워킹 횟수 기반 |
@@ -69,9 +90,9 @@
 | 순자산 | `NetAssets` | 현금 + 주식 + 부동산 - 대출 |
 | 총자산 | `TotalAssets` | 부채를 포함한 전체 자산 |
 | 주식 | `Stock` | 종목별 보유 수량 + 평균 매수가 |
-| ~~환율~~ | ~~`ExchangeRate`~~ | ~~원/달러 기준~~ *(미적용)* |
-| ~~환전 스프레드~~ | ~~`ExchangeSpread`~~ | ~~매수 `+0.5%`, 매도 `-0.5%`~~ *(미적용)* |
-| 싸피론 | `SsafyLoan` | 게임 전용 대출 (연 `2.5%`, 최대 1,000만) |
+| 환율 | `ExchangeRate` | 원/달러 기준 |
+| 환전 스프레드 | `ExchangeSpread` | 매수 `+0.5%`, 매도 `-0.5%` |
+| 싸피론 | `SsafyLoan` | 게임 전용 대출 |
 | 연체 | `Overdue` | 현금 부족 → 강제 매도 후에도 부족 시 |
 
 ### 5. 주거
@@ -79,18 +100,18 @@
 | :--- | :--- | :--- |
 | 주거 상태 | `HousingType` | `NONE`, `STUDIO`, `VILLA`, `JEONSE_APT`, `OWNED_APT` |
 | 보증금 | `Deposit` | 주거 진입 비용 |
-| 관리비 | `MaintenanceFee` | 통계청 평균 |
+| 관리비 | `MaintenanceFee` | 평균 관리비 |
 | 서류 검토 | `DocumentReview` | 계약 시 서류 확인 UX |
 | 함정 | `Trap` | 깡통전세, 과도한 근저당 등 |
 
 ### 6. 세계관
 | 한글 | 영문 (코드용) | 설명 |
 | :--- | :--- | :--- |
-| 경제 사이클 | `EconomicCycle` | 10개 세부 사이클 |
+| 경제 사이클 | `EconomicCycle` | 세부 사이클 묶음 |
 | 사이클 상태 | `CyclePhase` | `BOOM`, `CRISIS`, `RECOVERY` |
-| 뉴스 | `News` | 턴 시작 시 노출, 주가/환율/부동산 영향 |
-| 이벤트 | `GameEvent` | 랜덤 발생, 2지선다 |
-| 전조 뉴스 | `ForeshadowNews` | 사이클 종료 3턴/1턴 전 |
+| 뉴스 | `News` | 턴 시작 시 노출 |
+| 이벤트 | `GameEvent` | 랜덤 발생 |
+| 전조 뉴스 | `ForeshadowNews` | 사이클 종료 전 힌트 |
 
 ### 7. 엔딩
 | 한글 | 영문 (코드용) | 설명 |
