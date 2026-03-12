@@ -1,0 +1,95 @@
+.card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.scoreList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.scoreRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scoreName {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.scoreValue {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.kcb {
+  color: #7c3aed;
+}
+
+.nice {
+  color: #10b981;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #f3f4f6;
+  margin: var(--spacing-md) 0;
+}
+
+.rateSection {
+  margin-bottom: var(--spacing-md);
+}
+
+.rateLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.rateRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rateDesc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.rateValue {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: #7c3aed;
+}
+
+.detailBtn {
+  width: 100%;
+  padding: 10px 0;
+  background: #eff6ff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: #155dfc;
+  cursor: pointer;
+  transition: background var(--transition-normal);
+}
+
+.detailBtn:hover {
+  background: #ede9fe;
+}
