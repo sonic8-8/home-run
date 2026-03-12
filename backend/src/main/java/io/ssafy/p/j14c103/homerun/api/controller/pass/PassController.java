@@ -1,10 +1,11 @@
 package io.ssafy.p.j14c103.homerun.api.controller.pass;
 
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassProductResponse;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSubscribeRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSubscriptionResponse;
+import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSubscribeRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.PassService;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,13 +14,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/pass")
+@RequiredArgsConstructor
 public class PassController {
 
     private final PassService passService;
-
-    public PassController(final PassService passService) {
-        this.passService = passService;
-    }
 
     @GetMapping("/products")
     public ResponseEntity<List<PassProductResponse>> getProducts() {

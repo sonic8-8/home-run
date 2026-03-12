@@ -1,7 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSaveRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassWidgetResponse;
+import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
@@ -11,7 +12,6 @@ import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.TransactionType;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

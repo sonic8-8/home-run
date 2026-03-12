@@ -1,8 +1,9 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
-import io.ssafy.p.j14c103.homerun.api.dto.home.DashboardResponse;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -11,16 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class DashboardService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final String TRANSACTION_TYPE_DEPOSIT = "1";
 
     private final SsafyDemandDepositClient demandDepositClient;
-
-    public DashboardService(final SsafyDemandDepositClient demandDepositClient) {
-        this.demandDepositClient = demandDepositClient;
-    }
 
     public DashboardResponse getDashboard(final String userKey) {
         if (userKey == null || userKey.isBlank()) {

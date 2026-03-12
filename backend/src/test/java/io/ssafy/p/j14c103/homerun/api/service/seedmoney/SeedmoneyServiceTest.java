@@ -1,13 +1,13 @@
 package io.ssafy.p.j14c103.homerun.api.service.seedmoney;
 
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyAccountResponse;
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyDepositRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyTransferRequest;
+import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyDepositRequest;
+import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyTransferRequest;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccount;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

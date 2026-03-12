@@ -1,8 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassProductResponse;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSubscribeRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSubscriptionResponse;
+import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSubscribeRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProductRepository;

@@ -1,22 +1,20 @@
 package io.ssafy.p.j14c103.homerun.api.controller.seedmoney;
 
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyAccountResponse;
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyDepositRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyTransferRequest;
+import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyDepositRequest;
+import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyTransferRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.SeedmoneyService;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/seedmoney")
+@RequiredArgsConstructor
 public class SeedmoneyController {
 
     private final SeedmoneyService seedmoneyService;
-
-    public SeedmoneyController(final SeedmoneyService seedmoneyService) {
-        this.seedmoneyService = seedmoneyService;
-    }
 
     @GetMapping("/account")
     public ResponseEntity<SeedmoneyAccountResponse> getAccount(

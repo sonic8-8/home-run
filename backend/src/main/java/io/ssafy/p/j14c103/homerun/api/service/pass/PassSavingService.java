@@ -1,8 +1,9 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassHistoryResponse;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSaveRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassWidgetResponse;
+import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccount;
@@ -10,7 +11,7 @@ import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.TransactionType;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class PassSavingService {
 
     private static final BigDecimal DEFAULT_WEEKLY_GOAL = BigDecimal.valueOf(50000);
@@ -32,17 +34,6 @@ public class PassSavingService {
     private final SeedmoneyAccountRepository seedmoneyAccountRepository;
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
     private final SsafyDemandDepositClient demandDepositClient;
-
-    public PassSavingService(
-            final PassSubscriptionRepository passSubscriptionRepository,
-            final SeedmoneyAccountRepository seedmoneyAccountRepository,
-            final SeedmoneyTransactionRepository seedmoneyTransactionRepository,
-            final SsafyDemandDepositClient demandDepositClient) {
-        this.passSubscriptionRepository = passSubscriptionRepository;
-        this.seedmoneyAccountRepository = seedmoneyAccountRepository;
-        this.seedmoneyTransactionRepository = seedmoneyTransactionRepository;
-        this.demandDepositClient = demandDepositClient;
-    }
 
     @Transactional
     public void save(final PassSaveRequest request) {

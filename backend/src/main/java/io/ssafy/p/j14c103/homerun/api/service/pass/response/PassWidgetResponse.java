@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.api.dto.pass;
+package io.ssafy.p.j14c103.homerun.api.service.pass.response;
 
 import java.math.BigDecimal;
 

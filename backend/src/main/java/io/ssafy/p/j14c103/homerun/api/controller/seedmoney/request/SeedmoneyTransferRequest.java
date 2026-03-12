@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.api.dto.seedmoney;
+package io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

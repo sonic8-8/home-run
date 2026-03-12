@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.api.dto.seedmoney;
+package io.ssafy.p.j14c103.homerun.api.service.seedmoney.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

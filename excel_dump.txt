@@ -1,0 +1,104 @@
+=== Sheet: 목록 ===
+대분류 | 중분류 | NO | 방식 | 인터페이스 ID | 호출 URL | 결과 타입 | 기능
+앱 관리자 | API KEY 관리 | 01 | POST | MANAGER_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/app/issuedApiKe | JSON | API KEY 발급
+02 | POST | MANAGER_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/app/reIssuedApi | JSON | API KEY 재발급
+앱 사용자 | 계정관리 | 01 | POST | MEMBER_01 | https://finopenapi.ssafy.io/ssafy/api/v1/member | JSON | 계정 생성
+02 | POST | MEMBER_02 | https://finopenapi.ssafy.io/ssafy/api/v1/member/search | JSON | 계정 조회
+공통  | Header | 01 | - | HEADER_01 | - | - | 공통 Header 정보
+은행 | 정보 | 01 | POST | BANK_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/bank/inquireBan | JSON | 은행코드 조회
+정보 | 02 | POST | CURRENCY_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/bank/inquireBan | JSON | 통화코드 조회
+수시입출금 | 01 | POST | DEMAND_DEPOSIT_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/c | JSON | 수시입출금 상품등록
+02 | POST | DEMAND_DEPOSIT_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/i | JSON | 상품 조회
+03 | POST | DEMAND_DEPOSIT_03 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/c | JSON | 계좌 생성
+04 | POST | DEMAND_DEPOSIT_04 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/i | JSON | 계좌 목록 조회
+05 | POST | DEMAND_DEPOSIT_05 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/i | JSON | 계좌 조회(단건)
+06 | POST | DEMAND_DEPOSIT_06 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/i | JSON | 예금주 조회
+07 | POST | DEMAND_DEPOSIT_07 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/i | JSON | 계좌 잔액 조회
+08 | POST | DEMAND_DEPOSIT_08 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/u | JSON | 계좌 출금
+09 | POST | DEMAND_DEPOSIT_09 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/u | JSON | 계좌 입금
+10 | POST | DEMAND_DEPOSIT_10 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/u | JSON | 계좌 이체
+11 | POST | DEMAND_DEPOSIT_11 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/u | JSON | 이체한도변경
+12 | POST | DEMAND_DEPOSIT_12 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/i | JSON | 계좌거래내역조회
+13 | POST | DEMAND_DEPOSIT_13 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/i | JSON | 계좌거래내역조회(단건)
+14 | POST | DEMAND_DEPOSIT_14 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/d | JSON | 계좌해지
+예금 | 01 | POST | DEPOSIT_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/createD | JSON | 예금상품등록
+02 | POST | DEPOSIT_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquire | JSON | 예금상품조회
+03 | POST | DEPOSIT_03 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/createD | JSON | 예금계좌생성
+04 | POST | DEPOSIT_04 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquire | JSON | 예금계좌목록 조회
+05 | POST | DEPOSIT_05 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquire | JSON | 예금계좌조회(단건)
+06 | POST | DEPOSIT_06 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquire | JSON | 예금납입상세조회
+07 | POST | DEPOSIT_07 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquire | JSON | 예금만기이자조회
+08 | POST | DEPOSIT_08 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/inquire | JSON | 예금중도해지이자조회
+09 | POST | DEPOSIT_09 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/deposit/deleteD | JSON | 예금계좌해지
+적금 | 01 | POST | SAVINGS_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/createP | JSON | 적금상품등록
+02 | POST | SAVINGS_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquire | JSON | 적금상품조회
+03 | POST | SAVINGS_03 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/createA | JSON | 적금계좌생성
+04 | POST | SAVINGS_04 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquire | JSON | 적금계좌목록조회
+05 | POST | SAVINGS_05 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquire | JSON | 적금계좌조회(단건)
+06 | POST | SAVINGS_06 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquire | JSON | 적금납입회차조회
+07 | POST | SAVINGS_07 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquire | JSON | 적금만기이자조회
+08 | POST | SAVINGS_08 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/inquire | JSON | 적금중도해지이자조회
+09 | POST | SAVINGS_09 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/savings/deleteA | JSON | 적금계좌해지
+대출 | 01 | POST | LOAN_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireAss | JSON | 신용등급 기준 조회
+02 | POST | LOAN_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoan | JSON | 대출 상품 등록
+03 | POST | LOAN_03 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoa | JSON | 대출 상품 조회
+04 | POST | LOAN_04 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireMyC | JSON | 내 신용등급 조회
+05 | POST | LOAN_05 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoan | JSON | 대출심사 신청
+06 | POST | LOAN_06 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoa | JSON | 대출심사 목록 조회
+07 | POST | LOAN_07 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/createLoan | JSON | 대출 상품 가입
+08 | POST | LOAN_08 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireLoa | JSON | 대출 상품 가입 목록 조회
+09 | POST | LOAN_09 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/inquireRep | JSON | 대출 상환 내역 조회
+10 | POST | LOAN_10 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/loan/updateRepa | JSON | 대출 일시납 상환
+1원 인증 | 01 | POST | ACCOUNT_AUTH_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/accountAuth/ope | JSON | 1원 송금
+02 | POST | ACCOUNT_AUTH_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/accountAuth/che | JSON | 1원 송금 검증
+환율 | 01 | POST | EXCHANGE_RATE_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchangeRate | JSON | 환율 전체 조회
+02 | POST | EXCHANGE_RATE_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchangeRate/ex | JSON | 환율 단건 조회
+환전 | 01 | POST | EXCHANGE_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange/estima | JSON | 환전 예상 금액 조회
+02 | POST | EXCHANGE_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange | JSON | 환전 신청
+03 | POST | EXCHANGE_03 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/exchange/exchan | JSON | 환전 신청내역조회
+외화 수시입출금 | 01 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 수시입출금 상품등록
+02 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 상품 조회
+03 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_03 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌 생성
+04 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_04 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌 목록 조회
+05 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_05 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌 조회(단건)
+06 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_06 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 예금주 조회
+07 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_07 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌 잔액 조회
+08 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_08 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌 출금
+09 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_09 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌 입금
+10 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_10 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌 이체
+11 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_11 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 이체한도변경
+12 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_12 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌거래내역조회
+13 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_13 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌거래내역조회(단건)
+14 | POST | DEMAND_DEPOSIT_FOREIGN_CURRENCY_14 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/demandDeposit/f | JSON | 외화 계좌해지
+거래메모(원화,외화) | 01 | POST | TRANSACTION_MEMO_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/transactionMemo | JSON | 거래내역 메모
+카드 | 신용카드 | 01 | POST | CREDIT_CARD_01 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inqu | JSON | 카테고리 조회
+02 | POST | CREDIT_CARD_02 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/crea | JSON | 가맹점 등록
+03 | POST | CREDIT_CARD_03 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inqu | JSON | 카드사 조회
+04 | POST | CREDIT_CARD_04 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/crea | JSON | 카드 상품 등록
+05 | POST | CREDIT_CARD_05 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inqu | JSON | 카드 상품 조회
+06 | POST | CREDIT_CARD_06 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/crea | JSON | 카드 생성
+07 | POST | CREDIT_CARD_07 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inqu | JSON | 내 카드 목록 조회
+08 | POST | CREDIT_CARD_08 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inqu | JSON | 가맹점 목록 조회
+09 | POST | CREDIT_CARD_09 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/crea | JSON | 카드 결제
+10 | POST | CREDIT_CARD_10 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inqu | JSON | 카드 결제 내역 조회
+11 | POST | CREDIT_CARD_11 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/dele | JSON | 카드 결제 취소
+12 | POST | CREDIT_CARD_12 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/inqu | JSON | 청구서 조회
+13 | POST | CREDIT_CARD_13 | https://finopenapi.ssafy.io/ssafy/api/v1/edu/creditCard/upda | JSON | 카드 결제 계좌 수정
+
+=== Sheet: TRANSACTION_MEMO_01 ===
+1. 인터페이스 명세
+처음으로
+인터페이스ID | TRANSACTION_MEMO_01 | 인터페이스명 | 거래내역 메모
+운영URL | https://finopenapi.ssafy.io/ssafy/api/v1/edu/transactionMemo
+2. 관련 전문
+■ 인터페이스 요청 항목
+Parameter명 | 설명 | 타입 | 길이 | 필수여부 | 비고
+Header | 공통 | Y
+accountNo | 계좌번호 | String | 16 | Y
+transactionUniqueNo | 거래고유번호 | Long | Y
+transactionMemo | 메모 | String | 255 | N
+▶ 예제
+{
+    "Header": {
+        "apiName": "transactionMemo",
+    

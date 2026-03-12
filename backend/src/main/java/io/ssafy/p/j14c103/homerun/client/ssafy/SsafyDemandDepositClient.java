@@ -1,6 +1,7 @@
-package io.ssafy.p.j14c103.homerun.infrastructure.ssafy;
+package io.ssafy.p.j14c103.homerun.client.ssafy;
 
 import io.ssafy.p.j14c103.homerun.config.SsafyApiProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -10,20 +11,12 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class SsafyDemandDepositClient {
 
     private final RestTemplate restTemplate;
     private final SsafyApiProperties properties;
     private final SsafyApiHeaderGenerator headerGenerator;
-
-    public SsafyDemandDepositClient(
-            final RestTemplate restTemplate,
-            final SsafyApiProperties properties,
-            final SsafyApiHeaderGenerator headerGenerator) {
-        this.restTemplate = restTemplate;
-        this.properties = properties;
-        this.headerGenerator = headerGenerator;
-    }
 
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> inquireAccountList(final String userKey) {

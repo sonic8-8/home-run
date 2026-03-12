@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.api.dto.pass;
+package io.ssafy.p.j14c103.homerun.api.controller.pass.request;
 
 import jakarta.validation.constraints.NotNull;
 

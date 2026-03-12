@@ -1,10 +1,10 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
-import io.ssafy.p.j14c103.homerun.api.dto.home.SpendingCategoryDetail;
-import io.ssafy.p.j14c103.homerun.api.dto.home.SpendingResponse;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingCategoryDetail;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyCreditCardClient;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

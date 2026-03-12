@@ -1,12 +1,13 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassProductResponse;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSubscribeRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.pass.PassSubscriptionResponse;
+import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSubscribeRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,17 +15,11 @@ import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class PassService {
 
     private final PassProductRepository passProductRepository;
     private final PassSubscriptionRepository passSubscriptionRepository;
-
-    public PassService(
-            final PassProductRepository passProductRepository,
-            final PassSubscriptionRepository passSubscriptionRepository) {
-        this.passProductRepository = passProductRepository;
-        this.passSubscriptionRepository = passSubscriptionRepository;
-    }
 
     public List<PassProductResponse> getProducts() {
         return passProductRepository.findAll().stream()
@@ -36,6 +31,7 @@ public class PassService {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
+
         return passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId).stream()
                 .map(PassSubscriptionResponse::from)
                 .toList();
@@ -47,23 +43,19 @@ public class PassService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 PASS 상품입니다."));
 
         final PassSubscription subscription = PassSubscription.create(
-                request.getUserId(),
-                product,
-                request.getSourceAccountNo());
+                request.getUserId(), product, request.getSourceAccountNo());
 
-        passSubscriptionRepository.save(subscription);
-
-        return PassSubscriptionResponse.from(subscription);
+        return PassSubscriptionResponse.from(passSubscriptionRepository.save(subscription));
     }
 
     @Transactional
     public void cancelSubscription(final Long subscriptionId) {
-        if (subscriptionId == null) {
-            throw new IllegalArgumentException("구독 ID는 필수입니다.");
-        }
-
         final PassSubscription subscription = passSubscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구독입니다."));
+
+        if (!subscription.isActive()) {
+            throw new IllegalStateException("이미 해지된 구독입니다.");
+        }
 
         subscription.cancel();
     }

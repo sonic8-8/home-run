@@ -1,8 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
-import io.ssafy.p.j14c103.homerun.api.dto.home.DashboardResponse;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

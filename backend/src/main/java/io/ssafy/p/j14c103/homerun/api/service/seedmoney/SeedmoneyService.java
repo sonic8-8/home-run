@@ -1,13 +1,14 @@
 package io.ssafy.p.j14c103.homerun.api.service.seedmoney;
 
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyAccountResponse;
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyDepositRequest;
-import io.ssafy.p.j14c103.homerun.api.dto.seedmoney.SeedmoneyTransferRequest;
+import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyDepositRequest;
+import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyTransferRequest;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccount;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,20 +18,12 @@ import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class SeedmoneyService {
 
     private final SeedmoneyAccountRepository seedmoneyAccountRepository;
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
     private final SsafyDemandDepositClient demandDepositClient;
-
-    public SeedmoneyService(
-            final SeedmoneyAccountRepository seedmoneyAccountRepository,
-            final SeedmoneyTransactionRepository seedmoneyTransactionRepository,
-            final SsafyDemandDepositClient demandDepositClient) {
-        this.seedmoneyAccountRepository = seedmoneyAccountRepository;
-        this.seedmoneyTransactionRepository = seedmoneyTransactionRepository;
-        this.demandDepositClient = demandDepositClient;
-    }
 
     public SeedmoneyAccountResponse getAccount(final Long userId, final String userKey) {
         if (userId == null) {
