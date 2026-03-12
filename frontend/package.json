@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "lucide-react": "^0.577.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.13.1",
     "reflect-metadata": "^0.2.2",
     "tsyringe": "^4.10.0",
     "zustand": "^5.0.11"
