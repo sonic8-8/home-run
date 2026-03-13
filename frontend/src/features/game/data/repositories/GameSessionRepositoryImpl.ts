@@ -1,10 +1,11 @@
-import { injectable, inject } from 'tsyringe';
+// import { injectable, inject } from 'tsyringe';
 import type { IGameSessionRepository } from '../../domain/repositories/IGameSessionRepository';
-import { GameSessionRemoteDataSource } from '../datasources/GameSessionRemoteDataSource';
+import type { GameSessionRemoteDataSource } from '../datasources/GameSessionRemoteDataSource';
 import type { GameSlot } from '../../domain/entities/GameSlot';
 import type { GameSlotModel } from '../models/GameSessionModel';
 
-@injectable()
+
+// @injectable()
 export class GameSessionRepositoryImpl implements IGameSessionRepository {
   private readonly dataSource: GameSessionRemoteDataSource;
 

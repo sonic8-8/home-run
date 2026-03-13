@@ -1,8 +1,8 @@
-import { injectable, inject } from 'tsyringe';
+// import { injectable, inject } from 'tsyringe';
 import type { IGameSessionRepository } from '../repositories/IGameSessionRepository';
 import type { GameSlot } from '../entities/GameSlot';
 
-@injectable()
+// @injectable()
 export class GetGameSlotsUseCase {
   private readonly repository: IGameSessionRepository;
 
