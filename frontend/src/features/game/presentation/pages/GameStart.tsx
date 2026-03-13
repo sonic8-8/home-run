@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import backgroundImg from '@assets/images/background.png';
 import logoImg from '@assets/images/logo.png';
+import { ROUTES } from '@app/routes';
 import styles from './GameStart.module.css';
 
 export default function GameStart() {
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    navigate('/game/play');
+    navigate(ROUTES.GAME_SAVE);
   };
 
   const handleNewGame = () => {
