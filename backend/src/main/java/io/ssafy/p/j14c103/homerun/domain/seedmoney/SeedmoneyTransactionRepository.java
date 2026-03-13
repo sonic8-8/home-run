@@ -12,5 +12,5 @@ public interface SeedmoneyTransactionRepository extends JpaRepository<SeedmoneyT
     Page<SeedmoneyTransaction> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     List<SeedmoneyTransaction> findByUserIdAndTransactionTypeAndCreatedAtAfter(
-            Long userId, TransactionType transactionType, LocalDateTime after);
+            Long userId, String transactionType, LocalDateTime after);
 }

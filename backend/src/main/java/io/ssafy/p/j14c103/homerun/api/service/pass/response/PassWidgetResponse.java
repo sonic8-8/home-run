@@ -1,48 +1,29 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass.response;
 
-import java.math.BigDecimal;
-
 public class PassWidgetResponse {
 
-    private final BigDecimal todaySaving;
-    private final BigDecimal weekSaving;
-    private final BigDecimal goalAmount;
+    private final int todaySaving;
+    private final int weekSaving;
+    private final int goalAmount;
     private final double achievementRate;
 
-    private PassWidgetResponse(
-            final BigDecimal todaySaving,
-            final BigDecimal weekSaving,
-            final BigDecimal goalAmount,
-            final double achievementRate) {
+    private PassWidgetResponse(final int todaySaving, final int weekSaving,
+                               final int goalAmount, final double achievementRate) {
         this.todaySaving = todaySaving;
         this.weekSaving = weekSaving;
         this.goalAmount = goalAmount;
         this.achievementRate = achievementRate;
     }
 
-    public static PassWidgetResponse of(
-            final BigDecimal todaySaving,
-            final BigDecimal weekSaving,
-            final BigDecimal goalAmount) {
-        final double rate = goalAmount.compareTo(BigDecimal.ZERO) > 0
-                ? weekSaving.doubleValue() / goalAmount.doubleValue() * 100.0
+    public static PassWidgetResponse of(final int todaySaving, final int weekSaving, final int goalAmount) {
+        final double rate = goalAmount > 0
+                ? (double) weekSaving / goalAmount * 100.0
                 : 0.0;
         return new PassWidgetResponse(todaySaving, weekSaving, goalAmount, Math.min(rate, 100.0));
     }
 
-    public BigDecimal getTodaySaving() {
-        return todaySaving;
-    }
-
-    public BigDecimal getWeekSaving() {
-        return weekSaving;
-    }
-
-    public BigDecimal getGoalAmount() {
-        return goalAmount;
-    }
-
-    public double getAchievementRate() {
-        return achievementRate;
-    }
+    public int getTodaySaving() { return todaySaving; }
+    public int getWeekSaving() { return weekSaving; }
+    public int getGoalAmount() { return goalAmount; }
+    public double getAchievementRate() { return achievementRate; }
 }

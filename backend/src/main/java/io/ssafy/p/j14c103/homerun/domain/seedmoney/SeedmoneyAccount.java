@@ -5,53 +5,64 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "seedmoney_accounts")
+@Table(name = "시드머니계좌")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SeedmoneyAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "시드머니계좌번호")
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "유저번호", nullable = false, unique = true)
     private Long userId;
 
-    @Column(nullable = false)
-    private String accountNumber;
+    @Column(name = "은행명")
+    private String bankName;
 
-    @Column(nullable = false, precision = 15, scale = 0)
-    private BigDecimal balanceSnapshot;
+    @Column(name = "마스킹계좌번호")
+    private String maskedAccountNo;
 
-    @Column(nullable = false)
+    @Column(name = "잔액스냅샷")
+    private Integer balanceSnapshot;
+
+    @Column(name = "수정일시")
     private LocalDateTime updatedAt;
 
-    private SeedmoneyAccount(final Long userId, final String accountNumber) {
+    private SeedmoneyAccount(final Long userId, final String bankName, final String maskedAccountNo) {
         this.userId = userId;
-        this.accountNumber = accountNumber;
-        this.balanceSnapshot = BigDecimal.ZERO;
+        this.bankName = bankName;
+        this.maskedAccountNo = maskedAccountNo;
+        this.balanceSnapshot = 0;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public static SeedmoneyAccount create(final Long userId, final String accountNumber) {
+    public static SeedmoneyAccount create(final Long userId, final String bankName, final String accountNo) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
-        if (accountNumber == null || accountNumber.isBlank()) {
+        if (accountNo == null || accountNo.isBlank()) {
             throw new IllegalArgumentException("계좌번호는 필수입니다.");
         }
-        return new SeedmoneyAccount(userId, accountNumber);
+        return new SeedmoneyAccount(userId, bankName, maskAccountNo(accountNo));
     }
 
-    public void updateBalance(final BigDecimal newBalance) {
+    public void updateBalance(final Integer newBalance) {
         if (newBalance == null) {
             throw new IllegalArgumentException("잔액은 null일 수 없습니다.");
         }
         this.balanceSnapshot = newBalance;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    private static String maskAccountNo(final String accountNo) {
+        if (accountNo.length() <= 4) {
+            return "****";
+        }
+        return "****" + accountNo.substring(accountNo.length() - 4);
     }
 }

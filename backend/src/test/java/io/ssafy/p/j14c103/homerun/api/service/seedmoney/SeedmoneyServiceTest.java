@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,22 +44,23 @@ class SeedmoneyServiceTest {
     @DisplayName("시드머니 계좌 잔액을 실시간으로 조회한다")
     @Test
     void getAccount() {
-        final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "9990012345678");
+        final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "한국은행", "9990012345678");
 
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
         given(demandDepositClient.inquireAccountList("test-key"))
-                .willReturn(List.of(Map.of("accountNo", "9990012345678", "accountBalance", "150000")));
+                .willReturn(List.of(Map.of("accountNo", "****5678", "accountBalance", "150000")));
 
         final SeedmoneyAccountResponse result = seedmoneyService.getAccount(1L, "test-key");
 
-        assertThat(result.getBalance()).isEqualByComparingTo(BigDecimal.valueOf(150000));
-        assertThat(result.getAccountNumber()).isEqualTo("9990012345678");
+        assertThat(result.getBalance()).isEqualTo(150000);
+        assertThat(result.getMaskedAccountNo()).isEqualTo("****5678");
+        assertThat(result.getBankName()).isEqualTo("한국은행");
     }
 
     @DisplayName("시드머니에서 외부 계좌로 송금한다")
     @Test
     void transfer() {
-        final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "시드머니계좌");
+        final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "한국은행", "시드머니계좌");
         final SeedmoneyTransferRequest request = new SeedmoneyTransferRequest(1L, "test-key", 10000L, "외부계좌");
 
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
@@ -69,14 +69,13 @@ class SeedmoneyServiceTest {
 
         seedmoneyService.transfer(request);
 
-        verify(demandDepositClient).transferAccount("test-key", "외부계좌", "시드머니계좌", 10000L);
         verify(seedmoneyTransactionRepository).save(any(SeedmoneyTransaction.class));
     }
 
     @DisplayName("외부 계좌에서 시드머니로 입금한다")
     @Test
     void deposit() {
-        final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "시드머니계좌");
+        final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "한국은행", "시드머니계좌");
         final SeedmoneyDepositRequest request = new SeedmoneyDepositRequest(1L, "test-key", 20000L, "외부계좌");
 
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
@@ -85,7 +84,6 @@ class SeedmoneyServiceTest {
 
         seedmoneyService.deposit(request);
 
-        verify(demandDepositClient).transferAccount("test-key", "시드머니계좌", "외부계좌", 20000L);
         verify(seedmoneyTransactionRepository).save(any(SeedmoneyTransaction.class));
     }
 

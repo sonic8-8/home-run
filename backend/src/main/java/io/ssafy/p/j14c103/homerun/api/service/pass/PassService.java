@@ -43,7 +43,7 @@ public class PassService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 PASS 상품입니다."));
 
         final PassSubscription subscription = PassSubscription.create(
-                request.getUserId(), product, request.getSourceAccountNo());
+                request.getUserId(), product, request.getSavingAmount(), request.getSourceAccountNo());
 
         return PassSubscriptionResponse.from(passSubscriptionRepository.save(subscription));
     }
@@ -53,7 +53,7 @@ public class PassService {
         final PassSubscription subscription = passSubscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구독입니다."));
 
-        if (!subscription.isActive()) {
+        if (!subscription.getIsActive()) {
             throw new IllegalStateException("이미 해지된 구독입니다.");
         }
 

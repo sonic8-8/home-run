@@ -3,7 +3,6 @@ package io.ssafy.p.j14c103.homerun.api.service.pass;
 import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSubscribeRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
-import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
@@ -38,7 +37,7 @@ class PassServiceTest {
     @DisplayName("전체 PASS 상품 목록을 조회한다")
     @Test
     void getProducts() {
-        final PassProduct product = PassProduct.create("커피 PASS", Money.of(4500), "커피 한 잔 절약");
+        final PassProduct product = PassProduct.create("커피 PASS", "커피 한 잔 절약");
 
         given(passProductRepository.findAll()).willReturn(List.of(product));
 
@@ -51,8 +50,8 @@ class PassServiceTest {
     @DisplayName("사용자의 활성 구독 목록을 조회한다")
     @Test
     void getSubscriptions() {
-        final PassProduct product = PassProduct.create("커피 PASS", Money.of(4500), "커피 한 잔 절약");
-        final PassSubscription subscription = PassSubscription.create(1L, product, "0012345678");
+        final PassProduct product = PassProduct.create("커피 PASS", "커피 한 잔 절약");
+        final PassSubscription subscription = PassSubscription.create(1L, product, 4500, "0012345678");
 
         given(passSubscriptionRepository.findByUserIdAndIsActiveTrue(1L))
                 .willReturn(List.of(subscription));
@@ -67,8 +66,8 @@ class PassServiceTest {
     @DisplayName("PASS 구독을 신청한다")
     @Test
     void subscribe() {
-        final PassProduct product = PassProduct.create("커피 PASS", Money.of(4500), "커피 한 잔 절약");
-        final PassSubscribeRequest request = new PassSubscribeRequest(1L, 1L, "0012345678", "test-key");
+        final PassProduct product = PassProduct.create("커피 PASS", "커피 한 잔 절약");
+        final PassSubscribeRequest request = new PassSubscribeRequest(1L, 1L, 4500, "0012345678", "test-key");
 
         given(passProductRepository.findById(1L)).willReturn(Optional.of(product));
         given(passSubscriptionRepository.save(any(PassSubscription.class)))
@@ -83,7 +82,7 @@ class PassServiceTest {
     @DisplayName("존재하지 않는 상품으로 구독 신청 시 예외가 발생한다")
     @Test
     void subscribe_invalidProduct_exception() {
-        final PassSubscribeRequest request = new PassSubscribeRequest(1L, 999L, "0012345678", "test-key");
+        final PassSubscribeRequest request = new PassSubscribeRequest(1L, 999L, 4500, "0012345678", "test-key");
 
         given(passProductRepository.findById(999L)).willReturn(Optional.empty());
 
@@ -95,21 +94,21 @@ class PassServiceTest {
     @DisplayName("구독을 해지한다")
     @Test
     void cancelSubscription() {
-        final PassProduct product = PassProduct.create("커피 PASS", Money.of(4500), "커피 한 잔 절약");
-        final PassSubscription subscription = PassSubscription.create(1L, product, "0012345678");
+        final PassProduct product = PassProduct.create("커피 PASS", "커피 한 잔 절약");
+        final PassSubscription subscription = PassSubscription.create(1L, product, 4500, "0012345678");
 
         given(passSubscriptionRepository.findById(1L)).willReturn(Optional.of(subscription));
 
         passService.cancelSubscription(1L);
 
-        assertThat(subscription.isActive()).isFalse();
+        assertThat(subscription.getIsActive()).isFalse();
     }
 
     @DisplayName("이미 해지된 구독을 다시 해지하면 예외가 발생한다")
     @Test
     void cancelSubscription_alreadyCanceled_exception() {
-        final PassProduct product = PassProduct.create("커피 PASS", Money.of(4500), "커피 한 잔 절약");
-        final PassSubscription subscription = PassSubscription.create(1L, product, "0012345678");
+        final PassProduct product = PassProduct.create("커피 PASS", "커피 한 잔 절약");
+        final PassSubscription subscription = PassSubscription.create(1L, product, 4500, "0012345678");
         subscription.cancel();
 
         given(passSubscriptionRepository.findById(1L)).willReturn(Optional.of(subscription));

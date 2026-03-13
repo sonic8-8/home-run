@@ -2,23 +2,19 @@ package io.ssafy.p.j14c103.homerun.api.service.pass.response;
 
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class PassHistoryResponse {
 
     private final Long id;
     private final String transactionType;
-    private final BigDecimal amount;
+    private final Integer amount;
     private final String counterpartyAccountMasked;
     private final LocalDateTime createdAt;
 
     private PassHistoryResponse(
-            final Long id,
-            final String transactionType,
-            final BigDecimal amount,
-            final String counterpartyAccountMasked,
-            final LocalDateTime createdAt) {
+            final Long id, final String transactionType, final Integer amount,
+            final String counterpartyAccountMasked, final LocalDateTime createdAt) {
         this.id = id;
         this.transactionType = transactionType;
         this.amount = amount;
@@ -32,29 +28,15 @@ public class PassHistoryResponse {
         }
         return new PassHistoryResponse(
                 transaction.getId(),
-                transaction.getTransactionType().getDisplayName(),
+                transaction.getTransactionType(),
                 transaction.getAmount(),
                 transaction.getCounterpartyAccountMasked(),
                 transaction.getCreatedAt());
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getTransactionType() {
-        return transactionType;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public String getCounterpartyAccountMasked() {
-        return counterpartyAccountMasked;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public Long getId() { return id; }
+    public String getTransactionType() { return transactionType; }
+    public Integer getAmount() { return amount; }
+    public String getCounterpartyAccountMasked() { return counterpartyAccountMasked; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }

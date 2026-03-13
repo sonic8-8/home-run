@@ -10,6 +10,9 @@ public class PassSubscribeRequest {
     @NotNull(message = "PASS 상품 ID는 필수입니다.")
     private Long passProductId;
 
+    @NotNull(message = "1회 저축 금액은 필수입니다.")
+    private Integer savingAmount;
+
     @NotNull(message = "출금 계좌번호는 필수입니다.")
     private String sourceAccountNo;
 
@@ -20,26 +23,18 @@ public class PassSubscribeRequest {
     }
 
     public PassSubscribeRequest(final Long userId, final Long passProductId,
-                                final String sourceAccountNo, final String userKey) {
+                                final Integer savingAmount, final String sourceAccountNo,
+                                final String userKey) {
         this.userId = userId;
         this.passProductId = passProductId;
+        this.savingAmount = savingAmount;
         this.sourceAccountNo = sourceAccountNo;
         this.userKey = userKey;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public Long getPassProductId() {
-        return passProductId;
-    }
-
-    public String getSourceAccountNo() {
-        return sourceAccountNo;
-    }
-
-    public String getUserKey() {
-        return userKey;
-    }
+    public Long getUserId() { return userId; }
+    public Long getPassProductId() { return passProductId; }
+    public Integer getSavingAmount() { return savingAmount; }
+    public String getSourceAccountNo() { return sourceAccountNo; }
+    public String getUserKey() { return userKey; }
 }

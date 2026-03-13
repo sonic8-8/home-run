@@ -2,28 +2,23 @@ package io.ssafy.p.j14c103.homerun.api.service.pass.response;
 
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class PassSubscriptionResponse {
 
     private final Long id;
     private final String passName;
-    private final BigDecimal amountPerSave;
+    private final Integer savingAmount;
     private final String sourceAccountNo;
     private final boolean active;
     private final LocalDateTime subscribedAt;
 
     private PassSubscriptionResponse(
-            final Long id,
-            final String passName,
-            final BigDecimal amountPerSave,
-            final String sourceAccountNo,
-            final boolean active,
-            final LocalDateTime subscribedAt) {
+            final Long id, final String passName, final Integer savingAmount,
+            final String sourceAccountNo, final boolean active, final LocalDateTime subscribedAt) {
         this.id = id;
         this.passName = passName;
-        this.amountPerSave = amountPerSave;
+        this.savingAmount = savingAmount;
         this.sourceAccountNo = sourceAccountNo;
         this.active = active;
         this.subscribedAt = subscribedAt;
@@ -36,40 +31,16 @@ public class PassSubscriptionResponse {
         return new PassSubscriptionResponse(
                 subscription.getId(),
                 subscription.getPassName(),
-                subscription.getPassProduct().getAmountPerSave(),
-                maskAccountNo(subscription.getSourceAccountNo()),
-                subscription.isActive(),
+                subscription.getSavingAmount(),
+                subscription.getSourceAccountNo(),
+                subscription.getIsActive(),
                 subscription.getSubscribedAt());
     }
 
-    private static String maskAccountNo(final String accountNo) {
-        if (accountNo == null || accountNo.length() < 4) {
-            return accountNo;
-        }
-        return "****" + accountNo.substring(accountNo.length() - 4);
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getPassName() {
-        return passName;
-    }
-
-    public BigDecimal getAmountPerSave() {
-        return amountPerSave;
-    }
-
-    public String getSourceAccountNo() {
-        return sourceAccountNo;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public LocalDateTime getSubscribedAt() {
-        return subscribedAt;
-    }
+    public Long getId() { return id; }
+    public String getPassName() { return passName; }
+    public Integer getSavingAmount() { return savingAmount; }
+    public String getSourceAccountNo() { return sourceAccountNo; }
+    public boolean isActive() { return active; }
+    public LocalDateTime getSubscribedAt() { return subscribedAt; }
 }

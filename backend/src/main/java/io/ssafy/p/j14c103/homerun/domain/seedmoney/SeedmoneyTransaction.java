@@ -5,44 +5,45 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "seedmoney_transactions")
+@Table(name = "시드머니거래내역")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SeedmoneyTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "거래번호")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "유저번호", nullable = false)
     private Long userId;
 
-    private Long subscriptionId;
+    @Column(name = "패스번호")
+    private Long passId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TransactionType transactionType;
+    @Column(name = "거래유형")
+    private String transactionType;
 
-    @Column(nullable = false, precision = 15, scale = 0)
-    private BigDecimal amount;
+    @Column(name = "거래금액")
+    private Integer amount;
 
+    @Column(name = "상대계좌마스킹")
     private String counterpartyAccountMasked;
 
-    @Column(nullable = false)
+    @Column(name = "생성일시")
     private LocalDateTime createdAt;
 
     private SeedmoneyTransaction(
             final Long userId,
-            final Long subscriptionId,
-            final TransactionType transactionType,
-            final BigDecimal amount,
+            final Long passId,
+            final String transactionType,
+            final Integer amount,
             final String counterpartyAccountMasked) {
         this.userId = userId;
-        this.subscriptionId = subscriptionId;
+        this.passId = passId;
         this.transactionType = transactionType;
         this.amount = amount;
         this.counterpartyAccountMasked = counterpartyAccountMasked;
@@ -51,33 +52,33 @@ public class SeedmoneyTransaction {
 
     public static SeedmoneyTransaction createSave(
             final Long userId,
-            final Long subscriptionId,
-            final BigDecimal amount) {
+            final Long passId,
+            final Integer amount) {
         validateCommonFields(userId, amount);
-        return new SeedmoneyTransaction(userId, subscriptionId, TransactionType.SAVE, amount, null);
+        return new SeedmoneyTransaction(userId, passId, "SAVE", amount, null);
     }
 
     public static SeedmoneyTransaction createDeposit(
             final Long userId,
-            final BigDecimal amount,
+            final Integer amount,
             final String fromAccountMasked) {
         validateCommonFields(userId, amount);
-        return new SeedmoneyTransaction(userId, null, TransactionType.DEPOSIT, amount, fromAccountMasked);
+        return new SeedmoneyTransaction(userId, null, "DEPOSIT", amount, fromAccountMasked);
     }
 
     public static SeedmoneyTransaction createTransfer(
             final Long userId,
-            final BigDecimal amount,
+            final Integer amount,
             final String toAccountMasked) {
         validateCommonFields(userId, amount);
-        return new SeedmoneyTransaction(userId, null, TransactionType.TRANSFER, amount, toAccountMasked);
+        return new SeedmoneyTransaction(userId, null, "TRANSFER", amount, toAccountMasked);
     }
 
-    private static void validateCommonFields(final Long userId, final BigDecimal amount) {
+    private static void validateCommonFields(final Long userId, final Integer amount) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+        if (amount == null || amount <= 0) {
             throw new IllegalArgumentException("금액은 0보다 커야 합니다.");
         }
     }

@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -33,12 +32,13 @@ public class SeedmoneyService {
         final SeedmoneyAccount account = seedmoneyAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("시드머니 계좌가 없습니다."));
 
-        final BigDecimal realTimeBalance = fetchRealTimeBalance(userKey, account.getAccountNumber());
+        final int realTimeBalance = fetchRealTimeBalance(userKey, account.getMaskedAccountNo());
         account.updateBalance(realTimeBalance);
 
         return SeedmoneyAccountResponse.of(
                 account.getId(),
-                account.getAccountNumber(),
+                account.getBankName(),
+                account.getMaskedAccountNo(),
                 realTimeBalance,
                 account.getUpdatedAt());
     }
@@ -51,12 +51,12 @@ public class SeedmoneyService {
         demandDepositClient.transferAccount(
                 request.getUserKey(),
                 request.getToAccountNo(),
-                account.getAccountNumber(),
+                account.getMaskedAccountNo(),
                 request.getAmount());
 
         final SeedmoneyTransaction transaction = SeedmoneyTransaction.createTransfer(
                 request.getUserId(),
-                BigDecimal.valueOf(request.getAmount()),
+                request.getAmount().intValue(),
                 maskAccountNo(request.getToAccountNo()));
 
         seedmoneyTransactionRepository.save(transaction);
@@ -69,27 +69,27 @@ public class SeedmoneyService {
 
         demandDepositClient.transferAccount(
                 request.getUserKey(),
-                account.getAccountNumber(),
+                account.getMaskedAccountNo(),
                 request.getFromAccountNo(),
                 request.getAmount());
 
         final SeedmoneyTransaction transaction = SeedmoneyTransaction.createDeposit(
                 request.getUserId(),
-                BigDecimal.valueOf(request.getAmount()),
+                request.getAmount().intValue(),
                 maskAccountNo(request.getFromAccountNo()));
 
         seedmoneyTransactionRepository.save(transaction);
     }
 
     @SuppressWarnings("unchecked")
-    private BigDecimal fetchRealTimeBalance(final String userKey, final String accountNo) {
+    private int fetchRealTimeBalance(final String userKey, final String accountNo) {
         final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
 
         return accounts.stream()
                 .filter(account -> accountNo.equals(account.get("accountNo")))
                 .findFirst()
-                .map(account -> new BigDecimal(String.valueOf(account.get("accountBalance"))))
-                .orElse(BigDecimal.ZERO);
+                .map(account -> Integer.parseInt(String.valueOf(account.get("accountBalance"))))
+                .orElse(0);
     }
 
     private String maskAccountNo(final String accountNo) {
