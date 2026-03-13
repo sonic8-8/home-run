@@ -1,7 +1,9 @@
 export const ROUTES = {
   LOGIN:    '/login',
   HOME:     '/',
-  GAME:     '/game',
+  GAME:       '/game',
+  GAME_START: '/game/start',
+  GAME_SAVE:  '/game/save',
   LOAN:     '/loan',
   PROPERTY: '/property',
   CARD:     '/card',

@@ -12,6 +12,14 @@ const HomePage = lazy(() =>
   import('@features/home').then((m) => ({ default: m.HomePage }))
 );
 
+const GameStartPage = lazy(() =>
+  import('@features/game/presentation/pages/GameStart')
+);
+
+const GameSaveSlotPage = lazy(() =>
+  import('@features/game/presentation/pages/GameSaveSlot/GameSaveSlot')
+);
+
 const TempPage = () => <div>준비 중</div>;
 
 const router = createBrowserRouter([
@@ -25,7 +33,9 @@ const router = createBrowserRouter([
     element: <PrivateRoute />,
     children: [
       { path: ROUTES.HOME,     element: <Suspense fallback={null}><HomePage /></Suspense> },
-      { path: ROUTES.GAME,     element: <TempPage /> },
+      { path: ROUTES.GAME,       element: <TempPage /> },
+      { path: ROUTES.GAME_START, element: <Suspense fallback={null}><GameStartPage /></Suspense> },
+      { path: ROUTES.GAME_SAVE,  element: <Suspense fallback={null}><GameSaveSlotPage /></Suspense> },
       { path: ROUTES.LOAN,     element: <TempPage /> },
       { path: ROUTES.PROPERTY, element: <TempPage /> },
       { path: ROUTES.CARD,     element: <TempPage /> },
