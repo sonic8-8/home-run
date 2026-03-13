@@ -4,10 +4,11 @@ import type { GameSlot } from '../entities/GameSlot';
 
 @injectable()
 export class GetGameSlotsUseCase {
-  constructor(
-    @inject('IGameSessionRepository')
-    private readonly repository: IGameSessionRepository,
-  ) {}
+  private readonly repository: IGameSessionRepository;
+
+  constructor(repository: IGameSessionRepository) {
+    this.repository = repository;
+  }
 
   async execute(): Promise<GameSlot[]> {
     return this.repository.getSlots();
