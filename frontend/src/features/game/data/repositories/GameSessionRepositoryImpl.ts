@@ -6,10 +6,11 @@ import type { GameSlotModel } from '../models/GameSessionModel';
 
 @injectable()
 export class GameSessionRepositoryImpl implements IGameSessionRepository {
-  constructor(
-    @inject(GameSessionRemoteDataSource)
-    private readonly dataSource: GameSessionRemoteDataSource,
-  ) {}
+  private readonly dataSource: GameSessionRemoteDataSource;
+
+  constructor(dataSource: GameSessionRemoteDataSource) {
+    this.dataSource = dataSource;
+  }
 
   async getSlots(): Promise<GameSlot[]> {
     const response = await this.dataSource.getSlots();
