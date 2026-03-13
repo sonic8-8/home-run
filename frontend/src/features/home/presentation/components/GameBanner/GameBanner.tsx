@@ -7,7 +7,7 @@ export const GameBanner: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className={styles.banner} onClick={() => navigate(ROUTES.GAME)}>
+    <div className={styles.banner} onClick={() => navigate(ROUTES.GAME_START)}>
       <img src="/assets/images/icon.png" alt="홈런" className={styles.logo} />
       <div className={styles.text}>
         <div className={styles.sub}>게임으로 금융을 배운다.</div>
