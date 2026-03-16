@@ -65,7 +65,7 @@
 }
 
 .slotEmpty {
-  cursor: default;
+  cursor: pointer;
   opacity: 0.6;
 }
 
