@@ -25,11 +25,29 @@ public class DashboardService {
             throw new IllegalArgumentException("userKey는 필수입니다.");
         }
 
-        final Money totalAsset = calculateTotalAsset(userKey);
+        final Money totalAssets = calculateTotalAsset(userKey);
         final Money monthlyIncome = calculateMonthlyIncome(userKey);
         final Money monthlyExpense = calculateMonthlyExpense(userKey);
 
-        return DashboardResponse.of(totalAsset, monthlyIncome, monthlyExpense, null);
+        // 전월 대비 변동 (현재는 0으로 설정 - 추후 전월 데이터 비교 구현)
+        final Money incomeChange = Money.zero();
+        final Money expenseChange = Money.zero();
+
+        // 다음 월급일까지 남은 일수 (25일 기준)
+        final int nextPaydayDays = calculateNextPaydayDays();
+
+        return DashboardResponse.of(totalAssets, monthlyIncome, monthlyExpense,
+                incomeChange, expenseChange, nextPaydayDays);
+    }
+
+    private int calculateNextPaydayDays() {
+        final LocalDate today = LocalDate.now();
+        final int payday = 25;
+        LocalDate nextPayday = today.withDayOfMonth(payday);
+        if (!today.isBefore(nextPayday)) {
+            nextPayday = nextPayday.plusMonths(1);
+        }
+        return (int) java.time.temporal.ChronoUnit.DAYS.between(today, nextPayday);
     }
 
     private Money calculateTotalAsset(final String userKey) {

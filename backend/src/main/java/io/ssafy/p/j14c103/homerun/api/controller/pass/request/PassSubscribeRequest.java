@@ -8,13 +8,10 @@ public class PassSubscribeRequest {
     private Long userId;
 
     @NotNull(message = "PASS 상품 ID는 필수입니다.")
-    private Long passProductId;
+    private Long passId;
 
-    @NotNull(message = "1회 저축 금액은 필수입니다.")
-    private Integer savingAmount;
-
-    @NotNull(message = "출금 계좌번호는 필수입니다.")
-    private String sourceAccountNo;
+    @NotNull(message = "출금 계좌 ID는 필수입니다.")
+    private String sourceAccountId;
 
     @NotNull(message = "userKey는 필수입니다.")
     private String userKey;
@@ -22,19 +19,16 @@ public class PassSubscribeRequest {
     protected PassSubscribeRequest() {
     }
 
-    public PassSubscribeRequest(final Long userId, final Long passProductId,
-                                final Integer savingAmount, final String sourceAccountNo,
-                                final String userKey) {
+    public PassSubscribeRequest(final Long userId, final Long passId,
+                                final String sourceAccountId, final String userKey) {
         this.userId = userId;
-        this.passProductId = passProductId;
-        this.savingAmount = savingAmount;
-        this.sourceAccountNo = sourceAccountNo;
+        this.passId = passId;
+        this.sourceAccountId = sourceAccountId;
         this.userKey = userKey;
     }
 
     public Long getUserId() { return userId; }
-    public Long getPassProductId() { return passProductId; }
-    public Integer getSavingAmount() { return savingAmount; }
-    public String getSourceAccountNo() { return sourceAccountNo; }
+    public Long getPassId() { return passId; }
+    public String getSourceAccountId() { return sourceAccountId; }
     public String getUserKey() { return userKey; }
 }

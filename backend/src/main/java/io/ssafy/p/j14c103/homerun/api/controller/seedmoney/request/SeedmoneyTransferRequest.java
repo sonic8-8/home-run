@@ -16,32 +16,21 @@ public class SeedmoneyTransferRequest {
     private Long amount;
 
     @NotNull(message = "입금 계좌번호는 필수입니다.")
-    private String toAccountNo;
+    private String toAccountNumber;
 
     protected SeedmoneyTransferRequest() {
     }
 
     public SeedmoneyTransferRequest(final Long userId, final String userKey,
-                                    final Long amount, final String toAccountNo) {
+                                    final Long amount, final String toAccountNumber) {
         this.userId = userId;
         this.userKey = userKey;
         this.amount = amount;
-        this.toAccountNo = toAccountNo;
+        this.toAccountNumber = toAccountNumber;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    public String getUserKey() {
-        return userKey;
-    }
-
-    public Long getAmount() {
-        return amount;
-    }
-
-    public String getToAccountNo() {
-        return toAccountNo;
-    }
+    public Long getUserId() { return userId; }
+    public String getUserKey() { return userKey; }
+    public Long getAmount() { return amount; }
+    public String getToAccountNumber() { return toAccountNumber; }
 }

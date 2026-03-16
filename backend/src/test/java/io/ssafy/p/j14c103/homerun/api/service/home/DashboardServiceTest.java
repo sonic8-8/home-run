@@ -42,7 +42,7 @@ class DashboardServiceTest {
 
         final DashboardResponse response = dashboardService.getDashboard(userKey);
 
-        assertThat(response.getTotalAsset()).isEqualTo(Money.of(8000000L));
+        assertThat(response.getTotalAssets()).isEqualTo(Money.of(8000000L));
     }
 
     @DisplayName("이번 달 입금 거래를 합산하여 월 수입을 반환한다")
@@ -100,7 +100,7 @@ class DashboardServiceTest {
 
         final DashboardResponse response = dashboardService.getDashboard(userKey);
 
-        assertThat(response.getTotalAsset()).isEqualTo(Money.zero());
+        assertThat(response.getTotalAssets()).isEqualTo(Money.zero());
         assertThat(response.getMonthlyIncome()).isEqualTo(Money.zero());
         assertThat(response.getMonthlyExpense()).isEqualTo(Money.zero());
     }

@@ -48,12 +48,12 @@ class SeedmoneyServiceTest {
 
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
         given(demandDepositClient.inquireAccountList("test-key"))
-                .willReturn(List.of(Map.of("accountNo", "****5678", "accountBalance", "150000")));
+                .willReturn(List.of(Map.of("accountNo", "9990012345678", "accountBalance", "150000")));
 
         final SeedmoneyAccountResponse result = seedmoneyService.getAccount(1L, "test-key");
 
         assertThat(result.getBalance()).isEqualTo(150000);
-        assertThat(result.getMaskedAccountNo()).isEqualTo("****5678");
+        assertThat(result.getAccountNumber()).isEqualTo("9990012345678");
         assertThat(result.getBankName()).isEqualTo("한국은행");
     }
 
@@ -66,6 +66,8 @@ class SeedmoneyServiceTest {
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
         given(demandDepositClient.transferAccount(any(), any(), any(), eq(10000L)))
                 .willReturn(Map.of("status", "success"));
+        given(demandDepositClient.inquireAccountList("test-key"))
+                .willReturn(List.of(Map.of("accountNo", "시드머니계좌", "accountBalance", "90000")));
 
         seedmoneyService.transfer(request);
 
@@ -81,6 +83,8 @@ class SeedmoneyServiceTest {
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
         given(demandDepositClient.transferAccount(any(), any(), any(), eq(20000L)))
                 .willReturn(Map.of("status", "success"));
+        given(demandDepositClient.inquireAccountList("test-key"))
+                .willReturn(List.of(Map.of("accountNo", "시드머니계좌", "accountBalance", "120000")));
 
         seedmoneyService.deposit(request);
 

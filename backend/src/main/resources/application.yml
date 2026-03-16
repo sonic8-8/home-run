@@ -19,4 +19,9 @@ spring:
 ssafy:
   api:
     base-url: https://finopenapi.ssafy.io/ssafy/api/v1/edu
-    api-key: ${SSAFY_API_KEY:your-api-key-here}
+    api-key: ${SSAFY_API_KEY:f337ce43034b4950bb0c385ddc99c895}
+
+fss:
+  api:
+    base-url: https://finlife.fss.or.kr/finlifeapi
+    auth-key: ${FSS_API_KEY:debf8714241ee1f79453f666d751c22e}

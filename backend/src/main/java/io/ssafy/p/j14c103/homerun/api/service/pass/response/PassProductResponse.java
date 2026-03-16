@@ -4,13 +4,16 @@ import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 
 public class PassProductResponse {
 
-    private final Long id;
+    private final Long passId;
     private final String name;
+    private final Integer amountPerSave;
     private final String description;
 
-    private PassProductResponse(final Long id, final String name, final String description) {
-        this.id = id;
+    private PassProductResponse(final Long passId, final String name,
+                                final Integer amountPerSave, final String description) {
+        this.passId = passId;
         this.name = name;
+        this.amountPerSave = amountPerSave;
         this.description = description;
     }
 
@@ -18,10 +21,13 @@ public class PassProductResponse {
         if (product == null) {
             throw new IllegalArgumentException("PASS 상품은 null일 수 없습니다.");
         }
-        return new PassProductResponse(product.getId(), product.getName(), product.getDescription());
+        return new PassProductResponse(
+                product.getId(), product.getName(),
+                product.getAmountPerSave(), product.getDescription());
     }
 
-    public Long getId() { return id; }
+    public Long getPassId() { return passId; }
     public String getName() { return name; }
+    public Integer getAmountPerSave() { return amountPerSave; }
     public String getDescription() { return description; }
 }

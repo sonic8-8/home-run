@@ -1,6 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
 import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
@@ -17,18 +18,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -53,32 +52,38 @@ class PassSavingServiceTest {
     @InjectMocks
     private PassSavingService passSavingService;
 
-    @DisplayName("꾹 저축 시 SSAFY 이체 API를 호출하고 트랜잭션을 기록한다")
+    @DisplayName("꾹 저축 시 SSAFY 이체 API를 호출하고 응답을 반환한다")
     @Test
     void save_success() {
-        final PassProduct product = PassProduct.create("커피 PASS", "커피 한 잔 절약");
-        final PassSubscription subscription = PassSubscription.create(1L, product, 4500, "출금계좌");
+        final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
+        final PassSubscription subscription = PassSubscription.create(1L, product, 5000, "출금계좌");
         ReflectionTestUtils.setField(subscription, "id", 1L);
         final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "한국은행", "시드머니계좌");
-        final PassSaveRequest request = new PassSaveRequest(1L, 1L, "test-key");
+        final PassSaveRequest request = new PassSaveRequest(1L, "출금계좌", 1L, "test-key");
 
         given(passSubscriptionRepository.findById(1L)).willReturn(Optional.of(subscription));
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
         given(demandDepositClient.transferAccount(any(), any(), any(), anyLong()))
                 .willReturn(Map.of("status", "success"));
+        given(seedmoneyTransactionRepository.findByUserIdAndTransactionTypeAndCreatedAtAfter(any(), any(), any()))
+                .willReturn(Collections.emptyList());
+        given(demandDepositClient.inquireAccountList("test-key"))
+                .willReturn(List.of(Map.of("accountNo", "시드머니계좌", "accountBalance", "295000")));
 
-        passSavingService.save(request);
+        final PassSaveResponse result = passSavingService.save(request);
 
+        assertThat(result.getSavedAmount()).isEqualTo(5000);
+        assertThat(result.getRemainingBalance()).isEqualTo(295000);
         verify(seedmoneyTransactionRepository).save(any(SeedmoneyTransaction.class));
     }
 
     @DisplayName("해지된 구독으로 저축하면 예외가 발생한다")
     @Test
     void save_canceledSubscription_exception() {
-        final PassProduct product = PassProduct.create("커피 PASS", "커피 한 잔 절약");
-        final PassSubscription subscription = PassSubscription.create(1L, product, 4500, "출금계좌");
+        final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
+        final PassSubscription subscription = PassSubscription.create(1L, product, 5000, "출금계좌");
         subscription.cancel();
-        final PassSaveRequest request = new PassSaveRequest(1L, 1L, "test-key");
+        final PassSaveRequest request = new PassSaveRequest(1L, "출금계좌", 1L, "test-key");
 
         given(passSubscriptionRepository.findById(1L)).willReturn(Optional.of(subscription));
 
@@ -87,22 +92,23 @@ class PassSavingServiceTest {
                 .hasMessageContaining("해지된 구독");
     }
 
-    @DisplayName("오늘/주간 저축 합산을 위젯으로 반환한다")
+    @DisplayName("위젯에서 오늘/주간 저축 현황과 목표를 반환한다")
     @Test
     void getWidget() {
-        final SeedmoneyTransaction tx = SeedmoneyTransaction.createSave(1L, 1L, 4500);
-
-        given(seedmoneyTransactionRepository.findByUserIdAndTransactionTypeAndCreatedAtAfter(
-                eq(1L), eq("SAVE"), any()))
-                .willReturn(List.of(tx));
+        given(seedmoneyTransactionRepository
+                .findByUserIdAndTransactionTypeAndCreatedAtAfter(any(), eq("SAVE"), any()))
+                .willReturn(Collections.emptyList());
 
         final PassWidgetResponse result = passSavingService.getWidget(1L);
 
-        assertThat(result.getTodaySaving()).isEqualTo(4500);
-        assertThat(result.getWeekSaving()).isEqualTo(4500);
+        assertThat(result.getTodaySaved()).isEqualTo(0);
+        assertThat(result.getWeeklySaved()).isEqualTo(0);
+        assertThat(result.getWeeklyGoal()).isEqualTo(50000);
+        assertThat(result.getProgressRate()).isEqualTo(0);
+        assertThat(result.getRemaining()).isEqualTo(50000);
     }
 
-    @DisplayName("사용자 ID가 null이면 위젯 조회 시 예외가 발생한다")
+    @DisplayName("위젯 조회 시 userId가 null이면 예외가 발생한다")
     @Test
     void getWidget_nullUserId_exception() {
         assertThatThrownBy(() -> passSavingService.getWidget(null))

@@ -3,6 +3,7 @@ package io.ssafy.p.j14c103.homerun.api.controller.pass;
 import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.PassSavingService;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,9 @@ public class PassSavingController {
     private final PassSavingService passSavingService;
 
     @PostMapping("/save")
-    public ResponseEntity<Void> save(@Valid @RequestBody final PassSaveRequest request) {
-        passSavingService.save(request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<PassSaveResponse> save(@Valid @RequestBody final PassSaveRequest request) {
+        final PassSaveResponse response = passSavingService.save(request);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/widget")

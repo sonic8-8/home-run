@@ -18,6 +18,67 @@ public class SsafyDemandDepositClient {
     private final SsafyApiProperties properties;
     private final SsafyApiHeaderGenerator headerGenerator;
 
+    /**
+     * 수시입출금 상품 등록 (앱 관리자용, 1회)
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> createDemandDeposit(final String bankCode, final String accountName) {
+        final String apiName = "createDemandDeposit";
+        final String url = properties.getBaseUrl() + "/demandDeposit/" + apiName;
+
+        final Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("Header", headerGenerator.generate(apiName, null));
+        requestBody.put("bankCode", bankCode);
+        requestBody.put("accountName", accountName);
+        requestBody.put("accountDescription", "HomeRun 시드머니");
+
+        final Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
+        if (response == null) {
+            throw new RuntimeException("SSAFY 수시입출금 상품 등록 응답이 없습니다.");
+        }
+        return (Map<String, Object>) response.get("REC");
+    }
+
+    /**
+     * 수시입출금 계좌 생성 (유저별)
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> createDemandDepositAccount(final String userKey, final String accountTypeUniqueNo) {
+        final String apiName = "createDemandDepositAccount";
+        final String url = properties.getBaseUrl() + "/demandDeposit/" + apiName;
+
+        final Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("Header", headerGenerator.generate(apiName, userKey));
+        requestBody.put("accountTypeUniqueNo", accountTypeUniqueNo);
+
+        final Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
+        if (response == null) {
+            throw new RuntimeException("SSAFY 수시입출금 계좌 생성 응답이 없습니다.");
+        }
+        return (Map<String, Object>) response.get("REC");
+    }
+
+    /**
+     * 수시입출금 계좌 입금
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> depositAccount(final String userKey, final String accountNo, final long amount) {
+        final String apiName = "updateDemandDepositAccountDeposit";
+        final String url = properties.getBaseUrl() + "/demandDeposit/" + apiName;
+
+        final Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("Header", headerGenerator.generate(apiName, userKey));
+        requestBody.put("accountNo", accountNo);
+        requestBody.put("transactionBalance", String.valueOf(amount));
+        requestBody.put("transactionSummary", "시드머니 입금");
+
+        final Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
+        if (response == null) {
+            throw new RuntimeException("SSAFY 입금 API 응답이 없습니다.");
+        }
+        return (Map<String, Object>) response.get("REC");
+    }
+
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> inquireAccountList(final String userKey) {
         if (userKey == null || userKey.isBlank()) {

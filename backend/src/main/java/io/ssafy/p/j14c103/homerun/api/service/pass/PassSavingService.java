@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.api.service.pass;
 
 import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
+import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
@@ -22,6 +23,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
@@ -37,7 +39,7 @@ public class PassSavingService {
     private final SsafyDemandDepositClient demandDepositClient;
 
     @Transactional
-    public void save(final PassSaveRequest request) {
+    public PassSaveResponse save(final PassSaveRequest request) {
         final PassSubscription subscription = passSubscriptionRepository.findById(request.getSubscriptionId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구독입니다."));
 
@@ -52,8 +54,8 @@ public class PassSavingService {
 
         demandDepositClient.transferAccount(
                 request.getUserKey(),
-                seedmoneyAccount.getMaskedAccountNo(),
-                subscription.getSourceAccountNo(),
+                seedmoneyAccount.getAccountNumber(),
+                request.getSourceAccountId(),
                 amount);
 
         // 시드머니 거래내역 기록
@@ -67,6 +69,15 @@ public class PassSavingService {
         final UserPassTransaction passTransaction = UserPassTransaction.create(
                 subscription.getId(), amount);
         userPassTransactionRepository.save(passTransaction);
+
+        // 총 저축 합계 계산
+        final int totalSaved = calculateTotalSaved(request.getUserId());
+
+        // 잔액 조회
+        final int remainingBalance = fetchRealTimeBalance(request.getUserKey(), seedmoneyAccount.getAccountNumber());
+        seedmoneyAccount.updateBalance(remainingBalance);
+
+        return PassSaveResponse.of(amount, totalSaved, remainingBalance);
     }
 
     public PassWidgetResponse getWidget(final Long userId) {
@@ -79,10 +90,10 @@ public class PassSavingService {
                 .with(DayOfWeek.MONDAY)
                 .atStartOfDay();
 
-        final int todaySaving = sumSavings(userId, todayStart);
-        final int weekSaving = sumSavings(userId, weekStart);
+        final int todaySaved = sumSavings(userId, todayStart);
+        final int weeklySaved = sumSavings(userId, weekStart);
 
-        return PassWidgetResponse.of(todaySaving, weekSaving, DEFAULT_WEEKLY_GOAL);
+        return PassWidgetResponse.of(todaySaved, weeklySaved, DEFAULT_WEEKLY_GOAL);
     }
 
     public Page<PassHistoryResponse> getHistory(final Long userId, final int page, final int size) {
@@ -102,5 +113,19 @@ public class PassSavingService {
         return transactions.stream()
                 .mapToInt(SeedmoneyTransaction::getAmount)
                 .sum();
+    }
+
+    private int calculateTotalSaved(final Long userId) {
+        return sumSavings(userId, LocalDateTime.MIN);
+    }
+
+    @SuppressWarnings("unchecked")
+    private int fetchRealTimeBalance(final String userKey, final String accountNo) {
+        final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
+        return accounts.stream()
+                .filter(account -> accountNo.equals(account.get("accountNo")))
+                .findFirst()
+                .map(account -> Integer.parseInt(String.valueOf(account.get("accountBalance"))))
+                .orElse(0);
     }
 }

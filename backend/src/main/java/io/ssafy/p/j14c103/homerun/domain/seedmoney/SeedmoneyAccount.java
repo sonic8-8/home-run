@@ -25,7 +25,7 @@ public class SeedmoneyAccount {
     private String bankName;
 
     @Column(name = "마스킹계좌번호")
-    private String maskedAccountNo;
+    private String accountNumber;
 
     @Column(name = "잔액스냅샷")
     private Integer balanceSnapshot;
@@ -33,22 +33,22 @@ public class SeedmoneyAccount {
     @Column(name = "수정일시")
     private LocalDateTime updatedAt;
 
-    private SeedmoneyAccount(final Long userId, final String bankName, final String maskedAccountNo) {
+    private SeedmoneyAccount(final Long userId, final String bankName, final String accountNumber) {
         this.userId = userId;
         this.bankName = bankName;
-        this.maskedAccountNo = maskedAccountNo;
+        this.accountNumber = accountNumber;
         this.balanceSnapshot = 0;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public static SeedmoneyAccount create(final Long userId, final String bankName, final String accountNo) {
+    public static SeedmoneyAccount create(final Long userId, final String bankName, final String accountNumber) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
-        if (accountNo == null || accountNo.isBlank()) {
+        if (accountNumber == null || accountNumber.isBlank()) {
             throw new IllegalArgumentException("계좌번호는 필수입니다.");
         }
-        return new SeedmoneyAccount(userId, bankName, maskAccountNo(accountNo));
+        return new SeedmoneyAccount(userId, bankName, accountNumber);
     }
 
     public void updateBalance(final Integer newBalance) {
@@ -57,12 +57,5 @@ public class SeedmoneyAccount {
         }
         this.balanceSnapshot = newBalance;
         this.updatedAt = LocalDateTime.now();
-    }
-
-    private static String maskAccountNo(final String accountNo) {
-        if (accountNo.length() <= 4) {
-            return "****";
-        }
-        return "****" + accountNo.substring(accountNo.length() - 4);
     }
 }
