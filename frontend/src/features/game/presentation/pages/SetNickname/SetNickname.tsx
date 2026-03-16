@@ -26,7 +26,7 @@ export default function SetNickname() {
 
   const handleNext = () => {
     if (!isValid) return;
-    navigate(ROUTES.GAME, {
+    navigate(ROUTES.GAME_SELECT_START_METHOD, {
       state: { ...state, characterName: nickname.trim() },
     });
   };
