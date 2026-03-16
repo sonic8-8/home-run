@@ -11,9 +11,11 @@
 - 최상위 패키지는 `api`, `domain`, `client`, `config`를 사용하고, 애플리케이션 시작 클래스는 루트 패키지에 둔다.
 - Controller는 `api/controller/{domain}`, Controller Request DTO는 `api/controller/{domain}/request`에 둔다.
 - Service는 `api/service/{domain}`, Service Request/Response DTO는 `api/service/{domain}/request`, `api/service/{domain}/response`에 둔다.
-- Entity / Enum / Repository는 `domain/{domain}`에 함께 두고, `entity`, `repository`, `enum` 같은 기술 분류용 하위 패키지는 기본적으로 만들지 않는다.
+- `domain` 하위는 애그리거트 루트 기준으로 먼저 묶는다. Entity / Enum / Repository는 기본적으로 같은 애그리거트 패키지에 두고, `entity`, `repository`, `enum` 같은 기술 분류용 하위 패키지는 만들지 않는다.
 - 외부 시스템 연동은 `client`에 두고, 스프링 설정만 `config`에 둔다.
-- 독립 의미의 연결 객체는 별도 도메인 패키지로 분리하고, 이력성 데이터나 보조 하위 도메인은 `domain/history/...`처럼 의미 단위로 묶는다.
+- 애그리거트 내부 클래스가 많을 때만 해당 애그리거트 디렉토리 안에서 `turn`, `report`, `accountauth`처럼 의미별 하위 패키지로 나눈다.
+- 독립 생명주기, 독립 트랜잭션 경계, 독립 조회 요구가 생기면 별도 도메인 패키지로 승격한다. 그렇지 않으면 상위 애그리거트 내부에 둔다.
+- 이력성 데이터나 보조 하위 도메인은 `domain/history/...`처럼 의미 단위로 묶되, 상위 애그리거트에 종속되면 그 애그리거트 내부 하위 패키지를 우선 검토한다.
 - Controller는 HTTP 요청 수신, 입력 검증, Service 호출, `ApiResponse` 반환만 담당한다.
 - Service는 유스케이스 실행, 트랜잭션 처리, Repository 조합, Domain과 DTO 연결을 담당한다.
 - Domain은 핵심 상태와 비즈니스 규칙을 가진다. Repository는 조회/저장 책임에 집중한다.
@@ -22,6 +24,19 @@
 - 새 코드는 기존 구조와 네이밍을 우선 따르고, 과한 추상화보다 명확한 구현을 우선한다.
 - 이름은 `Controller`, `Service`, `Client`, `Repository`, `Request`, `ServiceRequest`, `Response`, `Config`, `Test`, `TestSupport` 접미사를 사용한다.
 - Value Object는 기본값으로 만들지 않고, 도메인 의미, 불변성/생성 검증, 값 비교 규칙이 분명할 때만 도입한다.
+
+### 패키지 설계 원칙
+- 이름: `계층 분리 + 애그리거트 중심 도메인 패키징`
+- 최상위는 `api`, `domain`, `client`, `config`처럼 계층으로 나눈다.
+- `domain` 하위는 DB 테이블 개수보다 애그리거트 경계를 우선한다.
+- 하위 개념은 `domain` 바로 아래에 평평하게 두지 말고, 가능하면 상위 애그리거트 내부 하위 패키지에 둔다.
+
+좋은 예시
+- `domain/user/User`, `domain/user/UserRepository`, `domain/user/auth/RefreshToken`
+- `domain/gamesession/GameSession`, `domain/gamesession/turn/GameTurnSlot`, `domain/gamesession/report/GameReport`
+
+지양 예시
+- `domain/turn`, `domain/settlement`, `domain/report`를 독립 애그리거트 근거 없이 `domain` 바로 아래에 평평하게 두는 구조
 
 ## 권장 사항
 
@@ -75,7 +90,7 @@
 ### 3. 커리어
 | 한글 | 영문 (코드용) | 설명 |
 | :--- | :--- | :--- |
-| 직장 유형 | `JobType` | `SMALL_BIZ`, `MID_BIZ`, `LARGE_BIZ`, `CIVIL`, `FREELANCER` |
+| 직장 유형 | `JobType` | `SMALL_BIZ`, `MID_BIZ`, `LARGE_BIZ`, `STARTUP`, `FREELANCER` |
 | 직함 | `JobTitle` | 근속 기반 자동 부여 |
 | 연봉 협상 | `SalaryNegotiation` | 연 1회, 슬롯 소모 |
 | 협상 준비도 | `NegotiationPreparation` | 공부/네트워킹 횟수 기반 |
