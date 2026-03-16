@@ -1,9 +1,8 @@
-package io.ssafy.p.j14c103.homerun.domain.event;
+package io.ssafy.p.j14c103.homerun.domain.world.event;
 
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
