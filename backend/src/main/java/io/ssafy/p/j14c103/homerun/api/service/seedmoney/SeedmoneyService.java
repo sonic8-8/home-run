@@ -52,8 +52,7 @@ public class SeedmoneyService {
         final int balance = (int) INITIAL_SEEDMONEY;
         account.updateBalance(balance);
 
-        return SeedmoneyAccountResponse.of(
-                account.getId(), bankName, accountNo, balance, account.getUpdatedAt());
+        return SeedmoneyAccountResponse.of(bankName, accountNo, balance);
     }
 
     public SeedmoneyAccountResponse getAccount(final Long userId, final String userKey) {
@@ -68,11 +67,9 @@ public class SeedmoneyService {
         account.updateBalance(realTimeBalance);
 
         return SeedmoneyAccountResponse.of(
-                account.getId(),
                 account.getBankName(),
                 account.getAccountNumber(),
-                realTimeBalance,
-                account.getUpdatedAt());
+                realTimeBalance);
     }
 
     @Transactional

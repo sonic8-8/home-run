@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/pass")
@@ -20,16 +21,16 @@ public class PassController {
     private final PassService passService;
 
     @GetMapping("/products")
-    public ResponseEntity<List<PassProductResponse>> getProducts() {
+    public ResponseEntity<Map<String, List<PassProductResponse>>> getProducts() {
         final List<PassProductResponse> response = passService.getProducts();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("products", response));
     }
 
     @GetMapping("/subscriptions")
-    public ResponseEntity<List<PassSubscriptionResponse>> getSubscriptions(
+    public ResponseEntity<Map<String, List<PassSubscriptionResponse>>> getSubscriptions(
             @RequestParam final Long userId) {
         final List<PassSubscriptionResponse> response = passService.getSubscriptions(userId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("subscriptions", response));
     }
 
     @PostMapping("/subscribe")
