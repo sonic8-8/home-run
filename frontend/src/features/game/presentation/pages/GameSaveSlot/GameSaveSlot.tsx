@@ -23,6 +23,7 @@ const SlotCard = ({ slot, onSelect }: SlotCardProps) => {
     <button
       className={`${styles.slot} ${isEmpty ? styles.slotEmpty : styles.slotActive}`}
       onClick={() => onSelect(slot)}
+      disabled={isEmpty}
       aria-label={isEmpty ? `슬롯 ${slot.slotNumber} 비어 있음` : `슬롯 ${slot.slotNumber} 불러오기`}
     >
       <div className={styles.slotNumber}>
