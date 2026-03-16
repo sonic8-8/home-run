@@ -1,15 +1,10 @@
 spring:
   application:
     name: homerun
-  datasource:
-    url: jdbc:postgresql://localhost:5432/homerun
-    username: homerun_user
-    password: Local14!
-    driver-class-name: org.postgresql.Driver
+  profiles:
+    default: local
   jpa:
     open-in-view: false
-    hibernate:
-      ddl-auto: update
     properties:
       hibernate:
         format_sql: true

@@ -1,7 +1,12 @@
 export const ROUTES = {
   LOGIN:    '/login',
   HOME:     '/',
-  GAME:     '/game',
+  GAME:       '/game',
+  GAME_START: '/game/start',
+  GAME_SAVE:  '/game/save',
+  GAME_SELECT_CHARACTER: '/game/select-character',
+  GAME_SET_NICKNAME: '/game/set-nickname',
+  GAME_SELECT_START_METHOD: '/game/select-start-method',
   LOAN:     '/loan',
   PROPERTY: '/property',
   CARD:     '/card',

@@ -1,0 +1,133 @@
+@font-face {
+  font-family: 'Gamtan';
+  src: url('/assets/fonts/gamtan/gamtan.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000000;
+  position: relative;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Gamtan', monospace;
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  padding: 0 var(--spacing-xl);
+}
+
+.title {
+  background-color: #1a1a8c;
+  border: 2px solid #8888cc;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 18px 0;
+  text-align: center;
+}
+
+.slot {
+  display: flex;
+  align-items: stretch;
+  background-color: #1a1a8c;
+  border: 2px solid #8888cc;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 80px;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  transition: opacity 0.15s, transform 0.15s;
+  width: 100%;
+}
+
+.slot:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: scale(1.01);
+}
+
+.slot:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.slotEmpty {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.slotNumber {
+  align-items: center;
+  border-right: 2px solid #8888cc;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  min-width: 72px;
+  padding: 12px;
+  text-align: center;
+}
+
+.slotInfo {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px 20px;
+}
+
+.emptyLabel {
+  color: #cccccc;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.slotRow {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.characterName {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.jobTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.date {
+  color: #cccccc;
+  font-size: var(--font-size-sm);
+}
+
+.assets {
+  color: #cccccc;
+  font-size: var(--font-size-sm);
+}
+
+.message {
+  color: #cccccc;
+  font-size: var(--font-size-md);
+  text-align: center;
+}
