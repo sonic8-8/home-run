@@ -21,8 +21,7 @@ class GameContractReviewRepositoryTest {
     @Autowired
     private TestEntityManager entityManager;
 
-    @DisplayName("GameContractReview를 저장하면 검토 상태와 함정 선택 결과를 다시 조
-    회할 수 있다.")
+    @DisplayName("GameContractReview를 저장하면 검토 상태와 함정 선택 결과를 다시 조회할 수 있다.")
     @Test
     void saveGameContractReview() {
         // given
@@ -46,7 +45,7 @@ class GameContractReviewRepositoryTest {
                         .orElseThrow();
 
         // then
-        assertThat(found.getSessionId()).isEqualTo(1L);
+        assertThat(found.getGameSessionId()).isEqualTo(1L);
         assertThat(found.getPropertyId()).isEqualTo(101L);
         assertThat(found.getReviewStatus()).isEqualTo(ContractReviewStatus.PASSED);
         assertThat(found.getCheckedTraps()).containsExactly("TRAP-01", "TRAP-02");
@@ -58,7 +57,7 @@ class GameContractReviewRepositoryTest {
 
     @DisplayName("세션과 매물 기준 최신 계약 검토 결과를 조회할 수 있다.")
     @Test
-    void findLatestReviewBySessionIdAndPropertyId() {
+    void findLatestReviewByGameSessionIdAndPropertyId() {
         // given
         GameContractReview older = GameContractReview.create(
                 1L,
@@ -86,8 +85,7 @@ class GameContractReviewRepositoryTest {
 
         // when
         Optional<GameContractReview> result =
-
-                gameContractReviewRepository.findTopBySessionIdAndPropertyIdOrderByReviewedAtDesc(
+                gameContractReviewRepository.findTopByGameSessionIdAndPropertyIdOrderByReviewedAtDesc(
                         1L,
                         101L
                 );
@@ -95,10 +93,10 @@ class GameContractReviewRepositoryTest {
         // then
         assertThat(result).isPresent();
 
-        assertThat(result.orElseThrow().getReviewStatus()).isEqualTo(ContractReviewStatus.PA
-                SSED);
+        assertThat(result.orElseThrow().getReviewStatus()).isEqualTo(ContractReviewStatus.PASSED);
 
         assertThat(result.orElseThrow().getContractResult()).isEqualTo(ContractResult.SAFE);
         assertThat(result.orElseThrow().getReviewedAt())
                 .isEqualTo(LocalDateTime.of(2026, 3, 16, 10, 0));
     }
+}

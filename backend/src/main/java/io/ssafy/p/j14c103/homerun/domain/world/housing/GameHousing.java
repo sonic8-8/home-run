@@ -6,98 +6,94 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(
-    name = "game_housings",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_game_housings_session_id", columnNames = "session_id")
-    }
-)
+@Table(name = "game_housings")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GameHousing {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "game_session_id")
+    private Long gameSessionId;
 
-    @Column(name = "session_id", nullable = false, unique = true)
-    private Long sessionId;
-
-    @Column(name = "target_property_id", nullable = false)
-    private Long targetPropertyId;
-
-    @Column(name = "target_region", nullable = false)
-    private String targetRegion;
+    @Column(name = "target_region_code")
+    private String targetRegionCode;
 
     @Convert(converter = Money.MoneyConverter.class)
-    @Column(name = "target_house_price", nullable = false)
+    @Column(name = "target_house_price_amount")
     private Money targetHousePrice;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "current_housing_type", nullable = false)
-    private HousingType currentHousingType;
+    @Column(name = "housing_type")
+    private HousingType housingType;
 
     @Convert(converter = Money.MoneyConverter.class)
-    @Column(name = "current_deposit", nullable = false)
+    @Column(name = "current_deposit_amount")
     private Money currentDeposit;
 
     @Convert(converter = Money.MoneyConverter.class)
-    @Column(name = "monthly_rent", nullable = false)
+    @Column(name = "monthly_rent_amount")
     private Money monthlyRent;
 
     @Convert(converter = Money.MoneyConverter.class)
-    @Column(name = "maintenance_fee", nullable = false)
+    @Column(name = "maintenance_fee_amount")
     private Money maintenanceFee;
 
+    @Column(name = "current_property_id")
+    private Long currentPropertyId;
+
+    @Column(name = "target_property_id")
+    private Long targetPropertyId;
+
     private GameHousing(
-        Long sessionId,
-        Long targetPropertyId,
-        String targetRegion,
+        Long gameSessionId,
+        String targetRegionCode,
         Money targetHousePrice,
-        HousingType currentHousingType,
+        HousingType housingType,
         Money currentDeposit,
         Money monthlyRent,
-        Money maintenanceFee
+        Money maintenanceFee,
+        Long currentPropertyId,
+        Long targetPropertyId
     ) {
-        this.sessionId = sessionId;
-        this.targetPropertyId = targetPropertyId;
-        this.targetRegion = targetRegion;
+        this.gameSessionId = gameSessionId;
+        this.targetRegionCode = targetRegionCode;
         this.targetHousePrice = targetHousePrice;
-        this.currentHousingType = currentHousingType;
+        this.housingType = housingType;
         this.currentDeposit = currentDeposit;
         this.monthlyRent = monthlyRent;
         this.maintenanceFee = maintenanceFee;
+        this.currentPropertyId = currentPropertyId;
+        this.targetPropertyId = targetPropertyId;
     }
 
     public static GameHousing create(
-        Long sessionId,
-        Long targetPropertyId,
-        String targetRegion,
+        Long gameSessionId,
+        String targetRegionCode,
         Money targetHousePrice,
-        HousingType currentHousingType,
+        HousingType housingType,
         Money currentDeposit,
         Money monthlyRent,
-        Money maintenanceFee
+        Money maintenanceFee,
+        Long currentPropertyId,
+        Long targetPropertyId
     ) {
         return new GameHousing(
-            sessionId,
-            targetPropertyId,
-            targetRegion,
+            gameSessionId,
+            targetRegionCode,
             targetHousePrice,
-            currentHousingType,
+            housingType,
             currentDeposit,
             monthlyRent,
-            maintenanceFee
+            maintenanceFee,
+            currentPropertyId,
+            targetPropertyId
         );
     }
 }

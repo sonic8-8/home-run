@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameHousingRepository extends JpaRepository<GameHousing, Long> {
 
-    Optional<GameHousing> findBySessionId(Long sessionId);
+    Optional<GameHousing> findByGameSessionId(Long gameSessionId);
 }
