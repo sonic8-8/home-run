@@ -4,6 +4,6 @@ public enum JobType {
     SMALL_BIZ,  // 중소기업
     MID_BIZ,    // 중견기업
     LARGE_BIZ,  // 대기업
-    CIVIL,      // 공무원
+    STARTUP,    // 스타트업
     FREELANCER  // 프리랜서
 }
