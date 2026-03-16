@@ -32,8 +32,6 @@ export default function SelectJob() {
 
   return (
     <div className={styles.page}>
-      <span className={styles.pageLabel}>직업 선택</span>
-
       <div className={styles.card}>
         <button className={styles.cardNavBtn} onClick={handlePrev} aria-label="이전 직업">
           {'<'}
