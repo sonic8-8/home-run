@@ -12,7 +12,16 @@ public class HomerunException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    private HomerunException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode.getMessage(), cause);
+        this.errorCode = errorCode;
+    }
+
     public static HomerunException from(ErrorCode errorCode) {
         return new HomerunException(errorCode);
+    }
+
+    public static HomerunException from(ErrorCode errorCode, Throwable cause) {
+        return new HomerunException(errorCode, cause);
     }
 }
