@@ -12,7 +12,7 @@ export default function GameStart() {
   };
 
   const handleNewGame = () => {
-    navigate('/game/play', { state: { isNew: true } });
+    navigate(ROUTES.GAME_SAVE);
   };
 
   return (
