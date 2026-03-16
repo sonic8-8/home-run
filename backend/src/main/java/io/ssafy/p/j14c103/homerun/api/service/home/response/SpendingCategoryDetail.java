@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.api.dto.home;
+package io.ssafy.p.j14c103.homerun.api.service.home.response;
 
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;

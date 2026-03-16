@@ -1,6 +1,7 @@
-package io.ssafy.p.j14c103.homerun.infrastructure.ssafy;
+package io.ssafy.p.j14c103.homerun.client.ssafy;
 
 import io.ssafy.p.j14c103.homerun.config.SsafyApiProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -10,29 +11,21 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class SsafyDemandDepositClient {
+@RequiredArgsConstructor
+public class SsafyCreditCardClient {
 
     private final RestTemplate restTemplate;
     private final SsafyApiProperties properties;
     private final SsafyApiHeaderGenerator headerGenerator;
 
-    public SsafyDemandDepositClient(
-            final RestTemplate restTemplate,
-            final SsafyApiProperties properties,
-            final SsafyApiHeaderGenerator headerGenerator) {
-        this.restTemplate = restTemplate;
-        this.properties = properties;
-        this.headerGenerator = headerGenerator;
-    }
-
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> inquireAccountList(final String userKey) {
+    public List<Map<String, Object>> inquireSignUpCreditCardList(final String userKey) {
         if (userKey == null || userKey.isBlank()) {
             throw new IllegalArgumentException("userKey는 필수입니다.");
         }
 
-        final String apiName = "inquireDemandDepositAccountList";
-        final String url = properties.getBaseUrl() + "/demandDeposit/" + apiName;
+        final String apiName = "inquireSignUpCreditCardList";
+        final String url = properties.getBaseUrl() + "/creditCard/" + apiName;
 
         final Map<String, Object> requestBody = new LinkedHashMap<>();
         requestBody.put("Header", headerGenerator.generate(apiName, userKey));
@@ -43,28 +36,28 @@ public class SsafyDemandDepositClient {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> inquireTransactionHistory(
+    public List<Map<String, Object>> inquireCreditCardTransactionList(
             final String userKey,
-            final String accountNo,
+            final String cardNo,
+            final String cvc,
             final String startDate,
             final String endDate) {
         if (userKey == null || userKey.isBlank()) {
             throw new IllegalArgumentException("userKey는 필수입니다.");
         }
-        if (accountNo == null || accountNo.isBlank()) {
-            throw new IllegalArgumentException("계좌번호는 필수입니다.");
+        if (cardNo == null || cardNo.isBlank()) {
+            throw new IllegalArgumentException("카드번호는 필수입니다.");
         }
 
-        final String apiName = "inquireTransactionHistoryList";
-        final String url = properties.getBaseUrl() + "/demandDeposit/" + apiName;
+        final String apiName = "inquireCreditCardTransactionList";
+        final String url = properties.getBaseUrl() + "/creditCard/" + apiName;
 
         final Map<String, Object> requestBody = new LinkedHashMap<>();
         requestBody.put("Header", headerGenerator.generate(apiName, userKey));
-        requestBody.put("accountNo", accountNo);
+        requestBody.put("cardNo", cardNo);
+        requestBody.put("cvc", cvc);
         requestBody.put("startDate", startDate);
         requestBody.put("endDate", endDate);
-        requestBody.put("transactionType", "A");
-        requestBody.put("orderByType", "ASC");
 
         final Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
 
@@ -96,7 +89,7 @@ public class SsafyDemandDepositClient {
             return Collections.emptyList();
         }
         final Map<String, Object> recMap = (Map<String, Object>) rec;
-        final Object list = recMap.get("list");
+        final Object list = recMap.get("transactionList");
         if (list == null) {
             return Collections.emptyList();
         }

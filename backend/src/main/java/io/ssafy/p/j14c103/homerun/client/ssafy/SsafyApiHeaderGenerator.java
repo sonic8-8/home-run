@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.infrastructure.ssafy;
+package io.ssafy.p.j14c103.homerun.client.ssafy;
 
 import io.ssafy.p.j14c103.homerun.config.SsafyApiProperties;
 import org.springframework.stereotype.Component;
