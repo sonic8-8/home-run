@@ -1,0 +1,152 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #000000;
+  gap: 28px;
+  padding: 24px;
+}
+
+.pageLabel {
+  position: absolute;
+  top: 16px;
+  left: 24px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: var(--font-size-sm);
+  color: #888888;
+}
+
+.cardRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navBtn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 12px 8px;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s, transform 0.1s;
+  user-select: none;
+}
+
+.navBtn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.navBtn:active {
+  transform: scale(0.9);
+}
+
+.card {
+  background-color: #0d0d6b;
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+  padding: 28px 32px 28px 28px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: clamp(320px, 45vw, 520px);
+}
+
+.statsSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.jobTitle {
+  font-family: 'Pretendard', sans-serif;
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statLabel {
+  font-family: 'Pretendard', sans-serif;
+  font-size: clamp(13px, 1.4vw, 16px);
+  color: #ffffff;
+  white-space: nowrap;
+  min-width: 68px;
+  text-align: right;
+}
+
+.barBg {
+  flex: 1;
+  height: 14px;
+  background-color: #aaaaaa;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background-color: #22cc44;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.cardNavBtn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: clamp(24px, 3.5vw, 40px);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.15s, transform 0.1s;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.cardNavBtn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.cardNavBtn:active {
+  transform: scale(0.9);
+}
+
+.startBtn {
+  font-family: 'Mona', monospace;
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  background-color: #F08000;
+  border: none;
+  border-radius: 8px;
+  padding: 20px 0;
+  width: clamp(320px, 45vw, 520px);
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+}
+
+.startBtn:hover {
+  background-color: #FF9900;
+  transform: scale(1.01);
+}
+
+.startBtn:active {
+  transform: scale(0.99);
+}
