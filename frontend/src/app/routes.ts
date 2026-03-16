@@ -4,6 +4,8 @@ export const ROUTES = {
   GAME:       '/game',
   GAME_START: '/game/start',
   GAME_SAVE:  '/game/save',
+  GAME_SELECT_CHARACTER: '/game/select-character',
+  GAME_SET_NICKNAME: '/game/set-nickname',
   LOAN:     '/loan',
   PROPERTY: '/property',
   CARD:     '/card',
