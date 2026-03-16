@@ -58,10 +58,7 @@ export const useGameSaveSlots = () => {
 
   const handleSelectSlot = useCallback(
     (slot: GameSlot) => {
-      if (slot.status === 'EMPTY') {
-        navigate(ROUTES.GAME_SELECT_CHARACTER, { state: { slotNumber: slot.slotNumber } });
-        return;
-      }
+      if (slot.status === 'EMPTY') return;
       navigate(ROUTES.GAME, { state: { sessionId: slot.sessionId } });
     },
     [navigate],

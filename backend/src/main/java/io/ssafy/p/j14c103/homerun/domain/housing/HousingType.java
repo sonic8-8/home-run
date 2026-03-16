@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.domain.world.housing;
+package io.ssafy.p.j14c103.homerun.domain.housing;
 
 public enum HousingType {
     NONE,
