@@ -1,12 +1,11 @@
 package io.ssafy.p.j14c103.homerun.client.ssafy;
 
-import io.ssafy.p.j14c103.homerun.config.SsafyApiProperties;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
+
+import java.util.Map;
 
 /**
  * SSAFY 금융망 대출 관련 API 클라이언트 (도메인 F: 신용등급 조회만)
@@ -16,8 +15,7 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class SsafyLoanClient {
 
-    private final RestTemplate restTemplate;
-    private final SsafyApiProperties properties;
+    private final RestClient ssafyRestClient;
     private final SsafyApiHeaderGenerator headerGenerator;
 
     /**
@@ -27,12 +25,12 @@ public class SsafyLoanClient {
     @SuppressWarnings("unchecked")
     public Map<String, Object> inquireMyCreditRating(final String userKey) {
         final Map<String, String> header = headerGenerator.generate("inquireMyCreditRating", userKey);
-        final String url = properties.getBaseUrl() + "/loan/inquireMyCreditRating";
 
-        final Map<String, Object> requestBody = new LinkedHashMap<>();
-        requestBody.put("Header", header);
-
-        final Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
+        final Map<String, Object> response = ssafyRestClient.post()
+                .uri("/loan/inquireMyCreditRating")
+                .body(Map.of("Header", header))
+                .retrieve()
+                .body(Map.class);
 
         if (response == null) {
             throw new RuntimeException("SSAFY 신용등급 조회 응답이 없습니다.");
@@ -47,12 +45,12 @@ public class SsafyLoanClient {
     @SuppressWarnings("unchecked")
     public java.util.List<Map<String, Object>> inquireAssetBasedCreditRatingList() {
         final Map<String, String> header = headerGenerator.generate("inquireAssetBasedCreditRatingList", null);
-        final String url = properties.getBaseUrl() + "/loan/inquireAssetBasedCreditRatingList";
 
-        final Map<String, Object> requestBody = new LinkedHashMap<>();
-        requestBody.put("Header", header);
-
-        final Map<String, Object> response = restTemplate.postForObject(url, requestBody, Map.class);
+        final Map<String, Object> response = ssafyRestClient.post()
+                .uri("/loan/inquireAssetBasedCreditRatingList")
+                .body(Map.of("Header", header))
+                .retrieve()
+                .body(Map.class);
 
         if (response == null) {
             throw new RuntimeException("SSAFY 신용등급 기준 조회 응답이 없습니다.");
