@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.domain.schedule;
+package io.ssafy.p.j14c103.homerun.domain.character.schedule;
 
 public enum ActionType {
     STUDY,        // 지식을 올리는 공부

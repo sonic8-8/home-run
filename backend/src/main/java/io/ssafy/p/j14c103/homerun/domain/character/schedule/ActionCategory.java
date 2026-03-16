@@ -1,4 +1,4 @@
-package io.ssafy.p.j14c103.homerun.domain.schedule;
+package io.ssafy.p.j14c103.homerun.domain.character.schedule;
 
 public enum ActionCategory {
     SHOPPING,  // 소비/여가 카테고리
