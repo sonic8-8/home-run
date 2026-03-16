@@ -146,9 +146,9 @@ public class FicoCreditScoringService implements CreditScoreProvider {
                 passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
         int passCount = activeSubs.size();
 
-        if (passCount >= 3) score += 60;
-        else if (passCount >= 2) score += 40;
-        else if (passCount >= 1) score += 20;
+        if (passCount >= 3) return Math.min(score + 60, 100);
+        if (passCount >= 2) return Math.min(score + 40, 100);
+        if (passCount >= 1) return Math.min(score + 20, 100);
 
         return Math.min(score, 100);
     }
