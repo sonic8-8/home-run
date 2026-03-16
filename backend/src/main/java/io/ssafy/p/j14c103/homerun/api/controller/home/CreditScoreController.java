@@ -14,8 +14,10 @@ public class CreditScoreController {
     private final CreditScoreService creditScoreService;
 
     @GetMapping("/score")
-    public ResponseEntity<CreditScoreResponse> getCreditScore(@RequestParam final String userKey) {
-        final CreditScoreResponse response = creditScoreService.getCreditScore(userKey);
+    public ResponseEntity<CreditScoreResponse> getCreditScore(
+            @RequestParam final Long userId,
+            @RequestParam(required = false) final String userKey) {
+        final CreditScoreResponse response = creditScoreService.getCreditScore(userId, userKey);
         return ResponseEntity.ok(response);
     }
 }
