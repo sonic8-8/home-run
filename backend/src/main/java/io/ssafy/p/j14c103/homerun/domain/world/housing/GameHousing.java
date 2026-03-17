@@ -1,6 +1,5 @@
 package io.ssafy.p.j14c103.homerun.domain.world.housing;
 
-import io.ssafy.p.j14c103.homerun.domain.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
