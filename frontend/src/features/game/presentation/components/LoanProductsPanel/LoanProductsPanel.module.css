@@ -1,0 +1,175 @@
+.panel {
+  height: 100%;
+  background: #fff;
+  border-radius: 16px;
+  margin: 20px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+}
+
+/* ── 필터 탭 ────────────────────────────── */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter {
+  padding: 8px 18px;
+  border: 1.5px solid #ddd;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter:hover {
+  border-color: #aaa;
+  color: #222;
+}
+
+.filterActive {
+  padding: 8px 18px;
+  border: 1.5px solid #111;
+  border-radius: 20px;
+  background: #111;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── 상품 목록 ──────────────────────────── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-radius: 8px;
+  padding-inline: 8px;
+}
+
+.item:hover {
+  background: #f5faff;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.icon {
+  font-size: 28px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.productName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.loanType {
+  font-size: 12px;
+  color: #999;
+}
+
+.rate {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.rateLabel {
+  font-size: 12px;
+  color: #999;
+}
+
+.rateMain {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111;
+}
+
+.rateMax {
+  font-size: 13px;
+  color: #999;
+}
+
+/* ── 페이지네이션 ───────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.pageBtn {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  min-width: 36px;
+  transition: background 0.1s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageBtnActive {
+  padding: 6px 10px;
+  border: 1px solid #111;
+  border-radius: 6px;
+  background: #111;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  min-width: 36px;
+  font-weight: 700;
+}

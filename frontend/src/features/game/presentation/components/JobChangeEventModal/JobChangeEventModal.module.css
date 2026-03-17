@@ -1,0 +1,154 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  width: 560px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* ── 헤더 ─────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 12px;
+}
+
+.headerTitle {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: color var(--transition-fast);
+}
+
+.closeButton:hover {
+  color: var(--color-text-primary);
+}
+
+/* ── 제목 ─────────────────────────────── */
+.subject {
+  padding: 0 24px 16px;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+/* ── 메타 정보 ─────────────────────────── */
+.metaSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: 0 24px 12px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.metaLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background-color: #e8f4f8;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  color: #2a7fa8;
+  font-weight: 500;
+}
+
+.metaDate {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+/* ── 구분선 ─────────────────────────────── */
+.divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 0 24px;
+}
+
+/* ── 본문 ─────────────────────────────── */
+.body {
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  text-align: center;
+  font-size: var(--font-size-md);
+  color: var(--color-text-primary);
+  line-height: 1.8;
+}
+
+/* ── 버튼 ─────────────────────────────── */
+.buttonGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  padding: 0 24px 28px;
+}
+
+.approveButton {
+  height: 48px;
+  background-color: #e8e8e8;
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+}
+
+.approveButton:hover {
+  background-color: #d0d0d0;
+}
+
+.declineButton {
+  height: 48px;
+  background-color: #fff;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+}
+
+.declineButton:hover {
+  background-color: var(--color-bg-secondary);
+}

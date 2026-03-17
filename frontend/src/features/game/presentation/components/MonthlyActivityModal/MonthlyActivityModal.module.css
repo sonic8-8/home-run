@@ -1,0 +1,233 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 150;
+}
+
+.modal {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  width: 760px;
+  max-height: 90vh;
+  padding: 32px 40px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+}
+
+/* ── 제목 ─────────────────────────────── */
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ── 슬롯 카운터 ─────────────────────────── */
+.slotCounter {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.slotCount {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.slotMax {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* ── 카테고리 ─────────────────────────── */
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.categoryLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+/* ── 캐러셀 ─────────────────────────── */
+.carousel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.cardRow {
+  display: flex;
+  gap: var(--spacing-md);
+  flex: 1;
+  justify-content: center;
+}
+
+.arrowBtn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #bbb;
+  cursor: pointer;
+  padding: 8px;
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.arrowBtn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.arrowBtn:disabled {
+  color: #e0e0e0;
+  cursor: default;
+}
+
+/* ── 카드 ─────────────────────────────── */
+.card {
+  position: relative;
+  width: 180px;
+  min-height: 160px;
+  background: #f8f8f8;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  user-select: none;
+}
+
+.card:hover {
+  border-color: #c0c0c0;
+  background: #f0f0f0;
+}
+
+.cardSelected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.cardSelected:hover {
+  border-color: var(--color-primary-hover);
+}
+
+/* ── 카드 아이콘 ─────────────────────────── */
+.cardIcon {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+/* ── 효과 목록 ─────────────────────────── */
+.effectList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.effectRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.effectLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.effectValue {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.positive {
+  color: #16a34a;
+}
+
+.negative {
+  color: #dc2626;
+}
+
+/* ── 뱃지 / 제거 버튼 ─────────────────────── */
+.countBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: background-color var(--transition-fast);
+}
+
+.removeBtn:hover {
+  background: #b91c1c;
+}
+
+/* ── START 버튼 ─────────────────────────── */
+.startButton {
+  align-self: center;
+  width: 280px;
+  height: 52px;
+  background: #3a3a3a;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+  margin-top: var(--spacing-xs);
+}
+
+.startButton:hover:not(:disabled) {
+  background: #1a1a1a;
+}
+
+.startButton:disabled {
+  background: #c0c0c0;
+  cursor: not-allowed;
+}

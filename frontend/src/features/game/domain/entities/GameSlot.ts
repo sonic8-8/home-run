@@ -2,10 +2,9 @@ export type SlotStatus = 'IN_PROGRESS' | 'EMPTY';
 
 export type JobType =
   | 'LARGE_BIZ'
-  | 'STARTUP'
-  | 'PUBLIC'
-  | 'FREELANCER'
-  | 'SELF_EMPLOYED';
+  | 'MID_BIZ'
+  | 'SMALL_BIZ'
+  | 'FREELANCER';
 
 export interface GameSlot {
   readonly slotNumber: 1 | 2 | 3;
