@@ -11,7 +11,7 @@ import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlot;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.domain.housing.HousingType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;

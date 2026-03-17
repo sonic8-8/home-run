@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.domain.world.housing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.ssafy.p.j14c103.homerun.domain.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;

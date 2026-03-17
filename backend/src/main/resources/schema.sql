@@ -1,14 +1,17 @@
 -- Platform user account and authentication linkage.
 create table if not exists users (
   user_id integer generated always as identity primary key,
-  email varchar(255),
-  user_name varchar(100),
+  email varchar(255) not null,
+  user_name varchar(100) not null,
   nickname varchar(100),
-  password_hash varchar(255),
-  auth_provider_type varchar(20),
+  password_hash varchar(255) not null,
+  auth_provider_type varchar(20) not null,
   ssafy_user_key varchar(255),
   ssafy_connected_at timestamp,
-  created_at timestamp not null default current_timestamp
+  account_auth_verified_at timestamp,
+  created_at timestamp not null default current_timestamp,
+  constraint uq_users__email unique (email),
+  constraint uq_users__ssafy_user_key unique (ssafy_user_key)
 );
 
 -- PASS product catalog for savings challenges.
