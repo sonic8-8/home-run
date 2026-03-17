@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Table(name = "users")
@@ -13,29 +15,64 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long id;
 
     @Convert(converter = EmailConverter.class)
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private Email email;
 
-    @Column(nullable = false)
+    @Column(name = "user_name", nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "nickname")
+    private String nickname;
+
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(unique = true)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider_type", nullable = false, length = 20)
+    private AuthProvider authProvider;
+
+    @Column(name = "ssafy_user_key", unique = true)
     private String ssafyUserKey;
 
-    private User(Email email, String name, String passwordHash, String ssafyUserKey) {
+    @Column(name = "ssafy_connected_at")
+    private LocalDateTime ssafyConnectedAt;
+
+    @Column(name = "account_auth_verified_at")
+    private LocalDateTime accountAuthVerifiedAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    private User(Email email, String name, String passwordHash, AuthProvider authProvider, LocalDateTime createdAt) {
         this.email = email;
         this.name = name;
         this.passwordHash = passwordHash;
-        this.ssafyUserKey = ssafyUserKey;
+        this.authProvider = authProvider;
+        this.createdAt = createdAt;
     }
 
-    public static User create(Email email, String name, String passwordHash, String ssafyUserKey) {
-        return new User(email, name, passwordHash, ssafyUserKey);
+    public static User register(Email email, String name, String passwordHash) {
+        return new User(email, name, passwordHash, AuthProvider.EMAIL, LocalDateTime.now());
+    }
+
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public boolean hasSsafyLink() {
+        return ssafyUserKey != null && ssafyConnectedAt != null;
+    }
+
+    public void linkSsafy(String ssafyUserKey, LocalDateTime connectedAt) {
+        this.ssafyUserKey = ssafyUserKey;
+        this.ssafyConnectedAt = connectedAt;
+    }
+
+    public void markAccountVerified(LocalDateTime verifiedAt) {
+        this.accountAuthVerifiedAt = verifiedAt;
     }
 }

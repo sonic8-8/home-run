@@ -1,10 +1,10 @@
-package io.ssafy.p.j14c103.homerun.domain.world.housing;
+package io.ssafy.p.j14c103.homerun.domain.housing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
 
 
 public class HousingTypeTest {
