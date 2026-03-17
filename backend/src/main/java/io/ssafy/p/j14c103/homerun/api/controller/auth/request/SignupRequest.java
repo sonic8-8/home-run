@@ -10,23 +10,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SignupRequest {
 
-    @NotBlank(message = "이름은 필수입니다.")
-    @Size(max = 30, message = "이름은 30자 이하여야 합니다.")
+    @NotBlank(message = "{validation.auth.signup.name.notBlank}")
+    @Size(max = 30, message = "{validation.auth.signup.name.size}")
     private String name;
 
-    @NotBlank(message = "이메일은 필수입니다.")
-    @Email(message = "이메일 형식이 올바르지 않습니다.")
-    @Size(max = 255, message = "이메일은 255자 이하여야 합니다.")
+    @NotBlank(message = "{validation.auth.signup.email.notBlank}")
+    @Email(message = "{validation.auth.signup.email.email}")
+    @Size(max = 255, message = "{validation.auth.signup.email.size}")
     private String email;
 
-    @NotBlank(message = "비밀번호는 필수입니다.")
-    @Size(min = 8, max = 32, message = "비밀번호는 8자 이상 32자 이하여야 합니다.")
+    @NotBlank(message = "{validation.auth.signup.password.notBlank}")
+    @Size(min = 8, max = 32, message = "{validation.auth.signup.password.size}")
     private String password;
 
-    @NotBlank(message = "비밀번호 확인은 필수입니다.")
+    @NotBlank(message = "{validation.auth.signup.passwordConfirm.notBlank}")
     private String passwordConfirm;
 
-    @NotNull(message = "약관 동의는 필수입니다.")
+    @NotNull(message = "{validation.auth.signup.termsAgreed.notNull}")
     private Boolean termsAgreed;
 
     @Builder
@@ -46,7 +46,7 @@ public class SignupRequest {
                 .build();
     }
 
-    @AssertTrue(message = "비밀번호 확인이 일치하지 않습니다.")
+    @AssertTrue(message = "{validation.auth.signup.passwordConfirm.assertTrue}")
     public boolean isPasswordConfirmed() {
         if (password == null || passwordConfirm == null) {
             return true;
@@ -55,7 +55,7 @@ public class SignupRequest {
         return password.equals(passwordConfirm);
     }
 
-    @AssertTrue(message = "약관 동의는 필수입니다.")
+    @AssertTrue(message = "{validation.auth.signup.termsAgreed.assertTrue}")
     public boolean isTermsAgreed() {
         return Boolean.TRUE.equals(termsAgreed);
     }

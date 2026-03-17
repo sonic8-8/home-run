@@ -12,13 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoginRequest {
 
-    @NotBlank(message = "이메일은 필수입니다.")
-    @Email(message = "이메일 형식이 올바르지 않습니다.")
-    @Size(max = 255, message = "이메일은 255자 이하여야 합니다.")
+    @NotBlank(message = "{validation.auth.login.email.notBlank}")
+    @Email(message = "{validation.auth.login.email.email}")
+    @Size(max = 255, message = "{validation.auth.login.email.size}")
     private String email;
 
-    @NotBlank(message = "비밀번호는 필수입니다.")
-    @Size(min = 8, max = 32, message = "비밀번호는 8자 이상 32자 이하여야 합니다.")
+    @NotBlank(message = "{validation.auth.login.password.notBlank}")
+    @Size(min = 8, max = 32, message = "{validation.auth.login.password.size}")
     private String password;
 
     @Builder
