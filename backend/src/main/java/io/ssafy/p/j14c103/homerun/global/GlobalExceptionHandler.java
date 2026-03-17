@@ -33,6 +33,13 @@ public class GlobalExceptionHandler {
         return badRequest(fieldError.getDefaultMessage());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException exception
+    ) {
+        return badRequest(exception.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception exception) {
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
