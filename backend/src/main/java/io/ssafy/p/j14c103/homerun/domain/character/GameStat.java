@@ -18,6 +18,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class GameStat {
 
+    private static final int MIN_STAT = 0;
+    private static final int MAX_STAT = 100;
+    private static final int BURNOUT_THRESHOLD = 80;
+    private static final int FORCED_RESIGNATION_HEALTH_THRESHOLD = 9;
+
     @Id
     @Column(name = "게임번호", nullable = false)
     private Integer gameId;
@@ -45,4 +50,135 @@ public class GameStat {
 
     @Column(name = "입원종료턴")
     private Integer hospitalizedUntilTurn;
+
+    public static GameStat create(
+        final Integer gameId,
+        final int health,
+        final int fatigue,
+        final int stress,
+        final int happiness,
+        final int knowledge,
+        final int currentTurn
+    ) {
+        validateGameId(gameId);
+        validateTurn(currentTurn, "currentTurn");
+        validateStatRange("health", health);
+        validateStatRange("fatigue", fatigue);
+        validateStatRange("stress", stress);
+        validateStatRange("happiness", happiness);
+        validateStatRange("knowledge", knowledge);
+
+        final boolean burnout = isBurnoutThresholdMet(fatigue, stress);
+        return GameStat.builder()
+            .gameId(gameId)
+            .health(health)
+            .fatigue(fatigue)
+            .stress(stress)
+            .happiness(happiness)
+            .knowledge(knowledge)
+            .burnout(burnout)
+            .burnoutStartedTurn(burnout ? currentTurn : null)
+            .hospitalizedUntilTurn(null)
+            .build();
+    }
+
+    public void applyChange(
+        final int healthDelta,
+        final int fatigueDelta,
+        final int stressDelta,
+        final int happinessDelta,
+        final int knowledgeDelta,
+        final int currentTurn
+    ) {
+        validateTurn(currentTurn, "currentTurn");
+
+        this.health = clampStat(requireInitialized("health", health) + healthDelta);
+        this.fatigue = clampStat(requireInitialized("fatigue", fatigue) + fatigueDelta);
+        this.stress = clampStat(requireInitialized("stress", stress) + stressDelta);
+        this.happiness = clampStat(requireInitialized("happiness", happiness) + happinessDelta);
+        this.knowledge = clampStat(requireInitialized("knowledge", knowledge) + knowledgeDelta);
+
+        refreshBurnout(currentTurn);
+    }
+
+    public boolean isForcedResignationRisk() {
+        return requireInitialized("health", health) <= FORCED_RESIGNATION_HEALTH_THRESHOLD;
+    }
+
+    public void hospitalizeUntil(final int endTurn) {
+        validateTurn(endTurn, "endTurn");
+        this.hospitalizedUntilTurn = endTurn;
+    }
+
+    public boolean isHospitalizedAt(final int currentTurn) {
+        validateTurn(currentTurn, "currentTurn");
+
+        if (hospitalizedUntilTurn == null) {
+            return false;
+        }
+
+        return currentTurn <= hospitalizedUntilTurn;
+    }
+
+    private void refreshBurnout(final int currentTurn) {
+        final boolean burnoutThresholdMet = isBurnoutThresholdMet(
+            requireInitialized("fatigue", fatigue),
+            requireInitialized("stress", stress)
+        );
+
+        if (burnoutThresholdMet && !Boolean.TRUE.equals(burnout)) {
+            this.burnout = true;
+            this.burnoutStartedTurn = currentTurn;
+            return;
+        }
+
+        if (burnoutThresholdMet) {
+            return;
+        }
+
+        this.burnout = false;
+        this.burnoutStartedTurn = null;
+    }
+
+    private static boolean isBurnoutThresholdMet(final int fatigue, final int stress) {
+        return fatigue >= BURNOUT_THRESHOLD && stress >= BURNOUT_THRESHOLD;
+    }
+
+    private static void validateGameId(final Integer gameId) {
+        if (gameId == null || gameId <= 0) {
+            throw new IllegalArgumentException("gameId는 1 이상이어야 합니다.");
+        }
+    }
+
+    private static void validateTurn(final int turn, final String fieldName) {
+        if (turn < 0) {
+            throw new IllegalArgumentException(fieldName + "은 0 이상이어야 합니다.");
+        }
+    }
+
+    private static void validateStatRange(final String fieldName, final int value) {
+        if (value < MIN_STAT || value > MAX_STAT) {
+            throw new IllegalArgumentException(fieldName + "는 0에서 100 사이여야 합니다.");
+        }
+    }
+
+    private static int clampStat(final int value) {
+        if (value < MIN_STAT) {
+            return MIN_STAT;
+        }
+
+        if (value > MAX_STAT) {
+            return MAX_STAT;
+        }
+
+        return value;
+    }
+
+    private static int requireInitialized(final String fieldName, final Integer value) {
+        if (value == null) {
+            throw new IllegalStateException(fieldName + "가 초기화되지 않았습니다.");
+        }
+
+        return value;
+    }
 }
