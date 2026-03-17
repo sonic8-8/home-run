@@ -1,7 +1,7 @@
 package io.ssafy.p.j14c103.homerun.domain.character;
 
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
-import io.ssafy.p.j14c103.homerun.domain.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
