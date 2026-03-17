@@ -1,11 +1,12 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
-import io.ssafy.p.j14c103.homerun.api.dto.home.SpendingCategoryDetail;
-import io.ssafy.p.j14c103.homerun.api.dto.home.SpendingResponse;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingCategoryDetail;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyCreditCardClient;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class SpendingService {
 
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
@@ -23,13 +25,6 @@ public class SpendingService {
 
     private final SsafyCreditCardClient creditCardClient;
     private final SsafyDemandDepositClient demandDepositClient;
-
-    public SpendingService(
-            final SsafyCreditCardClient creditCardClient,
-            final SsafyDemandDepositClient demandDepositClient) {
-        this.creditCardClient = creditCardClient;
-        this.demandDepositClient = demandDepositClient;
-    }
 
     public SpendingResponse getSpending(final String userKey, final String month) {
         if (userKey == null || userKey.isBlank()) {

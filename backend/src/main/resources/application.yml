@@ -1,15 +1,14 @@
 spring:
   application:
     name: homerun
-  datasource:
-    url: jdbc:postgresql://localhost:5432/homerun
-    username: homerun_user
-    password: Local14!
-    driver-class-name: org.postgresql.Driver
+  profiles:
+    default: local
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   jpa:
     open-in-view: false
-    hibernate:
-      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -19,4 +18,14 @@ spring:
 ssafy:
   api:
     base-url: https://finopenapi.ssafy.io/ssafy/api/v1/edu
-    api-key: ${SSAFY_API_KEY:your-api-key-here}
+    api-key: ${SSAFY_API_KEY:f337ce43034b4950bb0c385ddc99c895}
+
+fss:
+  api:
+    base-url: https://finlife.fss.or.kr/finlifeapi
+    auth-key: ${FSS_API_KEY:debf8714241ee1f79453f666d751c22e}
+
+jwt:
+  secret: ${JWT_SECRET:01234567890123456789012345678901}
+  access-token-ttl-seconds: ${JWT_ACCESS_TOKEN_TTL_SECONDS:1800}
+  refresh-token-ttl-seconds: ${JWT_REFRESH_TOKEN_TTL_SECONDS:1209600}
