@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.controller.auth;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -113,7 +114,10 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("비밀번호 확인이 일치하지 않습니다."));
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()))
+                .andExpect(jsonPath("$.errors[0].field").value("passwordConfirmed"))
+                .andExpect(jsonPath("$.errors[0].message").value("비밀번호 확인이 일치하지 않습니다."));
     }
 
     @DisplayName("약관 동의가 false이면 400을 반환한다.")
@@ -133,7 +137,10 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("약관 동의는 필수입니다."));
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()))
+                .andExpect(jsonPath("$.errors[0].field").value("termsAgreed"))
+                .andExpect(jsonPath("$.errors[0].message").value("약관 동의는 필수입니다."));
     }
 
     @DisplayName("로그인 요청이 성공하면 200과 토큰 응답을 반환한다.")
@@ -198,6 +205,9 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("비밀번호는 8자 이상 32자 이하여야 합니다."));
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()))
+                .andExpect(jsonPath("$.errors[*].field", hasItem("password")))
+                .andExpect(jsonPath("$.errors[*].message", hasItem("비밀번호는 필수입니다.")));
     }
 }
