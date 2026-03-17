@@ -1143,6 +1143,17 @@ Authorization: Bearer {refreshToken}
       }
     },
     {
+      "jobType": "STARTUP",
+      "label": "스타트업 직장인",
+      "stats": {
+        "salary": 55,
+        "health": 55,
+        "stability": 35,
+        "growthSpeed": 85,
+        "difficulty": 80
+      }
+    },
+    {
       "jobType": "FREELANCER",
       "label": "프리랜서",
       "stats": {
