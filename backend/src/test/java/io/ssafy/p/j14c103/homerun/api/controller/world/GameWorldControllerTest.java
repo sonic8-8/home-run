@@ -64,12 +64,12 @@ class GameWorldControllerTest {
     void getTurnWithUnknownSessionId() throws Exception {
         // given
         given(gameWorldService.getTurn(anyInt()))
-            .willThrow(HomerunException.from(ErrorCode.INVALID_INPUT_VALUE));
+            .willThrow(HomerunException.from(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/9999/turn"))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
-            .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()));
+            .andExpect(jsonPath("$.code").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getMessage()));
     }
 }
