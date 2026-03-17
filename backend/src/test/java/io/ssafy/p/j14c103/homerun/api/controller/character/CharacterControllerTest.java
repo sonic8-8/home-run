@@ -13,8 +13,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @WebMvcTest(CharacterController.class)
 class CharacterControllerTest {
@@ -22,7 +22,7 @@ class CharacterControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private CharacterQueryService characterQueryService;
 
     @DisplayName("캐릭터 선택지 조회 응답을 반환한다.")
@@ -36,7 +36,7 @@ class CharacterControllerTest {
         given(characterQueryService.getCharacterOptions()).willReturn(response);
 
         // when & then
-        mockMvc.perform(get("/games/characters"))
+        mockMvc.perform(get("/api/games/characters"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.characters[0].characterType").value("FEMALE"))
             .andExpect(jsonPath("$.characters[0].thumbnailUrl").value("/images/characters/female.png"))

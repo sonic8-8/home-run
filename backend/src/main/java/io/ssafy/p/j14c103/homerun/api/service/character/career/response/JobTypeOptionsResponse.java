@@ -21,11 +21,7 @@ public record JobTypeOptionsResponse(
     public record JobTypeOptionResponse(
         JobType jobType,
         String label,
-        int salaryGauge,
-        int healthGauge,
-        int stabilityGauge,
-        int growthSpeedGauge,
-        int difficultyGauge
+        JobTypeStatsResponse stats
     ) {
 
         public JobTypeOptionResponse {
@@ -35,37 +31,58 @@ public record JobTypeOptionsResponse(
             if (label == null || label.isBlank()) {
                 throw new IllegalArgumentException("label은 비어 있을 수 없습니다.");
             }
-            validateGauge("salaryGauge", salaryGauge);
-            validateGauge("healthGauge", healthGauge);
-            validateGauge("stabilityGauge", stabilityGauge);
-            validateGauge("growthSpeedGauge", growthSpeedGauge);
-            validateGauge("difficultyGauge", difficultyGauge);
+            if (stats == null) {
+                throw new IllegalArgumentException("stats는 null일 수 없습니다.");
+            }
         }
 
         public static JobTypeOptionResponse of(
             final JobType jobType,
             final String label,
-            final int salaryGauge,
-            final int healthGauge,
-            final int stabilityGauge,
-            final int growthSpeedGauge,
-            final int difficultyGauge
+            final int salary,
+            final int health,
+            final int stability,
+            final int growthSpeed,
+            final int difficulty
         ) {
             return new JobTypeOptionResponse(
                 jobType,
                 label,
-                salaryGauge,
-                healthGauge,
-                stabilityGauge,
-                growthSpeedGauge,
-                difficultyGauge
+                JobTypeStatsResponse.of(salary, health, stability, growthSpeed, difficulty)
             );
         }
+    }
 
-        private static void validateGauge(final String fieldName, final int gauge) {
-            if (gauge < 0 || gauge > 100) {
-                throw new IllegalArgumentException(fieldName + "는 0에서 100 사이여야 합니다.");
-            }
+    public record JobTypeStatsResponse(
+        int salary,
+        int health,
+        int stability,
+        int growthSpeed,
+        int difficulty
+    ) {
+
+        public JobTypeStatsResponse {
+            validateGauge("salary", salary);
+            validateGauge("health", health);
+            validateGauge("stability", stability);
+            validateGauge("growthSpeed", growthSpeed);
+            validateGauge("difficulty", difficulty);
+        }
+
+        public static JobTypeStatsResponse of(
+            final int salary,
+            final int health,
+            final int stability,
+            final int growthSpeed,
+            final int difficulty
+        ) {
+            return new JobTypeStatsResponse(salary, health, stability, growthSpeed, difficulty);
+        }
+    }
+
+    private static void validateGauge(final String fieldName, final int gauge) {
+        if (gauge < 0 || gauge > 100) {
+            throw new IllegalArgumentException(fieldName + "는 0에서 100 사이여야 합니다.");
         }
     }
 }

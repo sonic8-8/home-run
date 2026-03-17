@@ -11,13 +11,13 @@ public class CareerQueryService {
     public JobTypeOptionsResponse getJobTypeOptions() {
         return JobTypeOptionsResponse.from(List.of(
             JobTypeOptionsResponse.JobTypeOptionResponse.of(
-                JobType.SMALL_BIZ,
-                "중소기업 직장인",
-                40,
+                JobType.LARGE_BIZ,
+                "대기업 직장인",
                 80,
-                50,
                 60,
-                30
+                90,
+                40,
+                70
             ),
             JobTypeOptionsResponse.JobTypeOptionResponse.of(
                 JobType.MID_BIZ,
@@ -29,13 +29,13 @@ public class CareerQueryService {
                 50
             ),
             JobTypeOptionsResponse.JobTypeOptionResponse.of(
-                JobType.LARGE_BIZ,
-                "대기업 직장인",
-                80,
-                60,
-                90,
+                JobType.SMALL_BIZ,
+                "중소기업 직장인",
                 40,
-                70
+                80,
+                50,
+                60,
+                30
             ),
             JobTypeOptionsResponse.JobTypeOptionResponse.of(
                 JobType.STARTUP,

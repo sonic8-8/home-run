@@ -23,16 +23,16 @@ class CareerQueryServiceTest {
             .extracting(
                 JobTypeOptionsResponse.JobTypeOptionResponse::jobType,
                 JobTypeOptionsResponse.JobTypeOptionResponse::label,
-                JobTypeOptionsResponse.JobTypeOptionResponse::salaryGauge,
-                JobTypeOptionsResponse.JobTypeOptionResponse::healthGauge,
-                JobTypeOptionsResponse.JobTypeOptionResponse::stabilityGauge,
-                JobTypeOptionsResponse.JobTypeOptionResponse::growthSpeedGauge,
-                JobTypeOptionsResponse.JobTypeOptionResponse::difficultyGauge
+                option -> option.stats().salary(),
+                option -> option.stats().health(),
+                option -> option.stats().stability(),
+                option -> option.stats().growthSpeed(),
+                option -> option.stats().difficulty()
             )
             .containsExactly(
-                tuple(JobType.SMALL_BIZ, "중소기업 직장인", 40, 80, 50, 60, 30),
-                tuple(JobType.MID_BIZ, "중견기업 직장인", 60, 70, 70, 50, 50),
                 tuple(JobType.LARGE_BIZ, "대기업 직장인", 80, 60, 90, 40, 70),
+                tuple(JobType.MID_BIZ, "중견기업 직장인", 60, 70, 70, 50, 50),
+                tuple(JobType.SMALL_BIZ, "중소기업 직장인", 40, 80, 50, 60, 30),
                 tuple(JobType.STARTUP, "스타트업 직장인", 55, 55, 35, 85, 80),
                 tuple(JobType.FREELANCER, "프리랜서", 50, 50, 20, 90, 85)
             );
