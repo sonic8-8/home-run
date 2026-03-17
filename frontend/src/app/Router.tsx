@@ -36,6 +36,12 @@ const SelectJobPage = lazy(() =>
   import('@features/game/presentation/pages/SelectJob/SelectJob')
 );
 
+const GameMainPage = lazy(() =>
+  import('@features/game/presentation/pages/GameMain/GameMain').then((m) => ({
+    default: m.GameMain,
+  }))
+);
+
 const TempPage = () => <div>준비 중</div>;
 
 const router = createBrowserRouter([
@@ -49,7 +55,7 @@ const router = createBrowserRouter([
     element: <PrivateRoute />,
     children: [
       { path: ROUTES.HOME,     element: <Suspense fallback={null}><HomePage /></Suspense> },
-      { path: ROUTES.GAME,       element: <TempPage /> },
+      { path: ROUTES.GAME,       element: <Suspense fallback={null}><GameMainPage /></Suspense> },
       { path: ROUTES.GAME_START, element: <Suspense fallback={null}><GameStartPage /></Suspense> },
       { path: ROUTES.GAME_SAVE,  element: <Suspense fallback={null}><GameSaveSlotPage /></Suspense> },
       { path: ROUTES.GAME_SELECT_CHARACTER, element: <Suspense fallback={null}><SelectCharacterPage /></Suspense> },
