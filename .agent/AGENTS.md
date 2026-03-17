@@ -21,6 +21,8 @@
 - Domain은 핵심 상태와 비즈니스 규칙을 가진다. Repository는 조회/저장 책임에 집중한다.
 - Controller Request DTO와 Service DTO는 분리한다.
 - API는 엔티티를 직접 반환하지 않고 Response DTO로 변환한 뒤 공통 `ApiResponse`로 감싼다.
+- 예외 응답은 공통 `ErrorResponse`로 반환한다.
+- Validation 예외는 `ErrorResponse`의 `errors` 목록에 필드별 상세를 포함하는 것을 우선 검토한다.
 - 새 코드는 기존 구조와 네이밍을 우선 따르고, 과한 추상화보다 명확한 구현을 우선한다.
 - 이름은 `Controller`, `Service`, `Client`, `Repository`, `Request`, `ServiceRequest`, `Response`, `Config`, `Test`, `TestSupport` 접미사를 사용한다.
 - Value Object는 기본값으로 만들지 않고, 도메인 의미, 불변성/생성 검증, 값 비교 규칙이 분명할 때만 도입한다.
@@ -49,6 +51,7 @@
 - 객체 생성 시 정적 팩토리 메서드 패턴을 우선 검토한다.
 - Controller는 `@RestController`, `@RequiredArgsConstructor`, Service는 `@Service`, `@RequiredArgsConstructor`를 기본으로 검토한다.
 - 엔티티는 `@Getter`, `@Entity`, `@NoArgsConstructor(access = PROTECTED)` 패턴을 우선 검토하고, 생성은 Builder 또는 정적 팩토리 메서드를 우선 검토한다.
+- Validation 메시지는 DTO에 하드코딩하지 않고 메시지 키를 사용하며, 실제 문구는 `ValidationMessages.properties`에서 관리하는 것을 우선 검토한다.
 
 ### 금융 도메인 규칙
 - 돈 계산은 정밀도 문제 방지를 위해 `BigDecimal` 사용을 우선 검토한다. `double`/`float`는 지양한다.
