@@ -1,22 +1,26 @@
 package io.ssafy.p.j14c103.homerun.api.controller.character;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.ssafy.p.j14c103.homerun.api.service.character.CharacterQueryService;
+import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterOptionsResponse;
+import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.ssafy.p.j14c103.homerun.api.service.character.CharacterQueryService;
-import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterOptionsResponse;
-import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
-import java.util.List;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 @WebMvcTest(CharacterController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class CharacterControllerTest {
 
     @Autowired
@@ -30,8 +34,8 @@ class CharacterControllerTest {
     void getCharacters() throws Exception {
         // given
         CharacterOptionsResponse response = CharacterOptionsResponse.from(List.of(
-            CharacterOptionsResponse.CharacterOptionResponse.of(CharacterType.FEMALE, "/images/characters/female.png"),
-            CharacterOptionsResponse.CharacterOptionResponse.of(CharacterType.MALE, "/images/characters/male.png")
+                CharacterOptionsResponse.CharacterOptionResponse.of(CharacterType.FEMALE, "/images/characters/female.png"),
+                CharacterOptionsResponse.CharacterOptionResponse.of(CharacterType.MALE, "/images/characters/male.png")
         ));
         given(characterQueryService.getCharacterOptions()).willReturn(response);
 

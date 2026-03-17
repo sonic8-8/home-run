@@ -1,7 +1,10 @@
 package io.ssafy.p.j14c103.homerun.api.controller.auth;
 
+import io.ssafy.p.j14c103.homerun.api.controller.auth.request.LoginRequest;
 import io.ssafy.p.j14c103.homerun.api.controller.auth.request.SignupRequest;
+import io.ssafy.p.j14c103.homerun.api.service.auth.LoginService;
 import io.ssafy.p.j14c103.homerun.api.service.auth.SignupService;
+import io.ssafy.p.j14c103.homerun.api.service.auth.response.LoginResponse;
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
 import jakarta.validation.Valid;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final SignupService signupService;
+    private final LoginService loginService;
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
@@ -26,5 +30,12 @@ public class AuthController {
         SignupResponse response = signupService.signup(request.toServiceRequest());
 
         return ApiResponse.created(response);
+    }
+
+    @PostMapping("/login")
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = loginService.login(request.toServiceRequest());
+
+        return ApiResponse.ok(response);
     }
 }

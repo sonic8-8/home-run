@@ -58,6 +58,10 @@
 - 테스트 실행은 `./gradlew test`를 우선 사용한다.
 - 프론트엔드 패키지 매니저는 `npm` 사용을 우선한다.
 - 테스트는 JUnit 5, AssertJ를 사용하고, `@DisplayName` 한글 문장, `given / when / then`, Controller 슬라이스 테스트, Service 통합 테스트, `*TestSupport` 공통 설정, 저장소 테스트 후 상태 정리 규칙을 우선 따른다.
+- 테스트는 계층 책임에 맞춰 분리한다.
+- Controller 테스트는 `@WebMvcTest` 기반 슬라이스 테스트를 우선 검토한다.
+- Service 테스트는 `@SpringBootTest` 기반 통합 테스트를 우선 검토한다.
+- `*TestSupport`는 중복되는 테스트 패턴이 반복될 때 추출을 검토한다.
 
 ### 커밋 메시지
 - 백엔드 형식: `[BE] type(scope): 설명 (Jira 티켓번호)`
