@@ -15,7 +15,7 @@ class GameHousingRepositoryTest {
     @Autowired
     private GameHousingRepository gameHousingRepository;
 
-    @DisplayName("GameHousing을 저장하면 목표 매물 스냅샷과 현재 주거 상태를 다시 조회할 수 있다.")
+    @DisplayName("GameHousing을 저장하면 목표 매물 관련 값들과 현재 주거 상태를 다시 조회할 수 있다.")
     @Test
     void saveGameHousing() {
         // given
@@ -38,7 +38,7 @@ class GameHousingRepositoryTest {
         assertThat(saved.getGameSessionId()).isEqualTo(1L);
         assertThat(saved.getTargetRegionCode()).isEqualTo("SEOUL");
         assertThat(saved.getTargetHousePrice()).isEqualTo(Money.of(450_000_000L));
-        assertThat(saved.getHousingType()).isEqualTo(HousingType.STUDIO);
+        assertThat(saved.getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
         assertThat(saved.getCurrentDeposit()).isEqualTo(Money.of(10_000_000L));
         assertThat(saved.getMonthlyRent()).isEqualTo(Money.of(500_000L));
         assertThat(saved.getMaintenanceFee()).isEqualTo(Money.of(80_000L));
@@ -46,7 +46,7 @@ class GameHousingRepositoryTest {
         assertThat(saved.getTargetPropertyId()).isEqualTo(101L);
     }
 
-    @DisplayName("같은 gameSessionId로 다시 저장하면 현재 주거 스냅샷이 갱신된다.")
+    @DisplayName("같은 gameSessionId로 다시 저장하면 현재 목표매물(주거) 관련 정보들이 갱신된다.")
     @Test
     void updateCurrentHousingByGameSessionId() {
         // given
@@ -113,6 +113,6 @@ class GameHousingRepositoryTest {
         assertThat(result).isPresent();
         assertThat(result.orElseThrow().getGameSessionId()).isEqualTo(1L);
         assertThat(result.orElseThrow().getTargetPropertyId()).isEqualTo(101L);
-        assertThat(result.orElseThrow().getHousingType()).isEqualTo(HousingType.STUDIO);
+        assertThat(result.orElseThrow().getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
     }
 }

@@ -1,8 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
-import io.ssafy.p.j14c103.homerun.api.dto.home.DashboardResponse;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.infrastructure.ssafy.SsafyDemandDepositClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +42,7 @@ class DashboardServiceTest {
 
         final DashboardResponse response = dashboardService.getDashboard(userKey);
 
-        assertThat(response.getTotalAsset()).isEqualTo(Money.of(8000000L));
+        assertThat(response.getTotalAssets()).isEqualTo(Money.of(8000000L));
     }
 
     @DisplayName("이번 달 입금 거래를 합산하여 월 수입을 반환한다")
@@ -100,7 +100,7 @@ class DashboardServiceTest {
 
         final DashboardResponse response = dashboardService.getDashboard(userKey);
 
-        assertThat(response.getTotalAsset()).isEqualTo(Money.zero());
+        assertThat(response.getTotalAssets()).isEqualTo(Money.zero());
         assertThat(response.getMonthlyIncome()).isEqualTo(Money.zero());
         assertThat(response.getMonthlyExpense()).isEqualTo(Money.zero());
     }

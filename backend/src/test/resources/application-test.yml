@@ -1,15 +1,22 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:homerun-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:homerun-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
     password:
     driver-class-name: org.h2.Driver
-  sql:
-    init:
-      mode: never
   jpa:
     hibernate:
       ddl-auto: create-drop
-  h2:
-    console:
-      enabled: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Seoul
+  sql:
+    init:
+      mode: never
+
+jwt:
+  secret: 01234567890123456789012345678901
+  access-token-ttl-seconds: 1800
+  refresh-token-ttl-seconds: 1209600

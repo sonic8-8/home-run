@@ -1,0 +1,136 @@
+.panel {
+  height: 100%;
+  background: #fff;
+  border-radius: 16px;
+  margin: 20px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+}
+
+/* ── 필터 탭 ────────────────────────────── */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter {
+  padding: 8px 18px;
+  border: 1.5px solid #ddd;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter:hover {
+  border-color: #aaa;
+  color: #222;
+}
+
+.filterActive {
+  padding: 8px 18px;
+  border: 1.5px solid #111;
+  border-radius: 20px;
+  background: #111;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── 카드 그리드 ────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  flex: 1;
+}
+
+.cardItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.cardImage {
+  width: 70%;
+  aspect-ratio: 5 / 8;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s;
+}
+
+.cardItem:hover .cardImage {
+  transform: translateY(-3px);
+}
+
+.cardIcon {
+  font-size: 28px;
+}
+
+.cardName {
+  font-size: 12px;
+  color: #555;
+  text-align: center;
+}
+
+/* ── 페이지네이션 ───────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pageBtn {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  min-width: 36px;
+  transition: background 0.1s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pageBtnActive {
+  padding: 6px 10px;
+  border: 1px solid #111;
+  border-radius: 6px;
+  background: #111;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  min-width: 36px;
+  font-weight: 700;
+}

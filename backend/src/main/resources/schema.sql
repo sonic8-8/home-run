@@ -1,14 +1,17 @@
 -- Platform user account and authentication linkage.
 create table if not exists users (
   user_id integer generated always as identity primary key,
-  email varchar(255),
-  user_name varchar(100),
+  email varchar(255) not null,
+  user_name varchar(100) not null,
   nickname varchar(100),
-  password_hash varchar(255),
-  auth_provider_type varchar(20),
+  password_hash varchar(255) not null,
+  auth_provider_type varchar(20) not null,
   ssafy_user_key varchar(255),
   ssafy_connected_at timestamp,
-  created_at timestamp not null default current_timestamp
+  account_auth_verified_at timestamp,
+  created_at timestamp not null default current_timestamp,
+  constraint uq_users__email unique (email),
+  constraint uq_users__ssafy_user_key unique (ssafy_user_key)
 );
 
 -- PASS product catalog for savings challenges.
@@ -264,6 +267,8 @@ create table if not exists game_contract_reviews (
 -- Static stock master data shared across sessions.
 create table if not exists stock_markets (
   stock_code varchar(20) primary key,
+  stock_name varchar(100) not null,
+  kis_stock_code varchar(10),             -- 한투 OpenAPI 종목코드 (예: '005930')
   sector varchar(100),
   base_price_amount integer,
   volatility_rate numeric(8,4)
@@ -315,8 +320,9 @@ create table if not exists stock_orders (
 create table if not exists loan_applications (
   loan_application_id integer generated always as identity primary key,
   game_session_id integer not null,
+  loan_type varchar(20),                  -- 'CREDIT', 'JEONSE', 'MORTGAGE'
   product_id varchar(100),
-  property_id integer not null,
+  property_id integer,                    -- nullable: 개인신용대출은 매물 불필요
   application_status varchar(20),
   approved_limit_amount integer,
   rejection_reason text,

@@ -26,7 +26,7 @@ export default function SelectStartMethod() {
 
   const handleNext = () => {
     if (!method) return;
-    navigate(ROUTES.GAME, {
+    navigate(ROUTES.GAME_SELECT_JOB, {
       state: { ...state, useMyData: method === 'mydata' },
     });
   };

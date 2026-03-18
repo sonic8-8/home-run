@@ -55,7 +55,7 @@ public class GameHousing {
         Long gameSessionId,
         String targetRegionCode,
         Money targetHousePrice,
-        HousingType housingType,
+        HousingType currentHousingType,
         Money currentDeposit,
         Money monthlyRent,
         Money maintenanceFee,
@@ -65,7 +65,7 @@ public class GameHousing {
         this.gameSessionId = gameSessionId;
         this.targetRegionCode = targetRegionCode;
         this.targetHousePrice = targetHousePrice;
-        this.housingType = housingType;
+        this.housingType = currentHousingType;
         this.currentDeposit = currentDeposit;
         this.monthlyRent = monthlyRent;
         this.maintenanceFee = maintenanceFee;
@@ -77,7 +77,7 @@ public class GameHousing {
         Long gameSessionId,
         String targetRegionCode,
         Money targetHousePrice,
-        HousingType housingType,
+        HousingType currentHousingType,
         Money currentDeposit,
         Money monthlyRent,
         Money maintenanceFee,
@@ -88,12 +88,16 @@ public class GameHousing {
             gameSessionId,
             targetRegionCode,
             targetHousePrice,
-            housingType,
+            currentHousingType,
             currentDeposit,
             monthlyRent,
             maintenanceFee,
             currentPropertyId,
             targetPropertyId
         );
+    }
+
+    public HousingType getCurrentHousingType() {
+        return housingType;
     }
 }

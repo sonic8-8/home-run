@@ -1,6 +1,5 @@
 package io.ssafy.p.j14c103.homerun.domain.world.cycle;
 
-import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -21,6 +21,8 @@
 - Domain은 핵심 상태와 비즈니스 규칙을 가진다. Repository는 조회/저장 책임에 집중한다.
 - Controller Request DTO와 Service DTO는 분리한다.
 - API는 엔티티를 직접 반환하지 않고 Response DTO로 변환한 뒤 공통 `ApiResponse`로 감싼다.
+- 예외 응답은 공통 `ErrorResponse`로 반환한다.
+- Validation 예외는 `ErrorResponse`의 `errors` 목록에 필드별 상세를 포함하는 것을 우선 검토한다.
 - 새 코드는 기존 구조와 네이밍을 우선 따르고, 과한 추상화보다 명확한 구현을 우선한다.
 - 이름은 `Controller`, `Service`, `Client`, `Repository`, `Request`, `ServiceRequest`, `Response`, `Config`, `Test`, `TestSupport` 접미사를 사용한다.
 - Value Object는 기본값으로 만들지 않고, 도메인 의미, 불변성/생성 검증, 값 비교 규칙이 분명할 때만 도입한다.
@@ -44,11 +46,13 @@
 - indent depth는 가급적 2 이하로 유지한다.
 - `else`, `switch/case`, 삼항 연산자 사용은 지양하고 Early return 패턴을 우선 검토한다.
 - 가급적 1메서드 1기능 원칙을 지향한다.
+- 예외는 특별한 이유가 없으면 static factory보다 `throw new ExceptionType(...)` 형태를 우선 사용한다.
 - 핵심 도메인의 원시값과 문자열은 VO 후보로 먼저 검토한다.
 - 비즈니스 로직이 포함된 컬렉션은 일급 컬렉션으로 포장할지 검토한다.
 - 객체 생성 시 정적 팩토리 메서드 패턴을 우선 검토한다.
 - Controller는 `@RestController`, `@RequiredArgsConstructor`, Service는 `@Service`, `@RequiredArgsConstructor`를 기본으로 검토한다.
 - 엔티티는 `@Getter`, `@Entity`, `@NoArgsConstructor(access = PROTECTED)` 패턴을 우선 검토하고, 생성은 Builder 또는 정적 팩토리 메서드를 우선 검토한다.
+- Validation 메시지는 DTO에 하드코딩하지 않고 메시지 키를 사용하며, 실제 문구는 `ValidationMessages.properties`에서 관리하는 것을 우선 검토한다.
 
 ### 금융 도메인 규칙
 - 돈 계산은 정밀도 문제 방지를 위해 `BigDecimal` 사용을 우선 검토한다. `double`/`float`는 지양한다.
@@ -58,6 +62,10 @@
 - 테스트 실행은 `./gradlew test`를 우선 사용한다.
 - 프론트엔드 패키지 매니저는 `npm` 사용을 우선한다.
 - 테스트는 JUnit 5, AssertJ를 사용하고, `@DisplayName` 한글 문장, `given / when / then`, Controller 슬라이스 테스트, Service 통합 테스트, `*TestSupport` 공통 설정, 저장소 테스트 후 상태 정리 규칙을 우선 따른다.
+- 테스트는 계층 책임에 맞춰 분리한다.
+- Controller 테스트는 `@WebMvcTest` 기반 슬라이스 테스트를 우선 검토한다.
+- Service 테스트는 `@SpringBootTest` 기반 통합 테스트를 우선 검토한다.
+- `*TestSupport`는 중복되는 테스트 패턴이 반복될 때 추출을 검토한다.
 
 ### 커밋 메시지
 - 백엔드 형식: `[BE] type(scope): 설명 (Jira 티켓번호)`
