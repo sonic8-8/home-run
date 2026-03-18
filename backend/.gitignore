@@ -35,4 +35,4 @@ out/
 
 ### VS Code ###
 .vscode/
-docs/character-domain-config.md
+../.agent/private/character-domain-config.md
