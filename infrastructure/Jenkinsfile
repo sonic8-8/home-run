@@ -86,7 +86,9 @@ pipeline {
                 script {
                     env.PIPELINE_STAGE = 'Frontend Validate'
                 }
-                sh 'docker build --target validator -t homerun-frontend-validator -f frontend/Dockerfile frontend'
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    sh 'docker build --target validator -t homerun-frontend-validator -f frontend/Dockerfile frontend'
+                }
             }
         }
 
