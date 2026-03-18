@@ -1,20 +1,16 @@
 package io.ssafy.p.j14c103.homerun.api.controller.auth;
 
-import static org.hamcrest.Matchers.hasItem;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ssafy.p.j14c103.homerun.api.controller.auth.request.LoginRequest;
 import io.ssafy.p.j14c103.homerun.api.controller.auth.request.SignupRequest;
 import io.ssafy.p.j14c103.homerun.api.service.auth.LoginService;
+import io.ssafy.p.j14c103.homerun.api.service.auth.RefreshAccessTokenService;
 import io.ssafy.p.j14c103.homerun.api.service.auth.SignupService;
 import io.ssafy.p.j14c103.homerun.api.service.auth.request.LoginServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.auth.request.RefreshAccessTokenServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.auth.request.SignupServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.LoginResponse;
+import io.ssafy.p.j14c103.homerun.api.service.auth.response.RefreshAccessTokenResponse;
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -23,9 +19,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -42,6 +46,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private LoginService loginService;
+
+    @MockitoBean
+    private RefreshAccessTokenService refreshAccessTokenService;
 
     @DisplayName("회원가입 요청이 성공하면 201과 사용자 응답을 반환한다.")
     @Test
@@ -209,5 +216,53 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()))
                 .andExpect(jsonPath("$.errors[*].field", hasItem("password")))
                 .andExpect(jsonPath("$.errors[*].message", hasItem("비밀번호는 필수입니다.")));
+    }
+
+    @DisplayName("유효한 Refresh Token이면 Access Token 재발급 응답을 반환한다.")
+    @Test
+    void refreshAccessToken() throws Exception {
+        // given
+        String authorizationHeader = "Bearer refresh-token";
+        RefreshAccessTokenResponse response = RefreshAccessTokenResponse.builder()
+                .accessToken("new-access-token")
+                .accessTokenExpiresIn(1800L)
+                .build();
+        given(refreshAccessTokenService.refresh(any(RefreshAccessTokenServiceRequest.class)))
+                .willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/auth/refresh")
+                        .header(HttpHeaders.AUTHORIZATION, authorizationHeader))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("OK"))
+                .andExpect(jsonPath("$.data.accessToken").value("new-access-token"))
+                .andExpect(jsonPath("$.data.accessTokenExpiresIn").value(1800L));
+    }
+
+    @DisplayName("유효하지 않은 Refresh Token이면 401을 반환한다.")
+    @Test
+    void refreshAccessTokenWithInvalidToken() throws Exception {
+        // given
+        String authorizationHeader = "Bearer invalid-refresh-token";
+        given(refreshAccessTokenService.refresh(any(RefreshAccessTokenServiceRequest.class)))
+                .willThrow(HomerunException.from(ErrorCode.AUTH_REFRESH_INVALID));
+
+        // when & then
+        mockMvc.perform(post("/api/auth/refresh")
+                        .header(HttpHeaders.AUTHORIZATION, authorizationHeader))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_REFRESH_INVALID.getCode()))
+                .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_REFRESH_INVALID.getMessage()));
+    }
+
+    @DisplayName("Refresh Token 헤더가 없으면 401을 반환한다.")
+    @Test
+    void refreshAccessTokenWithoutAuthorizationHeader() throws Exception {
+        // given & when & then
+        mockMvc.perform(post("/api/auth/refresh"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_REFRESH_INVALID.getCode()))
+                .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_REFRESH_INVALID.getMessage()));
     }
 }
