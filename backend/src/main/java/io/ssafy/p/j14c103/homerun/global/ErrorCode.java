@@ -19,6 +19,9 @@ public enum ErrorCode {
     AUTH_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_004", "인증이 필요합니다."),
     AUTH_REFRESH_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_005", "Refresh Token 상태가 올바르지 않습니다."),
 
+    WORLD_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "WORLD_001", "존재하지 않는 게임 세션입니다."),
+    WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),
+
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "GLOBAL_001", "입력값이 올바르지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_002", "서버 내부 오류가 발생했습니다."),
     GLOBAL_CONFIGURATION_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_003", "서버 설정이 올바르지 않습니다."),

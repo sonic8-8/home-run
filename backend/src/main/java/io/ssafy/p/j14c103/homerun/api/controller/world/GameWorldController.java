@@ -1,0 +1,27 @@
+package io.ssafy.p.j14c103.homerun.api.controller.world;
+
+import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldService;
+import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnResponse;
+import io.ssafy.p.j14c103.homerun.global.ApiResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/games/sessions")
+public class GameWorldController {
+
+    private final GameWorldService gameWorldService;
+
+    @GetMapping("/{gameSessionId}/turn")
+    public ApiResponse<GameTurnResponse> getTurn(
+        @PathVariable int gameSessionId
+    ) {
+        GameTurnResponse response = gameWorldService.getTurn(gameSessionId);
+
+        return ApiResponse.ok(response);
+    }
+}

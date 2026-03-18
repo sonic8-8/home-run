@@ -20,6 +20,29 @@ class EmailTest {
         assertThat(email.getValue()).isEqualTo("test@ssafy.com");
     }
 
+    @DisplayName("같은 값을 가진 Email은 동등하다.")
+    @Test
+    void equalsSameValue() {
+        // given
+        Email first = Email.of("test@ssafy.com");
+        Email second = Email.of("test@ssafy.com");
+
+        // when & then
+        assertThat(first).isEqualTo(second);
+        assertThat(first.hashCode()).isEqualTo(second.hashCode());
+    }
+
+    @DisplayName("다른 값을 가진 Email은 동등하지 않다.")
+    @Test
+    void equalsDifferentValue() {
+        // given
+        Email first = Email.of("test@ssafy.com");
+        Email second = Email.of("other@ssafy.com");
+
+        // when & then
+        assertThat(first).isNotEqualTo(second);
+    }
+
     @DisplayName("이메일이 null이면 예외가 발생한다.")
     @Test
     void createWithNull() {
