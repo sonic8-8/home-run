@@ -267,6 +267,8 @@ create table if not exists game_contract_reviews (
 -- Static stock master data shared across sessions.
 create table if not exists stock_markets (
   stock_code varchar(20) primary key,
+  stock_name varchar(100) not null,
+  kis_stock_code varchar(10),             -- 한투 OpenAPI 종목코드 (예: '005930')
   sector varchar(100),
   base_price_amount integer,
   volatility_rate numeric(8,4)
@@ -318,8 +320,9 @@ create table if not exists stock_orders (
 create table if not exists loan_applications (
   loan_application_id integer generated always as identity primary key,
   game_session_id integer not null,
+  loan_type varchar(20),                  -- 'CREDIT', 'JEONSE', 'MORTGAGE'
   product_id varchar(100),
-  property_id integer not null,
+  property_id integer,                    -- nullable: 개인신용대출은 매물 불필요
   application_status varchar(20),
   approved_limit_amount integer,
   rejection_reason text,
