@@ -102,7 +102,7 @@ class UserRepositoryTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    @DisplayName("회원 확장 필드를 저장하고 조회할 수 있다.")
+    @DisplayName("회원 연동 필드를 저장하고 조회할 수 있다.")
     @Test
     void saveAndLoadNewPersistenceFields() {
         // given
@@ -113,7 +113,6 @@ class UserRepositoryTest {
                 "tester",
                 "hashed-password"
         );
-        user.changeNickname("홈런");
         user.linkSsafy("ssafy-user-key", connectedAt);
         user.markAccountVerified(verifiedAt);
 
@@ -125,7 +124,6 @@ class UserRepositoryTest {
                 .orElseThrow();
 
         // then
-        assertThat(result.getNickname()).isEqualTo("홈런");
         assertThat(result.getAuthProvider()).isEqualTo(AuthProvider.EMAIL);
         assertThat(result.getSsafyUserKey()).isEqualTo("ssafy-user-key");
         assertThat(result.getSsafyConnectedAt()).isEqualTo(connectedAt);

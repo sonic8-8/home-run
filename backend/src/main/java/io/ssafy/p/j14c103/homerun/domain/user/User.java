@@ -25,9 +25,6 @@ public class User {
     @Column(name = "user_name", nullable = false)
     private String name;
 
-    @Column(name = "nickname")
-    private String nickname;
-
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -57,10 +54,6 @@ public class User {
 
     public static User register(Email email, String name, String passwordHash) {
         return new User(email, name, passwordHash, AuthProvider.EMAIL, LocalDateTime.now());
-    }
-
-    public void changeNickname(String nickname) {
-        this.nickname = nickname;
     }
 
     public boolean hasSsafyLink() {
