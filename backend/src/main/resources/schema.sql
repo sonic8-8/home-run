@@ -350,17 +350,33 @@ create table if not exists game_loans (
     foreign key (game_session_id) references game_sessions (game_session_id)
 );
 
--- Cards registered for game benefits and expense reductions.
+-- Static card product catalog shared across recommendation and registration flows.
+create table if not exists card_products (
+  card_product_id integer generated always as identity primary key,
+  card_name varchar(100) not null,
+  card_issuer_name varchar(100),
+  card_description text,
+  baseline_performance_amount integer,
+  max_benefit_limit_amount integer,
+  active_benefits jsonb,
+  card_image_url varchar(255),
+  active_yn boolean not null default true
+);
+
+-- Session-scoped card selections referencing a real card product.
+-- card_status_type manages both recommended and registered cards in one table.
 create table if not exists game_cards (
   game_card_id integer generated always as identity primary key,
   game_session_id integer not null,
-  external_card_id varchar(100),
-  card_name varchar(100),
-  active_benefits jsonb,
+  card_product_id integer not null,
+  card_status_type varchar(20) not null, -- RECOMMENDED or REGISTERED
+  recommended_at timestamp,
   registered_at timestamp,
   active_yn boolean not null default true,
   constraint fk_game_cards__game_session
-    foreign key (game_session_id) references game_sessions (game_session_id)
+    foreign key (game_session_id) references game_sessions (game_session_id),
+  constraint fk_game_cards__card_product
+    foreign key (card_product_id) references card_products (card_product_id)
 );
 
 -- Static news master data with sector, property, and job impacts.
