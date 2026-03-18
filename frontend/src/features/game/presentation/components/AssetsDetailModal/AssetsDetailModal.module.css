@@ -1,0 +1,278 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* ── 헤더 / 탭 ─────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 20px;
+  padding: 4px;
+}
+
+.tab {
+  padding: 6px 18px;
+  border: none;
+  border-radius: 16px;
+  background: transparent;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+}
+
+.tabActive {
+  padding: 6px 18px;
+  border: none;
+  border-radius: 16px;
+  background: #fff;
+  font-size: 13px;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.saveButton {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+/* ── 콘텐츠 영역 ──────────────────────────── */
+.content {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── 2열 행 ───────────────────────────────── */
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── 카드 ─────────────────────────────────── */
+.card {
+  background: #f7f7f7;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100px;
+}
+
+.cardHighlight {
+  border: 2px solid #3dbdea;
+  background: #fff;
+}
+
+.cardLabel {
+  font-size: 13px;
+  color: #888;
+}
+
+.cardValueLg {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.cardValueMd {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.4;
+}
+
+.cardEmpty {
+  font-size: 14px;
+  color: #bbb;
+}
+
+/* ── 주거 유형 배지 ───────────────────────── */
+.housingBadge {
+  display: inline-block;
+  background: #c8f0c8;
+  color: #2a7a2a;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 3px 12px;
+  align-self: flex-start;
+}
+
+/* ── 대출 상세 ────────────────────────────── */
+.loanDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loanRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.loanKey {
+  font-size: 13px;
+  color: #888;
+}
+
+.loanVal {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+}
+
+/* ── 주식 카드 내부 ───────────────────────── */
+.stockHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stockDetail {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #888;
+  cursor: pointer;
+  padding: 0;
+}
+
+.stockRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.stockName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+.stockRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.stockValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+.stockQty {
+  font-size: 12px;
+  color: #aaa;
+}
+
+/* ── 커리어 ───────────────────────────────── */
+.career {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.careerName {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}
+
+.careerJob {
+  font-size: 14px;
+  color: #888;
+}
+
+.careerSalary {
+  font-size: 14px;
+  color: #555;
+  margin-left: auto;
+}
+
+/* ── 가능 부업 ────────────────────────────── */
+.sideJobSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sideJobTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+}
+
+.sideJobList {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.sideJobCard {
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sideJobName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 4px;
+}
+
+.sideJobEffect {
+  font-size: 12px;
+  color: #555;
+}
+
+/* ── 준비중 ───────────────────────────────── */
+.placeholder {
+  text-align: center;
+  color: #aaa;
+  padding: 40px 0;
+  font-size: 14px;
+}
