@@ -28,6 +28,7 @@ repositories {
 ext {
     set('snippetsDir', file("build/generated-snippets"))
     set('springAiVersion', "1.1.2")
+    set('ociSdkVersion', "3.81.1")
 }
 
 dependencies {
@@ -38,6 +39,7 @@ dependencies {
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // Spring Security
 //    implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -51,6 +53,10 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Oracle OCI
+    implementation "com.oracle.oci.sdk:oci-java-sdk-objectstorage:${ociSdkVersion}"
+    implementation "com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:${ociSdkVersion}"
 
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
