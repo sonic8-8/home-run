@@ -8,9 +8,10 @@ RUN npm ci
 FROM deps AS validator
 COPY . .
 RUN npm run lint
-RUN npm run build
 
-FROM validator AS builder
+FROM deps AS builder
+COPY . .
+RUN npm run build
 
 FROM nginx:1.29-alpine
 
