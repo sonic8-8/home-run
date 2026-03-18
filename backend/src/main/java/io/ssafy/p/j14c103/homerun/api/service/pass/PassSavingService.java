@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
+import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
@@ -37,9 +38,13 @@ public class PassSavingService {
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
     private final UserPassTransactionRepository userPassTransactionRepository;
     private final SsafyDemandDepositClient demandDepositClient;
+    private final UserAuthContextService userAuthContextService;
 
     @Transactional
-    public PassSaveResponse save(final PassSaveRequest request) {
+    public PassSaveResponse save(final Long userId, final PassSaveRequest request) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
         final PassSubscription subscription = passSubscriptionRepository.findById(request.getSubscriptionId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구독입니다."));
 
@@ -47,20 +52,21 @@ public class PassSavingService {
             throw new IllegalStateException("해지된 구독에서는 저축할 수 없습니다.");
         }
 
-        final SeedmoneyAccount seedmoneyAccount = seedmoneyAccountRepository.findByUserId(request.getUserId())
+        final SeedmoneyAccount seedmoneyAccount = seedmoneyAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("시드머니 계좌가 없습니다. 먼저 계좌를 개설해주세요."));
+        final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
 
         final int amount = subscription.getSavingAmount();
 
         demandDepositClient.transferAccount(
-                request.getUserKey(),
+                userKey,
                 seedmoneyAccount.getAccountNumber(),
                 request.getSourceAccountId(),
                 amount);
 
         // 시드머니 거래내역 기록
         final SeedmoneyTransaction transaction = SeedmoneyTransaction.createSave(
-                request.getUserId(),
+                userId,
                 subscription.getPassProduct().getId(),
                 amount);
         seedmoneyTransactionRepository.save(transaction);
@@ -71,10 +77,10 @@ public class PassSavingService {
         userPassTransactionRepository.save(passTransaction);
 
         // 총 저축 합계 계산
-        final int totalSaved = calculateTotalSaved(request.getUserId());
+        final int totalSaved = calculateTotalSaved(userId);
 
         // 잔액 조회
-        final int remainingBalance = fetchRealTimeBalance(request.getUserKey(), seedmoneyAccount.getAccountNumber());
+        final int remainingBalance = fetchRealTimeBalance(userKey, seedmoneyAccount.getAccountNumber());
         seedmoneyAccount.updateBalance(remainingBalance);
 
         return PassSaveResponse.of(amount, totalSaved, remainingBalance);

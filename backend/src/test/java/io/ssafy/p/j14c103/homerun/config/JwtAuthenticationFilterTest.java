@@ -48,8 +48,8 @@ class JwtAuthenticationFilterTest {
         assertThat(filterChain.getRequest()).isSameAs(request);
         assertThat(authentication).isNotNull();
         assertThat(authentication.isAuthenticated()).isTrue();
-        assertThat(principal.userId()).isEqualTo(1L);
-        assertThat(principal.email()).isEqualTo("user@example.com");
+        assertThat(principal.getUserId()).isEqualTo(1L);
+        assertThat(principal.getEmail()).isEqualTo("user@example.com");
     }
 
     @DisplayName("Authorization 헤더가 없으면 인증 없이 다음 필터로 진행한다.")

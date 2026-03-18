@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.api.service.home;
 
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingCategoryDetail;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingResponse;
+import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
@@ -25,11 +26,13 @@ public class SpendingService {
 
     private final SsafyCreditCardClient creditCardClient;
     private final SsafyDemandDepositClient demandDepositClient;
+    private final UserAuthContextService userAuthContextService;
 
-    public SpendingResponse getSpending(final String userKey, final String month) {
-        if (userKey == null || userKey.isBlank()) {
-            throw new IllegalArgumentException("userKey는 필수입니다.");
+    public SpendingResponse getSpending(final Long userId, final String month) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
+        final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
 
         final LocalDate targetMonth = parseMonth(month);
         final String resolvedMonth = targetMonth.format(MONTH_FORMATTER);
