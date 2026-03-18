@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { MonthlyActivityModal } from '@features/game/presentation/components/MonthlyActivityModal/MonthlyActivityModal';
 import { JobChangeEventModal } from '@features/game/presentation/components/JobChangeEventModal/JobChangeEventModal';
 import { EventCard } from '@features/game/presentation/components/EventCard/EventCard';
+import { LoanReviewResultModal } from '@features/loan/presentation/components/LoanReviewResultModal/LoanReviewResultModal';
+import { LoanConfirmModal } from '@features/loan/presentation/components/LoanConfirmModal/LoanConfirmModal';
 import type { TurnAction } from '@features/game/domain/entities/TurnAction';
 import type { GameEvent } from '@features/game/domain/entities/GameEvent';
+import type { LoanApplication } from '@features/loan/domain/entities/LoanApplication';
 import bonusImg from '@/assets/images/event/bonus.png';
 
 const MOCK_SHOPPING: TurnAction[] = [
@@ -20,6 +23,19 @@ const MOCK_ACTIVITIES: TurnAction[] = [
   { actionType: 'REST', label: '휴식', iconUrl: 'https://placehold.co/60x60?text=😴', effects: { fatigue: -30, stress: -20, happiness: 10 } },
 ];
 
+const MOCK_LOAN_APPLICATION: LoanApplication = {
+  applicationId: 'APP-001',
+  status: 'APPROVED',
+  requestInfo: {
+    propertyName: '하남3지구 모아엘가 더 퍼스트',
+    propertyPrice: 375_000_000,
+    applicationDate: '2026.03.10',
+  },
+  result: {
+    maxLoanAmount: 200_000_000,
+  },
+};
+
 const MOCK_EVENT: GameEvent = {
   id: 'BONUS_SALARY',
   title: '보너스 지급!',
@@ -35,6 +51,8 @@ const MOCK_EVENT: GameEvent = {
 export default function DevPreview() {
   const [showMonthly, setShowMonthly] = useState(false);
   const [showJobChange, setShowJobChange] = useState(false);
+  const [showLoanReview, setShowLoanReview] = useState(false);
+  const [showLoanConfirm, setShowLoanConfirm] = useState(false);
 
   return (
     <div style={{ padding: 32, background: '#1a1a2e', minHeight: '100vh', color: '#fff' }}>
@@ -54,6 +72,12 @@ export default function DevPreview() {
         >
           이직 이벤트 모달 열기
         </button>
+        <button
+          onClick={() => setShowLoanReview(true)}
+          style={{ padding: '12px 24px', borderRadius: 8, background: '#22c55e', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 16 }}
+        >
+          대출 심사 결과 모달 열기
+        </button>
       </div>
 
       {/* 이벤트 카드 인라인 표시 */}
@@ -72,6 +96,22 @@ export default function DevPreview() {
         shopping={MOCK_SHOPPING}
         activities={MOCK_ACTIVITIES}
         onStart={(slots) => { alert(`선택: ${slots.join(', ')}`); setShowMonthly(false); }}
+      />
+
+      <LoanReviewResultModal
+        isOpen={showLoanReview}
+        onClose={() => setShowLoanReview(false)}
+        onGoToProperty={() => { setShowLoanReview(false); setShowLoanConfirm(true); }}
+        application={MOCK_LOAN_APPLICATION}
+      />
+
+      <LoanConfirmModal
+        isOpen={showLoanConfirm}
+        onClose={() => setShowLoanConfirm(false)}
+        onConfirm={(amount) => { alert(`대출 신청 완료: ${amount.toLocaleString('ko-KR')}원`); setShowLoanConfirm(false); }}
+        applicationId={MOCK_LOAN_APPLICATION.applicationId}
+        contractorName="김싸피"
+        maxLoanAmount={MOCK_LOAN_APPLICATION.result.maxLoanAmount ?? 0}
       />
 
       <JobChangeEventModal
