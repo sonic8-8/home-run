@@ -44,7 +44,12 @@ const GameMainPage = lazy(() =>
 
 const TempPage = () => <div>준비 중</div>;
 
+const DevPreviewPage = lazy(() =>
+  import('@features/game/presentation/pages/DevPreview/DevPreview')
+);
+
 const router = createBrowserRouter([
+  { path: '/dev', element: <Suspense fallback={null}><DevPreviewPage /></Suspense> },
   {
     element: <PublicRoute />,
     children: [
