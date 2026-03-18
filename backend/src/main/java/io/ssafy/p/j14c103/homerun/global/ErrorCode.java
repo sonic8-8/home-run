@@ -25,7 +25,13 @@ public enum ErrorCode {
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "GLOBAL_001", "입력값이 올바르지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_002", "서버 내부 오류가 발생했습니다."),
     GLOBAL_CONFIGURATION_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_003", "서버 설정이 올바르지 않습니다."),
-    GLOBAL_SERIALIZATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_004", "데이터 직렬화 처리 중 오류가 발생했습니다.");
+    GLOBAL_SERIALIZATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_004", "데이터 직렬화 처리 중 오류가 발생했습니다."),
+
+    LOAN_APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "LOAN_001", "대출 신청을 찾을 수 없습니다."),
+    LOAN_NOT_APPROVED(HttpStatus.BAD_REQUEST, "LOAN_002", "승인되지 않은 대출입니다."),
+    LOAN_ALREADY_REPAID(HttpStatus.BAD_REQUEST, "LOAN_003", "이미 상환된 대출입니다."),
+    LOAN_SSAFY_DUPLICATE(HttpStatus.BAD_REQUEST, "LOAN_004", "싸피론은 세션당 1건만 가능합니다."),
+    LOAN_EXCEED_LIMIT(HttpStatus.BAD_REQUEST, "LOAN_005", "승인 한도를 초과했습니다.");
 
     private final HttpStatus status;
     private final String code;
