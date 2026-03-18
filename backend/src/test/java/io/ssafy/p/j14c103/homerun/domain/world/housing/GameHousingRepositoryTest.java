@@ -20,7 +20,7 @@ class GameHousingRepositoryTest {
     void saveGameHousing() {
         // given
         GameHousing gameHousing = GameHousing.create(
-            1L,
+            1,
             "SEOUL",
             Money.of(450_000_000L),
             HousingType.STUDIO,
@@ -35,7 +35,7 @@ class GameHousingRepositoryTest {
         GameHousing saved = gameHousingRepository.save(gameHousing);
 
         // then
-        assertThat(saved.getGameSessionId()).isEqualTo(1L);
+        assertThat(saved.getGameSessionId()).isEqualTo(1);
         assertThat(saved.getTargetRegionCode()).isEqualTo("SEOUL");
         assertThat(saved.getTargetHousePrice()).isEqualTo(Money.of(450_000_000L));
         assertThat(saved.getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
@@ -51,7 +51,7 @@ class GameHousingRepositoryTest {
     void updateCurrentHousingByGameSessionId() {
         // given
         GameHousing first = GameHousing.create(
-            1L,
+            1,
             "SEOUL",
             Money.of(450_000_000L),
             HousingType.STUDIO,
@@ -63,7 +63,7 @@ class GameHousingRepositoryTest {
         );
 
         GameHousing updated = GameHousing.create(
-            1L,
+            1,
             "GWANGJU",
             Money.of(320_000_000L),
             HousingType.VILLA,
@@ -81,10 +81,10 @@ class GameHousingRepositoryTest {
 
         // then
         assertThat(gameHousingRepository.count()).isEqualTo(1);
-        assertThat(gameHousingRepository.findByGameSessionId(1L)).isPresent();
-        assertThat(gameHousingRepository.findByGameSessionId(1L).orElseThrow().getTargetRegionCode())
+        assertThat(gameHousingRepository.findByGameSessionId(1)).isPresent();
+        assertThat(gameHousingRepository.findByGameSessionId(1).orElseThrow().getTargetRegionCode())
             .isEqualTo("GWANGJU");
-        assertThat(gameHousingRepository.findByGameSessionId(1L).orElseThrow().getCurrentPropertyId())
+        assertThat(gameHousingRepository.findByGameSessionId(1).orElseThrow().getCurrentPropertyId())
             .isEqualTo(202L);
     }
 
@@ -93,7 +93,7 @@ class GameHousingRepositoryTest {
     void findByGameSessionId() {
         // given
         GameHousing gameHousing = GameHousing.create(
-            1L,
+            1,
             "SEOUL",
             Money.of(450_000_000L),
             HousingType.STUDIO,
@@ -107,11 +107,11 @@ class GameHousingRepositoryTest {
         gameHousingRepository.save(gameHousing);
 
         // when
-        Optional<GameHousing> result = gameHousingRepository.findByGameSessionId(1L);
+        Optional<GameHousing> result = gameHousingRepository.findByGameSessionId(1);
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.orElseThrow().getGameSessionId()).isEqualTo(1L);
+        assertThat(result.orElseThrow().getGameSessionId()).isEqualTo(1);
         assertThat(result.orElseThrow().getTargetPropertyId()).isEqualTo(101L);
         assertThat(result.orElseThrow().getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
     }
