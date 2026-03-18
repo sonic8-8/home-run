@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
+import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
@@ -19,11 +20,13 @@ public class DashboardService {
     private static final String TRANSACTION_TYPE_DEPOSIT = "1";
 
     private final SsafyDemandDepositClient demandDepositClient;
+    private final UserAuthContextService userAuthContextService;
 
-    public DashboardResponse getDashboard(final String userKey) {
-        if (userKey == null || userKey.isBlank()) {
-            throw new IllegalArgumentException("userKey는 필수입니다.");
+    public DashboardResponse getDashboard(final Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
+        final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
 
         final Money totalAssets = calculateTotalAsset(userKey);
         final Money monthlyIncome = calculateMonthlyIncome(userKey);
