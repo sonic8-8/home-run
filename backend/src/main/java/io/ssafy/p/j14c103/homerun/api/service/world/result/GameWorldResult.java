@@ -2,6 +2,8 @@ package io.ssafy.p.j14c103.homerun.api.service.world.result;
 
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
 import lombok.Getter;
 
@@ -41,25 +43,25 @@ public class GameWorldResult {
 
     private void validateCycleResult(CycleResult cycleResult) {
         if (cycleResult == null) {
-            throw new IllegalArgumentException("cycleResult는 null일 수 없습니다.");
+            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
     private void validateNewsCandidates(List<NewsCandidate> newsCandidates) {
         if (newsCandidates == null) {
-            throw new IllegalArgumentException("newsCandidates는 null일 수 없습니다.");
+            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
     private void validateEventCandidates(List<EventCandidate> eventCandidates) {
         if (eventCandidates == null) {
-            throw new IllegalArgumentException("eventCandidates는 null일 수 없습니다.");
+            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
     private void validateHousingSnapshot(HousingSnapshot housingSnapshot) {
         if (housingSnapshot == null) {
-            throw new IllegalArgumentException("housingSnapshot은 null일 수 없습니다.");
+            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
@@ -83,13 +85,13 @@ public class GameWorldResult {
 
         private void validateNextPhase(CyclePhase nextPhase) {
             if (nextPhase == null) {
-                throw new IllegalArgumentException("nextPhase는 null일 수 없습니다.");
+                throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
             }
         }
 
         private void validateDescription(String description) {
             if (description == null || description.isBlank()) {
-                throw new IllegalArgumentException("description은 비어 있을 수 없습니다.");
+                throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
             }
         }
     }

@@ -45,6 +45,8 @@ class NewsMasterRepositoryTest {
         assertThat(found.getSectorImpact()).containsEntry("FINANCE", 2);
         assertThat(found.getRealEstateImpact()).isEqualTo(3);
         assertThat(found.getJobImpact()).containsKey("STARTUP");
-        assertThat((Map<?, ?>) found.getJobImpact().get("FREELANCER")).containsEntry("incomeMult", 110);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> freelancerImpact = (Map<String, Object>) found.getJobImpact().get("FREELANCER");
+        assertThat(freelancerImpact).containsEntry("incomeMult", 110);
     }
 }

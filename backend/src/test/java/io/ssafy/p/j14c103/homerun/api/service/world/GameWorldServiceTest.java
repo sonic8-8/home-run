@@ -74,6 +74,7 @@ class GameWorldServiceTest {
         // then
         assertThat(response.getTurnNumber()).isEqualTo(12);
         assertThat(response.getCurrentDate()).isEqualTo(LocalDate.of(2026, 1, 1));
+        assertThat(response.getMonth()).isEqualTo(1);
         assertThat(response.getEconomicCycle().getPhase()).isEqualTo(CyclePhase.BOOM);
         assertThat(response.getEconomicCycle().getDescription()).isEqualTo("경기 호황기");
         assertThat(response.getNews()).isEmpty();
