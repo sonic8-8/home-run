@@ -55,16 +55,16 @@ public class AuthController {
 
     private String extractRefreshToken(String authorizationHeader) {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_INVALID);
         }
         if (!authorizationHeader.startsWith("Bearer ")) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_INVALID);
         }
 
         String refreshToken = authorizationHeader.substring("Bearer ".length()).trim();
 
         if (refreshToken.isBlank()) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_INVALID);
         }
 
         return refreshToken;

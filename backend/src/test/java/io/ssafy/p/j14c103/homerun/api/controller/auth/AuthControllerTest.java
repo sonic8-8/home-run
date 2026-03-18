@@ -93,7 +93,7 @@ class AuthControllerTest {
                 .termsAgreed(true)
                 .build();
         given(signupService.signup(any(SignupServiceRequest.class)))
-                .willThrow(HomerunException.from(ErrorCode.USER_EMAIL_DUPLICATE));
+                .willThrow(new HomerunException(ErrorCode.USER_EMAIL_DUPLICATE));
 
         // when & then
         mockMvc.perform(post("/api/auth/signup")
@@ -187,7 +187,7 @@ class AuthControllerTest {
                 .password("Password123!")
                 .build();
         given(loginService.login(any(LoginServiceRequest.class)))
-                .willThrow(HomerunException.from(ErrorCode.AUTH_LOGIN_FAILED));
+                .willThrow(new HomerunException(ErrorCode.AUTH_LOGIN_FAILED));
 
         // when & then
         mockMvc.perform(post("/api/auth/login")
@@ -246,7 +246,7 @@ class AuthControllerTest {
         // given
         String authorizationHeader = "Bearer invalid-refresh-token";
         given(refreshAccessTokenService.refresh(any(RefreshAccessTokenServiceRequest.class)))
-                .willThrow(HomerunException.from(ErrorCode.AUTH_REFRESH_INVALID));
+                .willThrow(new HomerunException(ErrorCode.AUTH_REFRESH_INVALID));
 
         // when & then
         mockMvc.perform(post("/api/auth/refresh")

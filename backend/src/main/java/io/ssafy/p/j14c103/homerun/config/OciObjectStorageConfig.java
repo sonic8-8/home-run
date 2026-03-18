@@ -81,16 +81,16 @@ public class OciObjectStorageConfig {
         validateCommonProperties(properties);
 
         if (!StringUtils.hasText(properties.userOcid())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
         if (!StringUtils.hasText(properties.tenancyOcid())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
         if (!StringUtils.hasText(properties.fingerprint())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
         if (!StringUtils.hasText(properties.privateKeyBase64())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
     }
 
@@ -98,22 +98,22 @@ public class OciObjectStorageConfig {
         validateCommonProperties(properties);
 
         if (!StringUtils.hasText(properties.configPath())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
         if (!StringUtils.hasText(properties.profile())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
     }
 
     private void validateCommonProperties(final OciObjectStorageProperties properties) {
         if (!StringUtils.hasText(properties.region())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
         if (!StringUtils.hasText(properties.namespace())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
         if (!StringUtils.hasText(properties.bucketName())) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
     }
 
@@ -121,7 +121,7 @@ public class OciObjectStorageConfig {
         try {
             return Base64.getDecoder().decode(privateKeyBase64);
         } catch (IllegalArgumentException exception) {
-            throw HomerunException.from(ErrorCode.OCI_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.OCI_CONFIGURATION_INVALID);
         }
     }
 }

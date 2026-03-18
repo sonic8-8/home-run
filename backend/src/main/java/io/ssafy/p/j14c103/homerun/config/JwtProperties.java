@@ -47,10 +47,10 @@ public class JwtProperties {
             long refreshTokenTtlSeconds
     ) {
         if (secret == null || secret.isBlank()) {
-            throw HomerunException.from(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (accessTokenTtlSeconds <= 0 || refreshTokenTtlSeconds <= 0) {
-            throw HomerunException.from(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
     }
 }
