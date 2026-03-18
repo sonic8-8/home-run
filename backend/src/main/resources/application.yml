@@ -15,3 +15,10 @@ ssafy:
   api:
     base-url: https://finopenapi.ssafy.io/ssafy/api/v1/edu
     api-key: ${SSAFY_API_KEY:your-api-key-here}
+
+oci:
+  enabled: ${OCI_ENABLED:false}
+  profile: ${OCI_PROFILE:DEFAULT}
+  region: ${OCI_REGION:ap-singapore-1}
+  namespace: ${OCI_NAMESPACE:axyqj6o2a3yw}
+  bucket-name: ${OCI_BUCKET_NAME:bucket-20260316-1523}
