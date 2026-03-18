@@ -38,3 +38,10 @@ kis:
     base-url: ${KIS_API_BASE_URL:https://openapi.koreainvestment.com:9443}
     app-key: ${KIS_APP_KEY:}
     app-secret: ${KIS_APP_SECRET:}
+
+oci:
+  enabled: ${OCI_ENABLED:false}
+  profile: ${OCI_PROFILE:DEFAULT}
+  region: ${OCI_REGION:ap-singapore-1}
+  namespace: ${OCI_NAMESPACE:axyqj6o2a3yw}
+  bucket-name: ${OCI_BUCKET_NAME:bucket-20260316-1523}

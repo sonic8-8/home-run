@@ -11,3 +11,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+oci:
+  enabled: ${OCI_ENABLED:true}
+  config-path: ${OCI_CONFIG_PATH:C:/key/oci_config}
