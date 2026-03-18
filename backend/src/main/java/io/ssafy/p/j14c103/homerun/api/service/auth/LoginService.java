@@ -52,7 +52,7 @@ public class LoginService {
 
     private User getUser(LoginServiceRequest request) {
         return userRepository.findByEmail(Email.of(request.getEmail()))
-                .orElseThrow(() -> HomerunException.from(ErrorCode.AUTH_LOGIN_FAILED));
+                .orElseThrow(() -> new HomerunException(ErrorCode.AUTH_LOGIN_FAILED));
     }
 
     private void validatePassword(LoginServiceRequest request, User user) {
@@ -60,6 +60,6 @@ public class LoginService {
             return;
         }
 
-        throw HomerunException.from(ErrorCode.AUTH_LOGIN_FAILED);
+        throw new HomerunException(ErrorCode.AUTH_LOGIN_FAILED);
     }
 }

@@ -64,7 +64,7 @@ class GameWorldControllerTest {
     void getTurnWithUnknownSessionId() throws Exception {
         // given
         given(gameWorldService.getTurn(anyInt()))
-            .willThrow(HomerunException.from(ErrorCode.WORLD_SESSION_NOT_FOUND));
+            .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/9999/turn"))

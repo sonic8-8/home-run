@@ -25,7 +25,7 @@ class RedisRefreshTokenRepository implements RefreshTokenRepository {
         Duration ttl = Duration.between(Instant.now(), refreshToken.getExpiresAt());
 
         if (ttl.isZero() || ttl.isNegative()) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_STATE_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_STATE_INVALID);
         }
 
         stringRedisTemplate.opsForValue().set(
@@ -63,7 +63,7 @@ class RedisRefreshTokenRepository implements RefreshTokenRepository {
                     refreshToken.getExpiresAt()
             ));
         } catch (JsonProcessingException exception) {
-            throw HomerunException.from(ErrorCode.GLOBAL_SERIALIZATION_ERROR, exception);
+            throw new HomerunException(ErrorCode.GLOBAL_SERIALIZATION_ERROR, exception);
         }
     }
 
@@ -76,7 +76,7 @@ class RedisRefreshTokenRepository implements RefreshTokenRepository {
                     cacheValue.expiresAt()
             );
         } catch (JsonProcessingException exception) {
-            throw HomerunException.from(ErrorCode.GLOBAL_SERIALIZATION_ERROR, exception);
+            throw new HomerunException(ErrorCode.GLOBAL_SERIALIZATION_ERROR, exception);
         }
     }
 

@@ -99,18 +99,18 @@ public class LoanService {
             final boolean agreed
     ) {
         if (!agreed) {
-            throw HomerunException.from(ErrorCode.INVALID_INPUT_VALUE);
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
         final LoanApplication application = loanApplicationRepository.findById(applicationId)
-                .orElseThrow(() -> HomerunException.from(ErrorCode.LOAN_APPLICATION_NOT_FOUND));
+                .orElseThrow(() -> new HomerunException(ErrorCode.LOAN_APPLICATION_NOT_FOUND));
 
         if (!application.isApproved()) {
-            throw HomerunException.from(ErrorCode.LOAN_NOT_APPROVED);
+            throw new HomerunException(ErrorCode.LOAN_NOT_APPROVED);
         }
 
         if (requestedAmount > application.getApprovedLimitAmount()) {
-            throw HomerunException.from(ErrorCode.LOAN_EXCEED_LIMIT);
+            throw new HomerunException(ErrorCode.LOAN_EXCEED_LIMIT);
         }
 
         application.confirm();
@@ -149,7 +149,7 @@ public class LoanService {
         final int existing = gameLoanRepository.countByGameSessionIdAndProductIdAndLoanStatus(
                 sessionId, "SSAFY_LOAN", LoanStatus.ACTIVE);
         if (existing > 0) {
-            throw HomerunException.from(ErrorCode.LOAN_SSAFY_DUPLICATE);
+            throw new HomerunException(ErrorCode.LOAN_SSAFY_DUPLICATE);
         }
 
         final GameLoan loan = GameLoan.createSsafyLoan(sessionId, principal);
@@ -165,10 +165,10 @@ public class LoanService {
     @Transactional
     public LoanRepayResponse repay(final Integer sessionId, final Integer loanId, final int amount) {
         final GameLoan loan = gameLoanRepository.findById(loanId)
-                .orElseThrow(() -> HomerunException.from(ErrorCode.INVALID_INPUT_VALUE));
+                .orElseThrow(() -> new HomerunException(ErrorCode.INVALID_INPUT_VALUE));
 
         if (!loan.isActive()) {
-            throw HomerunException.from(ErrorCode.LOAN_ALREADY_REPAID);
+            throw new HomerunException(ErrorCode.LOAN_ALREADY_REPAID);
         }
 
         loan.repay(amount);
