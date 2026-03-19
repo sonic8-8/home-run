@@ -32,7 +32,8 @@ public class SeedmoneyController {
             @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final SeedmoneyCreateRequest request) {
         final SeedmoneyAccountResponse response = seedmoneyService.createAccount(
-                authenticatedUser.getUserId(), request.getAccountTypeUniqueNo());
+                authenticatedUser.getUserId(),
+                request.toServiceRequest());
         return ApiResponse.created(response);
     }
 
@@ -47,7 +48,9 @@ public class SeedmoneyController {
     public ApiResponse<SeedmoneyTransactionResponse> transfer(
             @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final SeedmoneyTransferRequest request) {
-        final SeedmoneyTransactionResponse response = seedmoneyService.transfer(authenticatedUser.getUserId(), request);
+        final SeedmoneyTransactionResponse response = seedmoneyService.transfer(
+                authenticatedUser.getUserId(),
+                request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 
@@ -55,7 +58,9 @@ public class SeedmoneyController {
     public ApiResponse<SeedmoneyTransactionResponse> deposit(
             @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final SeedmoneyDepositRequest request) {
-        final SeedmoneyTransactionResponse response = seedmoneyService.deposit(authenticatedUser.getUserId(), request);
+        final SeedmoneyTransactionResponse response = seedmoneyService.deposit(
+                authenticatedUser.getUserId(),
+                request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 }

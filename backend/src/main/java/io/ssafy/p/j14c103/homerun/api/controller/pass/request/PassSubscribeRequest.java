@@ -1,23 +1,31 @@
 package io.ssafy.p.j14c103.homerun.api.controller.pass.request;
 
+import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSubscribeServiceRequest;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
+@NoArgsConstructor
 public class PassSubscribeRequest {
 
-    @NotNull(message = "PASS 상품 ID는 필수입니다.")
+    @NotNull(message = "{validation.pass.subscribe.passId.notNull}")
     private Long passId;
 
-    @NotNull(message = "출금 계좌 ID는 필수입니다.")
+    @NotNull(message = "{validation.pass.subscribe.sourceAccountId.notNull}")
     private String sourceAccountId;
 
-    protected PassSubscribeRequest() {
-    }
-
-    public PassSubscribeRequest(final Long passId, final String sourceAccountId) {
+    @Builder
+    private PassSubscribeRequest(final Long passId, final String sourceAccountId) {
         this.passId = passId;
         this.sourceAccountId = sourceAccountId;
     }
 
-    public Long getPassId() { return passId; }
-    public String getSourceAccountId() { return sourceAccountId; }
+    public PassSubscribeServiceRequest toServiceRequest() {
+        return PassSubscribeServiceRequest.builder()
+                .passId(passId)
+                .sourceAccountId(sourceAccountId)
+                .build();
+    }
 }

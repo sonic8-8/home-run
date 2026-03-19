@@ -1,7 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.seedmoney;
 
-import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyDepositRequest;
-import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyTransferRequest;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyDepositServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyTransferServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
@@ -70,7 +70,10 @@ class SeedmoneyServiceTest {
   void transfer() {
     // given
     final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "한국은행", "시드머니계좌");
-    final SeedmoneyTransferRequest request = new SeedmoneyTransferRequest(10000L, "외부계좌");
+    final SeedmoneyTransferServiceRequest request = SeedmoneyTransferServiceRequest.builder()
+            .amount(10000L)
+            .toAccountNumber("외부계좌")
+            .build();
 
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
@@ -91,7 +94,10 @@ class SeedmoneyServiceTest {
   void deposit() {
     // given
     final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "한국은행", "시드머니계좌");
-    final SeedmoneyDepositRequest request = new SeedmoneyDepositRequest(20000L, "외부계좌");
+    final SeedmoneyDepositServiceRequest request = SeedmoneyDepositServiceRequest.builder()
+            .amount(20000L)
+            .fromAccountNumber("외부계좌")
+            .build();
 
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");

@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSubscribeRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSubscribeServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
@@ -82,7 +82,10 @@ class PassServiceTest {
   void subscribe() {
     // given
     final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
-    final PassSubscribeRequest request = new PassSubscribeRequest(1L, "0012345678");
+    final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
+            .passId(1L)
+            .sourceAccountId("0012345678")
+            .build();
 
     given(passProductRepository.findById(1L)).willReturn(Optional.of(product));
     given(passSubscriptionRepository.save(any(PassSubscription.class)))
@@ -100,7 +103,10 @@ class PassServiceTest {
   @Test
   void subscribe_notFound_exception() {
     // given
-    final PassSubscribeRequest request = new PassSubscribeRequest(999L, "0012345678");
+    final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
+            .passId(999L)
+            .sourceAccountId("0012345678")
+            .build();
 
     given(passProductRepository.findById(999L)).willReturn(Optional.empty());
 
