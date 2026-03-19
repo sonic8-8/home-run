@@ -3,12 +3,15 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnResponse;
+import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRef;
 import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.GameHousing;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -23,42 +26,82 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class GameWorldServiceTest {
+class GameWorldResultServiceTest {
 
     @Autowired
-    private GameWorldService gameWorldService;
+    private GameWorldResultService gameWorldResultService;
 
     @Autowired
     private GameSessionRefRepository gameSessionRefRepository;
 
+    @Autowired
+    private GameHousingRepository gameHousingRepository;
+
     @AfterEach
     void tearDown() {
+        gameHousingRepository.deleteAllInBatch();
         gameSessionRefRepository.deleteAllInBatch();
     }
 
-    @DisplayName("세션 스냅샷을 읽어 턴 조회 응답으로 조립한다")
+    @DisplayName("턴 커밋용 world result를 누락 필드 없이 조립한다")
     @Test
-    void getTurn() {
+    void buildWorldResult() {
         // given
         gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "BOOM"));
+        GameHousing gameHousing = GameHousing.create(
+            1001,
+            "SEOUL",
+            Money.of(450_000_000L),
+            HousingType.STUDIO,
+            Money.of(10_000_000L),
+            Money.of(500_000L),
+            Money.of(80_000L),
+            201L,
+            101L
+        );
+        gameHousingRepository.saveAndFlush(gameHousing);
 
         // when
-        GameTurnResponse response = gameWorldService.getTurn(1001);
+        GameWorldResult result = gameWorldResultService.buildWorldResult(1001, 81);
 
         // then
-        assertThat(response.getTurnNumber()).isEqualTo(12);
-        assertThat(response.getCurrentDate()).isEqualTo(LocalDate.of(2026, 1, 1));
-        assertThat(response.getMonth()).isEqualTo(1);
-        assertThat(response.getEconomicCycle().getPhase()).isEqualTo(CyclePhase.BOOM);
-        assertThat(response.getEconomicCycle().getDescription()).isEqualTo("경기 호황기");
-        assertThat(response.getNews()).isEmpty();
+        assertThat(result.getCycleResult()).isNotNull();
+        assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.RECOVERY);
+        assertThat(result.getCycleResult().getDescription()).isEqualTo("경기 회복기");
+        assertThat(result.getNewsCandidates()).isEmpty();
+        assertThat(result.getEventCandidates()).isEmpty();
+        assertThat(result.getHousingSnapshot()).isNotNull();
+        assertThat(result.getHousingSnapshot().getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
+        assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isEqualTo(201L);
+        assertThat(result.getHousingSnapshot().getTargetPropertyId()).isEqualTo(101L);
+        assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isFalse();
+    }
+
+    @DisplayName("현재 주거 데이터가 없어도 기본 housing snapshot을 포함한 world result를 반환한다")
+    @Test
+    void buildWorldResultWithoutHousing() {
+        // given
+        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "RECOVERY"));
+
+        // when
+        GameWorldResult result = gameWorldResultService.buildWorldResult(1001, 30);
+
+        // then
+        assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.BOOM);
+        assertThat(result.getNewsCandidates()).isEmpty();
+        assertThat(result.getEventCandidates()).isEmpty();
+        assertThat(result.getHousingSnapshot()).isNotNull();
+        assertThat(result.getHousingSnapshot().getCurrentHousingType()).isNull();
+        assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isNull();
+        assertThat(result.getHousingSnapshot().getTargetPropertyId()).isNull();
+        assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isFalse();
     }
 
     @DisplayName("존재하지 않는 세션이면 world 세션 조회 에러를 던진다")
     @Test
-    void getTurnWithUnknownSession() {
+    void buildWorldResultWithUnknownSession() {
         // when & then
-        assertThatThrownBy(() -> gameWorldService.getTurn(9999))
+        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(9999, 50))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_SESSION_NOT_FOUND);
@@ -66,12 +109,12 @@ class GameWorldServiceTest {
 
     @DisplayName("세션의 경제 사이클 값이 잘못되면 world cycle 상태 에러를 던진다")
     @Test
-    void getTurnWithInvalidCycleState() {
+    void buildWorldResultWithInvalidCycleState() {
         // given
         gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "INVALID"));
 
         // when & then
-        assertThatThrownBy(() -> gameWorldService.getTurn(1001))
+        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(1001, 50))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_CYCLE_STATE_INVALID);
