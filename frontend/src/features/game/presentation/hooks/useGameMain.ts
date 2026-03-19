@@ -5,11 +5,16 @@ import type { GameStats } from '@features/game/domain/entities/GameStats';
 
 interface LocationState {
   sessionId: number;
+  openLoan?: boolean;
+  preSelectedPropertyId?: string;
+  preSelectedPropertyName?: string;
+  preSelectedPropertyPrice?: number;
 }
 
 export const useGameMain = () => {
   const location = useLocation();
-  const { sessionId } = (location.state as LocationState) ?? { sessionId: null };
+  const { sessionId, openLoan, preSelectedPropertyId, preSelectedPropertyName, preSelectedPropertyPrice } =
+    (location.state as LocationState) ?? { sessionId: null };
 
   const [assets, setAssets] = useState<GameAssets | null>(null);
   const [stats, setStats] = useState<GameStats | null>(null);
@@ -17,7 +22,7 @@ export const useGameMain = () => {
   const [characterType, setCharacterType] = useState<'MALE' | 'FEMALE'>('MALE');
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [leftView, setLeftView] = useState<'scene' | 'loan' | 'property' | 'card'>('scene');
+  const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card'>(openLoan ? 'loan' : 'scene');
 
   useEffect(() => {
     const load = async () => {
@@ -28,9 +33,9 @@ export const useGameMain = () => {
           cash: 1_000_000,
           loan: { principal: 1_000_000, monthlyInterest: 30_000 },
           realEstate: {
-            propertyName: '하남3지구 모아엘가 더 퍼스트',
+            propertyName: '강남 힐스테이트 에코',
             housingType: 'JEONSE_APT',
-            currentValue: 0,
+            currentValue: 720_000_000,
           },
           stock: {
             totalValue: 100_000,
@@ -89,5 +94,8 @@ export const useGameMain = () => {
     closeModal: () => setIsModalOpen(false),
     leftView,
     setLeftView,
+    preSelectedPropertyId,
+    preSelectedPropertyName,
+    preSelectedPropertyPrice,
   };
 };
