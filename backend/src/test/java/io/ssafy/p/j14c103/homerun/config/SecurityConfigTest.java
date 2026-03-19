@@ -210,8 +210,10 @@ class SecurityConfigTest {
         mockMvc.perform(get("/api/games/characters")
                         .header(AUTHORIZATION, bearer(accessToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.characters[0].characterType").value("FEMALE"))
-                .andExpect(jsonPath("$.characters[1].characterType").value("MALE"));
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("OK"))
+                .andExpect(jsonPath("$.data.characters[0].characterType").value("FEMALE"))
+                .andExpect(jsonPath("$.data.characters[1].characterType").value("MALE"));
     }
 
     @DisplayName("유효한 Access Token이면 Principal 기반 보호 API에서 사용자 식별을 수행한다.")
