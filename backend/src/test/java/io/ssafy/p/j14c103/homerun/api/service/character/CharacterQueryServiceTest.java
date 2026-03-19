@@ -6,16 +6,22 @@ import static org.assertj.core.api.Assertions.tuple;
 import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterOptionsResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class CharacterQueryServiceTest {
 
-    private final CharacterQueryService characterQueryService = new CharacterQueryService();
+    @Autowired
+    private CharacterQueryService characterQueryService;
 
     @DisplayName("캐릭터 선택지 메타데이터를 반환한다.")
     @Test
     void getCharacterOptions() {
         // when
-        CharacterOptionsResponse response = characterQueryService.getCharacterOptions();
+        final CharacterOptionsResponse response = characterQueryService.getCharacterOptions();
 
         // then
         assertThat(response.characters())
