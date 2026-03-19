@@ -86,3 +86,38 @@
   color: #10b981;
   font-weight: 600;
 }
+
+.saveButton {
+  width: 100%;
+  margin-top: var(--spacing-md);
+  padding: 12px 0;
+  background: #3DB54A;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.saveButton:hover {
+  opacity: 0.85;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totalLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.totalAmount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #3DB54A;
+}

@@ -11,7 +11,7 @@ import { useHomePage } from '../../hooks/useHomePage';
 import styles from './HomePage.module.css';
 
 export const HomePage: React.FC = () => {
-  const { dashboard, seedMoney, creditScore, loanRecommendations, cardRecommendations, passSubscriptions } =
+  const { dashboard, seedMoney, creditScore, loanRecommendations, cardRecommendations, passSubscriptions, allPasses } =
     useHomePage();
 
   return (
@@ -23,7 +23,7 @@ export const HomePage: React.FC = () => {
             {/* Left column */}
             <div className={styles.leftCol}>
               <SummaryCards dashboard={dashboard} />
-              <PassWidget subscriptions={passSubscriptions} />
+              <PassWidget subscriptions={passSubscriptions} allPasses={allPasses} />
               <LoanRecommendations loans={loanRecommendations} />
               <CardRecommendations cards={cardRecommendations} />
             </div>
