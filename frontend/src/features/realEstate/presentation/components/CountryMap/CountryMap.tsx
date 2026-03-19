@@ -25,16 +25,16 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
       style={{ width: '100%', height: '100%' }}
     >
       <Geographies geography={GEO_PROVINCES}>
-        {({ geographies }) => {
+        {({ geographies }: any) => {
           const activeGeos: { geo: any; keyword: string; data: RegionData }[] = [];
-          geographies.forEach((geo) => {
+          geographies.forEach((geo: any) => {
             const kw = matchRegion(geo);
             if (kw) activeGeos.push({ geo, keyword: kw, data: ACTIVE_REGIONS[kw] });
           });
 
           return (
             <>
-              {geographies.map((geo) => {
+              {geographies.map((geo: any) => {
                 const keyword = matchRegion(geo);
                 const isActive = keyword !== null;
                 return (
@@ -85,7 +85,7 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
                 );
               })}
 
-              {geographies.map((geo) => {
+              {geographies.map((geo: any) => {
                 const keyword = matchRegion(geo);
                 const isActive = keyword !== null;
                 const raised = isActive && geo.rsmKey === hoveredKey;

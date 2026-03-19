@@ -16,7 +16,7 @@ const getPropertyDetailUseCase = new GetPropertyDetailUseCase(repository);
  * 게임 부동산 매물 데이터 훅.
  * 백엔드 API에서 매물 목록을 가져와 지도 마커로 표시합니다.
  */
-export function useProperties(mapInstance: any, sessionId: number) {
+export function useProperties(_mapInstance: any, sessionId: number) {
   const [properties, setProperties] = useState<PropertySummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<PropertySummary | null>(null);

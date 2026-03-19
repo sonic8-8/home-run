@@ -1,5 +1,5 @@
-import type { Property, PropertySummary, PropertyDocument, ContractResponse, PurchaseResponse } from '../entities/Property';
-import type {} from '../entities/PropertyDocument';
+import type { Property, PropertySummary } from '../entities/Property';
+import type { PropertyDocument, ContractResponse, PurchaseResponse } from '../entities/PropertyDocument';
 
 export interface IRealEstateRepository {
   getProperties(sessionId: number, bounds: string): Promise<PropertySummary[]>;
