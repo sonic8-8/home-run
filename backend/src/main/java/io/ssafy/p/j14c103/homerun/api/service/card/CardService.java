@@ -49,7 +49,7 @@ public class CardService {
 
     private void validateUser(final Long userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+            throw new HomerunException(ErrorCode.USER_ID_REQUIRED);
         }
         if (userRepository.existsById(userId)) {
             return;
@@ -79,7 +79,7 @@ public class CardService {
         try {
             final List<Map<String, Object>> payloads = objectMapper.readValue(
                     activeBenefits,
-                    new TypeReference<List<Map<String, Object>>>() {
+                    new TypeReference<>() {
                     }
             );
             final List<CardBenefitResponse> responses = new ArrayList<>();

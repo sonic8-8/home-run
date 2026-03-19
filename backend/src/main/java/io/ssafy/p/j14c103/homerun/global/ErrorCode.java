@@ -14,6 +14,7 @@ public enum ErrorCode {
     USER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "USER_004", "이미 가입된 이메일입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_005", "존재하지 않는 사용자입니다."),
     USER_SSAFY_CONNECTION_REQUIRED(HttpStatus.BAD_REQUEST, "USER_006", "SSAFY 연동이 필요합니다."),
+    USER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "USER_007", "사용자 ID는 필수입니다."),
 
     AUTH_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "AUTH_001", "이메일 또는 비밀번호가 올바르지 않습니다."),
     AUTH_REFRESH_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_002", "Refresh Token이 유효하지 않습니다."),

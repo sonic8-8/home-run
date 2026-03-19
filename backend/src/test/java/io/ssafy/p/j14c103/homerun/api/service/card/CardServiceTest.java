@@ -98,4 +98,14 @@ class CardServiceTest {
                 .extracting(exception -> ((HomerunException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.USER_NOT_FOUND);
     }
+
+    @DisplayName("카드 추천에서 사용자 ID가 없으면 ErrorCode 기반 예외가 발생한다")
+    @Test
+    void getRecommendations_userIdRequired() {
+        // when & then
+        assertThatThrownBy(() -> cardService.getRecommendations(null))
+                .isInstanceOf(HomerunException.class)
+                .extracting(exception -> ((HomerunException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.USER_ID_REQUIRED);
+    }
 }
