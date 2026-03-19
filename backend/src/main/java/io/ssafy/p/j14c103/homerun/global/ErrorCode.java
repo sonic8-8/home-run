@@ -45,6 +45,7 @@ public enum ErrorCode {
     OCI_CONFIGURATION_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "OCI_001", "OCI 설정이 올바르지 않습니다."),
 
     CARD_DUMMY_LOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CARD_001", "카드 더미 데이터 적재에 실패했습니다."),
+    CARD_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "CARD_002", "카드명은 필수입니다."),
 
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "GLOBAL_001", "입력값이 올바르지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_002", "서버 내부 오류가 발생했습니다."),

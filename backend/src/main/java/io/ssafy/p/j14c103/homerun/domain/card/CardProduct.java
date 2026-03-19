@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.domain.card;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -76,7 +78,7 @@ public class CardProduct {
             final boolean activeYn
     ) {
         if (cardName == null || cardName.isBlank()) {
-            throw new IllegalArgumentException("카드명은 필수입니다.");
+            throw new HomerunException(ErrorCode.CARD_NAME_REQUIRED);
         }
 
         return new CardProduct(
