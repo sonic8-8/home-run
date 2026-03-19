@@ -2,7 +2,6 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
@@ -11,7 +10,6 @@ import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
-import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleTransitionPolicy;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
@@ -19,34 +17,37 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 class GameWorldResultServiceTest {
 
-    @Mock
+    @Autowired
+    private GameWorldResultService gameWorldResultService;
+
+    @Autowired
     private GameSessionRefRepository gameSessionRefRepository;
 
-    @Mock
+    @Autowired
     private GameHousingRepository gameHousingRepository;
 
-    @Mock
-    private CycleTransitionPolicy cycleTransitionPolicy;
-
-    @InjectMocks
-    private GameWorldResultService gameWorldResultService;
+    @AfterEach
+    void tearDown() {
+        gameHousingRepository.deleteAllInBatch();
+        gameSessionRefRepository.deleteAllInBatch();
+    }
 
     @DisplayName("턴 커밋용 world result를 누락 필드 없이 조립한다")
     @Test
     void buildWorldResult() {
         // given
-        GameSessionRef gameSessionRef = createGameSessionRef("BOOM");
+        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "BOOM"));
         GameHousing gameHousing = GameHousing.create(
             1001,
             "SEOUL",
@@ -58,19 +59,15 @@ class GameWorldResultServiceTest {
             201L,
             101L
         );
-
-        given(gameSessionRefRepository.findById(1001)).willReturn(Optional.of(gameSessionRef));
-        given(gameHousingRepository.findByGameSessionId(1001)).willReturn(Optional.of(gameHousing));
-        given(cycleTransitionPolicy.nextPhase(CyclePhase.BOOM, 81)).willReturn(CyclePhase.CRISIS);
-        given(cycleTransitionPolicy.descriptionOf(CyclePhase.CRISIS)).willReturn("경기 위기");
+        gameHousingRepository.saveAndFlush(gameHousing);
 
         // when
         GameWorldResult result = gameWorldResultService.buildWorldResult(1001, 81);
 
         // then
         assertThat(result.getCycleResult()).isNotNull();
-        assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.CRISIS);
-        assertThat(result.getCycleResult().getDescription()).isEqualTo("경기 위기");
+        assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.RECOVERY);
+        assertThat(result.getCycleResult().getDescription()).isEqualTo("경기 회복기");
         assertThat(result.getNewsCandidates()).isEmpty();
         assertThat(result.getEventCandidates()).isEmpty();
         assertThat(result.getHousingSnapshot()).isNotNull();
@@ -84,12 +81,7 @@ class GameWorldResultServiceTest {
     @Test
     void buildWorldResultWithoutHousing() {
         // given
-        GameSessionRef gameSessionRef = createGameSessionRef("RECOVERY");
-
-        given(gameSessionRefRepository.findById(1001)).willReturn(Optional.of(gameSessionRef));
-        given(gameHousingRepository.findByGameSessionId(1001)).willReturn(Optional.empty());
-        given(cycleTransitionPolicy.nextPhase(CyclePhase.RECOVERY, 30)).willReturn(CyclePhase.BOOM);
-        given(cycleTransitionPolicy.descriptionOf(CyclePhase.BOOM)).willReturn("경기 호황기");
+        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "RECOVERY"));
 
         // when
         GameWorldResult result = gameWorldResultService.buildWorldResult(1001, 30);
@@ -108,9 +100,6 @@ class GameWorldResultServiceTest {
     @DisplayName("존재하지 않는 세션이면 world 세션 조회 에러를 던진다")
     @Test
     void buildWorldResultWithUnknownSession() {
-        // given
-        given(gameSessionRefRepository.findById(9999)).willReturn(Optional.empty());
-
         // when & then
         assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(9999, 50))
             .isInstanceOf(HomerunException.class)
@@ -122,9 +111,7 @@ class GameWorldResultServiceTest {
     @Test
     void buildWorldResultWithInvalidCycleState() {
         // given
-        GameSessionRef gameSessionRef = createGameSessionRef("INVALID");
-
-        given(gameSessionRefRepository.findById(1001)).willReturn(Optional.of(gameSessionRef));
+        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "INVALID"));
 
         // when & then
         assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(1001, 50))
@@ -133,9 +120,9 @@ class GameWorldResultServiceTest {
             .isEqualTo(ErrorCode.WORLD_CYCLE_STATE_INVALID);
     }
 
-    private GameSessionRef createGameSessionRef(String economicCycleType) {
+    private GameSessionRef createGameSessionRef(int gameSessionId, String economicCycleType) {
         return GameSessionRef.builder()
-            .gameId(1001)
+            .gameId(gameSessionId)
             .userId(1)
             .characterName("윤서")
             .characterType(CharacterType.FEMALE)
