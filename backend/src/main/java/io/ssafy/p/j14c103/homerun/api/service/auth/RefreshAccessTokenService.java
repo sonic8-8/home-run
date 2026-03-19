@@ -40,12 +40,12 @@ public class RefreshAccessTokenService {
     private void validateRefreshTokenState(String refreshTokenValue) {
         Long userId = jwtTokenProvider.getRefreshTokenUserId(refreshTokenValue);
         RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
-                .orElseThrow(() -> HomerunException.from(ErrorCode.AUTH_REFRESH_STATE_INVALID));
+                .orElseThrow(() -> new HomerunException(ErrorCode.AUTH_REFRESH_STATE_INVALID));
 
         if (refreshToken.getTokenValue().equals(refreshTokenValue)) {
             return;
         }
 
-        throw HomerunException.from(ErrorCode.AUTH_REFRESH_STATE_INVALID);
+        throw new HomerunException(ErrorCode.AUTH_REFRESH_STATE_INVALID);
     }
 }

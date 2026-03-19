@@ -13,5 +13,5 @@ spring:
       ddl-auto: update
 
 oci:
-  enabled: ${OCI_ENABLED:true}
+  enabled: ${OCI_ENABLED:false}
   config-path: ${OCI_CONFIG_PATH:C:/key/oci_config}

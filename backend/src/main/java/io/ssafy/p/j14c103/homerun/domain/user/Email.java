@@ -32,10 +32,10 @@ public final class Email {
 
     private void validateRequired(String value) {
         if (value == null) {
-            throw HomerunException.from(ErrorCode.EMAIL_REQUIRED);
+            throw new HomerunException(ErrorCode.EMAIL_REQUIRED);
         }
         if (value.isBlank()) {
-            throw HomerunException.from(ErrorCode.EMAIL_BLANK);
+            throw new HomerunException(ErrorCode.EMAIL_BLANK);
         }
     }
 
@@ -44,7 +44,7 @@ public final class Email {
             return;
         }
 
-        throw HomerunException.from(ErrorCode.INVALID_EMAIL_FORMAT);
+        throw new HomerunException(ErrorCode.INVALID_EMAIL_FORMAT);
     }
 
     @Override

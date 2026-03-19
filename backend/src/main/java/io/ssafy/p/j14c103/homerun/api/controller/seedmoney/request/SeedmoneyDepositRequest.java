@@ -5,12 +5,6 @@ import jakarta.validation.constraints.Positive;
 
 public class SeedmoneyDepositRequest {
 
-    @NotNull(message = "사용자 ID는 필수입니다.")
-    private Long userId;
-
-    @NotNull(message = "userKey는 필수입니다.")
-    private String userKey;
-
     @NotNull(message = "입금 금액은 필수입니다.")
     @Positive(message = "입금 금액은 0보다 커야 합니다.")
     private Long amount;
@@ -21,16 +15,11 @@ public class SeedmoneyDepositRequest {
     protected SeedmoneyDepositRequest() {
     }
 
-    public SeedmoneyDepositRequest(final Long userId, final String userKey,
-                                   final Long amount, final String fromAccountNumber) {
-        this.userId = userId;
-        this.userKey = userKey;
+    public SeedmoneyDepositRequest(final Long amount, final String fromAccountNumber) {
         this.amount = amount;
         this.fromAccountNumber = fromAccountNumber;
     }
 
-    public Long getUserId() { return userId; }
-    public String getUserKey() { return userKey; }
     public Long getAmount() { return amount; }
     public String getFromAccountNumber() { return fromAccountNumber; }
 }

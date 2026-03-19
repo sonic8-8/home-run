@@ -127,7 +127,7 @@ public class JwtTokenProvider {
         String tokenType = claims.get(TOKEN_TYPE_CLAIM, String.class);
 
         if (!REFRESH_TOKEN_TYPE.equals(tokenType)) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_INVALID);
         }
 
         return claims;
@@ -137,9 +137,9 @@ public class JwtTokenProvider {
         try {
             return parseClaims(token);
         } catch (ExpiredJwtException exception) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_EXPIRED);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_EXPIRED);
         } catch (JwtException | IllegalArgumentException exception) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_INVALID);
         }
     }
 

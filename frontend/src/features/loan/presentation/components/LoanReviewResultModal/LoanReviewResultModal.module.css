@@ -1,0 +1,197 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  width: 480px;
+  max-width: calc(100vw - var(--spacing-xl));
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* 제목 */
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* 스테퍼 */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: var(--spacing-sm) 0;
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.stepCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.stepDone {
+  background-color: #d1d5db;
+  color: #fff;
+}
+
+.stepCurrent {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.stepPending {
+  background-color: #9ca3af;
+  color: #fff;
+}
+
+.stepLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.stepLabelActive {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.stepLine {
+  flex: 1;
+  height: 2px;
+  background-color: #e5e7eb;
+  margin: 0 var(--spacing-xs);
+  margin-bottom: 18px;
+  min-width: 40px;
+  border-top: 2px dashed #d1d5db;
+}
+
+.stepLineDone {
+  border-top-color: var(--color-primary);
+}
+
+/* 섹션 제목 */
+.sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-top: var(--spacing-xs);
+}
+
+.resultTitle {
+  color: var(--color-primary);
+}
+
+/* 심사 요청 정보 */
+.infoList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.infoRow {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+/* 심사 결과 */
+.resultBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.resultLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.resultAmount {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.rejectedText {
+  font-size: var(--font-size-md);
+  color: var(--color-danger);
+}
+
+/* 버튼 */
+.buttonGroup {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.primaryButton {
+  flex: 1;
+  height: 48px;
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.primaryButton:disabled {
+  background-color: var(--color-bg-disabled);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  flex: 1;
+  height: 48px;
+  background-color: var(--color-bg-primary);
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-normal);
+}
+
+.secondaryButton:hover {
+  background-color: var(--color-primary-light);
+}

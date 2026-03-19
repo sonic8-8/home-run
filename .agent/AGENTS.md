@@ -20,6 +20,7 @@
 - Service는 유스케이스 실행, 트랜잭션 처리, Repository 조합, Domain과 DTO 연결을 담당한다.
 - Domain은 핵심 상태와 비즈니스 규칙을 가진다. Repository는 조회/저장 책임에 집중한다.
 - Controller Request DTO와 Service DTO는 분리한다.
+- 보호 API를 추가하거나 보안 설정을 변경할 때는, 컨트롤러와 서비스가 요청 파라미터의 `userId`/`userKey` 대신 인증 principal을 사용해야 하는지 함께 검토한다.
 - API는 엔티티를 직접 반환하지 않고 Response DTO로 변환한 뒤 공통 `ApiResponse`로 감싼다.
 - 예외 응답은 공통 `ErrorResponse`로 반환한다.
 - Validation 예외는 `ErrorResponse`의 `errors` 목록에 필드별 상세를 포함하는 것을 우선 검토한다.

@@ -20,7 +20,7 @@ public class ImageStorageService {
 
     public ImageDownloadResponse download(final String objectName) {
         if (objectName == null || objectName.isBlank()) {
-            throw HomerunException.from(ErrorCode.IMAGE_OBJECT_NAME_REQUIRED);
+            throw new HomerunException(ErrorCode.IMAGE_OBJECT_NAME_REQUIRED);
         }
 
         final ImageObjectData objectData = imageObjectClient.download(objectName);

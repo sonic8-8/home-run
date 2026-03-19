@@ -54,19 +54,26 @@ public class PassService {
     }
 
     @Transactional
-    public PassSubscriptionResponse subscribe(final PassSubscribeRequest request) {
+    public PassSubscriptionResponse subscribe(final Long userId, final PassSubscribeRequest request) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
         final PassProduct product = passProductRepository.findById(request.getPassId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 PASS 상품입니다."));
 
         final PassSubscription subscription = PassSubscription.create(
-                request.getUserId(), product, product.getAmountPerSave(), request.getSourceAccountId());
+                userId, product, product.getAmountPerSave(), request.getSourceAccountId());
 
         return PassSubscriptionResponse.fromSubscribe(passSubscriptionRepository.save(subscription));
     }
 
     @Transactional
-    public void cancelSubscription(final Long subscriptionId) {
-        final PassSubscription subscription = passSubscriptionRepository.findById(subscriptionId)
+    public void cancelSubscription(final Long userId, final Long subscriptionId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+
+        final PassSubscription subscription = passSubscriptionRepository.findByIdAndUserId(subscriptionId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구독입니다."));
 
         if (!subscription.getIsActive()) {

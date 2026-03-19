@@ -38,6 +38,6 @@ public class SignupService {
             return;
         }
 
-        throw HomerunException.from(ErrorCode.USER_EMAIL_DUPLICATE);
+        throw new HomerunException(ErrorCode.USER_EMAIL_DUPLICATE);
     }
 }

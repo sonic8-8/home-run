@@ -45,7 +45,7 @@ public class OciImageObjectClient implements ImageObjectClient {
                     objectName,
                     exception
             );
-            throw HomerunException.from(ErrorCode.IMAGE_DOWNLOAD_FAILED);
+            throw new HomerunException(ErrorCode.IMAGE_DOWNLOAD_FAILED);
         }
     }
 
