@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Positive;
 
 public class SeedmoneyDepositRequest {
 
-    @NotNull(message = "입금 금액은 필수입니다.")
-    @Positive(message = "입금 금액은 0보다 커야 합니다.")
+    @NotNull(message = "{validation.seedmoney.deposit.amount.notNull}")
+    @Positive(message = "{validation.seedmoney.deposit.amount.positive}")
     private Long amount;
 
-    @NotNull(message = "출금 계좌번호는 필수입니다.")
+    @NotNull(message = "{validation.seedmoney.deposit.fromAccountNumber.notNull}")
     private String fromAccountNumber;
 
     protected SeedmoneyDepositRequest() {

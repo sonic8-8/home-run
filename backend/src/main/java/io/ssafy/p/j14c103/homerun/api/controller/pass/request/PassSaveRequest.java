@@ -4,10 +4,10 @@ import jakarta.validation.constraints.NotNull;
 
 public class PassSaveRequest {
 
-    @NotNull(message = "구독 ID는 필수입니다.")
+    @NotNull(message = "{validation.pass.save.subscriptionId.notNull}")
     private Long subscriptionId;
 
-    @NotNull(message = "출금 계좌 ID는 필수입니다.")
+    @NotNull(message = "{validation.pass.save.sourceAccountId.notNull}")
     private String sourceAccountId;
 
     protected PassSaveRequest() {
