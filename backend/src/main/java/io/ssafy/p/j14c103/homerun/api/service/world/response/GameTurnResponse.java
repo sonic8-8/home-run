@@ -10,6 +10,7 @@ public class GameTurnResponse {
 
     private final Integer turnNumber;
     private final LocalDate currentDate;
+    private final Integer month;
     private final EconomicCycleResponse economicCycle;
     private final List<NewsResponse> news;
 
@@ -26,6 +27,7 @@ public class GameTurnResponse {
 
         this.turnNumber = turnNumber;
         this.currentDate = currentDate;
+        this.month = currentDate.getMonthValue();
         this.economicCycle = economicCycle;
         this.news = List.copyOf(news);
     }

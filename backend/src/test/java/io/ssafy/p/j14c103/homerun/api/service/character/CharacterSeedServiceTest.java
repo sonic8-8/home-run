@@ -8,25 +8,33 @@ import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterSeedRe
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class CharacterSeedServiceTest {
 
-    private final CharacterSeedService characterSeedService = new CharacterSeedService();
+    @Autowired
+    private CharacterSeedService characterSeedService;
 
     @DisplayName("MY_DATA 시작 유형이면 초기 캐시와 커리어 시드를 생성한다.")
     @Test
     void generateMyDataSeed() {
         // given
-        CharacterSeedRequest request = CharacterSeedRequest.of(
+        final CharacterSeedRequest request = CharacterSeedRequest.of(
             CharacterType.MALE,
             JobType.LARGE_BIZ,
             "MY_DATA"
         );
 
         // when
-        CharacterSeedResponse response = characterSeedService.generate(request);
+        final CharacterSeedResponse response = characterSeedService.generate(request);
 
         // then
         assertThat(response.characterType()).isEqualTo(CharacterType.MALE);
@@ -50,14 +58,14 @@ class CharacterSeedServiceTest {
     @Test
     void generateFreelancerSeed() {
         // given
-        CharacterSeedRequest request = CharacterSeedRequest.of(
+        final CharacterSeedRequest request = CharacterSeedRequest.of(
             CharacterType.FEMALE,
             JobType.FREELANCER,
             "PROFILE"
         );
 
         // when
-        CharacterSeedResponse response = characterSeedService.generate(request);
+        final CharacterSeedResponse response = characterSeedService.generate(request);
 
         // then
         assertThat(response.characterType()).isEqualTo(CharacterType.FEMALE);
@@ -78,7 +86,7 @@ class CharacterSeedServiceTest {
     @Test
     void generateWithInvalidSeedType() {
         // given
-        CharacterSeedRequest request = CharacterSeedRequest.of(
+        final CharacterSeedRequest request = CharacterSeedRequest.of(
             CharacterType.MALE,
             JobType.MID_BIZ,
             "LEGACY"
@@ -86,7 +94,8 @@ class CharacterSeedServiceTest {
 
         // when & then
         assertThatThrownBy(() -> characterSeedService.generate(request))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("지원하지 않는 seedType");
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.CHARACTER_SEED_TYPE_UNSUPPORTED);
     }
 }

@@ -7,16 +7,22 @@ import io.ssafy.p.j14c103.homerun.api.service.character.career.response.JobTypeO
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class CareerQueryServiceTest {
 
-    private final CareerQueryService careerQueryService = new CareerQueryService();
+    @Autowired
+    private CareerQueryService careerQueryService;
 
     @DisplayName("직업 선택지 메타데이터를 반환한다.")
     @Test
     void getJobTypeOptions() {
         // when
-        JobTypeOptionsResponse response = careerQueryService.getJobTypeOptions();
+        final JobTypeOptionsResponse response = careerQueryService.getJobTypeOptions();
 
         // then
         assertThat(response.jobTypes())

@@ -47,7 +47,9 @@ public class PassController {
     public ApiResponse<PassSubscriptionResponse> subscribe(
             @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final PassSubscribeRequest request) {
-        final PassSubscriptionResponse response = passService.subscribe(authenticatedUser.getUserId(), request);
+        final PassSubscriptionResponse response = passService.subscribe(
+                authenticatedUser.getUserId(),
+                request.toServiceRequest());
         return ApiResponse.created(response);
     }
 

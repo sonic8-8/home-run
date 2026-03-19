@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@app/routes';
 import styles from './LoanDetailPanel.module.css';
 
 interface LoanProduct {
@@ -13,7 +15,12 @@ interface LoanProduct {
 
 interface Props {
   product: LoanProduct;
+  sessionId: number;
   onBack: () => void;
+  preSelectedPropertyId?: string;
+  preSelectedPropertyName?: string;
+  preSelectedPropertyPrice?: number;
+  onApplyDirect?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
 }
 
 const REPAYMENT_METHODS = [
@@ -34,7 +41,8 @@ function calcMonthlyPayment(amount: number, annualRate: number, months: number, 
   return Math.round((amount * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1));
 }
 
-export function LoanDetailPanel({ product, onBack }: Props) {
+export function LoanDetailPanel({ product, sessionId, onBack, preSelectedPropertyId, preSelectedPropertyName, preSelectedPropertyPrice, onApplyDirect }: Props) {
+  const navigate = useNavigate();
   const [repaymentMethod, setRepaymentMethod] = useState('EQUAL_PRINCIPAL_INTEREST');
   const [termMonths, setTermMonths] = useState<number>(12);
   const [amount, setAmount] = useState('');
@@ -127,8 +135,20 @@ export function LoanDetailPanel({ product, onBack }: Props) {
       </div>
 
       {/* 액션 버튼 */}
-      <button className={styles.applyButton}>
-        {/* TODO: POST /games/sessions/{id}/loans/apply */}
+      <button
+        className={styles.applyButton}
+        onClick={() => {
+          if (preSelectedPropertyId && preSelectedPropertyName && preSelectedPropertyPrice && onApplyDirect) {
+            // 매물이 이미 선택된 경우 → GameMain에서 직접 모달 표시 (빈 화면 방지)
+            onApplyDirect(preSelectedPropertyId, preSelectedPropertyName, preSelectedPropertyPrice);
+          } else {
+            // 일반 흐름 → 부동산 화면에서 매물 선택 후 심사
+            navigate(ROUTES.PROPERTY, {
+              state: { mode: 'loan-apply', productId: String(product.productId), sessionId },
+            });
+          }
+        }}
+      >
         은행 심사 넘기기
       </button>
       <button className={styles.backButton} onClick={onBack}>

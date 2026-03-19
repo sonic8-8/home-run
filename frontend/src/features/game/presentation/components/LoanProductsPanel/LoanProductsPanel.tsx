@@ -39,14 +39,38 @@ function filterProducts(products: LoanProduct[], filter: FilterType): LoanProduc
   return products;
 }
 
-export function LoanProductsPanel() {
+interface LoanProductsPanelProps {
+  sessionId: number;
+  preSelectedPropertyId?: string;
+  preSelectedPropertyName?: string;
+  preSelectedPropertyPrice?: number;
+  onApplyDirect?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
+}
+
+export function LoanProductsPanel({
+  sessionId,
+  preSelectedPropertyId,
+  preSelectedPropertyName,
+  preSelectedPropertyPrice,
+  onApplyDirect,
+}: LoanProductsPanelProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<LoanProduct | null>(null);
 
   // 상세 화면
   if (selected) {
-    return <LoanDetailPanel product={selected} onBack={() => setSelected(null)} />;
+    return (
+      <LoanDetailPanel
+        product={selected}
+        sessionId={sessionId}
+        onBack={() => setSelected(null)}
+        preSelectedPropertyId={preSelectedPropertyId}
+        preSelectedPropertyName={preSelectedPropertyName}
+        preSelectedPropertyPrice={preSelectedPropertyPrice}
+        onApplyDirect={onApplyDirect}
+      />
+    );
   }
 
   const filtered = filterProducts(MOCK_PRODUCTS, activeFilter);

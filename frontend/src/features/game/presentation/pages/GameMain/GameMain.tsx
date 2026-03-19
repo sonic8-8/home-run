@@ -1,7 +1,13 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@app/routes';
 import { useGameMain } from '@features/game/presentation/hooks/useGameMain';
 import { AssetsDetailModal } from '@features/game/presentation/components/AssetsDetailModal/AssetsDetailModal';
 import { LoanProductsPanel } from '@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel';
 import { CardRecommendPanel } from '@features/game/presentation/components/CardRecommendPanel/CardRecommendPanel';
+import { LoanReviewResultModal } from '@features/loan/presentation/components/LoanReviewResultModal';
+import { LoanConfirmModal } from '@features/loan/presentation/components/LoanConfirmModal';
+import type { LoanApplication } from '@features/loan/domain/entities/LoanApplication';
 import styles from './GameMain.module.css';
 
 // 부동산 보유 유형별 씬 이미지
@@ -41,11 +47,32 @@ function formatDate(dateStr: string | null): string {
 }
 
 export function GameMain() {
+  const navigate = useNavigate();
   const {
+    sessionId,
     assets, stats, currentDate, characterType, totalAssets,
     isModalOpen, openModal, closeModal,
     leftView, setLeftView,
+    preSelectedPropertyId, preSelectedPropertyName, preSelectedPropertyPrice,
   } = useGameMain();
+
+  const [loanApplication, setLoanApplication] = useState<LoanApplication | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleApplyDirect = (_propertyId: string, propertyName: string, propertyPrice: number) => {
+    setLoanApplication({
+      applicationId: 'APP-001',
+      status: 'APPROVED',
+      requestInfo: {
+        propertyName,
+        propertyPrice,
+        applicationDate: new Date().toISOString().slice(0, 10),
+      },
+      result: { maxLoanAmount: Math.round(propertyPrice * 0.7) },
+    });
+    setReviewOpen(true);
+  };
 
   const housingType = assets?.realEstate?.housingType ?? 'NONE';
   const sceneImage = SCENE_BY_HOUSING[housingType] ?? SCENE_BY_HOUSING['NONE'];
@@ -70,9 +97,16 @@ export function GameMain() {
             </div>
           ) : (
             <div className={styles.leftPanel}>
-              {leftView === 'loan'     && <LoanProductsPanel />}
-              {leftView === 'property' && <div className={styles.placeholder}>부동산 — 준비 중</div>}
-              {leftView === 'card'     && <CardRecommendPanel />}
+              {leftView === 'loan'  && (
+                <LoanProductsPanel
+                  sessionId={sessionId}
+                  preSelectedPropertyId={preSelectedPropertyId}
+                  preSelectedPropertyName={preSelectedPropertyName}
+                  preSelectedPropertyPrice={preSelectedPropertyPrice}
+                  onApplyDirect={handleApplyDirect}
+                />
+              )}
+              {leftView === 'card'  && <CardRecommendPanel />}
             </div>
           )}
 
@@ -115,8 +149,8 @@ export function GameMain() {
                   대출 알아보기
                 </button>
                 <button
-                  className={leftView === 'property' ? styles.menuButtonActive : styles.menuButton}
-                  onClick={() => setLeftView(leftView === 'property' ? 'scene' : 'property')}
+                  className={styles.menuButton}
+                  onClick={() => navigate(ROUTES.PROPERTY, { state: { sessionId, mode: 'browse' } })}
                 >
                   부동산 알아보기
                 </button>
@@ -152,6 +186,25 @@ export function GameMain() {
       </div>
 
       <AssetsDetailModal isOpen={isModalOpen} onClose={closeModal} assets={assets} />
+
+      {loanApplication && (
+        <>
+          <LoanReviewResultModal
+            isOpen={reviewOpen}
+            onClose={() => { setReviewOpen(false); setLoanApplication(null); }}
+            onGoToProperty={() => { setReviewOpen(false); setConfirmOpen(true); }}
+            application={loanApplication}
+          />
+          <LoanConfirmModal
+            isOpen={confirmOpen}
+            onClose={() => { setConfirmOpen(false); setLoanApplication(null); }}
+            onConfirm={() => { setConfirmOpen(false); setLoanApplication(null); }}
+            applicationId={loanApplication.applicationId}
+            contractorName="플레이어"
+            maxLoanAmount={loanApplication.result.maxLoanAmount ?? 0}
+          />
+        </>
+      )}
     </>
   );
 }

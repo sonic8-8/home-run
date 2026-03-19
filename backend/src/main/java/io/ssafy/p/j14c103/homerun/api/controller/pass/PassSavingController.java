@@ -29,7 +29,9 @@ public class PassSavingController {
     public ApiResponse<PassSaveResponse> save(
             @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final PassSaveRequest request) {
-        final PassSaveResponse response = passSavingService.save(authenticatedUser.getUserId(), request);
+        final PassSaveResponse response = passSavingService.save(
+                authenticatedUser.getUserId(),
+                request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 

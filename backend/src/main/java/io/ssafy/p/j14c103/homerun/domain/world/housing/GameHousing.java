@@ -20,7 +20,7 @@ public class GameHousing {
 
     @Id
     @Column(name = "game_session_id")
-    private Long gameSessionId;
+    private Integer gameSessionId;
 
     @Column(name = "target_region_code")
     private String targetRegionCode;
@@ -52,7 +52,7 @@ public class GameHousing {
     private Long targetPropertyId;
 
     private GameHousing(
-        Long gameSessionId,
+        Integer gameSessionId,
         String targetRegionCode,
         Money targetHousePrice,
         HousingType currentHousingType,
@@ -74,7 +74,7 @@ public class GameHousing {
     }
 
     public static GameHousing create(
-        Long gameSessionId,
+        Integer gameSessionId,
         String targetRegionCode,
         Money targetHousePrice,
         HousingType currentHousingType,

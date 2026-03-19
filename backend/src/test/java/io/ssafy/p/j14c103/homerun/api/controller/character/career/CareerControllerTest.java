@@ -31,7 +31,7 @@ class CareerControllerTest {
     @Test
     void getJobTypes() throws Exception {
         // given
-        JobTypeOptionsResponse response = JobTypeOptionsResponse.from(List.of(
+        final JobTypeOptionsResponse response = JobTypeOptionsResponse.from(List.of(
             JobTypeOptionsResponse.JobTypeOptionResponse.of(JobType.LARGE_BIZ, "대기업 직장인", 80, 60, 90, 40, 70),
             JobTypeOptionsResponse.JobTypeOptionResponse.of(JobType.MID_BIZ, "중견기업 직장인", 60, 70, 70, 50, 50),
             JobTypeOptionsResponse.JobTypeOptionResponse.of(JobType.SMALL_BIZ, "중소기업 직장인", 40, 80, 50, 60, 30),
@@ -43,12 +43,14 @@ class CareerControllerTest {
         // when & then
         mockMvc.perform(get("/api/games/job-types"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.jobTypes[0].jobType").value("LARGE_BIZ"))
-            .andExpect(jsonPath("$.jobTypes[0].label").value("대기업 직장인"))
-            .andExpect(jsonPath("$.jobTypes[0].stats.salary").value(80))
-            .andExpect(jsonPath("$.jobTypes[3].jobType").value("STARTUP"))
-            .andExpect(jsonPath("$.jobTypes[3].stats.growthSpeed").value(85))
-            .andExpect(jsonPath("$.jobTypes[4].jobType").value("FREELANCER"))
-            .andExpect(jsonPath("$.jobTypes[4].stats.difficulty").value(85));
+            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.message").value("OK"))
+            .andExpect(jsonPath("$.data.jobTypes[0].jobType").value("LARGE_BIZ"))
+            .andExpect(jsonPath("$.data.jobTypes[0].label").value("대기업 직장인"))
+            .andExpect(jsonPath("$.data.jobTypes[0].stats.salary").value(80))
+            .andExpect(jsonPath("$.data.jobTypes[3].jobType").value("STARTUP"))
+            .andExpect(jsonPath("$.data.jobTypes[3].stats.growthSpeed").value(85))
+            .andExpect(jsonPath("$.data.jobTypes[4].jobType").value("FREELANCER"))
+            .andExpect(jsonPath("$.data.jobTypes[4].stats.difficulty").value(85));
     }
 }
