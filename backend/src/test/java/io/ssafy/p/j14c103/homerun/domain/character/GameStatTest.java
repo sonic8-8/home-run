@@ -3,6 +3,8 @@ package io.ssafy.p.j14c103.homerun.domain.character;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -179,7 +181,8 @@ class GameStatTest {
 
         // when & then
         assertThatThrownBy(() -> GameStat.create(1, 101, 10, 10, 50, 50, 1))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("health");
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.CHARACTER_STAT_INVALID);
     }
 }
