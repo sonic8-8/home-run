@@ -45,20 +45,26 @@ public class LoanRecommendationService {
 
     /**
      * CSS 기반 카테고리별 대출 추천.
-     * - 개인신용대출: CSS 등급별 예상금리 적용
-     * - 전세/주택담보: FSS 상품 금리순
+     * 신용점수 영향도 (실제 한국 금융시장 기반):
+     * - 개인신용대출: 100% (무담보 → 신용점수가 금리 결정의 핵심)
+     * - 전세자금대출:  40% (보증서 담보 → 신용 영향 제한적)
+     * - 주택담보대출:  30% (부동산 담보 → 신용 영향 최소)
      */
+    private static final double CREDIT_LOAN_CSS_WEIGHT = 1.0;
+    private static final double JEONSE_LOAN_CSS_WEIGHT = 0.4;
+    private static final double MORTGAGE_LOAN_CSS_WEIGHT = 0.3;
+
     public LoanRecommendationResponse getRecommendations(final Long userId) {
         // 1. CSS 점수 산출
         CreditScore css = creditScoreProvider.calculate(userId);
 
-        // 2. FSS 상품 조회
+        // 2. FSS 상품 조회 + CSS 가중치 적용
         List<LoanRecommendationItem> creditItems = fetchItems(
-                fssLoanClient.getCreditLoanProducts(), "개인신용대출", css);
+                fssLoanClient.getCreditLoanProducts(), "개인신용대출", css, CREDIT_LOAN_CSS_WEIGHT);
         List<LoanRecommendationItem> jeonseItems = fetchItems(
-                fssLoanClient.getRentHouseLoanProducts(), "전세자금대출", null);
+                fssLoanClient.getRentHouseLoanProducts(), "전세자금대출", css, JEONSE_LOAN_CSS_WEIGHT);
         List<LoanRecommendationItem> mortgageItems = fetchItems(
-                fssLoanClient.getMortgageLoanProducts(), "주택담보대출", null);
+                fssLoanClient.getMortgageLoanProducts(), "주택담보대출", css, MORTGAGE_LOAN_CSS_WEIGHT);
 
         // 3. 카테고리별 정렬 + 상위 N개
         creditItems = limitSorted(creditItems);
@@ -84,7 +90,8 @@ public class LoanRecommendationService {
     private List<LoanRecommendationItem> fetchItems(
             final FssLoanResponse fssResponse,
             final String productType,
-            final CreditScore css) {
+            final CreditScore css,
+            final double cssWeight) {
 
         if (fssResponse.isEmpty()) {
             return Collections.emptyList();
@@ -93,7 +100,7 @@ public class LoanRecommendationService {
         final Map<String, RateRange> rateMap = buildRateMap(fssResponse.getOptionList());
 
         return fssResponse.getBaseList().stream()
-                .map(base -> toRecommendationItem(base, rateMap, productType, css))
+                .map(base -> toRecommendationItem(base, rateMap, productType, css, cssWeight))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
@@ -121,7 +128,8 @@ public class LoanRecommendationService {
             final Map<String, Object> base,
             final Map<String, RateRange> rateMap,
             final String productType,
-            final CreditScore css) {
+            final CreditScore css,
+            final double cssWeight) {
 
         final String finCoNo = (String) base.get("fin_co_no");
         final String finPrdtCd = (String) base.get("fin_prdt_cd");
@@ -135,14 +143,12 @@ public class LoanRecommendationService {
         final String bankName = (String) base.get("kor_co_nm");
         final String productName = sanitizeProductName((String) base.get("fin_prdt_nm"));
 
-        // CSS 기반 예상금리 계산 (개인신용대출만)
+        // CSS 기반 예상금리 계산 (가중치 적용)
+        // 예: 개인신용=100%, 전세=40%, 주담보=30%
         double estimatedRate;
-        if (css != null) {
-            estimatedRate = rateRange.min + (rateRange.max - rateRange.min) * css.rateCoefficient();
-            estimatedRate = Math.round(estimatedRate * 100.0) / 100.0;
-        } else {
-            estimatedRate = rateRange.min;
-        }
+        double weightedCoefficient = css.rateCoefficient() * cssWeight;
+        estimatedRate = rateRange.min + (rateRange.max - rateRange.min) * weightedCoefficient;
+        estimatedRate = Math.round(estimatedRate * 100.0) / 100.0;
 
         return Optional.of(LoanRecommendationItem.builder()
                 .productId(finPrdtCd)
