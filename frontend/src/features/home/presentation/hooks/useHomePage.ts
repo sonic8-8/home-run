@@ -5,6 +5,7 @@ import type { LoanRecommendation } from '../../domain/entities/LoanRecommendatio
 import type { CardRecommendation } from '../../domain/entities/CardRecommendation';
 import type { PassSubscription } from '../../domain/entities/PassSubscription';
 import type { Pass } from '../../domain/entities/Pass';
+import type { MyCard } from '../../domain/entities/MyCard';
 
 // TODO: 백엔드 연동 시 각 항목을 useQuery / API 호출로 교체
 const MOCK_DASHBOARD: Dashboard = {
@@ -75,6 +76,11 @@ const MOCK_ALL_PASSES: Pass[] = [
   { passId: 6, name: '술 PASS',   description: '한 잔 하고 싶은 마음을 꾹 참고 저축해볼까요?', amountPerSave: 30000 },
 ];
 
+const MOCK_MY_CARDS: MyCard[] = [
+  { cardId: 'MY-CARD-001', cardName: 'zero 카드', cardImageUrl: '', lastFourDigits: '1234', expiryDate: '26/09' },
+  { cardId: 'MY-CARD-002', cardName: 'zero 카드', cardImageUrl: '', lastFourDigits: '5678', expiryDate: '27/03' },
+];
+
 const MOCK_PASS_SUBSCRIPTIONS: PassSubscription[] = [
   {
     subscriptionId: 1,
@@ -103,5 +109,6 @@ export const useHomePage = () => {
     cardRecommendations: MOCK_CARD_RECOMMENDATIONS,
     passSubscriptions: MOCK_PASS_SUBSCRIPTIONS,
     allPasses: MOCK_ALL_PASSES,
+    myCards: MOCK_MY_CARDS,
   };
 };

@@ -133,8 +133,23 @@ const CARD_ICONS: Record<number, string> = {
   5: '🌿', 6: '⚡', 7: '📚', 8: '🃏',
 };
 
+// TODO: GET /games/sessions/{id}/cards/my
+interface MyGameCard {
+  cardId: number;
+  cardName: string;
+  bgColor: string;
+  icon: string;
+  lastFourDigits: string;
+}
+
+const MOCK_MY_CARDS: MyGameCard[] = [
+  { cardId: 1, cardName: '스타벅스 삼성카드', bgColor: '#1a1a2e', icon: '☕', lastFourDigits: '1234' },
+  { cardId: 5, cardName: '생활 할인 카드',    bgColor: '#d4edda', icon: '🌿', lastFourDigits: '5678' },
+];
+
 const PAGE_SIZE = 8;
 
+type TabType = 'recommend' | 'my';
 type FilterType = 'all' | 'travel' | 'gas' | 'life' | 'recommended';
 
 const FILTERS: { key: FilterType; label: string }[] = [
@@ -151,11 +166,13 @@ function filterCards(cards: CardProduct[], filter: FilterType): CardProduct[] {
 }
 
 export function CardRecommendPanel() {
+  const [activeTab, setActiveTab] = useState<TabType>('recommend');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<CardProduct | null>(null);
+  const [myCards, setMyCards] = useState<MyGameCard[]>(MOCK_MY_CARDS);
 
-  // 상세 화면
+  // 추천 카드 상세 화면
   if (selected) {
     return <CardDetailPanel card={selected} onBack={() => setSelected(null)} />;
   }
@@ -169,42 +186,98 @@ export function CardRecommendPanel() {
     setPage(1);
   };
 
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
   return (
     <div className={styles.panel}>
       <h2 className={styles.title}>신용카드</h2>
 
-      <div className={styles.filters}>
-        {FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            className={activeFilter === key ? styles.filterActive : styles.filter}
-            onClick={() => handleFilter(key)}
-          >
-            {label}
-          </button>
-        ))}
+      {/* 탭 */}
+      <div className={styles.tabs}>
+        <button
+          className={activeTab === 'recommend' ? styles.tabActive : styles.tab}
+          onClick={() => handleTabChange('recommend')}
+        >
+          추천 카드
+        </button>
+        <button
+          className={activeTab === 'my' ? styles.tabActive : styles.tab}
+          onClick={() => handleTabChange('my')}
+        >
+          내 카드
+        </button>
       </div>
 
-      <div className={styles.grid}>
-        {paged.map((card) => (
-          <div key={card.cardId} className={styles.cardItem} onClick={() => setSelected(card)}>
-            <div className={styles.cardImage} style={{ backgroundColor: card.bgColor }}>
-              <span className={styles.cardIcon}>{CARD_ICONS[card.cardId]}</span>
-            </div>
-            <span className={styles.cardName}>{card.cardName}</span>
+      {/* ── 추천 카드 탭 ── */}
+      {activeTab === 'recommend' && (
+        <>
+          <div className={styles.filters}>
+            {FILTERS.map(({ key, label }) => (
+              <button
+                key={key}
+                className={activeFilter === key ? styles.filterActive : styles.filter}
+                onClick={() => handleFilter(key)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button className={styles.pageBtn} onClick={() => setPage(1)} disabled={page === 1}>« First</button>
-          <button className={styles.pageBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>‹ Back</button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button key={p} className={p === page ? styles.pageBtnActive : styles.pageBtn} onClick={() => setPage(p)}>{p}</button>
-          ))}
-          <button className={styles.pageBtn} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next ›</button>
-          <button className={styles.pageBtn} onClick={() => setPage(totalPages)} disabled={page === totalPages}>Last »</button>
+          <div className={styles.grid}>
+            {paged.map((card) => (
+              <div key={card.cardId} className={styles.cardItem} onClick={() => setSelected(card)}>
+                <div className={styles.cardImage} style={{ backgroundColor: card.bgColor }}>
+                  <span className={styles.cardIcon}>{CARD_ICONS[card.cardId]}</span>
+                </div>
+                <span className={styles.cardName}>{card.cardName}</span>
+              </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className={styles.pagination}>
+              <button className={styles.pageBtn} onClick={() => setPage(1)} disabled={page === 1}>« First</button>
+              <button className={styles.pageBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>‹ Back</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button key={p} className={p === page ? styles.pageBtnActive : styles.pageBtn} onClick={() => setPage(p)}>{p}</button>
+              ))}
+              <button className={styles.pageBtn} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next ›</button>
+              <button className={styles.pageBtn} onClick={() => setPage(totalPages)} disabled={page === totalPages}>Last »</button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── 내 카드 탭 ── */}
+      {activeTab === 'my' && (
+        <div className={styles.myCardList}>
+          {myCards.length === 0 ? (
+            <p className={styles.emptyText}>보유 중인 카드가 없습니다.</p>
+          ) : (
+            myCards.map((card) => (
+              <div key={card.cardId} className={styles.myCardItem}>
+                <div className={styles.myCardImage} style={{ backgroundColor: card.bgColor }}>
+                  <span className={styles.cardIcon}>{card.icon}</span>
+                </div>
+                <div className={styles.myCardInfo}>
+                  <span className={styles.myCardName}>{card.cardName}</span>
+                  <span className={styles.myCardNumber}>**** **** **** {card.lastFourDigits}</span>
+                </div>
+                <button
+                  className={styles.cancelButton}
+                  onClick={() => {
+                    setMyCards((prev) => prev.filter((c) => c.cardId !== card.cardId));
+                    // TODO: API 연동
+                  }}
+                >
+                  카드 해지하기
+                </button>
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>
