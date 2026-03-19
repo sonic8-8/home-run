@@ -16,7 +16,7 @@ export function PassWidget({ subscriptions, allPasses }: PassWidgetProps) {
 
   return (
     <>
-      <div className={styles.card} style={{ cursor: 'pointer' }} onClick={() => setModalOpen(true)}>
+      <div className={styles.card}>
         <div className={styles.header}>
           <span className={styles.headerIcon}>🔄</span>
           <span className={styles.headerTitle}>소비 통제 PASS</span>
@@ -27,18 +27,20 @@ export function PassWidget({ subscriptions, allPasses }: PassWidgetProps) {
         {isEmpty ? (
           <div className={styles.emptyState}>
             <p className={styles.emptyText}>아직 구독중인 PASS가 존재하지 않아요</p>
-            <button
-              className={styles.subscribeButton}
-              onClick={(e) => { e.stopPropagation(); setModalOpen(true); }}
-            >
+            <button className={styles.subscribeButton} onClick={() => setModalOpen(true)}>
               구독하러 가기
             </button>
           </div>
         ) : (
-          <div className={styles.totalRow}>
-            <span className={styles.totalLabel}>총 저축 금액</span>
-            <span className={styles.totalAmount}>₩ {totalSaved.toLocaleString()}</span>
-          </div>
+          <>
+            <div className={styles.totalRow}>
+              <span className={styles.totalLabel}>총 저축 금액</span>
+              <span className={styles.totalAmount}>₩ {totalSaved.toLocaleString()}</span>
+            </div>
+            <button className={styles.saveButton} onClick={() => setModalOpen(true)}>
+              저축하기
+            </button>
+          </>
         )}
       </div>
 
