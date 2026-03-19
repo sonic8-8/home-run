@@ -1,9 +1,12 @@
 package io.ssafy.p.j14c103.homerun.domain.character.schedule;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.ActionCatalog.ActionDefinition;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.ActionCatalog.ResolvedAction;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -147,6 +150,15 @@ class ActionCatalogTest {
         assertThat(highPreview.cashPreview().maximumCashDelta()).isEqualTo(790_000);
         assertThat(midActual.cashDelta()).isEqualTo(430_000);
         assertThat(highActual.cashDelta()).isEqualTo(790_000);
+    }
+
+    @DisplayName("행동 카탈로그 정책 구성이 잘못되면 에러코드 기반 예외가 발생한다.")
+    @Test
+    void createWithInvalidPolicy() {
+        assertThatThrownBy(() -> new ActionCatalog(null))
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
     }
 
     private static Stream<Arguments> previewActions() {

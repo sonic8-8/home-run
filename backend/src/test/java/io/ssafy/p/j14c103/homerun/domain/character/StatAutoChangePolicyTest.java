@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -182,8 +184,9 @@ class StatAutoChangePolicyTest {
 
         // when & then
         assertThatThrownBy(() -> policy.calculate(gameStat, null))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("housingType");
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.CHARACTER_REQUEST_INVALID);
     }
 
     private GameStat createGameStat(

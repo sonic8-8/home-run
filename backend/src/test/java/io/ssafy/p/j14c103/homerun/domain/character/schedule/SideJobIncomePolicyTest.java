@@ -3,6 +3,8 @@ package io.ssafy.p.j14c103.homerun.domain.character.schedule;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,8 +56,18 @@ class SideJobIncomePolicyTest {
     void resolveRangeWithInvalidKnowledge() {
         // when & then
         assertThatThrownBy(() -> policy.resolveRange(101))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("knowledge");
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.CHARACTER_STAT_INVALID);
+    }
+
+    @DisplayName("부업 정책 구성이 잘못되면 에러코드 기반 예외가 발생한다.")
+    @Test
+    void createWithInvalidPolicy() {
+        assertThatThrownBy(() -> new SideJobIncomePolicy(null))
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
     }
 
     @DisplayName("중고지식 구간 preview는 실제 부업 수입과 같은 결정형 금액을 사용한다.")

@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.character.career.response;
 
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
 
 public record JobTypeOptionsResponse(
@@ -9,7 +11,7 @@ public record JobTypeOptionsResponse(
 
     public JobTypeOptionsResponse {
         if (jobTypes == null) {
-            throw new IllegalArgumentException("jobTypes는 null일 수 없습니다.");
+            throwResponseInvalid();
         }
         jobTypes = List.copyOf(jobTypes);
     }
@@ -26,13 +28,13 @@ public record JobTypeOptionsResponse(
 
         public JobTypeOptionResponse {
             if (jobType == null) {
-                throw new IllegalArgumentException("jobType은 null일 수 없습니다.");
+                throwResponseInvalid();
             }
             if (label == null || label.isBlank()) {
-                throw new IllegalArgumentException("label은 비어 있을 수 없습니다.");
+                throwResponseInvalid();
             }
             if (stats == null) {
-                throw new IllegalArgumentException("stats는 null일 수 없습니다.");
+                throwResponseInvalid();
             }
         }
 
@@ -82,7 +84,11 @@ public record JobTypeOptionsResponse(
 
     private static void validateGauge(final String fieldName, final int gauge) {
         if (gauge < 0 || gauge > 100) {
-            throw new IllegalArgumentException(fieldName + "는 0에서 100 사이여야 합니다.");
+            throwResponseInvalid();
         }
+    }
+
+    private static void throwResponseInvalid() {
+        throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
     }
 }

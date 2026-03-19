@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.domain.character.schedule;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SideJobIncomePolicy {
@@ -20,7 +22,7 @@ public class SideJobIncomePolicy {
 
     SideJobIncomePolicy(final IncomeRandomizer incomeRandomizer) {
         if (incomeRandomizer == null) {
-            throw new IllegalArgumentException("incomeRandomizer는 null일 수 없습니다.");
+            throwSchedulePolicyInvalid();
         }
 
         this.incomeRandomizer = incomeRandomizer;
@@ -139,7 +141,7 @@ public class SideJobIncomePolicy {
 
     private void validateKnowledge(final int knowledge) {
         if (knowledge < MIN_KNOWLEDGE || knowledge > MAX_KNOWLEDGE) {
-            throw new IllegalArgumentException("knowledge는 0에서 100 사이여야 합니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_STAT_INVALID);
         }
     }
 
@@ -157,16 +159,16 @@ public class SideJobIncomePolicy {
 
         public IncomeRange {
             if (sideJobKind == null || sideJobKind.isBlank()) {
-                throw new IllegalArgumentException("sideJobKind는 비어 있을 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (minimumIncome < 0) {
-                throw new IllegalArgumentException("minimumIncome은 0 이상이어야 합니다.");
+                throwSchedulePolicyInvalid();
             }
             if (maximumIncome < 0) {
-                throw new IllegalArgumentException("maximumIncome은 0 이상이어야 합니다.");
+                throwSchedulePolicyInvalid();
             }
             if (minimumIncome > maximumIncome) {
-                throw new IllegalArgumentException("minimumIncome은 maximumIncome보다 클 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
         }
 
@@ -182,13 +184,13 @@ public class SideJobIncomePolicy {
 
         public IncomePreview {
             if (minimumIncome < 0) {
-                throw new IllegalArgumentException("minimumIncome은 0 이상이어야 합니다.");
+                throwSchedulePolicyInvalid();
             }
             if (maximumIncome < 0) {
-                throw new IllegalArgumentException("maximumIncome은 0 이상이어야 합니다.");
+                throwSchedulePolicyInvalid();
             }
             if (minimumIncome > maximumIncome) {
-                throw new IllegalArgumentException("minimumIncome은 maximumIncome보다 클 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
         }
 
@@ -203,5 +205,9 @@ public class SideJobIncomePolicy {
         public boolean isRange() {
             return minimumIncome != maximumIncome;
         }
+    }
+
+    private static void throwSchedulePolicyInvalid() {
+        throw new HomerunException(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
     }
 }

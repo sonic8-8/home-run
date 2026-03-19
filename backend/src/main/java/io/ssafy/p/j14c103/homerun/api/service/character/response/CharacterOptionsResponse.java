@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.character.response;
 
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
 
 public record CharacterOptionsResponse(
@@ -9,7 +11,7 @@ public record CharacterOptionsResponse(
 
     public CharacterOptionsResponse {
         if (characters == null) {
-            throw new IllegalArgumentException("characters는 null일 수 없습니다.");
+            throwResponseInvalid();
         }
         characters = List.copyOf(characters);
     }
@@ -25,10 +27,10 @@ public record CharacterOptionsResponse(
 
         public CharacterOptionResponse {
             if (characterType == null) {
-                throw new IllegalArgumentException("characterType은 null일 수 없습니다.");
+                throwResponseInvalid();
             }
             if (thumbnailUrl == null || thumbnailUrl.isBlank()) {
-                throw new IllegalArgumentException("thumbnailUrl은 비어 있을 수 없습니다.");
+                throwResponseInvalid();
             }
         }
 
@@ -38,5 +40,9 @@ public record CharacterOptionsResponse(
         ) {
             return new CharacterOptionResponse(characterType, thumbnailUrl);
         }
+    }
+
+    private static void throwResponseInvalid() {
+        throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
     }
 }

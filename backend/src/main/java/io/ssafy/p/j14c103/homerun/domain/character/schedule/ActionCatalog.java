@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.domain.character.schedule;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
 
 public class ActionCatalog {
@@ -12,7 +14,7 @@ public class ActionCatalog {
     }
 
     ActionCatalog(final SideJobIncomePolicy sideJobIncomePolicy) {
-        validateNotNull(sideJobIncomePolicy, "sideJobIncomePolicy");
+        validatePolicyNotNull(sideJobIncomePolicy);
 
         this.sideJobIncomePolicy = sideJobIncomePolicy;
         this.actionDefinitions = List.of(
@@ -101,12 +103,12 @@ public class ActionCatalog {
     }
 
     public ActionDefinition getDefinition(final ActionType actionType) {
-        validateNotNull(actionType, "actionType");
+        validateRequestNotNull(actionType);
 
         return actionDefinitions.stream()
             .filter(actionDefinition -> actionDefinition.actionType() == actionType)
             .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 actionType입니다: " + actionType));
+            .orElseThrow(() -> new HomerunException(ErrorCode.CHARACTER_ACTION_TYPE_UNSUPPORTED));
     }
 
     public List<ResolvedAction> getPreviewActions(final int knowledge) {
@@ -163,9 +165,15 @@ public class ActionCatalog {
         return sideJobIncomePolicy.calculateIncome(knowledge);
     }
 
-    private void validateNotNull(final Object value, final String fieldName) {
+    private void validateRequestNotNull(final Object value) {
         if (value == null) {
-            throw new IllegalArgumentException(fieldName + "은 null일 수 없습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private void validatePolicyNotNull(final Object value) {
+        if (value == null) {
+            throwSchedulePolicyInvalid();
         }
     }
 
@@ -183,19 +191,19 @@ public class ActionCatalog {
 
         public ActionDefinition {
             if (actionType == null) {
-                throw new IllegalArgumentException("actionType은 null일 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (category == null) {
-                throw new IllegalArgumentException("category는 null일 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (label == null || label.isBlank()) {
-                throw new IllegalArgumentException("label은 비어 있을 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (iconKey == null || iconKey.isBlank()) {
-                throw new IllegalArgumentException("iconKey는 비어 있을 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (statDelta == null) {
-                throw new IllegalArgumentException("statDelta는 null일 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
         }
 
@@ -261,22 +269,22 @@ public class ActionCatalog {
 
         public ResolvedAction {
             if (actionType == null) {
-                throw new IllegalArgumentException("actionType은 null일 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (category == null) {
-                throw new IllegalArgumentException("category는 null일 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (label == null || label.isBlank()) {
-                throw new IllegalArgumentException("label은 비어 있을 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (iconKey == null || iconKey.isBlank()) {
-                throw new IllegalArgumentException("iconKey는 비어 있을 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (statDelta == null) {
-                throw new IllegalArgumentException("statDelta는 null일 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
             if (cashPreview == null) {
-                throw new IllegalArgumentException("cashPreview는 null일 수 없습니다.");
+                throwSchedulePolicyInvalid();
             }
         }
     }
@@ -288,9 +296,7 @@ public class ActionCatalog {
 
         public CashPreview {
             if (minimumCashDelta > maximumCashDelta) {
-                throw new IllegalArgumentException(
-                    "minimumCashDelta는 maximumCashDelta보다 클 수 없습니다."
-                );
+                throwSchedulePolicyInvalid();
             }
         }
 
@@ -301,5 +307,9 @@ public class ActionCatalog {
         public boolean isRange() {
             return minimumCashDelta != maximumCashDelta;
         }
+    }
+
+    private static void throwSchedulePolicyInvalid() {
+        throw new HomerunException(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
     }
 }
