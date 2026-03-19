@@ -25,6 +25,7 @@ import io.ssafy.p.j14c103.homerun.api.service.auth.response.RefreshAccessTokenRe
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
 import io.ssafy.p.j14c103.homerun.api.service.character.CharacterQueryService;
 import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterOptionsResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.CardService;
 import io.ssafy.p.j14c103.homerun.api.service.home.CreditScoreService;
 import io.ssafy.p.j14c103.homerun.api.service.home.DashboardService;
 import io.ssafy.p.j14c103.homerun.api.service.home.LoanRecommendationService;
@@ -73,6 +74,9 @@ class SecurityConfigTest {
 
     @MockitoBean
     private CharacterQueryService characterQueryService;
+
+    @MockitoBean
+    private CardService cardService;
 
     @MockitoBean
     private DashboardService dashboardService;
@@ -179,6 +183,7 @@ class SecurityConfigTest {
 
         verifyNoInteractions(
                 characterQueryService,
+                cardService,
                 dashboardService,
                 spendingService,
                 loanRecommendationService,
@@ -265,6 +270,8 @@ class SecurityConfigTest {
     private static Stream<Arguments> protectedPaths() {
         return Stream.of(
                 Arguments.of("/api/games/characters"),
+                Arguments.of("/api/cards"),
+                Arguments.of("/api/cards/recommendations"),
                 Arguments.of("/api/home/dashboard"),
                 Arguments.of("/api/home/spending"),
                 Arguments.of("/api/home/loan-recommendations"),
