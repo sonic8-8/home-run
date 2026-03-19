@@ -1,27 +1,24 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
 
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanApprovalService.ApprovalResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
-import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanType;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
 class LoanApprovalServiceTest {
 
-    @InjectMocks
+    @Autowired
     private LoanApprovalService loanApprovalService;
 
-    @Mock
+    @Autowired
     private GameLoanRepository gameLoanRepository;
 
     @Test
@@ -68,9 +65,6 @@ class LoanApprovalServiceTest {
         final Integer propertyPrice = 300_000_000;
         final Integer sessionId = 1;
 
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
-
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
                 LoanType.JEONSE, annualSalary, "LARGE_BIZ", 2,
@@ -89,9 +83,6 @@ class LoanApprovalServiceTest {
         final int annualSalary = 50_000_000;
         final Integer propertyPrice = 200_000_000;
         final Integer sessionId = 1;
-
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -112,9 +103,6 @@ class LoanApprovalServiceTest {
         final Integer propertyPrice = 500_000_000;
         final Integer sessionId = 1;
 
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
-
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
                 LoanType.MORTGAGE, annualSalary, "LARGE_BIZ", 1,
@@ -133,9 +121,6 @@ class LoanApprovalServiceTest {
         final int annualSalary = 40_000_000;
         final Integer propertyPrice = 300_000_000;
         final Integer sessionId = 1;
-
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(

@@ -7,7 +7,6 @@ import lombok.Getter;
  * 대출 상품 목록 응답 항목.
  */
 @Getter
-@Builder
 public class LoanProductResponse {
 
     private final String productId;
@@ -17,4 +16,16 @@ public class LoanProductResponse {
     private final String productType;
     private final double minRate;
     private final double maxRate;
+
+    @Builder
+    private LoanProductResponse(String productId, String bankName, String bankLogoUrl,
+                                String productName, String productType, double minRate, double maxRate) {
+        this.productId = productId;
+        this.bankName = bankName;
+        this.bankLogoUrl = bankLogoUrl;
+        this.productName = productName;
+        this.productType = productType;
+        this.minRate = minRate;
+        this.maxRate = maxRate;
+    }
 }

@@ -19,25 +19,37 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoanProductService {
 
-    private static final Map<String, String> BANK_LOGO_MAP = Map.ofEntries(
-            Map.entry("우리은행", "/images/banks/woori.png"),
-            Map.entry("한국스탠다드차타드은행", "/images/banks/sc.png"),
-            Map.entry("아이엠뱅크", "/images/banks/im.png"),
-            Map.entry("부산은행", "/images/banks/busan.png"),
-            Map.entry("광주은행", "/images/banks/gwangju.png"),
-            Map.entry("제주은행", "/images/banks/jeju.png"),
-            Map.entry("전북은행", "/images/banks/jeonbuk.png"),
-            Map.entry("경남은행", "/images/banks/gyeongnam.png"),
-            Map.entry("중소기업은행", "/images/banks/ibk.png"),
-            Map.entry("한국산업은행", "/images/banks/kdb.png"),
-            Map.entry("국민은행", "/images/banks/kb.png"),
-            Map.entry("신한은행", "/images/banks/shinhan.png"),
-            Map.entry("농협은행주식회사", "/images/banks/nh.png"),
-            Map.entry("주식회사 하나은행", "/images/banks/hana.png"),
-            Map.entry("주식회사 케이뱅크", "/images/banks/kbank.png"),
-            Map.entry("수협은행", "/images/banks/suhyup.png"),
-            Map.entry("주식회사 카카오뱅크", "/images/banks/kakao.png")
+    public static final String CATEGORY_ALL = "ALL";
+    public static final String CATEGORY_CREDIT = "CREDIT";
+    public static final String CATEGORY_JEONSE = "JEONSE";
+    public static final String CATEGORY_MORTGAGE = "MORTGAGE";
+
+    public static final String PRODUCT_TYPE_CREDIT = "개인신용대출";
+    public static final String PRODUCT_TYPE_JEONSE = "전세자금대출";
+    public static final String PRODUCT_TYPE_MORTGAGE = "주택담보대출";
+
+    private static final Map<String, String> BANK_LOGO_FILE_MAP = Map.ofEntries(
+            Map.entry("우리은행", "woori.png"),
+            Map.entry("한국스탠다드차타드은행", "sc.png"),
+            Map.entry("아이엠뱅크", "im.png"),
+            Map.entry("부산은행", "busan.png"),
+            Map.entry("광주은행", "gwangju.png"),
+            Map.entry("제주은행", "jeju.png"),
+            Map.entry("전북은행", "jeonbuk.png"),
+            Map.entry("경남은행", "gyeongnam.png"),
+            Map.entry("중소기업은행", "ibk.png"),
+            Map.entry("한국산업은행", "kdb.png"),
+            Map.entry("국민은행", "kb.png"),
+            Map.entry("신한은행", "shinhan.png"),
+            Map.entry("농협은행주식회사", "nh.png"),
+            Map.entry("주식회사 하나은행", "hana.png"),
+            Map.entry("주식회사 케이뱅크", "kbank.png"),
+            Map.entry("수협은행", "suhyup.png"),
+            Map.entry("주식회사 카카오뱅크", "kakao.png")
     );
+
+    @org.springframework.beans.factory.annotation.Value("${game.loan.bank-logo.base-path:/images/banks/}")
+    private String bankLogoBasePath;
 
     private final FssLoanClient fssLoanClient;
 
@@ -64,9 +76,9 @@ public class LoanProductService {
      */
     public Optional<LoanProductDetailResponse> getProductDetail(final String productId) {
         final List<FssProductData> allData = new ArrayList<>();
-        allData.addAll(parseProducts(fssLoanClient.getCreditLoanProducts(), "개인신용대출"));
-        allData.addAll(parseProducts(fssLoanClient.getRentHouseLoanProducts(), "전세자금대출"));
-        allData.addAll(parseProducts(fssLoanClient.getMortgageLoanProducts(), "주택담보대출"));
+        allData.addAll(parseProducts(fssLoanClient.getCreditLoanProducts(), PRODUCT_TYPE_CREDIT));
+        allData.addAll(parseProducts(fssLoanClient.getRentHouseLoanProducts(), PRODUCT_TYPE_JEONSE));
+        allData.addAll(parseProducts(fssLoanClient.getMortgageLoanProducts(), PRODUCT_TYPE_MORTGAGE));
 
         return allData.stream()
                 .filter(d -> productId.equals(d.productId))
@@ -74,7 +86,7 @@ public class LoanProductService {
                 .map(d -> LoanProductDetailResponse.builder()
                         .productId(d.productId)
                         .bankName(d.bankName)
-                        .bankLogoUrl(BANK_LOGO_MAP.getOrDefault(d.bankName, "/images/banks/default.png"))
+                        .bankLogoUrl(bankLogoBasePath + BANK_LOGO_FILE_MAP.getOrDefault(d.bankName, "default.png"))
                         .productName(d.productName)
                         .productType(d.productType)
                         .minRate(d.minRate)
@@ -108,14 +120,14 @@ public class LoanProductService {
     private List<LoanProductResponse> fetchAllProducts(final String category) {
         final List<FssProductData> allData = new ArrayList<>();
 
-        if ("ALL".equals(category) || "CREDIT".equals(category)) {
-            allData.addAll(parseProducts(fssLoanClient.getCreditLoanProducts(), "개인신용대출"));
+        if (CATEGORY_ALL.equals(category) || CATEGORY_CREDIT.equals(category)) {
+            allData.addAll(parseProducts(fssLoanClient.getCreditLoanProducts(), PRODUCT_TYPE_CREDIT));
         }
-        if ("ALL".equals(category) || "JEONSE".equals(category)) {
-            allData.addAll(parseProducts(fssLoanClient.getRentHouseLoanProducts(), "전세자금대출"));
+        if (CATEGORY_ALL.equals(category) || CATEGORY_JEONSE.equals(category)) {
+            allData.addAll(parseProducts(fssLoanClient.getRentHouseLoanProducts(), PRODUCT_TYPE_JEONSE));
         }
-        if ("ALL".equals(category) || "MORTGAGE".equals(category)) {
-            allData.addAll(parseProducts(fssLoanClient.getMortgageLoanProducts(), "주택담보대출"));
+        if (CATEGORY_ALL.equals(category) || CATEGORY_MORTGAGE.equals(category)) {
+            allData.addAll(parseProducts(fssLoanClient.getMortgageLoanProducts(), PRODUCT_TYPE_MORTGAGE));
         }
 
         return allData.stream()
@@ -123,7 +135,7 @@ public class LoanProductService {
                 .map(d -> LoanProductResponse.builder()
                         .productId(d.productId)
                         .bankName(d.bankName)
-                        .bankLogoUrl(BANK_LOGO_MAP.getOrDefault(d.bankName, "/images/banks/default.png"))
+                        .bankLogoUrl(bankLogoBasePath + BANK_LOGO_FILE_MAP.getOrDefault(d.bankName, "default.png"))
                         .productName(d.productName)
                         .productType(d.productType)
                         .minRate(d.minRate)

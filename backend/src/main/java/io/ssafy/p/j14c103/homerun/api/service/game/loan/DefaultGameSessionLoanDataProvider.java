@@ -14,12 +14,12 @@ public class DefaultGameSessionLoanDataProvider implements GameSessionLoanDataPr
     @Override
     public LoanSessionData getLoanSessionData(final Integer sessionId) {
         log.warn("임시 세션 데이터 사용 중 (sessionId={}). GameSession 완성 시 교체 필요.", sessionId);
-        return new LoanSessionData(
-                36_000_000,     // annualSalary
-                "LARGE_BIZ",    // jobType
-                2,              // cssGrade
-                "SEOUL",        // regionCode
-                375_000_000     // propertyPrice
-        );
+        return LoanSessionData.builder()
+                .annualSalary(36_000_000)     // annualSalary
+                .jobType("LARGE_BIZ")         // jobType
+                .cssGrade(2)                  // cssGrade
+                .regionCode("SEOUL")          // regionCode
+                .propertyPrice(375_000_000)   // propertyPrice
+                .build();
     }
 }

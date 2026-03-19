@@ -1,7 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanProductDetailResponse;
@@ -13,18 +12,17 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
 class LoanProductServiceTest {
 
-    @InjectMocks
+    @Autowired
     private LoanProductService loanProductService;
 
-    @Mock
+    @MockitoBean
     private FssLoanClient fssLoanClient;
 
     @Test

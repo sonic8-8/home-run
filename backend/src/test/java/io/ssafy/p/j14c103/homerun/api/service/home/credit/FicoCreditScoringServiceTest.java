@@ -1,59 +1,48 @@
 package io.ssafy.p.j14c103.homerun.api.service.home.credit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.lenient;
 
-import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
-import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
-import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransactionRepository;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContext;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
-import java.util.Collections;
-import java.util.Optional;
+import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
+import io.ssafy.p.j14c103.homerun.domain.user.Email;
+import io.ssafy.p.j14c103.homerun.domain.user.User;
+import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
 class FicoCreditScoringServiceTest {
 
-    @InjectMocks
+    @Autowired
     private FicoCreditScoringService ficoCreditScoringService;
 
-    @Mock
-    private PassSubscriptionRepository passSubscriptionRepository;
-
-    @Mock
-    private UserPassTransactionRepository passTransactionRepository;
-
-    @Mock
-    private SeedmoneyAccountRepository seedmoneyAccountRepository;
-
-    @Mock
-    private SeedmoneyTransactionRepository seedmoneyTransactionRepository;
-
-    @Mock
+    @MockitoBean
     private SsafyCreditCardClient creditCardClient;
 
-    @Mock
+    @Autowired
     private UserAuthContextService userAuthContextService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private Long userId;
+
+    @BeforeEach
+    void setUp() {
+        final User user = User.register(Email.of("test@test.com"), "tester", "password");
+        userRepository.save(user);
+        this.userId = user.getId();
+    }
 
     @Test
     @DisplayName("금융 이력 없는 사용자는 보수적 기본 점수를 받는다")
     void 이력없는사용자_보수적기본점수() {
-        // given
-        final Long userId = 1L;
-        stubNoHistory(userId);
-
         // when
         final CreditScore result = ficoCreditScoringService.calculate(userId);
 
@@ -70,10 +59,6 @@ class FicoCreditScoringServiceTest {
     @Test
     @DisplayName("CSS 총점은 5요소 합산이며 1000점을 초과하지 않는다")
     void CSS총점_5요소합산_최대1000() {
-        // given
-        final Long userId = 2L;
-        stubNoHistory(userId);
-
         // when
         final CreditScore result = ficoCreditScoringService.calculate(userId);
 
@@ -92,17 +77,5 @@ class FicoCreditScoringServiceTest {
         assertThat(CreditScore.of(300, 250, 120, 80, 80).rateCoefficient()).isEqualTo(0.25);
         assertThat(CreditScore.of(250, 200, 100, 70, 80).rateCoefficient()).isEqualTo(0.50);
         assertThat(CreditScore.of(200, 150, 80, 50, 50).rateCoefficient()).isEqualTo(1.0);
-    }
-
-    private void stubNoHistory(final Long userId) {
-        given(passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId))
-                .willReturn(Collections.emptyList());
-        given(userAuthContextService.getContext(userId))
-                .willReturn(new UserAuthContext(userId, null));
-        lenient().when(seedmoneyTransactionRepository.findByUserIdAndTransactionTypeAndCreatedAtAfter(
-                anyLong(), anyString(), any()))
-                .thenReturn(Collections.emptyList());
-        given(seedmoneyAccountRepository.findByUserId(userId))
-                .willReturn(Optional.empty());
     }
 }

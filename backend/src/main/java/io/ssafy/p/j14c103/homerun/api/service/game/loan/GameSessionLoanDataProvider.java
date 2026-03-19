@@ -14,6 +14,7 @@ public interface GameSessionLoanDataProvider {
     /**
      * 대출 심사에 필요한 세션 데이터.
      */
+    @lombok.Builder
     record LoanSessionData(
             int annualSalary,
             String jobType,

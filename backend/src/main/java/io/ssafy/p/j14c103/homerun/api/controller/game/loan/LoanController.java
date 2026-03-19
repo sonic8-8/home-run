@@ -13,6 +13,8 @@ import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanProductDeta
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanRepayResponse;
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,7 +62,7 @@ public class LoanController {
             @PathVariable final String productId
     ) {
         final LoanProductDetailResponse detail = loanProductService.getProductDetail(productId)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다: " + productId));
+                .orElseThrow(() -> new HomerunException(ErrorCode.LOAN_PRODUCT_NOT_FOUND));
         return ApiResponse.ok(detail);
     }
 

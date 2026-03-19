@@ -52,7 +52,8 @@ public enum ErrorCode {
     LOAN_NOT_APPROVED(HttpStatus.BAD_REQUEST, "LOAN_002", "승인되지 않은 대출입니다."),
     LOAN_ALREADY_REPAID(HttpStatus.BAD_REQUEST, "LOAN_003", "이미 상환된 대출입니다."),
     LOAN_SSAFY_DUPLICATE(HttpStatus.BAD_REQUEST, "LOAN_004", "싸피론은 세션당 1건만 가능합니다."),
-    LOAN_EXCEED_LIMIT(HttpStatus.BAD_REQUEST, "LOAN_005", "승인 한도를 초과했습니다.");
+    LOAN_EXCEED_LIMIT(HttpStatus.BAD_REQUEST, "LOAN_005", "승인 한도를 초과했습니다."),
+    LOAN_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "LOAN_006", "대출 상품을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
