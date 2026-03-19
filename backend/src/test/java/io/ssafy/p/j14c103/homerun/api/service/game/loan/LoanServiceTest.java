@@ -35,6 +35,12 @@ class LoanServiceTest {
     @Mock
     private LoanApprovalService loanApprovalService;
 
+    @Mock
+    private GameSessionLoanDataProvider sessionDataProvider;
+
+    @Mock
+    private LoanProductService loanProductService;
+
     @Test
     @DisplayName("싸피론 대출 - 세션당 1건 정상 생성")
     void 싸피론_정상_생성() {
