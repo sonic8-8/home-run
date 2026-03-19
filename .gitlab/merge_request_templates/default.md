@@ -1,25 +1,25 @@
 ## 변경 사항
-<!-- 이 PR에서 변경한 내용을 간단히 설명해주세요 -->
+<!-- 이 MR에서 변경한 내용을 간단히 설명해주세요 -->
 
 ## 관련 Jira 티켓
 <!-- HOME-XXX -->
 
-## 리뷰 체크리스트
+## 작성자 확인
+- [ ] 백엔드 변경 사항에 대해 `./gradlew test`를 실행했다.
 
-### 컨벤션 (CI 자동 체크 대상)
-- [ ] 테스트 통과 확인 (`./gradlew test`)
-- [ ] 빌드 성공 확인
-
-### 도메인 리뷰 (사람이 직접 확인)
-- [ ] **도메인 용어 일치:** 클래스/메서드명이 도메인 용어 사전과 일치하는가?
-- [ ] **비즈니스 로직 흐름:** 코드의 사고 흐름이 자연스럽고 이해 가능한가?
-- [ ] **매직 코드 없음:** 설명할 수 없는 로직이 없는가?
-- [ ] **엣지 케이스 처리:** 동시성/멱등성 시나리오가 커버되는가?
-
-### OOP 컨벤션 (사람이 직접 확인)
-- [ ] 원시값/문자열이 VO로 포장되어 있는가?
-- [ ] 일급 컬렉션을 사용했는가?
-- [ ] indent depth 2 이하인가?
-- [ ] else/switch/삼항 연산자를 사용하지 않았는가?
-- [ ] 1메서드 1기능 원칙을 지켰는가?
-- [ ] Money 계산에 BigDecimal을 사용했는가?
+## 백엔드 리뷰 체크리스트
+- [ ] 변경한 일반 JSON 성공 응답이 공통 `ApiResponse`를 사용한다.
+- [ ] `ApiResponse`를 사용하지 않은 성공 응답이 있다면, 그 이유를 MR 설명에 적었다.
+- [ ] 예외 응답 형식을 추가하거나 수정했다면, 공통 `ErrorResponse`를 사용한다.
+- [ ] Validation을 추가하거나 수정했다면, Validation 실패 응답에 `errors` 목록이 포함된다.
+- [ ] 보호 API를 수정했다면, `userId`/`userKey` 요청값 대신 인증 principal 기반으로 처리한다.
+- [ ] 컨트롤러가 엔티티를 직접 반환하지 않고 Response DTO를 반환한다.
+- [ ] Controller Request DTO와 Service DTO를 분리해야 하는 흐름에서 DTO를 혼용하지 않았다.
+- [ ] DTO를 추가하거나 수정했다면, validation 메시지가 하드코딩되지 않고 `backend/src/main/resources/ValidationMessages.properties` 키를 사용한다.
+- [ ] 컨트롤러 테스트를 추가하거나 수정했다면 `@WebMvcTest` 기반으로 작성했다.
+- [ ] 서비스 테스트를 추가하거나 수정했다면 `@SpringBootTest` 기반으로 작성했다.
+- [ ] 서비스 테스트를 Mockito로 작성하거나 유지했다면, `@SpringBootTest` 대신 선택한 이유를 MR 설명에 적었다.
+- [ ] 새 domain 패키지를 추가했다면, 관련 Entity/Repository/Enum을 같은 도메인 패키지에 두고 기술별 폴더로 나누지 않았다.
+- [ ] 클래스명이 `Controller`, `Service`, `Repository`, `Request`, `Response`, `Client`, `Config`, `Test` 규칙을 따른다.
+- [ ] 금액 계산을 변경했다면 `BigDecimal`을 사용했다.
+- [ ] 커밋 메시지가 `[BE] type(scope): 설명 (Jira 티켓번호)` 형식을 따른다.
