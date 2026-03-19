@@ -9,22 +9,22 @@
 }
 
 .modal {
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
   width: 480px;
-  max-width: calc(100vw - var(--spacing-xl));
-  box-shadow: var(--shadow-lg);
+  max-width: calc(100vw - 32px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 16px;
 }
 
 /* 제목 */
 .title {
-  font-size: var(--font-size-xl);
+  font-size: 20px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: #111827;
 }
 
 /* 스테퍼 */
@@ -33,24 +33,24 @@
   align-items: center;
   justify-content: center;
   gap: 0;
-  margin: var(--spacing-sm) 0;
+  margin: 8px 0;
 }
 
 .stepItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: 4px;
 }
 
 .stepCircle {
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-size-sm);
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -60,7 +60,7 @@
 }
 
 .stepCurrent {
-  background-color: var(--color-primary);
+  background-color: #3b82f6;
   color: #fff;
 }
 
@@ -70,13 +70,13 @@
 }
 
 .stepLabel {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  font-size: 11px;
+  color: #6b7280;
   white-space: nowrap;
 }
 
 .stepLabelActive {
-  color: var(--color-text-primary);
+  color: #111827;
   font-weight: 600;
 }
 
@@ -84,41 +84,41 @@
   flex: 1;
   height: 2px;
   background-color: #e5e7eb;
-  margin: 0 var(--spacing-xs);
+  margin: 0 4px;
   margin-bottom: 18px;
   min-width: 40px;
   border-top: 2px dashed #d1d5db;
 }
 
 .stepLineDone {
-  border-top-color: var(--color-primary);
+  border-top-color: #3b82f6;
 }
 
 /* 섹션 제목 */
 .sectionTitle {
-  font-size: var(--font-size-lg);
+  font-size: 16px;
   font-weight: 700;
-  color: var(--color-text-primary);
-  margin-top: var(--spacing-xs);
+  color: #111827;
+  margin-top: 4px;
 }
 
 .resultTitle {
-  color: var(--color-primary);
+  color: #3b82f6;
 }
 
 /* 심사 요청 정보 */
 .infoList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
 .infoRow {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
+  padding: 10px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
   text-align: center;
 }
 
@@ -127,71 +127,71 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
 }
 
 .resultLabel {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: 13px;
+  color: #6b7280;
 }
 
 .resultAmount {
-  font-size: var(--font-size-2xl);
+  font-size: 24px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: #3b82f6;
 }
 
 .rejectedText {
-  font-size: var(--font-size-md);
-  color: var(--color-danger);
+  font-size: 15px;
+  color: #ef4444;
 }
 
 /* 버튼 */
 .buttonGroup {
   display: flex;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-xs);
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .primaryButton {
   flex: 1;
   height: 48px;
-  background-color: var(--color-primary);
+  background-color: #3b82f6;
   color: #fff;
   border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-md);
+  border-radius: 8px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--transition-normal);
+  transition: background-color 0.2s;
 }
 
 .primaryButton:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
+  background-color: #2563eb;
 }
 
 .primaryButton:disabled {
-  background-color: var(--color-bg-disabled);
-  color: var(--color-text-disabled);
+  background-color: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
 }
 
 .secondaryButton {
   flex: 1;
   height: 48px;
-  background-color: var(--color-bg-primary);
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-md);
+  background-color: #ffffff;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color var(--transition-normal);
+  transition: background-color 0.2s;
 }
 
 .secondaryButton:hover {
-  background-color: var(--color-primary-light);
+  background-color: #eff6ff;
 }
