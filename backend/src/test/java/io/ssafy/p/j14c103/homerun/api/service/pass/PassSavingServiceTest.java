@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSaveServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
@@ -64,7 +64,10 @@ class PassSavingServiceTest {
     final PassSubscription subscription = PassSubscription.create(1L, product, 5000, "출금계좌");
         ReflectionTestUtils.setField(subscription, "id", 1L);
         final SeedmoneyAccount account = SeedmoneyAccount.create(1L, "한국은행", "시드머니계좌");
-        final PassSaveRequest request = new PassSaveRequest(1L, "출금계좌");
+        final PassSaveServiceRequest request = PassSaveServiceRequest.builder()
+                .subscriptionId(1L)
+                .sourceAccountId("출금계좌")
+                .build();
 
         given(passSubscriptionRepository.findById(1L)).willReturn(Optional.of(subscription));
         given(seedmoneyAccountRepository.findByUserId(1L)).willReturn(Optional.of(account));
@@ -92,7 +95,10 @@ class PassSavingServiceTest {
     final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
     final PassSubscription subscription = PassSubscription.create(1L, product, 5000, "출금계좌");
         subscription.cancel();
-        final PassSaveRequest request = new PassSaveRequest(1L, "출금계좌");
+        final PassSaveServiceRequest request = PassSaveServiceRequest.builder()
+                .subscriptionId(1L)
+                .sourceAccountId("출금계좌")
+                .build();
 
     given(passSubscriptionRepository.findById(1L)).willReturn(Optional.of(subscription));
 

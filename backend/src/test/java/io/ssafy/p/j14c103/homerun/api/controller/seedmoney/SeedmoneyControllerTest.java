@@ -48,7 +48,7 @@ class SeedmoneyControllerTest {
   @Test
   void createAccount() throws Exception {
     // given
-    given(seedmoneyService.createAccount(1L, "SEED-001"))
+    given(seedmoneyService.createAccount(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
             .willReturn(SeedmoneyAccountResponse.of("한국은행", "110-123-000000", 10000000));
 
     // when & then

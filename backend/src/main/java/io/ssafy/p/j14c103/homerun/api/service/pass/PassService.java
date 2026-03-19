@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSubscribeRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSubscribeServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
@@ -54,7 +54,7 @@ public class PassService {
     }
 
     @Transactional
-    public PassSubscriptionResponse subscribe(final Long userId, final PassSubscribeRequest request) {
+    public PassSubscriptionResponse subscribe(final Long userId, final PassSubscribeServiceRequest request) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }

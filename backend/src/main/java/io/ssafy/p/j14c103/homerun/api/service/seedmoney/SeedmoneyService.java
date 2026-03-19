@@ -1,7 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.seedmoney;
 
-import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyDepositRequest;
-import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyTransferRequest;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyCreateServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyDepositServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyTransferServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyTransactionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
@@ -34,7 +35,7 @@ public class SeedmoneyService {
      */
     @Transactional
     public SeedmoneyAccountResponse createAccount(
-            final Long userId, final String accountTypeUniqueNo) {
+            final Long userId, final SeedmoneyCreateServiceRequest request) {
         validateUserId(userId);
         if (seedmoneyAccountRepository.findByUserId(userId).isPresent()) {
             throw new IllegalStateException("이미 시드머니 계좌가 존재합니다.");
@@ -42,7 +43,9 @@ public class SeedmoneyService {
         final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
 
         // 1. SSAFY 수시입출금 계좌 생성
-        final Map<String, Object> rec = demandDepositClient.createDemandDepositAccount(userKey, accountTypeUniqueNo);
+        final Map<String, Object> rec = demandDepositClient.createDemandDepositAccount(
+                userKey,
+                request.getAccountTypeUniqueNo());
         final String accountNo = (String) rec.get("accountNo");
         final String bankName = (String) rec.getOrDefault("bankName", "한국은행");
 
@@ -75,7 +78,7 @@ public class SeedmoneyService {
     }
 
     @Transactional
-    public SeedmoneyTransactionResponse transfer(final Long userId, final SeedmoneyTransferRequest request) {
+    public SeedmoneyTransactionResponse transfer(final Long userId, final SeedmoneyTransferServiceRequest request) {
         validateUserId(userId);
         final SeedmoneyAccount account = seedmoneyAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("시드머니 계좌가 없습니다."));
@@ -103,7 +106,7 @@ public class SeedmoneyService {
     }
 
     @Transactional
-    public SeedmoneyTransactionResponse deposit(final Long userId, final SeedmoneyDepositRequest request) {
+    public SeedmoneyTransactionResponse deposit(final Long userId, final SeedmoneyDepositServiceRequest request) {
         validateUserId(userId);
         final SeedmoneyAccount account = seedmoneyAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("시드머니 계좌가 없습니다."));
