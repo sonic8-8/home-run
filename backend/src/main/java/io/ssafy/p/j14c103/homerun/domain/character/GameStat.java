@@ -20,8 +20,12 @@ public class GameStat {
 
     private static final int MIN_STAT = 0;
     private static final int MAX_STAT = 100;
-    private static final int BURNOUT_THRESHOLD = 80;
+    private static final int BURNOUT_ENTRY_THRESHOLD = 80;
+    private static final int BURNOUT_RELEASE_THRESHOLD = 50;
     private static final int FORCED_RESIGNATION_HEALTH_THRESHOLD = 9;
+    private static final int HOSPITALIZATION_HEALTH_THRESHOLD = 29;
+    private static final int MEDICAL_BILL_HEALTH_THRESHOLD = 49;
+    private static final int NEGOTIATION_PENALTY_HEALTH_THRESHOLD = 69;
 
     @Id
     @Column(name = "게임번호", nullable = false)
@@ -102,7 +106,29 @@ public class GameStat {
     }
 
     public boolean isForcedResignationRisk() {
-        return requireInitialized("health", health) <= FORCED_RESIGNATION_HEALTH_THRESHOLD;
+        return evaluateHealthRisk().isForcedResignationCandidate();
+    }
+
+    public HealthRisk evaluateHealthRisk() {
+        final int currentHealth = requireInitialized("health", health);
+
+        if (currentHealth <= FORCED_RESIGNATION_HEALTH_THRESHOLD) {
+            return HealthRisk.FORCED_RESIGNATION_CANDIDATE;
+        }
+
+        if (currentHealth <= HOSPITALIZATION_HEALTH_THRESHOLD) {
+            return HealthRisk.HOSPITALIZATION_CANDIDATE;
+        }
+
+        if (currentHealth <= MEDICAL_BILL_HEALTH_THRESHOLD) {
+            return HealthRisk.MEDICAL_BILL_CANDIDATE;
+        }
+
+        if (currentHealth <= NEGOTIATION_PENALTY_HEALTH_THRESHOLD) {
+            return HealthRisk.NEGOTIATION_PENALTY;
+        }
+
+        return HealthRisk.STABLE;
     }
 
     public void hospitalizeUntil(final int endTurn) {
@@ -121,27 +147,41 @@ public class GameStat {
     }
 
     private void refreshBurnout(final int currentTurn) {
-        final boolean burnoutThresholdMet = isBurnoutThresholdMet(
-            requireInitialized("fatigue", fatigue),
-            requireInitialized("stress", stress)
-        );
+        final int currentFatigue = requireInitialized("fatigue", fatigue);
+        final int currentStress = requireInitialized("stress", stress);
 
-        if (burnoutThresholdMet && !Boolean.TRUE.equals(burnout)) {
-            this.burnout = true;
-            this.burnoutStartedTurn = currentTurn;
+        if (Boolean.TRUE.equals(burnout)) {
+            if (isBurnoutReleaseConditionMet(currentFatigue, currentStress)) {
+                releaseBurnout();
+            }
             return;
         }
 
-        if (burnoutThresholdMet) {
-            return;
+        if (isBurnoutEntryConditionMet(currentFatigue, currentStress)) {
+            enterBurnout(currentTurn);
         }
+    }
 
+    private void enterBurnout(final int currentTurn) {
+        this.burnout = true;
+        this.burnoutStartedTurn = currentTurn;
+    }
+
+    private void releaseBurnout() {
         this.burnout = false;
         this.burnoutStartedTurn = null;
     }
 
+    private static boolean isBurnoutEntryConditionMet(final int fatigue, final int stress) {
+        return fatigue >= BURNOUT_ENTRY_THRESHOLD && stress >= BURNOUT_ENTRY_THRESHOLD;
+    }
+
+    private static boolean isBurnoutReleaseConditionMet(final int fatigue, final int stress) {
+        return fatigue <= BURNOUT_RELEASE_THRESHOLD && stress <= BURNOUT_RELEASE_THRESHOLD;
+    }
+
     private static boolean isBurnoutThresholdMet(final int fatigue, final int stress) {
-        return fatigue >= BURNOUT_THRESHOLD && stress >= BURNOUT_THRESHOLD;
+        return isBurnoutEntryConditionMet(fatigue, stress);
     }
 
     private static void validateGameId(final Integer gameId) {

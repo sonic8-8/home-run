@@ -6,11 +6,18 @@ import io.ssafy.p.j14c103.homerun.api.controller.seedmoney.request.SeedmoneyTran
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.SeedmoneyService;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyTransactionResponse;
+import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
+import io.ssafy.p.j14c103.homerun.global.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/seedmoney")
@@ -20,31 +27,35 @@ public class SeedmoneyController {
     private final SeedmoneyService seedmoneyService;
 
     @PostMapping("/create")
-    public ResponseEntity<SeedmoneyAccountResponse> createAccount(
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<SeedmoneyAccountResponse> createAccount(
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final SeedmoneyCreateRequest request) {
         final SeedmoneyAccountResponse response = seedmoneyService.createAccount(
-                request.getUserId(), request.getUserKey(), request.getAccountTypeUniqueNo());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+                authenticatedUser.getUserId(), request.getAccountTypeUniqueNo());
+        return ApiResponse.created(response);
     }
+
     @GetMapping("/account")
-    public ResponseEntity<SeedmoneyAccountResponse> getAccount(
-            @RequestParam final Long userId,
-            @RequestParam final String userKey) {
-        final SeedmoneyAccountResponse response = seedmoneyService.getAccount(userId, userKey);
-        return ResponseEntity.ok(response);
+    public ApiResponse<SeedmoneyAccountResponse> getAccount(
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser) {
+        final SeedmoneyAccountResponse response = seedmoneyService.getAccount(authenticatedUser.getUserId());
+        return ApiResponse.ok(response);
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<SeedmoneyTransactionResponse> transfer(
+    public ApiResponse<SeedmoneyTransactionResponse> transfer(
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final SeedmoneyTransferRequest request) {
-        final SeedmoneyTransactionResponse response = seedmoneyService.transfer(request);
-        return ResponseEntity.ok(response);
+        final SeedmoneyTransactionResponse response = seedmoneyService.transfer(authenticatedUser.getUserId(), request);
+        return ApiResponse.ok(response);
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<SeedmoneyTransactionResponse> deposit(
+    public ApiResponse<SeedmoneyTransactionResponse> deposit(
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
             @Valid @RequestBody final SeedmoneyDepositRequest request) {
-        final SeedmoneyTransactionResponse response = seedmoneyService.deposit(request);
-        return ResponseEntity.ok(response);
+        final SeedmoneyTransactionResponse response = seedmoneyService.deposit(authenticatedUser.getUserId(), request);
+        return ApiResponse.ok(response);
     }
 }

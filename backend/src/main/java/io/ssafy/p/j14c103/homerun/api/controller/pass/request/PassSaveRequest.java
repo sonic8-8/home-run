@@ -10,25 +10,14 @@ public class PassSaveRequest {
     @NotNull(message = "출금 계좌 ID는 필수입니다.")
     private String sourceAccountId;
 
-    @NotNull(message = "사용자 ID는 필수입니다.")
-    private Long userId;
-
-    @NotNull(message = "userKey는 필수입니다.")
-    private String userKey;
-
     protected PassSaveRequest() {
     }
 
-    public PassSaveRequest(final Long subscriptionId, final String sourceAccountId,
-                           final Long userId, final String userKey) {
+    public PassSaveRequest(final Long subscriptionId, final String sourceAccountId) {
         this.subscriptionId = subscriptionId;
         this.sourceAccountId = sourceAccountId;
-        this.userId = userId;
-        this.userKey = userKey;
     }
 
     public Long getSubscriptionId() { return subscriptionId; }
     public String getSourceAccountId() { return sourceAccountId; }
-    public Long getUserId() { return userId; }
-    public String getUserKey() { return userKey; }
 }

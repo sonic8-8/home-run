@@ -3,13 +3,23 @@ import groovy.json.JsonOutput
 def sendMattermostNotification(String status) {
     def color = status == 'SUCCESS' ? '#2EB67D' : '#D24B4E'
     def statusLabel = status == 'SUCCESS' ? '성공' : '실패'
-    def commitShort = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'unknown'
+    def commitMessage = env.GIT_COMMIT_MESSAGE ?: 'unknown'
+    def failedStage = env.PIPELINE_STAGE ?: 'unknown'
+    def detailLines = [
+        "메시지: ${commitMessage}",
+        "빌드 URL: ${env.BUILD_URL ?: 'N/A'}"
+    ]
+
+    if (status == 'FAILURE') {
+        detailLines.add(1, "실패 단계: ${failedStage}")
+    }
+
     def payload = JsonOutput.toJson([
         attachments: [[
             color: color,
             title: "${env.JOB_NAME} #${env.BUILD_NUMBER} 배포 ${statusLabel}",
             title_link: env.BUILD_URL ?: '',
-            text: "커밋: ${commitShort}\n빌드 URL: ${env.BUILD_URL ?: 'N/A'}"
+            text: detailLines.join('\n')
         ]]
     ])
 
@@ -50,6 +60,7 @@ pipeline {
         FRONTEND_HOST_PORT = '3000'
         BACKEND_HOST_PORT = '8081'
         POSTGRES_HOST_PORT = '5432'
+        REDIS_HOST_PORT = '6379'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
         POSTGRES_PASSWORD = credentials('homerun-postgres-password')
@@ -58,13 +69,43 @@ pipeline {
     stages {
         stage('Checkout Info') {
             steps {
+                script {
+                    env.PIPELINE_STAGE = 'Checkout Info'
+                    env.GIT_BRANCH_NAME = sh(script: 'git branch --show-current || true', returnStdout: true).trim()
+                    env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.GIT_COMMIT_MESSAGE = sh(script: "git log -1 --pretty=%s", returnStdout: true).trim()
+                }
                 sh 'git branch --show-current || true'
                 sh 'git rev-parse --short HEAD'
+                sh 'git log -1 --pretty=%s'
+            }
+        }
+
+        stage('Frontend Validate') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'Frontend Validate'
+                }
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    sh 'docker build --target validator -t homerun-frontend-validator -f frontend/Dockerfile frontend'
+                }
+            }
+        }
+
+        stage('Backend Test') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'Backend Test'
+                }
+                sh 'docker build --target tester -t homerun-backend-tester -f backend/Dockerfile backend'
             }
         }
 
         stage('Build Runtime Images') {
             steps {
+                script {
+                    env.PIPELINE_STAGE = 'Build Runtime Images'
+                }
                 sh 'docker build -t ${FRONTEND_IMAGE} -f frontend/Dockerfile frontend'
                 sh 'docker build -t ${BACKEND_IMAGE} -f backend/Dockerfile backend'
             }
@@ -72,10 +113,14 @@ pipeline {
 
         stage('Deploy Runtime') {
             steps {
+                script {
+                    env.PIPELINE_STAGE = 'Deploy Runtime'
+                }
                 writeFile file: env.ENV_FILE, text: """
 FRONTEND_HOST_PORT=${env.FRONTEND_HOST_PORT}
 BACKEND_HOST_PORT=${env.BACKEND_HOST_PORT}
 POSTGRES_HOST_PORT=${env.POSTGRES_HOST_PORT}
+REDIS_HOST_PORT=${env.REDIS_HOST_PORT}
 POSTGRES_DB=${env.POSTGRES_DB}
 POSTGRES_USER=${env.POSTGRES_USER}
 POSTGRES_PASSWORD=${env.POSTGRES_PASSWORD}
@@ -87,13 +132,16 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                     docker compose \
                       --env-file ${ENV_FILE} \
                       -f ${COMPOSE_FILE} \
-                      up -d postgres backend frontend
+                      up -d postgres redis backend frontend
                 '''
             }
         }
 
         stage('Verify Runtime Startup') {
             steps {
+                script {
+                    env.PIPELINE_STAGE = 'Verify Runtime Startup'
+                }
                 sh '''
                     for i in $(seq 1 60); do
                       if ! docker ps --format '{{.Names}}' | grep -qx homerun-backend; then

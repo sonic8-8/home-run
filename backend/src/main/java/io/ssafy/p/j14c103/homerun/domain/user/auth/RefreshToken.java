@@ -26,13 +26,13 @@ public class RefreshToken {
 
     private void validate(Long userId, String tokenValue, Instant expiresAt) {
         if (userId == null) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_STATE_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_STATE_INVALID);
         }
         if (tokenValue == null || tokenValue.isBlank()) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_STATE_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_STATE_INVALID);
         }
         if (expiresAt == null) {
-            throw HomerunException.from(ErrorCode.AUTH_REFRESH_STATE_INVALID);
+            throw new HomerunException(ErrorCode.AUTH_REFRESH_STATE_INVALID);
         }
     }
 }

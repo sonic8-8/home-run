@@ -74,7 +74,7 @@ public class StockTradingService {
     ) {
         validateStockExists(gameSessionId, stockCode);
         if (quantity == null || quantity <= 0) {
-            throw HomerunException.from(ErrorCode.INVALID_INPUT_VALUE);
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
         final StockOrder order = StockOrder.createBuyOrder(gameSessionId, stockCode, quantity, currentTurn);
@@ -93,15 +93,15 @@ public class StockTradingService {
     ) {
         validateStockExists(gameSessionId, stockCode);
         if (quantity == null || quantity <= 0) {
-            throw HomerunException.from(ErrorCode.INVALID_INPUT_VALUE);
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
         final StockHolding holding = stockHoldingRepository
                 .findById(new StockHoldingId(gameSessionId, stockCode))
-                .orElseThrow(() -> HomerunException.from(ErrorCode.INVALID_INPUT_VALUE));
+                .orElseThrow(() -> new HomerunException(ErrorCode.INVALID_INPUT_VALUE));
 
         if (holding.getQuantity() < quantity) {
-            throw HomerunException.from(ErrorCode.INVALID_INPUT_VALUE);
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
         final StockOrder order = StockOrder.createSellOrder(gameSessionId, stockCode, quantity, currentTurn);
@@ -180,6 +180,6 @@ public class StockTradingService {
     private void validateStockExists(final Integer gameSessionId, final String stockCode) {
         gameStockMarketStateRepository
                 .findById(new GameStockMarketStateId(gameSessionId, stockCode))
-                .orElseThrow(() -> HomerunException.from(ErrorCode.INVALID_INPUT_VALUE));
+                .orElseThrow(() -> new HomerunException(ErrorCode.INVALID_INPUT_VALUE));
     }
 }

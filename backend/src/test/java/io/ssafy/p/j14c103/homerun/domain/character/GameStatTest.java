@@ -72,14 +72,28 @@ class GameStatTest {
         assertThat(gameStat.getBurnoutStartedTurn()).isEqualTo(4);
     }
 
-    @DisplayName("번아웃 상태에서 피로도 또는 스트레스가 내려가면 번아웃이 해제된다.")
+    @DisplayName("번아웃 상태는 피로도와 스트레스가 모두 50 이하가 되기 전까지 유지된다.")
+    @Test
+    void applyChangeKeepBurnoutUntilReleaseThreshold() {
+        // given
+        final GameStat gameStat = GameStat.create(1, 70, 85, 82, 50, 50, 2);
+
+        // when
+        gameStat.applyChange(0, -10, 0, 0, 0, 3);
+
+        // then
+        assertThat(gameStat.getBurnout()).isTrue();
+        assertThat(gameStat.getBurnoutStartedTurn()).isEqualTo(2);
+    }
+
+    @DisplayName("번아웃 상태에서 피로도와 스트레스가 모두 50 이하가 되면 번아웃이 해제된다.")
     @Test
     void applyChangeRecoverBurnout() {
         // given
         final GameStat gameStat = GameStat.create(1, 70, 85, 82, 50, 50, 2);
 
         // when
-        gameStat.applyChange(0, -10, 0, 0, 0, 3);
+        gameStat.applyChange(0, -35, -32, 0, 0, 3);
 
         // then
         assertThat(gameStat.getBurnout()).isFalse();
@@ -97,6 +111,50 @@ class GameStatTest {
 
         // then
         assertThat(gameStat.isForcedResignationRisk()).isTrue();
+    }
+
+    @DisplayName("체력 구간에 따라 건강 위험 상태를 판정한다.")
+    @Test
+    void evaluateHealthRisk() {
+        // given
+        final GameStat stable = GameStat.create(1, 70, 10, 10, 50, 50, 1);
+        final GameStat negotiationPenalty = GameStat.create(2, 69, 10, 10, 50, 50, 1);
+        final GameStat medicalBillCandidate = GameStat.create(3, 49, 10, 10, 50, 50, 1);
+        final GameStat hospitalizationCandidate = GameStat.create(4, 29, 10, 10, 50, 50, 1);
+        final GameStat forcedResignationCandidate = GameStat.create(5, 9, 10, 10, 50, 50, 1);
+
+        // when & then
+        assertThat(stable.evaluateHealthRisk()).isEqualTo(HealthRisk.STABLE);
+        assertThat(negotiationPenalty.evaluateHealthRisk()).isEqualTo(
+            HealthRisk.NEGOTIATION_PENALTY
+        );
+        assertThat(medicalBillCandidate.evaluateHealthRisk()).isEqualTo(
+            HealthRisk.MEDICAL_BILL_CANDIDATE
+        );
+        assertThat(hospitalizationCandidate.evaluateHealthRisk()).isEqualTo(
+            HealthRisk.HOSPITALIZATION_CANDIDATE
+        );
+        assertThat(forcedResignationCandidate.evaluateHealthRisk()).isEqualTo(
+            HealthRisk.FORCED_RESIGNATION_CANDIDATE
+        );
+    }
+
+    @DisplayName("건강 위험 상태는 입원 후보와 강제 퇴사 후보 여부를 함께 제공한다.")
+    @Test
+    void evaluateHealthRiskCandidateFlags() {
+        // given
+        final GameStat hospitalizationCandidate = GameStat.create(1, 20, 10, 10, 50, 50, 1);
+        final GameStat forcedResignationCandidate = GameStat.create(2, 5, 10, 10, 50, 50, 1);
+
+        // when
+        final HealthRisk hospitalizationRisk = hospitalizationCandidate.evaluateHealthRisk();
+        final HealthRisk forcedResignationRisk = forcedResignationCandidate.evaluateHealthRisk();
+
+        // then
+        assertThat(hospitalizationRisk.isHospitalizationCandidate()).isTrue();
+        assertThat(hospitalizationRisk.isForcedResignationCandidate()).isFalse();
+        assertThat(forcedResignationRisk.isHospitalizationCandidate()).isFalse();
+        assertThat(forcedResignationRisk.isForcedResignationCandidate()).isTrue();
     }
 
     @DisplayName("입원 종료 턴 전까지는 입원 상태로 판단한다.")

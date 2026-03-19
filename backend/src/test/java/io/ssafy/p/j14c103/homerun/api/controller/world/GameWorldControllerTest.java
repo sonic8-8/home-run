@@ -53,6 +53,7 @@ class GameWorldControllerTest {
             .andExpect(jsonPath("$.message").value("OK"))
             .andExpect(jsonPath("$.data.turnNumber").value(12))
             .andExpect(jsonPath("$.data.currentDate").value("2026-01-01"))
+            .andExpect(jsonPath("$.data.month").value(1))
             .andExpect(jsonPath("$.data.economicCycle.phase").value("BOOM"))
             .andExpect(jsonPath("$.data.economicCycle.description").value("경기 호황기"))
             .andExpect(jsonPath("$.data.news").isArray())
@@ -64,7 +65,7 @@ class GameWorldControllerTest {
     void getTurnWithUnknownSessionId() throws Exception {
         // given
         given(gameWorldService.getTurn(anyInt()))
-            .willThrow(HomerunException.from(ErrorCode.WORLD_SESSION_NOT_FOUND));
+            .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/9999/turn"))
