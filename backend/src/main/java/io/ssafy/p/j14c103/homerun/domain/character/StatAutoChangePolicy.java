@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.domain.character;
 
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 
 public class StatAutoChangePolicy {
 
@@ -66,7 +68,7 @@ public class StatAutoChangePolicy {
             return -6;
         }
 
-        throw new IllegalArgumentException("지원하지 않는 housingType입니다: " + housingType);
+        throw new HomerunException(ErrorCode.CHARACTER_HOUSING_TYPE_UNSUPPORTED);
     }
 
     private int resolveFatigueDelta(final HousingType housingType) {
@@ -90,12 +92,12 @@ public class StatAutoChangePolicy {
             return -13;
         }
 
-        throw new IllegalArgumentException("지원하지 않는 housingType입니다: " + housingType);
+        throw new HomerunException(ErrorCode.CHARACTER_HOUSING_TYPE_UNSUPPORTED);
     }
 
     private int requireStat(final String fieldName, final Integer value) {
         if (value == null) {
-            throw new IllegalStateException(fieldName + "가 초기화되지 않았습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
         }
 
         return value;
@@ -103,7 +105,7 @@ public class StatAutoChangePolicy {
 
     private void validateNotNull(final Object value, final String fieldName) {
         if (value == null) {
-            throw new IllegalArgumentException(fieldName + "은 null일 수 없습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
     }
 

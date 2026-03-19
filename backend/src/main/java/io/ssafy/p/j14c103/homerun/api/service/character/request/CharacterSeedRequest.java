@@ -2,6 +2,8 @@ package io.ssafy.p.j14c103.homerun.api.service.character.request;
 
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 
 public record CharacterSeedRequest(
     CharacterType characterType,
@@ -11,13 +13,13 @@ public record CharacterSeedRequest(
 
     public CharacterSeedRequest {
         if (characterType == null) {
-            throw new IllegalArgumentException("characterType은 null일 수 없습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
         if (jobType == null) {
-            throw new IllegalArgumentException("jobType은 null일 수 없습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
         if (seedType == null || seedType.isBlank()) {
-            throw new IllegalArgumentException("seedType은 비어 있을 수 없습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
     }
 

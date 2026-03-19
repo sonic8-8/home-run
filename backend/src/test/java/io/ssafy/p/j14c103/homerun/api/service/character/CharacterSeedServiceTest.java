@@ -8,6 +8,8 @@ import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterSeedRe
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,7 +94,8 @@ class CharacterSeedServiceTest {
 
         // when & then
         assertThatThrownBy(() -> characterSeedService.generate(request))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("지원하지 않는 seedType");
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.CHARACTER_SEED_TYPE_UNSUPPORTED);
     }
 }

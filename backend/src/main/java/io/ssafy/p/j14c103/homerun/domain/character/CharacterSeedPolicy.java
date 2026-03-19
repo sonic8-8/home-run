@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.domain.character;
 
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
 
 public class CharacterSeedPolicy {
@@ -108,7 +110,7 @@ public class CharacterSeedPolicy {
         return jobTypeProfiles.stream()
             .filter(profile -> profile.jobType() == jobType)
             .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 jobType입니다: " + jobType));
+            .orElseThrow(() -> new HomerunException(ErrorCode.CHARACTER_JOB_TYPE_UNSUPPORTED));
     }
 
     private int resolveInitialCash(final SeedType seedType) {
@@ -121,7 +123,7 @@ public class CharacterSeedPolicy {
 
     private void validateNotNull(final Object value, final String fieldName) {
         if (value == null) {
-            throw new IllegalArgumentException(fieldName + "은 null일 수 없습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
     }
 
@@ -134,16 +136,16 @@ public class CharacterSeedPolicy {
 
         public CharacterSeedPlan {
             if (characterType == null) {
-                throw new IllegalArgumentException("characterType은 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (session == null) {
-                throw new IllegalArgumentException("session은 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (stat == null) {
-                throw new IllegalArgumentException("stat은 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (career == null) {
-                throw new IllegalArgumentException("career는 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
         }
     }
@@ -157,10 +159,10 @@ public class CharacterSeedPolicy {
 
         public SessionSeed {
             if (jobTypeSummary == null) {
-                throw new IllegalArgumentException("jobTypeSummary는 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (seedType == null) {
-                throw new IllegalArgumentException("seedType은 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             validateNonNegative("initialCash", initialCash);
             validateNonNegative("initialNetAssets", initialNetAssets);
@@ -221,10 +223,10 @@ public class CharacterSeedPolicy {
 
         public CareerSeed {
             if (jobType == null) {
-                throw new IllegalArgumentException("jobType은 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (jobTitle == null || jobTitle.isBlank()) {
-                throw new IllegalArgumentException("jobTitle은 비어 있을 수 없습니다.");
+                throwPolicyInvalid();
             }
             validateNonNegative("annualSalary", annualSalary);
             validateNonNegative("monthlySalary", monthlySalary);
@@ -234,7 +236,7 @@ public class CharacterSeedPolicy {
             validateNonNegative("negotiationPreparationScore", negotiationPreparationScore);
             validateNonNegative("lastNegotiatedTurn", lastNegotiatedTurn);
             if (employmentStatus == null) {
-                throw new IllegalArgumentException("employmentStatus는 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             validateNullableNonNegative("probationEndTurn", probationEndTurn);
             validateNullableNonNegative("rehireAvailableTurn", rehireAvailableTurn);
@@ -279,24 +281,24 @@ public class CharacterSeedPolicy {
 
         public JobTypeSeedProfile {
             if (jobType == null) {
-                throw new IllegalArgumentException("jobType은 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (label == null || label.isBlank()) {
-                throw new IllegalArgumentException("label은 비어 있을 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (gauge == null) {
-                throw new IllegalArgumentException("gauge는 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (statOffset == null) {
-                throw new IllegalArgumentException("statOffset은 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             validateNonNegative("initialAnnualSalary", initialAnnualSalary);
             validateNonNegative("initialMonthlySalary", initialMonthlySalary);
             if (initialJobTitle == null || initialJobTitle.isBlank()) {
-                throw new IllegalArgumentException("initialJobTitle은 비어 있을 수 없습니다.");
+                throwPolicyInvalid();
             }
             if (initialEmploymentStatus == null) {
-                throw new IllegalArgumentException("initialEmploymentStatus는 null일 수 없습니다.");
+                throwPolicyInvalid();
             }
             validateNullableNonNegative("probationEndTurn", probationEndTurn);
         }
@@ -356,13 +358,13 @@ public class CharacterSeedPolicy {
 
     private static void validateStatRange(final String fieldName, final int value) {
         if (value < 0 || value > 100) {
-            throw new IllegalArgumentException(fieldName + "는 0에서 100 사이여야 합니다.");
+            throwPolicyInvalid();
         }
     }
 
     private static void validateNonNegative(final String fieldName, final int value) {
         if (value < 0) {
-            throw new IllegalArgumentException(fieldName + "는 0 이상이어야 합니다.");
+            throwPolicyInvalid();
         }
     }
 
@@ -375,5 +377,9 @@ public class CharacterSeedPolicy {
         }
 
         validateNonNegative(fieldName, value);
+    }
+
+    private static void throwPolicyInvalid() {
+        throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
     }
 }
