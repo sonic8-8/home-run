@@ -2,7 +2,8 @@ import type { IRealEstateRepository } from '../repositories/IRealEstateRepositor
 import type { Property } from '../entities/Property';
 
 export class GetPropertyDetailUseCase {
-  constructor(private readonly repository: IRealEstateRepository) {}
+  private readonly repository: IRealEstateRepository;
+  constructor(repository: IRealEstateRepository) { this.repository = repository; }
 
   async execute(sessionId: number, propertyId: string): Promise<Property> {
     return this.repository.getPropertyDetail(sessionId, propertyId);

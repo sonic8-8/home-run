@@ -47,8 +47,8 @@ export function CityMap({
       style={{ width: '100%', height: '100%' }}
     >
       <Geographies geography={GEO_MUNICIPALITIES}>
-        {({ geographies }) => {
-          const filtered = geographies.filter((geo) => matchByCode(geo, data.code));
+        {({ geographies }: any) => {
+          const filtered = geographies.filter((geo: any) => matchByCode(geo, data.code));
           return (
             <>
               {filtered.map((geo) => {

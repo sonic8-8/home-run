@@ -4,7 +4,8 @@ import type { PropertyDocument, Trap, ContractResponse, PurchaseResponse, Contra
 import { RealEstateRemoteDataSource } from '../datasources/RealEstateRemoteDataSource';
 
 export class RealEstateRepositoryImpl implements IRealEstateRepository {
-  constructor(private readonly dataSource: RealEstateRemoteDataSource) {}
+  private readonly dataSource: RealEstateRemoteDataSource;
+  constructor(dataSource: RealEstateRemoteDataSource) { this.dataSource = dataSource; }
 
   async getProperties(sessionId: number, bounds: string): Promise<PropertySummary[]> {
     const response = await this.dataSource.getProperties(sessionId, bounds);
