@@ -115,6 +115,7 @@ class UserRepositoryTest {
         );
         user.linkSsafy("ssafy-user-key", connectedAt);
         user.markAccountVerified(verifiedAt);
+        user.updatePaymentType("LIVING");
 
         userRepository.saveAndFlush(user);
         entityManager.clear();
@@ -128,6 +129,7 @@ class UserRepositoryTest {
         assertThat(result.getSsafyUserKey()).isEqualTo("ssafy-user-key");
         assertThat(result.getSsafyConnectedAt()).isEqualTo(connectedAt);
         assertThat(result.getAccountAuthVerifiedAt()).isEqualTo(verifiedAt);
+        assertThat(result.getPaymentType()).isEqualTo("LIVING");
         assertThat(result.getCreatedAt()).isNotNull();
     }
 }
