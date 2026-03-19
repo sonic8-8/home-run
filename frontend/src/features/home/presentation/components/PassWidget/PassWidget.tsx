@@ -12,6 +12,7 @@ interface PassWidgetProps {
 export function PassWidget({ subscriptions, allPasses }: PassWidgetProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const isEmpty = subscriptions.length === 0;
+  const totalSaved = subscriptions.reduce((sum, s) => sum + s.totalSaved, 0);
 
   return (
     <>
@@ -26,18 +27,17 @@ export function PassWidget({ subscriptions, allPasses }: PassWidgetProps) {
         {isEmpty ? (
           <div className={styles.emptyState}>
             <p className={styles.emptyText}>아직 구독중인 PASS가 존재하지 않아요</p>
-            <button className={styles.subscribeButton} onClick={(e) => { e.stopPropagation(); setModalOpen(true); }}>
+            <button
+              className={styles.subscribeButton}
+              onClick={(e) => { e.stopPropagation(); setModalOpen(true); }}
+            >
               구독하러 가기
             </button>
           </div>
         ) : (
-          <div className={styles.list}>
-            {subscriptions.map((sub) => (
-              <div key={sub.subscriptionId} className={styles.item}>
-                <span className={styles.itemName}>{sub.name}</span>
-                <span className={styles.itemSaved}>{sub.totalSaved.toLocaleString()}원 저축</span>
-              </div>
-            ))}
+          <div className={styles.totalRow}>
+            <span className={styles.totalLabel}>총 저축 금액</span>
+            <span className={styles.totalAmount}>₩ {totalSaved.toLocaleString()}</span>
           </div>
         )}
       </div>
