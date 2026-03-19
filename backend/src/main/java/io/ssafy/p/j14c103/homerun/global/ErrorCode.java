@@ -23,6 +23,7 @@ public enum ErrorCode {
 
     WORLD_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "WORLD_001", "존재하지 않는 게임 세션입니다."),
     WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),
+    WORLD_RESULT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_003", "월드 결과 데이터가 올바르지 않습니다."),
 
     IMAGE_OBJECT_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "IMAGE_001", "objectName은 필수입니다."),
     IMAGE_DOWNLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "IMAGE_002", "이미지 다운로드에 실패했습니다."),

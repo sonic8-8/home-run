@@ -43,25 +43,25 @@ public class GameWorldResult {
 
     private void validateCycleResult(CycleResult cycleResult) {
         if (cycleResult == null) {
-            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
     private void validateNewsCandidates(List<NewsCandidate> newsCandidates) {
         if (newsCandidates == null) {
-            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
     private void validateEventCandidates(List<EventCandidate> eventCandidates) {
         if (eventCandidates == null) {
-            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
     private void validateHousingSnapshot(HousingSnapshot housingSnapshot) {
         if (housingSnapshot == null) {
-            throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
 
@@ -85,13 +85,13 @@ public class GameWorldResult {
 
         private void validateNextPhase(CyclePhase nextPhase) {
             if (nextPhase == null) {
-                throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
             }
         }
 
         private void validateDescription(String description) {
             if (description == null || description.isBlank()) {
-                throw HomerunException.from(ErrorCode.WORLD_RESULT_INVALID);
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
             }
         }
     }

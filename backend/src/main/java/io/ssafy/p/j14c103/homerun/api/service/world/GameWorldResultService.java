@@ -25,7 +25,7 @@ public class GameWorldResultService {
 
     public GameWorldResult buildWorldResult(int gameSessionId, int roll) {
         GameSessionRef gameSessionRef = gameSessionRefRepository.findById(gameSessionId)
-            .orElseThrow(() -> HomerunException.from(ErrorCode.WORLD_SESSION_NOT_FOUND));
+            .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
         CyclePhase currentPhase = parseCyclePhase(gameSessionRef.getEconomicCycleType());
         CyclePhase nextPhase = cycleTransitionPolicy.nextPhase(currentPhase, roll);
         String description = cycleTransitionPolicy.descriptionOf(nextPhase);
@@ -40,13 +40,13 @@ public class GameWorldResultService {
 
     private CyclePhase parseCyclePhase(String economicCycleType) {
         if (economicCycleType == null || economicCycleType.isBlank()) {
-            throw HomerunException.from(ErrorCode.WORLD_CYCLE_STATE_INVALID);
+            throw new HomerunException(ErrorCode.WORLD_CYCLE_STATE_INVALID);
         }
 
         try {
             return CyclePhase.valueOf(economicCycleType);
         } catch (IllegalArgumentException exception) {
-            throw HomerunException.from(ErrorCode.WORLD_CYCLE_STATE_INVALID, exception);
+            throw new HomerunException(ErrorCode.WORLD_CYCLE_STATE_INVALID, exception);
         }
     }
 
