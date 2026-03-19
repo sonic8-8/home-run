@@ -42,6 +42,10 @@ const GameMainPage = lazy(() =>
   }))
 );
 
+const RealEstatePage = lazy(() =>
+  import('@features/realEstate').then((m) => ({ default: m.RealEstatePage }))
+);
+
 const TempPage = () => <div>준비 중</div>;
 
 const DevPreviewPage = lazy(() =>
@@ -68,7 +72,7 @@ const router = createBrowserRouter([
       { path: ROUTES.GAME_SELECT_START_METHOD, element: <Suspense fallback={null}><SelectStartMethodPage /></Suspense> },
       { path: ROUTES.GAME_SELECT_JOB, element: <Suspense fallback={null}><SelectJobPage /></Suspense> },
       { path: ROUTES.LOAN,     element: <TempPage /> },
-      { path: ROUTES.PROPERTY, element: <TempPage /> },
+      { path: ROUTES.PROPERTY, element: <Suspense fallback={null}><RealEstatePage /></Suspense> },
       { path: ROUTES.CARD,     element: <TempPage /> },
       { path: ROUTES.MY_PAGE,  element: <TempPage /> },
     ],
