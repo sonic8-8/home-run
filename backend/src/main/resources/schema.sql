@@ -9,6 +9,7 @@ create table if not exists users (
   ssafy_user_key varchar(255),
   ssafy_connected_at timestamp,
   account_auth_verified_at timestamp,
+  payment_type varchar(100), -- 회원 주요 결제 분야
   created_at timestamp not null default current_timestamp,
   constraint uq_users__email unique (email),
   constraint uq_users__ssafy_user_key unique (ssafy_user_key)
@@ -115,7 +116,7 @@ create table if not exists game_sessions (
   target_district_code varchar(30),
   data_source_type varchar(20),
   current_turn integer not null,
-  current_date date,
+  "current_date" date,
   economic_cycle_type varchar(50),
   cash integer not null,
   net_assets integer,
