@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
-import io.ssafy.p.j14c103.homerun.api.controller.pass.request.PassSaveRequest;
+import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSaveServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
@@ -41,7 +41,7 @@ public class PassSavingService {
     private final UserAuthContextService userAuthContextService;
 
     @Transactional
-    public PassSaveResponse save(final Long userId, final PassSaveRequest request) {
+    public PassSaveResponse save(final Long userId, final PassSaveServiceRequest request) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }

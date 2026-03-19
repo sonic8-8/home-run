@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.domain.character;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -186,19 +188,19 @@ public class GameStat {
 
     private static void validateGameId(final Integer gameId) {
         if (gameId == null || gameId <= 0) {
-            throw new IllegalArgumentException("gameId는 1 이상이어야 합니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_GAME_ID_INVALID);
         }
     }
 
     private static void validateTurn(final int turn, final String fieldName) {
         if (turn < 0) {
-            throw new IllegalArgumentException(fieldName + "은 0 이상이어야 합니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
         }
     }
 
     private static void validateStatRange(final String fieldName, final int value) {
         if (value < MIN_STAT || value > MAX_STAT) {
-            throw new IllegalArgumentException(fieldName + "는 0에서 100 사이여야 합니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_STAT_INVALID);
         }
     }
 
@@ -216,7 +218,7 @@ public class GameStat {
 
     private static int requireInitialized(final String fieldName, final Integer value) {
         if (value == null) {
-            throw new IllegalStateException(fieldName + "가 초기화되지 않았습니다.");
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
         }
 
         return value;
