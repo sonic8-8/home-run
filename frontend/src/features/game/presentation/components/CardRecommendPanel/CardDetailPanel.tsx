@@ -88,6 +88,11 @@ export function CardDetailPanel({ card, onBack }: Props) {
             {card.annualFee === 0 ? '면제' : `${card.annualFee.toLocaleString('ko-KR')}원`}
           </span>
         </div>
+
+        {/* 신청 버튼 */}
+        <button className={styles.applyButton} onClick={() => { /* TODO: API 연동 */ }}>
+          카드 신청하기
+        </button>
       </div>
     </div>
   );
