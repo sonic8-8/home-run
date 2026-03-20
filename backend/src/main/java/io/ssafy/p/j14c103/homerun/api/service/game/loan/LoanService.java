@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.GameSessionLoanDataProvider.LoanSessionData;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanApprovalService.ApprovalResult;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanCalculator.CalculationResult;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanApplyResponse;
@@ -24,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 게임 대출 서비스.
- * 싸피론 + FSS 대출 상품 + 심사 + 확정 + 상환 전체를 관리한다.
+ * 싸피론 + 금감원 대출 상품 + 심사 + 확정 + 상환 전체를 관리한다.
  */
 @Slf4j
 @Service
@@ -35,6 +36,8 @@ public class LoanService {
     private final LoanApplicationRepository loanApplicationRepository;
     private final GameLoanRepository gameLoanRepository;
     private final LoanApprovalService loanApprovalService;
+    private final GameSessionLoanDataProvider sessionDataProvider;
+    private final LoanProductService loanProductService;
 
     /**
      * 이자 계산기.
@@ -52,22 +55,21 @@ public class LoanService {
 
     /**
      * 대출 심사 신청.
+     * GameSessionLoanDataProvider를 통해 세션 데이터를 조회한다.
      */
     @Transactional
     public LoanApplyResponse apply(
             final Integer sessionId,
             final String productId,
-            final Integer propertyId,
-            final int annualSalary,
-            final String jobType,
-            final int cssGrade,
-            final String regionCode,
-            final Integer propertyPrice
+            final Integer propertyId
     ) {
+        final LoanSessionData sessionData = sessionDataProvider.getLoanSessionData(sessionId);
         final LoanType loanType = determineLoanType(productId, propertyId);
 
         final ApprovalResult approvalResult = loanApprovalService.evaluate(
-                loanType, annualSalary, jobType, cssGrade, regionCode, propertyPrice, sessionId);
+                loanType, sessionData.annualSalary(), sessionData.jobType(),
+                sessionData.cssGrade(), sessionData.regionCode(),
+                sessionData.propertyPrice(), sessionId);
 
         final LoanApplication application = LoanApplication.create(
                 sessionId, loanType, productId, propertyId);
@@ -115,9 +117,8 @@ public class LoanService {
 
         application.confirm();
 
-        // 기본 360턴(30년) 상환, 원리금균등
         final int termMonths = 360;
-        final double annualRate = 3.49; // TODO: 상품별 금리 조회
+        final double annualRate = loanProductService.getProductRate(application.getProductId());
         final CalculationResult calcResult = LoanCalculator.calculate(
                 requestedAmount, annualRate, termMonths, RepaymentType.EQUAL_PRINCIPAL_INTEREST);
 
@@ -134,7 +135,8 @@ public class LoanService {
 
         gameLoanRepository.save(gameLoan);
 
-        log.info("대출 확정: sessionId={}, loanId={}, amount={}", sessionId, gameLoan.getGameLoanId(), requestedAmount);
+        log.info("대출 확정: sessionId={}, loanId={}, amount={}, rate={}",
+                sessionId, gameLoan.getGameLoanId(), requestedAmount, annualRate);
 
         return LoanConfirmResponse.from(gameLoan);
     }
@@ -198,11 +200,25 @@ public class LoanService {
                 .sum();
     }
 
+    /**
+     * 대출 유형 결정.
+     * 금감원 상품 유형 조회 또는 propertyId 기반.
+     */
     private LoanType determineLoanType(final String productId, final Integer propertyId) {
         if (propertyId == null) {
             return LoanType.CREDIT;
         }
-        // TODO: productId 기반으로 JEONSE/MORTGAGE 구분 로직 필요
+
+        final String productType = loanProductService.getProductType(productId);
+        if (productType != null) {
+            if (productType.contains("전세")) {
+                return LoanType.JEONSE;
+            }
+            if (productType.contains("주택") || productType.contains("담보")) {
+                return LoanType.MORTGAGE;
+            }
+        }
+
         return LoanType.MORTGAGE;
     }
 }

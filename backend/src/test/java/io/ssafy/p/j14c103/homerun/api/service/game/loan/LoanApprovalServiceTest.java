@@ -1,32 +1,29 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
 
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanApprovalService.ApprovalResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
-import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanType;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
 class LoanApprovalServiceTest {
 
-    @InjectMocks
+    @Autowired
     private LoanApprovalService loanApprovalService;
 
-    @Mock
+    @Autowired
     private GameLoanRepository gameLoanRepository;
 
     @Test
     @DisplayName("개인신용대출 - 대기업 2등급이면 연봉 × 1.5 × 0.8 한도 승인")
-    void 개인신용_대기업_2등급_승인() {
+    void creditLargeBizGrade2Approved() {
         // given
         final int annualSalary = 36_000_000;
         final String jobType = "LARGE_BIZ";
@@ -44,7 +41,7 @@ class LoanApprovalServiceTest {
 
     @Test
     @DisplayName("개인신용대출 - 프리랜서 5등급은 낮은 한도 승인")
-    void 개인신용_프리랜서_5등급_저한도() {
+    void creditFreelancerGrade5LowLimit() {
         // given
         final int annualSalary = 24_000_000;
         final String jobType = "FREELANCER";
@@ -62,14 +59,11 @@ class LoanApprovalServiceTest {
 
     @Test
     @DisplayName("전세대출 서울 - LTV 70% 적용")
-    void 전세_서울_LTV_70() {
+    void jeonseSeoulLtv70() {
         // given
         final int annualSalary = 50_000_000;
         final Integer propertyPrice = 300_000_000;
         final Integer sessionId = 1;
-
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -84,14 +78,11 @@ class LoanApprovalServiceTest {
 
     @Test
     @DisplayName("전세대출 광주 - LTV 80% 적용")
-    void 전세_광주_LTV_80() {
+    void jeonseGwangjuLtv80() {
         // given
         final int annualSalary = 50_000_000;
         final Integer propertyPrice = 200_000_000;
         final Integer sessionId = 1;
-
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -106,14 +97,11 @@ class LoanApprovalServiceTest {
 
     @Test
     @DisplayName("주택담보대출 서울 - LTV 50% 적용")
-    void 주담_서울_LTV_50() {
+    void mortgageSeoulLtv50() {
         // given
         final int annualSalary = 60_000_000;
         final Integer propertyPrice = 500_000_000;
         final Integer sessionId = 1;
-
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -128,14 +116,11 @@ class LoanApprovalServiceTest {
 
     @Test
     @DisplayName("주택담보대출 광주 - LTV 70%, DTI 60% 적용")
-    void 주담_광주_LTV_70_DTI_60() {
+    void mortgageGwangjuLtv70Dti60() {
         // given
         final int annualSalary = 40_000_000;
         final Integer propertyPrice = 300_000_000;
         final Integer sessionId = 1;
-
-        given(gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE))
-                .willReturn(List.of());
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -148,7 +133,7 @@ class LoanApprovalServiceTest {
 
     @Test
     @DisplayName("전세대출 - 매물 가격 없으면 거절")
-    void 전세_매물없음_거절() {
+    void jeonseRejectedWhenNoProperty() {
         // given & when
         final ApprovalResult result = loanApprovalService.evaluate(
                 LoanType.JEONSE, 50_000_000, "LARGE_BIZ", 1,

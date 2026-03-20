@@ -2,51 +2,32 @@ package io.ssafy.p.j14c103.homerun.api.service.game.loan;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoan;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
-import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanApplication;
-import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanApplicationRepository;
-import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanStatus;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Transactional
 class LoanServiceTest {
 
-    @InjectMocks
+    @Autowired
     private LoanService loanService;
 
-    @Mock
-    private LoanApplicationRepository loanApplicationRepository;
-
-    @Mock
+    @Autowired
     private GameLoanRepository gameLoanRepository;
-
-    @Mock
-    private LoanApprovalService loanApprovalService;
 
     @Test
     @DisplayName("싸피론 대출 - 세션당 1건 정상 생성")
-    void 싸피론_정상_생성() {
+    void applySsafyLoan() {
         // given
         final Integer sessionId = 1;
         final int principal = 10_000_000;
-
-        given(gameLoanRepository.countByGameSessionIdAndProductIdAndLoanStatus(
-                sessionId, "SSAFY_LOAN", LoanStatus.ACTIVE))
-                .willReturn(0);
-        given(gameLoanRepository.save(any(GameLoan.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         final GameLoan loan = loanService.applySsafyLoan(sessionId, principal);
@@ -56,18 +37,15 @@ class LoanServiceTest {
         assertThat(loan.getPrincipalAmount()).isEqualTo(10_000_000);
         assertThat(loan.isActive()).isTrue();
         assertThat(loan.isSsafyLoan()).isTrue();
-        verify(gameLoanRepository).save(any(GameLoan.class));
+        assertThat(gameLoanRepository.findById(loan.getGameLoanId())).isPresent();
     }
 
     @Test
     @DisplayName("싸피론 대출 - 이미 존재하면 예외 발생")
-    void 싸피론_중복_예외() {
+    void applySsafyLoanDuplicateThrows() {
         // given
         final Integer sessionId = 1;
-
-        given(gameLoanRepository.countByGameSessionIdAndProductIdAndLoanStatus(
-                sessionId, "SSAFY_LOAN", LoanStatus.ACTIVE))
-                .willReturn(1);
+        gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 5_000_000));
 
         // when & then
         assertThatThrownBy(() -> loanService.applySsafyLoan(sessionId, 5_000_000))
@@ -76,14 +54,11 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("중도 상환 - 부분 상환 시 잔액 감소")
-    void 중도상환_부분() {
+    void repayPartial() {
         // given
         final Integer sessionId = 1;
-        final Integer loanId = 10;
-        final GameLoan loan = GameLoan.createSsafyLoan(sessionId, 10_000_000);
-
-        given(gameLoanRepository.findById(loanId))
-                .willReturn(Optional.of(loan));
+        final GameLoan loan = gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 10_000_000));
+        final Integer loanId = loan.getGameLoanId();
 
         // when
         final var response = loanService.repay(sessionId, loanId, 3_000_000);
@@ -96,14 +71,11 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("중도 상환 - 전액 상환 시 CLOSED 상태")
-    void 중도상환_전액_CLOSED() {
+    void repayFullClosed() {
         // given
         final Integer sessionId = 1;
-        final Integer loanId = 10;
-        final GameLoan loan = GameLoan.createSsafyLoan(sessionId, 5_000_000);
-
-        given(gameLoanRepository.findById(loanId))
-                .willReturn(Optional.of(loan));
+        final GameLoan loan = gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 5_000_000));
+        final Integer loanId = loan.getGameLoanId();
 
         // when
         final var response = loanService.repay(sessionId, loanId, 5_000_000);
@@ -115,7 +87,7 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("이자 계산기 - 원리금균등 결과 반환")
-    void 이자_계산기_원리금균등() {
+    void calculateEqualPrincipalInterest() {
         // given & when
         final var response = loanService.calculate(
                 200_000_000, 3.49, 360, "EQUAL_PRINCIPAL_INTEREST");
