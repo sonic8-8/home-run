@@ -11,7 +11,7 @@ class LoanCalculatorTest {
 
     @Test
     @DisplayName("원리금균등 - 2억, 3.49%, 360개월 계산")
-    void 원리금균등_계산() {
+    void equalPrincipalInterest() {
         // given
         final int principal = 200_000_000;
         final double annualRate = 3.49;
@@ -30,7 +30,7 @@ class LoanCalculatorTest {
 
     @Test
     @DisplayName("원금균등 - 1억, 4.0%, 120개월 계산")
-    void 원금균등_계산() {
+    void equalPrincipal() {
         // given
         final int principal = 100_000_000;
         final double annualRate = 4.0;
@@ -48,7 +48,7 @@ class LoanCalculatorTest {
 
     @Test
     @DisplayName("만기일시 - 5천만, 3.0%, 60개월 계산")
-    void 만기일시_계산() {
+    void bulletRepayment() {
         // given
         final int principal = 50_000_000;
         final double annualRate = 3.0;
@@ -67,7 +67,7 @@ class LoanCalculatorTest {
 
     @Test
     @DisplayName("금리 0%일 때 이자 없이 원금만 분할")
-    void 금리_0_원리금균등() {
+    void zeroInterestRate() {
         // given
         final int principal = 12_000_000;
         final double annualRate = 0;

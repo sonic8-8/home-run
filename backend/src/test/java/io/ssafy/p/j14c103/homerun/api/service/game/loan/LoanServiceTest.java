@@ -24,7 +24,7 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("싸피론 대출 - 세션당 1건 정상 생성")
-    void 싸피론_정상_생성() {
+    void applySsafyLoan() {
         // given
         final Integer sessionId = 1;
         final int principal = 10_000_000;
@@ -42,7 +42,7 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("싸피론 대출 - 이미 존재하면 예외 발생")
-    void 싸피론_중복_예외() {
+    void applySsafyLoanDuplicateThrows() {
         // given
         final Integer sessionId = 1;
         gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 5_000_000));
@@ -54,7 +54,7 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("중도 상환 - 부분 상환 시 잔액 감소")
-    void 중도상환_부분() {
+    void repayPartial() {
         // given
         final Integer sessionId = 1;
         final GameLoan loan = gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 10_000_000));
@@ -71,7 +71,7 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("중도 상환 - 전액 상환 시 CLOSED 상태")
-    void 중도상환_전액_CLOSED() {
+    void repayFullClosed() {
         // given
         final Integer sessionId = 1;
         final GameLoan loan = gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 5_000_000));
@@ -87,7 +87,7 @@ class LoanServiceTest {
 
     @Test
     @DisplayName("이자 계산기 - 원리금균등 결과 반환")
-    void 이자_계산기_원리금균등() {
+    void calculateEqualPrincipalInterest() {
         // given & when
         final var response = loanService.calculate(
                 200_000_000, 3.49, 360, "EQUAL_PRINCIPAL_INTEREST");

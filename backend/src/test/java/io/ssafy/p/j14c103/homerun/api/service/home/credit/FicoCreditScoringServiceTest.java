@@ -42,7 +42,7 @@ class FicoCreditScoringServiceTest {
 
     @Test
     @DisplayName("금융 이력 없는 사용자는 보수적 기본 점수를 받는다")
-    void 이력없는사용자_보수적기본점수() {
+    void noHistoryUserGetsConservativeBaseScore() {
         // when
         final CreditScore result = ficoCreditScoringService.calculate(userId);
 
@@ -58,7 +58,7 @@ class FicoCreditScoringServiceTest {
 
     @Test
     @DisplayName("CSS 총점은 5요소 합산이며 1000점을 초과하지 않는다")
-    void CSS총점_5요소합산_최대1000() {
+    void totalScoreIsSumOfFiveFactorsMaxThousand() {
         // when
         final CreditScore result = ficoCreditScoringService.calculate(userId);
 
@@ -71,7 +71,7 @@ class FicoCreditScoringServiceTest {
 
     @Test
     @DisplayName("등급별 금리 계수는 1등급 0.0, 5등급 1.0이다")
-    void 등급별_금리계수() {
+    void rateCoefficient() {
         // given & when & then
         assertThat(CreditScore.of(350, 300, 150, 100, 100).rateCoefficient()).isEqualTo(0.0);
         assertThat(CreditScore.of(300, 250, 120, 80, 80).rateCoefficient()).isEqualTo(0.25);
