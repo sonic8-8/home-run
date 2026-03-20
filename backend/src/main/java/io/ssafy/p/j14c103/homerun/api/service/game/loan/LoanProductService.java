@@ -6,6 +6,7 @@ import io.ssafy.p.j14c103.homerun.client.fss.FssLoanClient;
 import io.ssafy.p.j14c103.homerun.client.fss.FssLoanResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -48,8 +49,11 @@ public class LoanProductService {
             Map.entry("주식회사 카카오뱅크", "kakao.png")
     );
 
-    @org.springframework.beans.factory.annotation.Value("${game.loan.bank-logo.base-path:/images/banks/}")
+    @Value("${game.loan.bank-logo.base-path:/images/banks/}")
     private String bankLogoBasePath;
+
+    @Value("${game.loan.default-rate:3.49}")
+    private double defaultRate;
 
     private final FssLoanClient fssLoanClient;
 
@@ -103,7 +107,7 @@ public class LoanProductService {
     public double getProductRate(final String productId) {
         return getProductDetail(productId)
                 .map(LoanProductDetailResponse::getMinRate)
-                .orElse(3.49);
+                .orElse(defaultRate);
     }
 
     /**

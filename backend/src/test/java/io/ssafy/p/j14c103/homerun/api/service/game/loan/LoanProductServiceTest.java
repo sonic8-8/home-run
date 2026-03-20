@@ -27,7 +27,7 @@ class LoanProductServiceTest {
 
     @Test
     @DisplayName("FSS 데이터가 없으면 빈 목록을 반환한다")
-    void FSS데이터없음_빈목록() {
+    void getProductsEmptyWhenNoFssData() {
         // given
         given(fssLoanClient.getCreditLoanProducts()).willReturn(FssLoanResponse.empty());
         given(fssLoanClient.getRentHouseLoanProducts()).willReturn(FssLoanResponse.empty());
@@ -42,7 +42,7 @@ class LoanProductServiceTest {
 
     @Test
     @DisplayName("카테고리 CREDIT은 개인신용대출만 반환한다")
-    void 카테고리_CREDIT_필터링() {
+    void getProductsFilterByCredit() {
         // given
         final FssLoanResponse creditResponse = createFssResponse("CREDIT_PROD", "국민은행", "국민신용대출");
         given(fssLoanClient.getCreditLoanProducts()).willReturn(creditResponse);
@@ -57,7 +57,7 @@ class LoanProductServiceTest {
 
     @Test
     @DisplayName("상품 상세 조회 시 존재하지 않는 상품이면 빈 Optional을 반환한다")
-    void 상품상세_존재하지않음() {
+    void getProductDetailEmptyWhenNotFound() {
         // given
         given(fssLoanClient.getCreditLoanProducts()).willReturn(FssLoanResponse.empty());
         given(fssLoanClient.getRentHouseLoanProducts()).willReturn(FssLoanResponse.empty());
@@ -72,7 +72,7 @@ class LoanProductServiceTest {
 
     @Test
     @DisplayName("상품 금리 조회 시 상품이 없으면 기본 금리 3.49%를 반환한다")
-    void 상품금리_기본값() {
+    void getProductRateDefaultWhenNotFound() {
         // given
         given(fssLoanClient.getCreditLoanProducts()).willReturn(FssLoanResponse.empty());
         given(fssLoanClient.getRentHouseLoanProducts()).willReturn(FssLoanResponse.empty());
