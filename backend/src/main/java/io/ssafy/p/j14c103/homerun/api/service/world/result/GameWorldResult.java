@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.world.result;
 
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -115,16 +116,61 @@ public class GameWorldResult {
     @Getter
     public static class EventCandidate {
 
-        private final Long eventId;
-        private final String title;
+        private final Integer gameEventId;
+        private final String eventCode;
+        private final String eventName;
+        private final EventPresentationType eventPresentationType;
 
-        private EventCandidate(Long eventId, String title) {
-            this.eventId = eventId;
-            this.title = title;
+        private EventCandidate(
+            final Integer gameEventId,
+            final String eventCode,
+            final String eventName,
+            final EventPresentationType eventPresentationType
+        ) {
+            validateGameEventId(gameEventId);
+            validateEventCode(eventCode);
+            validateEventName(eventName);
+            validateEventPresentationType(eventPresentationType);
+
+            this.gameEventId = gameEventId;
+            this.eventCode = eventCode;
+            this.eventName = eventName;
+            this.eventPresentationType = eventPresentationType;
         }
 
-        public static EventCandidate of(Long eventId, String title) {
-            return new EventCandidate(eventId, title);
+        public static EventCandidate of(
+            final Integer gameEventId,
+            final String eventCode,
+            final String eventName,
+            final EventPresentationType eventPresentationType
+        ) {
+            return new EventCandidate(gameEventId, eventCode, eventName, eventPresentationType);
+        }
+
+        private void validateGameEventId(final Integer gameEventId) {
+            if (gameEventId == null) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
+        }
+
+        private void validateEventCode(final String eventCode) {
+            if (eventCode == null || eventCode.isBlank()) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
+        }
+
+        private void validateEventName(final String eventName) {
+            if (eventName == null || eventName.isBlank()) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
+        }
+
+        private void validateEventPresentationType(
+            final EventPresentationType eventPresentationType
+        ) {
+            if (eventPresentationType == null) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
         }
     }
 

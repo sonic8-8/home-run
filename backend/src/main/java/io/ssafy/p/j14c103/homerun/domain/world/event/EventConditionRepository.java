@@ -5,4 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EventConditionRepository extends JpaRepository<EventCondition, Integer> {
 
     boolean existsByGameEventId(Integer gameEventId);
+
+    java.util.List<EventCondition> findAllByGameEventIdOrderByConditionGroupNumberAscConditionOrderAsc(
+        Integer gameEventId
+    );
 }
