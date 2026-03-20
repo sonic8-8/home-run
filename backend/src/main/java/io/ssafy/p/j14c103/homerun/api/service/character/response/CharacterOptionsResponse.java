@@ -11,7 +11,7 @@ public record CharacterOptionsResponse(
 
     public CharacterOptionsResponse {
         if (characters == null) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
         characters = List.copyOf(characters);
     }
@@ -27,10 +27,10 @@ public record CharacterOptionsResponse(
 
         public CharacterOptionResponse {
             if (characterType == null) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
             if (thumbnailUrl == null || thumbnailUrl.isBlank()) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
         }
 
@@ -40,9 +40,5 @@ public record CharacterOptionsResponse(
         ) {
             return new CharacterOptionResponse(characterType, thumbnailUrl);
         }
-    }
-
-    private static void throwResponseInvalid() {
-        throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
     }
 }

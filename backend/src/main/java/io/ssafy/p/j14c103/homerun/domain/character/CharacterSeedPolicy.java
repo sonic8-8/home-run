@@ -87,9 +87,9 @@ public class CharacterSeedPolicy {
         final JobType jobType,
         final SeedType seedType
     ) {
-        validateNotNull(characterType, "characterType");
-        validateNotNull(jobType, "jobType");
-        validateNotNull(seedType, "seedType");
+        validateNotNull(characterType);
+        validateNotNull(jobType);
+        validateNotNull(seedType);
 
         final JobTypeSeedProfile profile = findJobTypeProfile(jobType);
         final int initialCash = resolveInitialCash(seedType);
@@ -121,7 +121,7 @@ public class CharacterSeedPolicy {
         return DEFAULT_INITIAL_CASH;
     }
 
-    private void validateNotNull(final Object value, final String fieldName) {
+    private void validateNotNull(final Object value) {
         if (value == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
@@ -136,16 +136,16 @@ public class CharacterSeedPolicy {
 
         public CharacterSeedPlan {
             if (characterType == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (session == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (stat == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (career == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
         }
     }
@@ -159,13 +159,13 @@ public class CharacterSeedPolicy {
 
         public SessionSeed {
             if (jobTypeSummary == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (seedType == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
-            validateNonNegative("initialCash", initialCash);
-            validateNonNegative("initialNetAssets", initialNetAssets);
+            validateNonNegative(initialCash);
+            validateNonNegative(initialNetAssets);
         }
 
         public static SessionSeed of(
@@ -186,11 +186,11 @@ public class CharacterSeedPolicy {
     ) {
 
         public StatSeed {
-            validateStatRange("health", health);
-            validateStatRange("fatigue", fatigue);
-            validateStatRange("stress", stress);
-            validateStatRange("knowledge", knowledge);
-            validateStatRange("happiness", happiness);
+            validateStatRange(health);
+            validateStatRange(fatigue);
+            validateStatRange(stress);
+            validateStatRange(knowledge);
+            validateStatRange(happiness);
         }
 
         public static StatSeed from(final StatOffset statOffset) {
@@ -223,28 +223,25 @@ public class CharacterSeedPolicy {
 
         public CareerSeed {
             if (jobType == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (jobTitle == null || jobTitle.isBlank()) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
-            validateNonNegative("annualSalary", annualSalary);
-            validateNonNegative("monthlySalary", monthlySalary);
-            validateNonNegative("tenureTurns", tenureTurns);
-            validateNonNegative("recentStudyCount", recentStudyCount);
-            validateNonNegative("recentNetworkingCount", recentNetworkingCount);
-            validateNonNegative("negotiationPreparationScore", negotiationPreparationScore);
-            validateNonNegative("lastNegotiatedTurn", lastNegotiatedTurn);
+            validateNonNegative(annualSalary);
+            validateNonNegative(monthlySalary);
+            validateNonNegative(tenureTurns);
+            validateNonNegative(recentStudyCount);
+            validateNonNegative(recentNetworkingCount);
+            validateNonNegative(negotiationPreparationScore);
+            validateNonNegative(lastNegotiatedTurn);
             if (employmentStatus == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
-            validateNullableNonNegative("probationEndTurn", probationEndTurn);
-            validateNullableNonNegative("rehireAvailableTurn", rehireAvailableTurn);
-            validateNonNegative(
-                "remainingUnemploymentBenefitTurns",
-                remainingUnemploymentBenefitTurns
-            );
-            validateNullableNonNegative("salaryBeforeResignation", salaryBeforeResignation);
+            validateNullableNonNegative(probationEndTurn);
+            validateNullableNonNegative(rehireAvailableTurn);
+            validateNonNegative(remainingUnemploymentBenefitTurns);
+            validateNullableNonNegative(salaryBeforeResignation);
         }
 
         public static CareerSeed from(final JobTypeSeedProfile profile) {
@@ -281,26 +278,26 @@ public class CharacterSeedPolicy {
 
         public JobTypeSeedProfile {
             if (jobType == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (label == null || label.isBlank()) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (gauge == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (statOffset == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
-            validateNonNegative("initialAnnualSalary", initialAnnualSalary);
-            validateNonNegative("initialMonthlySalary", initialMonthlySalary);
+            validateNonNegative(initialAnnualSalary);
+            validateNonNegative(initialMonthlySalary);
             if (initialJobTitle == null || initialJobTitle.isBlank()) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (initialEmploymentStatus == null) {
-                throwPolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
-            validateNullableNonNegative("probationEndTurn", probationEndTurn);
+            validateNullableNonNegative(probationEndTurn);
         }
     }
 
@@ -313,11 +310,11 @@ public class CharacterSeedPolicy {
     ) {
 
         public JobTypeGauge {
-            validateStatRange("salary", salary);
-            validateStatRange("health", health);
-            validateStatRange("stability", stability);
-            validateStatRange("growthSpeed", growthSpeed);
-            validateStatRange("difficulty", difficulty);
+            validateStatRange(salary);
+            validateStatRange(health);
+            validateStatRange(stability);
+            validateStatRange(growthSpeed);
+            validateStatRange(difficulty);
         }
 
         public static JobTypeGauge of(
@@ -356,30 +353,23 @@ public class CharacterSeedPolicy {
         }
     }
 
-    private static void validateStatRange(final String fieldName, final int value) {
+    private static void validateStatRange(final int value) {
         if (value < 0 || value > 100) {
-            throwPolicyInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
         }
     }
 
-    private static void validateNonNegative(final String fieldName, final int value) {
+    private static void validateNonNegative(final int value) {
         if (value < 0) {
-            throwPolicyInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
         }
     }
 
-    private static void validateNullableNonNegative(
-        final String fieldName,
-        final Integer value
-    ) {
+    private static void validateNullableNonNegative(final Integer value) {
         if (value == null) {
             return;
         }
 
-        validateNonNegative(fieldName, value);
-    }
-
-    private static void throwPolicyInvalid() {
-        throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        validateNonNegative(value);
     }
 }

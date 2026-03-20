@@ -67,12 +67,12 @@ public class GameStat {
         final int currentTurn
     ) {
         validateGameId(gameId);
-        validateTurn(currentTurn, "currentTurn");
-        validateStatRange("health", health);
-        validateStatRange("fatigue", fatigue);
-        validateStatRange("stress", stress);
-        validateStatRange("happiness", happiness);
-        validateStatRange("knowledge", knowledge);
+        validateTurn(currentTurn);
+        validateStatRange(health);
+        validateStatRange(fatigue);
+        validateStatRange(stress);
+        validateStatRange(happiness);
+        validateStatRange(knowledge);
 
         final boolean burnout = isBurnoutThresholdMet(fatigue, stress);
         return GameStat.builder()
@@ -96,13 +96,13 @@ public class GameStat {
         final int knowledgeDelta,
         final int currentTurn
     ) {
-        validateTurn(currentTurn, "currentTurn");
+        validateTurn(currentTurn);
 
-        this.health = clampStat(requireInitialized("health", health) + healthDelta);
-        this.fatigue = clampStat(requireInitialized("fatigue", fatigue) + fatigueDelta);
-        this.stress = clampStat(requireInitialized("stress", stress) + stressDelta);
-        this.happiness = clampStat(requireInitialized("happiness", happiness) + happinessDelta);
-        this.knowledge = clampStat(requireInitialized("knowledge", knowledge) + knowledgeDelta);
+        this.health = clampStat(requireInitialized(health) + healthDelta);
+        this.fatigue = clampStat(requireInitialized(fatigue) + fatigueDelta);
+        this.stress = clampStat(requireInitialized(stress) + stressDelta);
+        this.happiness = clampStat(requireInitialized(happiness) + happinessDelta);
+        this.knowledge = clampStat(requireInitialized(knowledge) + knowledgeDelta);
 
         refreshBurnout(currentTurn);
     }
@@ -112,7 +112,7 @@ public class GameStat {
     }
 
     public HealthRisk evaluateHealthRisk() {
-        final int currentHealth = requireInitialized("health", health);
+        final int currentHealth = requireInitialized(health);
 
         if (currentHealth <= FORCED_RESIGNATION_HEALTH_THRESHOLD) {
             return HealthRisk.FORCED_RESIGNATION_CANDIDATE;
@@ -134,12 +134,12 @@ public class GameStat {
     }
 
     public void hospitalizeUntil(final int endTurn) {
-        validateTurn(endTurn, "endTurn");
+        validateTurn(endTurn);
         this.hospitalizedUntilTurn = endTurn;
     }
 
     public boolean isHospitalizedAt(final int currentTurn) {
-        validateTurn(currentTurn, "currentTurn");
+        validateTurn(currentTurn);
 
         if (hospitalizedUntilTurn == null) {
             return false;
@@ -149,8 +149,8 @@ public class GameStat {
     }
 
     private void refreshBurnout(final int currentTurn) {
-        final int currentFatigue = requireInitialized("fatigue", fatigue);
-        final int currentStress = requireInitialized("stress", stress);
+        final int currentFatigue = requireInitialized(fatigue);
+        final int currentStress = requireInitialized(stress);
 
         if (Boolean.TRUE.equals(burnout)) {
             if (isBurnoutReleaseConditionMet(currentFatigue, currentStress)) {
@@ -192,13 +192,13 @@ public class GameStat {
         }
     }
 
-    private static void validateTurn(final int turn, final String fieldName) {
+    private static void validateTurn(final int turn) {
         if (turn < 0) {
             throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
         }
     }
 
-    private static void validateStatRange(final String fieldName, final int value) {
+    private static void validateStatRange(final int value) {
         if (value < MIN_STAT || value > MAX_STAT) {
             throw new HomerunException(ErrorCode.CHARACTER_STAT_INVALID);
         }
@@ -216,7 +216,7 @@ public class GameStat {
         return value;
     }
 
-    private static int requireInitialized(final String fieldName, final Integer value) {
+    private static int requireInitialized(final Integer value) {
         if (value == null) {
             throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
         }

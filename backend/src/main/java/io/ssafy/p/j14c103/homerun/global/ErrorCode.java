@@ -34,7 +34,6 @@ public enum ErrorCode {
     CHARACTER_POLICY_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "CHAR_010", "캐릭터 정책 구성이 올바르지 않습니다."),
     CHARACTER_RESPONSE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "CHAR_011", "캐릭터 응답 데이터 구성이 올바르지 않습니다."),
     CHARACTER_ACTION_TYPE_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CHAR_012", "지원하지 않는 행동 타입입니다."),
-    CHARACTER_SCHEDULE_POLICY_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "CHAR_013", "캐릭터 행동 정책 구성이 올바르지 않습니다."),
 
     WORLD_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "WORLD_001", "존재하지 않는 게임 세션입니다."),
     WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),

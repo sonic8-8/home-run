@@ -139,19 +139,19 @@ public class ActionCatalog {
 
         public ActionDefinition {
             if (actionType == null) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (category == null) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (label == null || label.isBlank()) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (iconKey == null || iconKey.isBlank()) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (statDelta == null) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
         }
 
@@ -221,9 +221,5 @@ public class ActionCatalog {
                 knowledgeDelta
             );
         }
-    }
-
-    private static void throwSchedulePolicyInvalid() {
-        throw new HomerunException(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
     }
 }

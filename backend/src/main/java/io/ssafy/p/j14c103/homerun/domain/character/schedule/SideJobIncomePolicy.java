@@ -22,7 +22,7 @@ public class SideJobIncomePolicy {
 
     SideJobIncomePolicy(final IncomeRandomizer incomeRandomizer) {
         if (incomeRandomizer == null) {
-            throwSchedulePolicyInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
         }
 
         this.incomeRandomizer = incomeRandomizer;
@@ -159,16 +159,16 @@ public class SideJobIncomePolicy {
 
         public IncomeRange {
             if (sideJobKind == null || sideJobKind.isBlank()) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (minimumIncome < 0) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (maximumIncome < 0) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (minimumIncome > maximumIncome) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
         }
 
@@ -184,13 +184,13 @@ public class SideJobIncomePolicy {
 
         public IncomePreview {
             if (minimumIncome < 0) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (maximumIncome < 0) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (minimumIncome > maximumIncome) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
         }
 
@@ -205,9 +205,5 @@ public class SideJobIncomePolicy {
         public boolean isRange() {
             return minimumIncome != maximumIncome;
         }
-    }
-
-    private static void throwSchedulePolicyInvalid() {
-        throw new HomerunException(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
     }
 }

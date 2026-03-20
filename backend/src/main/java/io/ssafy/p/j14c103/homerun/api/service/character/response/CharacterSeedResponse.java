@@ -16,16 +16,16 @@ public record CharacterSeedResponse(
 
     public CharacterSeedResponse {
         if (characterType == null) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
         if (session == null) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
         if (stat == null) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
         if (career == null) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
     }
 
@@ -47,13 +47,13 @@ public record CharacterSeedResponse(
 
         public SessionSeedResponse {
             if (jobTypeSummary == null) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
             if (seedType == null || seedType.isBlank()) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
-            validateNonNegative("initialCash", initialCash);
-            validateNonNegative("initialNetAssets", initialNetAssets);
+            validateNonNegative(initialCash);
+            validateNonNegative(initialNetAssets);
         }
 
         public static SessionSeedResponse from(final CharacterSeedPolicy.SessionSeed sessionSeed) {
@@ -75,11 +75,11 @@ public record CharacterSeedResponse(
     ) {
 
         public StatSeedResponse {
-            validateRange("health", health);
-            validateRange("fatigue", fatigue);
-            validateRange("stress", stress);
-            validateRange("knowledge", knowledge);
-            validateRange("happiness", happiness);
+            validateRange(health);
+            validateRange(fatigue);
+            validateRange(stress);
+            validateRange(knowledge);
+            validateRange(happiness);
         }
 
         public static StatSeedResponse from(final CharacterSeedPolicy.StatSeed statSeed) {
@@ -112,28 +112,25 @@ public record CharacterSeedResponse(
 
         public CareerSeedResponse {
             if (jobType == null) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
             if (jobTitle == null || jobTitle.isBlank()) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
-            validateNonNegative("annualSalary", annualSalary);
-            validateNonNegative("monthlySalary", monthlySalary);
-            validateNonNegative("tenureTurns", tenureTurns);
-            validateNonNegative("recentStudyCount", recentStudyCount);
-            validateNonNegative("recentNetworkingCount", recentNetworkingCount);
-            validateNonNegative("negotiationPreparationScore", negotiationPreparationScore);
-            validateNonNegative("lastNegotiatedTurn", lastNegotiatedTurn);
+            validateNonNegative(annualSalary);
+            validateNonNegative(monthlySalary);
+            validateNonNegative(tenureTurns);
+            validateNonNegative(recentStudyCount);
+            validateNonNegative(recentNetworkingCount);
+            validateNonNegative(negotiationPreparationScore);
+            validateNonNegative(lastNegotiatedTurn);
             if (employmentStatus == null) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
-            validateNullableNonNegative("probationEndTurn", probationEndTurn);
-            validateNullableNonNegative("rehireAvailableTurn", rehireAvailableTurn);
-            validateNonNegative(
-                "remainingUnemploymentBenefitTurns",
-                remainingUnemploymentBenefitTurns
-            );
-            validateNullableNonNegative("salaryBeforeResignation", salaryBeforeResignation);
+            validateNullableNonNegative(probationEndTurn);
+            validateNullableNonNegative(rehireAvailableTurn);
+            validateNonNegative(remainingUnemploymentBenefitTurns);
+            validateNullableNonNegative(salaryBeforeResignation);
         }
 
         public static CareerSeedResponse from(final CharacterSeedPolicy.CareerSeed careerSeed) {
@@ -156,30 +153,23 @@ public record CharacterSeedResponse(
         }
     }
 
-    private static void validateRange(final String fieldName, final int value) {
+    private static void validateRange(final int value) {
         if (value < 0 || value > 100) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
     }
 
-    private static void validateNonNegative(final String fieldName, final int value) {
+    private static void validateNonNegative(final int value) {
         if (value < 0) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
     }
 
-    private static void validateNullableNonNegative(
-        final String fieldName,
-        final Integer value
-    ) {
+    private static void validateNullableNonNegative(final Integer value) {
         if (value == null) {
             return;
         }
 
-        validateNonNegative(fieldName, value);
-    }
-
-    private static void throwResponseInvalid() {
-        throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+        validateNonNegative(value);
     }
 }

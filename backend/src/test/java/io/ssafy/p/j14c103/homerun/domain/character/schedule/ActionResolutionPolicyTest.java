@@ -76,6 +76,6 @@ class ActionResolutionPolicyTest {
         assertThatThrownBy(() -> new ActionResolutionPolicy(null, new SideJobIncomePolicy()))
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
-            .isEqualTo(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
+            .isEqualTo(ErrorCode.CHARACTER_POLICY_INVALID);
     }
 }

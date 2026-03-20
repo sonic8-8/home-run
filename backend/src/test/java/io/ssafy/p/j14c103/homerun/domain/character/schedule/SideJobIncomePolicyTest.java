@@ -67,7 +67,7 @@ class SideJobIncomePolicyTest {
         assertThatThrownBy(() -> new SideJobIncomePolicy(null))
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
-            .isEqualTo(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
+            .isEqualTo(ErrorCode.CHARACTER_POLICY_INVALID);
     }
 
     @DisplayName("중고지식 구간 preview는 실제 부업 수입과 같은 결정형 금액을 사용한다.")

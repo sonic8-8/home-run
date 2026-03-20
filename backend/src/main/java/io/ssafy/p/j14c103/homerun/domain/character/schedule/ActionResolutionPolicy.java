@@ -102,7 +102,7 @@ public class ActionResolutionPolicy {
 
     private void validatePolicyNotNull(final Object value) {
         if (value == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
         }
     }
 
@@ -118,22 +118,22 @@ public class ActionResolutionPolicy {
 
         public ResolvedAction {
             if (actionType == null) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (category == null) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (label == null || label.isBlank()) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (iconKey == null || iconKey.isBlank()) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (statDelta == null) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
             if (cashPreview == null) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
         }
     }
@@ -145,7 +145,7 @@ public class ActionResolutionPolicy {
 
         public CashPreview {
             if (minimumCashDelta > maximumCashDelta) {
-                throwSchedulePolicyInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
             }
         }
 
@@ -156,9 +156,5 @@ public class ActionResolutionPolicy {
         public boolean isRange() {
             return minimumCashDelta != maximumCashDelta;
         }
-    }
-
-    private static void throwSchedulePolicyInvalid() {
-        throw new HomerunException(ErrorCode.CHARACTER_SCHEDULE_POLICY_INVALID);
     }
 }
