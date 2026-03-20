@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EventChoiceRepository extends JpaRepository<EventChoice, Integer> {
 
     List<EventChoice> findAllByGameEventIdOrderByChoiceOrderAsc(Integer gameEventId);
+
+    List<EventChoice> findAllByGameEventIdInOrderByGameEventIdAscChoiceOrderAsc(List<Integer> gameEventIds);
 }
