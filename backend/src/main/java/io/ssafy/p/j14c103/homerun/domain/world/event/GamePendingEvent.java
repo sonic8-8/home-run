@@ -87,4 +87,8 @@ public class GamePendingEvent {
             createdAt
         );
     }
+
+    public void markResolved() {
+        this.resolvedYn = true;
+    }
 }
