@@ -12,18 +12,18 @@ public class StatAutoChangePolicy {
     private static final int MID_KNOWLEDGE_THRESHOLD = 31;
 
     public StatAutoChange calculate(final GameStat gameStat, final HousingType housingType) {
-        validateNotNull(gameStat, "gameStat");
-        validateNotNull(housingType, "housingType");
+        validateNotNull(gameStat);
+        validateNotNull(housingType);
 
         return new StatAutoChange(
             HEALTH_DELTA,
             resolveFatigueDelta(housingType),
             resolveStressDelta(
-                requireStat("happiness", gameStat.getHappiness()),
+                requireStat(gameStat.getHappiness()),
                 housingType
             ),
             HAPPINESS_DELTA,
-            resolveKnowledgeDelta(requireStat("knowledge", gameStat.getKnowledge()))
+            resolveKnowledgeDelta(requireStat(gameStat.getKnowledge()))
         );
     }
 
@@ -95,7 +95,7 @@ public class StatAutoChangePolicy {
         throw new HomerunException(ErrorCode.CHARACTER_HOUSING_TYPE_UNSUPPORTED);
     }
 
-    private int requireStat(final String fieldName, final Integer value) {
+    private int requireStat(final Integer value) {
         if (value == null) {
             throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
         }
@@ -103,7 +103,7 @@ public class StatAutoChangePolicy {
         return value;
     }
 
-    private void validateNotNull(final Object value, final String fieldName) {
+    private void validateNotNull(final Object value) {
         if (value == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }

@@ -11,7 +11,7 @@ public record JobTypeOptionsResponse(
 
     public JobTypeOptionsResponse {
         if (jobTypes == null) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
         jobTypes = List.copyOf(jobTypes);
     }
@@ -28,13 +28,13 @@ public record JobTypeOptionsResponse(
 
         public JobTypeOptionResponse {
             if (jobType == null) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
             if (label == null || label.isBlank()) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
             if (stats == null) {
-                throwResponseInvalid();
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
         }
 
@@ -64,11 +64,11 @@ public record JobTypeOptionsResponse(
     ) {
 
         public JobTypeStatsResponse {
-            validateGauge("salary", salary);
-            validateGauge("health", health);
-            validateGauge("stability", stability);
-            validateGauge("growthSpeed", growthSpeed);
-            validateGauge("difficulty", difficulty);
+            validateGauge(salary);
+            validateGauge(health);
+            validateGauge(stability);
+            validateGauge(growthSpeed);
+            validateGauge(difficulty);
         }
 
         public static JobTypeStatsResponse of(
@@ -82,13 +82,9 @@ public record JobTypeOptionsResponse(
         }
     }
 
-    private static void validateGauge(final String fieldName, final int gauge) {
+    private static void validateGauge(final int gauge) {
         if (gauge < 0 || gauge > 100) {
-            throwResponseInvalid();
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
-    }
-
-    private static void throwResponseInvalid() {
-        throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
     }
 }
