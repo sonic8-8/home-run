@@ -41,6 +41,9 @@ public class User {
     @Column(name = "account_auth_verified_at")
     private LocalDateTime accountAuthVerifiedAt;
 
+    @Column(name = "payment_type", length = 100)
+    private String paymentType;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -67,5 +70,9 @@ public class User {
 
     public void markAccountVerified(LocalDateTime verifiedAt) {
         this.accountAuthVerifiedAt = verifiedAt;
+    }
+
+    public void updatePaymentType(final String paymentType) {
+        this.paymentType = paymentType;
     }
 }

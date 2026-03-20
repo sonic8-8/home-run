@@ -14,6 +14,7 @@ public enum ErrorCode {
     USER_EMAIL_DUPLICATE(HttpStatus.CONFLICT, "USER_004", "이미 가입된 이메일입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_005", "존재하지 않는 사용자입니다."),
     USER_SSAFY_CONNECTION_REQUIRED(HttpStatus.BAD_REQUEST, "USER_006", "SSAFY 연동이 필요합니다."),
+    USER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "USER_007", "사용자 ID는 필수입니다."),
 
     AUTH_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "AUTH_001", "이메일 또는 비밀번호가 올바르지 않습니다."),
     AUTH_REFRESH_INVALID(HttpStatus.UNAUTHORIZED, "AUTH_002", "Refresh Token이 유효하지 않습니다."),
@@ -42,6 +43,9 @@ public enum ErrorCode {
     IMAGE_OBJECT_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "IMAGE_001", "objectName은 필수입니다."),
     IMAGE_DOWNLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "IMAGE_002", "이미지 다운로드에 실패했습니다."),
     OCI_CONFIGURATION_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "OCI_001", "OCI 설정이 올바르지 않습니다."),
+
+    CARD_DUMMY_LOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CARD_001", "카드 더미 데이터 적재에 실패했습니다."),
+    CARD_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "CARD_002", "카드명은 필수입니다."),
 
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "GLOBAL_001", "입력값이 올바르지 않습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_002", "서버 내부 오류가 발생했습니다."),
