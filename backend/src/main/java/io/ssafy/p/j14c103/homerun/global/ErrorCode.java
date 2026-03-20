@@ -40,6 +40,10 @@ public enum ErrorCode {
     WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),
     WORLD_RESULT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_003", "월드 결과 데이터가 올바르지 않습니다."),
 
+    SCHEDULE_ACTION_TYPE_INVALID(HttpStatus.BAD_REQUEST, "SCHEDULE_003", "행동 유형이 올바르지 않습니다."),
+    SCHEDULE_ACTION_CATALOG_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "SCHEDULE_004", "행동 카탈로그 상태가 올바르지 않습니다."),
+    SCHEDULE_KNOWLEDGE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "SCHEDULE_005", "지식 스탯 값이 올바르지 않습니다."),
+
     IMAGE_OBJECT_NAME_REQUIRED(HttpStatus.BAD_REQUEST, "IMAGE_001", "objectName은 필수입니다."),
     IMAGE_DOWNLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "IMAGE_002", "이미지 다운로드에 실패했습니다."),
     OCI_CONFIGURATION_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "OCI_001", "OCI 설정이 올바르지 않습니다."),
