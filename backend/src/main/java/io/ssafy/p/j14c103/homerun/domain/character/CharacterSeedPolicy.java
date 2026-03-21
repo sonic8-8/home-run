@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.domain.character;
 
+import io.ssafy.p.j14c103.homerun.domain.character.career.JobTitlePolicy;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -9,8 +10,6 @@ public class CharacterSeedPolicy {
 
     private static final int MY_DATA_INITIAL_CASH = 13_000_000;
     private static final int DEFAULT_INITIAL_CASH = 10_000_000;
-    private static final String ENTRY_LEVEL_EMPLOYEE_JOB_TITLE = "수습/인턴";
-    private static final String ENTRY_LEVEL_FREELANCER_JOB_TITLE = "신입";
     private static final int BASE_HEALTH = 70;
     private static final int BASE_FATIGUE = 10;
     private static final int BASE_STRESS = 10;
@@ -24,63 +23,77 @@ public class CharacterSeedPolicy {
     private static final int DEFAULT_UNEMPLOYMENT_BENEFIT_TURNS = 0;
     private static final int DEFAULT_PROBATION_END_TURN = 6;
 
-    private final List<JobTypeSeedProfile> jobTypeProfiles = List.of(
-        new JobTypeSeedProfile(
-            JobType.LARGE_BIZ,
-            "대기업 직장인",
-            JobTypeGauge.of(80, 60, 90, 40, 70),
-            StatOffset.of(5, -5, -5, 0, 0),
-            42_000_000,
-            3_500_000,
-            ENTRY_LEVEL_EMPLOYEE_JOB_TITLE,
-            EmploymentStatus.PROBATION,
-            DEFAULT_PROBATION_END_TURN
-        ),
-        new JobTypeSeedProfile(
-            JobType.MID_BIZ,
-            "중견기업 직장인",
-            JobTypeGauge.of(60, 70, 70, 50, 50),
-            StatOffset.of(0, 0, 0, 0, 0),
-            32_000_000,
-            2_666_666,
-            ENTRY_LEVEL_EMPLOYEE_JOB_TITLE,
-            EmploymentStatus.PROBATION,
-            DEFAULT_PROBATION_END_TURN
-        ),
-        new JobTypeSeedProfile(
-            JobType.SMALL_BIZ,
-            "중소기업 직장인",
-            JobTypeGauge.of(40, 80, 50, 60, 30),
-            StatOffset.of(-5, 5, 5, 0, 0),
-            30_000_000,
-            2_500_000,
-            ENTRY_LEVEL_EMPLOYEE_JOB_TITLE,
-            EmploymentStatus.PROBATION,
-            DEFAULT_PROBATION_END_TURN
-        ),
-        new JobTypeSeedProfile(
-            JobType.STARTUP,
-            "스타트업 직장인",
-            JobTypeGauge.of(55, 55, 35, 85, 80),
-            StatOffset.of(-5, 8, 8, 5, -3),
-            31_000_000,
-            2_583_333,
-            ENTRY_LEVEL_EMPLOYEE_JOB_TITLE,
-            EmploymentStatus.PROBATION,
-            DEFAULT_PROBATION_END_TURN
-        ),
-        new JobTypeSeedProfile(
-            JobType.FREELANCER,
-            "프리랜서",
-            JobTypeGauge.of(50, 50, 20, 90, 85),
-            StatOffset.of(-2, 2, 5, 3, 5),
-            28_000_000,
-            2_333_333,
-            ENTRY_LEVEL_FREELANCER_JOB_TITLE,
-            EmploymentStatus.EMPLOYED,
-            null
-        )
-    );
+    private final JobTitlePolicy jobTitlePolicy;
+    private final List<JobTypeSeedProfile> jobTypeProfiles;
+
+    public CharacterSeedPolicy() {
+        this(new JobTitlePolicy());
+    }
+
+    CharacterSeedPolicy(final JobTitlePolicy jobTitlePolicy) {
+        if (jobTitlePolicy == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+
+        this.jobTitlePolicy = jobTitlePolicy;
+        this.jobTypeProfiles = List.of(
+            new JobTypeSeedProfile(
+                JobType.LARGE_BIZ,
+                "대기업 직장인",
+                JobTypeGauge.of(80, 60, 90, 40, 70),
+                StatOffset.of(5, -5, -5, 0, 0),
+                42_000_000,
+                3_500_000,
+                resolveInitialJobTitle(JobType.LARGE_BIZ),
+                EmploymentStatus.PROBATION,
+                DEFAULT_PROBATION_END_TURN
+            ),
+            new JobTypeSeedProfile(
+                JobType.MID_BIZ,
+                "중견기업 직장인",
+                JobTypeGauge.of(60, 70, 70, 50, 50),
+                StatOffset.of(0, 0, 0, 0, 0),
+                32_000_000,
+                2_666_666,
+                resolveInitialJobTitle(JobType.MID_BIZ),
+                EmploymentStatus.PROBATION,
+                DEFAULT_PROBATION_END_TURN
+            ),
+            new JobTypeSeedProfile(
+                JobType.SMALL_BIZ,
+                "중소기업 직장인",
+                JobTypeGauge.of(40, 80, 50, 60, 30),
+                StatOffset.of(-5, 5, 5, 0, 0),
+                30_000_000,
+                2_500_000,
+                resolveInitialJobTitle(JobType.SMALL_BIZ),
+                EmploymentStatus.PROBATION,
+                DEFAULT_PROBATION_END_TURN
+            ),
+            new JobTypeSeedProfile(
+                JobType.STARTUP,
+                "스타트업 직장인",
+                JobTypeGauge.of(55, 55, 35, 85, 80),
+                StatOffset.of(-5, 8, 8, 5, -3),
+                31_000_000,
+                2_583_333,
+                resolveInitialJobTitle(JobType.STARTUP),
+                EmploymentStatus.PROBATION,
+                DEFAULT_PROBATION_END_TURN
+            ),
+            new JobTypeSeedProfile(
+                JobType.FREELANCER,
+                "프리랜서",
+                JobTypeGauge.of(50, 50, 20, 90, 85),
+                StatOffset.of(-2, 2, 5, 3, 5),
+                28_000_000,
+                2_333_333,
+                resolveInitialJobTitle(JobType.FREELANCER),
+                EmploymentStatus.EMPLOYED,
+                null
+            )
+        );
+    }
 
     public CharacterSeedPlan calculate(
         final CharacterType characterType,
@@ -104,6 +117,10 @@ public class CharacterSeedPolicy {
 
     public List<JobTypeSeedProfile> getJobTypeProfiles() {
         return jobTypeProfiles;
+    }
+
+    private String resolveInitialJobTitle(final JobType jobType) {
+        return jobTitlePolicy.calculate(jobType, DEFAULT_TENURE_TURNS);
     }
 
     private JobTypeSeedProfile findJobTypeProfile(final JobType jobType) {
