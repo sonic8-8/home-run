@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface RealEstatePropertyRepository extends JpaRepository<RealEstateProperty, Long> {
+public interface RealEstatePropertyRepository extends JpaRepository<RealEstateProperty, Integer> {
 
     Optional<RealEstateProperty> findByProviderId(String providerId);
 

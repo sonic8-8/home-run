@@ -31,7 +31,7 @@ public class GameContractReview {
     private Integer gameSessionId;
 
     @Column(name = "property_id", nullable = false)
-    private Long propertyId;
+    private Integer propertyId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "review_status")
@@ -54,7 +54,7 @@ public class GameContractReview {
 
     private GameContractReview(
         Integer gameSessionId,
-        Long propertyId,
+        Integer propertyId,
         ContractReviewStatus reviewStatus,
         List<String> checkedTraps,
         List<String> detectedTraps,
@@ -72,7 +72,7 @@ public class GameContractReview {
 
     public static GameContractReview create(
         Integer gameSessionId,
-        Long propertyId,
+        Integer propertyId,
         ContractReviewStatus reviewStatus,
         List<String> checkedTraps,
         List<String> detectedTraps,

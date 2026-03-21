@@ -56,8 +56,8 @@ class GameWorldResultServiceTest {
             Money.of(10_000_000L),
             Money.of(500_000L),
             Money.of(80_000L),
-            201L,
-            101L
+            201,
+            101
         );
         gameHousingRepository.saveAndFlush(gameHousing);
 
@@ -72,8 +72,8 @@ class GameWorldResultServiceTest {
         assertThat(result.getEventCandidates()).isEmpty();
         assertThat(result.getHousingSnapshot()).isNotNull();
         assertThat(result.getHousingSnapshot().getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
-        assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isEqualTo(201L);
-        assertThat(result.getHousingSnapshot().getTargetPropertyId()).isEqualTo(101L);
+        assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isEqualTo(201);
+        assertThat(result.getHousingSnapshot().getTargetPropertyId()).isEqualTo(101);
         assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isFalse();
     }
 
