@@ -7,6 +7,8 @@ public interface RealEstateDocumentRepository extends JpaRepository<RealEstateDo
 
     List<RealEstateDocument> findAllByPropertyIdOrderByRealEstateDocumentIdAsc(Long propertyId);
 
+    boolean existsByPropertyIdAndDocumentType(Long propertyId, RealEstateDocumentType documentType);
+
     List<RealEstateDocument> findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
         Long propertyId,
         RealEstateDocumentType documentType,
