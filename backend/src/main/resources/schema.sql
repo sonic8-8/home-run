@@ -103,6 +103,55 @@ create table if not exists member_payment_histories (
 );
 
 -- Static real-estate listing master data shared across sessions.
+create table if not exists housing_regions (
+  region_code varchar(30) primary key,
+  region_name varchar(100)
+);
+
+create table if not exists housing_districts (
+  district_code varchar(30) primary key,
+  region_code varchar(30),
+  district_name varchar(100),
+  district_legal_dong_code varchar(30)
+);
+
+create table if not exists housing_legal_dongs (
+  legal_dong_code varchar(30) primary key,
+  parent_legal_dong_code varchar(30),
+  region_code varchar(30),
+  district_code varchar(30),
+  legal_dong_name varchar(100),
+  full_address_name varchar(255)
+);
+
+create table if not exists apartment_trade_raws (
+  apartment_trade_raw_id integer generated always as identity primary key,
+  trade_key varchar(255) not null,
+  district_code varchar(30),
+  legal_dong_name varchar(100),
+  legal_dong_code varchar(30),
+  apartment_name varchar(200),
+  jibun varchar(100),
+  deal_date date,
+  deal_amount numeric(19,0),
+  exclusive_area numeric(10,2),
+  floor integer,
+  build_year integer,
+  land_leasehold boolean,
+  constraint uq_apartment_trade_raws__trade_key unique (trade_key)
+);
+
+create table if not exists real_estate_geocode_caches (
+  real_estate_geocode_cache_id integer generated always as identity primary key,
+  geocoding_query varchar(255) not null,
+  geocoding_status varchar(30) not null,
+  latitude numeric(10,7),
+  longitude numeric(10,7),
+  resolved_road_address varchar(255),
+  resolved_jibun_address varchar(255),
+  constraint uq_real_estate_geocode_caches__geocoding_query unique (geocoding_query)
+);
+
 create table if not exists real_estate_properties (
   property_id integer generated always as identity primary key,
   provider_id varchar(255),
@@ -110,11 +159,15 @@ create table if not exists real_estate_properties (
   address varchar(255),
   region_code varchar(30),
   district_code varchar(30),
-  base_price_amount integer,
+  legal_dong_code varchar(30),
+  base_price_amount numeric(19,0),
   latitude numeric(10,7),
   longitude numeric(10,7),
   housing_type varchar(50),
-  contract_traps jsonb
+  property_type varchar(50),
+  transaction_type varchar(50),
+  contract_traps jsonb,
+  constraint uq_real_estate_properties__provider_id unique (provider_id)
 );
 
 -- Top-level game session aggregate for one save slot.
