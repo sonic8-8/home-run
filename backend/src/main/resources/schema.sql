@@ -88,6 +88,20 @@ create table if not exists seedmoney_transactions (
     foreign key (pass_subscription_id) references pass_subscriptions (pass_subscription_id)
 );
 
+-- User card payment history used for card recommendation scoring.
+create table if not exists member_payment_histories (
+  payment_history_id integer generated always as identity primary key,
+  user_id integer not null,
+  category_id varchar(50) not null,
+  category_name varchar(50) not null,
+  merchant_name varchar(100) not null,
+  payment_amount integer not null,
+  payment_date date not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_member_payment_histories__user
+    foreign key (user_id) references users (user_id)
+);
+
 -- Static real-estate listing master data shared across sessions.
 create table if not exists real_estate_properties (
   property_id integer generated always as identity primary key,
@@ -123,6 +137,7 @@ create table if not exists game_sessions (
   session_status varchar(20),
   created_at timestamp not null default current_timestamp,
   last_played_at timestamp,
+  selected_card_monthly_saving_amount integer not null default 0,
   owned_property_id integer,
   constraint fk_game_sessions__user
     foreign key (user_id) references users (user_id),
