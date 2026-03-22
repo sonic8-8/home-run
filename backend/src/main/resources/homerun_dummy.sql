@@ -1267,6 +1267,78 @@ cross join (
 ) as payments(category_id, category_name, merchant_name, payment_amount, payment_date)
 where u.email = 'homerun@example.com';
 
+insert into real_estate_properties (
+  provider_id,
+  property_name,
+  address,
+  region_code,
+  district_code,
+  base_price_amount,
+  latitude,
+  longitude,
+  housing_type,
+  contract_traps
+)
+select
+  'SEOCHO-ART-XI',
+  '서초아트자이',
+  '서울특별시 서초구 반포대로 58',
+  'SEOUL',
+  'SEOCHO',
+  1300000000,
+  37.485551,
+  127.011500,
+  'OWNED_APT',
+  null
+where not exists (
+  select 1
+  from real_estate_properties
+  where provider_id = 'SEOCHO-ART-XI'
+);
+
+with target_property as (
+  select property_id
+  from real_estate_properties
+  where provider_id = 'SEOCHO-ART-XI'
+), registry_document_samples(registry_section, issue_summary, quiz_sample_payload) as (
+  values
+    ('GAPGU', '현재 소유권이전 이후 가압류가 말소되지 않고 남아 있어 매수인이 바로 주의해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2021년 3월 15일","reason":"보존","details":"소유자 주식회사 청명하우징"},{"rank_no":"2","purpose":"소유권이전","receipt":"2024년 10월 21일","reason":"2024년 10월 3일 매매","details":"소유자 김서준"},{"rank_no":"3","purpose":"가압류","receipt":"2025년 2월 7일","reason":"가압류결정","details":"청구금액 {claim_amount} 가압류권자 주식회사 한빛자산관리 서울중앙지방법원의 가압류결정","rendering":{"claim_amount":{"source":"sale_price_ratio","ratio_percent":12,"rounding_unit":"만원"}}}],"issueSummary":"현재 소유권이전 이후 가압류가 말소되지 않고 남아 있어 매수인이 바로 주의해야 하는 사례입니다.","keyPoints":["현재 소유자 앞으로 소유권이전이 완료된 뒤 가압류가 추가로 기재되어 있습니다.","갑구만 보더라도 현재 권리관계가 깨끗하지 않은 상태로 읽힙니다.","가압류는 매수 전 말소 여부를 반드시 확인해야 하는 대표 신호입니다."],"feedbackCorrect":"맞았습니다. 이 사례는 현재 가압류가 살아 있어 위험으로 보는 것이 맞습니다. 매수 전 말소 여부와 거래 진행 가능 여부를 반드시 확인해야 합니다.","feedbackWrong":"이 사례는 정상으로 보기 어렵습니다. 현재 소유권이전 이후 가압류가 남아 있으므로, 갑구만 봐도 매수인이 주의해야 하는 위험 사례입니다."}$$::jsonb),
+    ('GAPGU', '현재 소유자 명의 뒤에 소유권이전등기청구권가처분이 남아 있어 소유권 분쟁 가능성을 의심해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2020년 8월 26일","reason":"보존","details":"소유자 이지안"},{"rank_no":"2","purpose":"소유권이전","receipt":"2024년 12월 4일","reason":"2024년 11월 20일 매매","details":"소유자 박시우"},{"rank_no":"3","purpose":"소유권이전등기청구권가처분","receipt":"2025년 1월 17일","reason":"가처분결정","details":"가처분권자 정유진 서울서부지방법원의 가처분결정"}],"issueSummary":"현재 소유자 명의 뒤에 소유권이전등기청구권가처분이 남아 있어 소유권 분쟁 가능성을 의심해야 하는 사례입니다.","keyPoints":["현재 소유권이전 이후 바로 분쟁성 보전처분이 기재되어 있습니다.","소유권이전등기청구권가처분은 매수인 입장에서 가장 직접적인 경고 신호 중 하나입니다.","갑구만 보더라도 거래를 서두르기보다 권리관계를 먼저 확인해야 합니다."],"feedbackCorrect":"맞았습니다. 소유권이전등기청구권가처분이 현재 남아 있는 경우는 소유권 분쟁 위험을 먼저 의심해야 합니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 소유권이전등기청구권가처분이 남아 있다는 점만으로도 매수인은 신중해야 합니다."}$$::jsonb),
+    ('GAPGU', '짧은 기간 안에 소유권이전이 연속해서 반복되어 거래 흐름이 비정상적으로 빠르게 보이는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2019년 6월 20일","reason":"보존","details":"소유자 장민호"},{"rank_no":"2","purpose":"소유권이전","receipt":"2025년 1월 6일","reason":"2024년 12월 28일 매매","details":"소유자 김현우"},{"rank_no":"3","purpose":"소유권이전","receipt":"2025년 1월 24일","reason":"2025년 1월 10일 매매","details":"소유자 이서진"},{"rank_no":"4","purpose":"소유권이전","receipt":"2025년 2월 11일","reason":"2025년 2월 3일 매매","details":"소유자 박도윤"}],"issueSummary":"짧은 기간 안에 소유권이전이 연속해서 반복되어 거래 흐름이 비정상적으로 빠르게 보이는 사례입니다.","keyPoints":["한 달 남짓한 기간에 소유권이전이 여러 차례 이어졌습니다.","현재 소유자의 보유 기간이 매우 짧아 보입니다.","갑구만 보고도 거래 패턴 자체가 이상 신호로 읽히는 구조입니다."],"feedbackCorrect":"맞았습니다. 반복 이전 자체가 곧바로 불법을 뜻하는 것은 아니지만, 이렇게 짧은 기간에 연속 거래가 이어지면 매수인은 충분히 경계해야 합니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 짧은 기간 반복된 소유권이전은 갑구만으로도 주의 신호로 읽힙니다."}$$::jsonb),
+    ('GAPGU', '중간 소유권이전등기가 말소되었는데 그 뒤의 소유권이전등기가 남아 있어 권리 연결 관계를 특히 조심해서 확인해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2018년 11월 2일","reason":"보존","details":"소유자 주식회사 다온개발"},{"rank_no":"2","purpose":"소유권이전","receipt":"2024년 7월 12일","reason":"2024년 7월 2일 매매","details":"소유자 김태훈"},{"rank_no":"3","purpose":"소유권이전","receipt":"2024년 9월 5일","reason":"2024년 8월 29일 매매","details":"소유자 이수빈"},{"rank_no":"4","purpose":"3번소유권이전등기말소","receipt":"2024년 11월 18일","reason":"해제","details":"2024년 9월 5일 접수 소유권이전등기 말소"},{"rank_no":"5","purpose":"소유권이전","receipt":"2024년 12월 6일","reason":"2024년 11월 25일 매매","details":"소유자 최도윤"}],"issueSummary":"중간 소유권이전등기가 말소되었는데 그 뒤의 소유권이전등기가 남아 있어 권리 연결 관계를 특히 조심해서 확인해야 하는 사례입니다.","keyPoints":["중간 순위의 소유권이전등기가 후순위에서 말소되었습니다.","그 뒤 후속 소유권이전등기가 그대로 남아 있어 흐름이 단순하지 않습니다.","갑구만 보더라도 권리 연결이 매끄럽지 않아 추가 검토가 필요한 구조입니다."],"feedbackCorrect":"맞았습니다. 중간 소유권이전등기 말소 후 후속등기가 남아 있는 경우는 권리관계를 더 깊게 확인해야 하므로 위험 신호로 보는 편이 맞습니다.","feedbackWrong":"이 사례는 정상으로 보기 어렵습니다. 중간 등기 말소와 후속 소유권이전이 함께 보이면 권리 연결 관계를 면밀히 살펴봐야 합니다."}$$::jsonb),
+    ('GAPGU', '가압류가 반복되어 등장한 데 이어 소유권이전등기청구권가처분까지 남아 있어 분쟁 흔적이 누적된 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2020년 5월 14일","reason":"보존","details":"소유자 유한회사 다온리빙"},{"rank_no":"2","purpose":"소유권이전","receipt":"2024년 8월 8일","reason":"2024년 7월 29일 매매","details":"소유자 정하린"},{"rank_no":"3","purpose":"가압류","receipt":"2024년 10월 2일","reason":"가압류결정","details":"청구금액 {claim_amount_primary} 가압류권자 주식회사 미래채권관리 인천지방법원의 가압류결정","rendering":{"claim_amount_primary":{"source":"sale_price_ratio","ratio_percent":12,"rounding_unit":"만원"}}},{"rank_no":"4","purpose":"3번가압류등기말소","receipt":"2024년 11월 7일","reason":"해제","details":"2024년 10월 2일 접수 가압류등기 말소"},{"rank_no":"5","purpose":"가압류","receipt":"2025년 1월 9일","reason":"가압류결정","details":"청구금액 {claim_amount_secondary} 가압류권자 박준혁 수원지방법원의 가압류결정","rendering":{"claim_amount_secondary":{"source":"sale_price_ratio","ratio_percent":7,"rounding_unit":"만원"}}},{"rank_no":"6","purpose":"소유권이전등기청구권가처분","receipt":"2025년 2월 3일","reason":"가처분결정","details":"가처분권자 오세린 수원지방법원의 가처분결정"}],"issueSummary":"가압류가 반복되어 등장한 데 이어 소유권이전등기청구권가처분까지 남아 있어 분쟁 흔적이 누적된 사례입니다.","keyPoints":["가압류가 한 차례 말소된 뒤 다시 다른 가압류가 등장했습니다.","현재는 가압류와 가처분이 함께 보이는 복합 분쟁 구조입니다.","갑구 이력만으로도 권리관계가 안정적이라고 보기 어렵습니다."],"feedbackCorrect":"맞았습니다. 반복된 가압류 이력과 현재 남아 있는 가처분은 함께 볼 때 매우 강한 위험 신호입니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 말소 이력이 있더라도 분쟁 흔적이 반복되고 현재 가처분까지 남아 있어 매수인이 주의해야 합니다."}$$::jsonb),
+    ('GAPGU', '갑구에 소유권보존과 소유권이전 외 특이사항이 없어 현재 등기만 보면 정상에 가까운 사례입니다.', $${"quizVerdict":"정상","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2021년 4월 2일","reason":"보존","details":"소유자 주식회사 세림건설"},{"rank_no":"2","purpose":"소유권이전","receipt":"2024년 9월 13일","reason":"2024년 8월 30일 매매","details":"소유자 한지민"}],"issueSummary":"갑구에 소유권보존과 소유권이전 외 특이사항이 없어 현재 등기만 보면 정상에 가까운 사례입니다.","keyPoints":["갑구에 가압류, 가처분, 경매개시 같은 위험 등기가 없습니다.","말소 이력이나 반복 이전 같은 이상 흐름도 보이지 않습니다.","현재 보이는 정보만 기준으로는 비교적 깨끗한 갑구입니다."],"feedbackCorrect":"맞았습니다. 이 사례는 갑구만 보면 정상으로 판단하는 편이 자연스럽습니다.","feedbackWrong":"이번 사례는 위험보다 정상에 가깝습니다. 갑구에 소유권 외 특이사항이 보이지 않아 기본형에 가까운 샘플입니다."}$$::jsonb),
+    ('EULGU', '을구에 현재 유효한 근저당권, 전세권, 임차권이 보이지 않아 매수인 기준으로는 가장 기본적인 정상형에 가까운 사례입니다.', $${"quizVerdict":"정상","rows":[],"issueSummary":"을구에 현재 유효한 근저당권, 전세권, 임차권이 보이지 않아 매수인 기준으로는 가장 기본적인 정상형에 가까운 사례입니다.","keyPoints":["을구에 현재 살아 있는 담보권이나 임차 관련 권리가 없습니다.","설정과 말소가 반복된 복잡한 이력도 보이지 않습니다.","현재 보이는 정보만 기준으로는 비교적 깨끗한 을구입니다."],"feedbackCorrect":"맞았습니다. 이 사례는 을구만 보면 정상으로 판단하는 편이 자연스럽습니다.","feedbackWrong":"이번 사례는 위험보다 정상에 가깝습니다. 을구에 현재 유효한 부담 권리가 없어 기본형에 가까운 샘플입니다."}$$::jsonb),
+    ('EULGU', '현재 근저당권 1건이 보이지만 채권최고액이 매매가 대비 매우 낮고 다른 을구 권리가 없어 본 퀴즈 기준으로는 정상에 가까운 사례입니다.', $${"quizVerdict":"정상","rows":[{"rank_no":"1","purpose":"근저당권설정","receipt":"2025년 1월 17일","reason":"2025년 1월 10일 설정계약","details":"채권최고액 {max_claim_amount} 채무자 김도윤 근저당권자 주식회사 한울저축은행","rendering":{"max_claim_amount":{"source":"sale_price_ratio","ratio_percent":15,"rounding_unit":"만원"}}}],"issueSummary":"현재 근저당권 1건이 보이지만 채권최고액이 매매가 대비 매우 낮고 다른 을구 권리가 없어 본 퀴즈 기준으로는 정상에 가까운 사례입니다.","keyPoints":["현재 유효한 을구 권리는 근저당권 1건뿐입니다.","채권최고액은 매매가 대비 매우 낮은 비율로 설계되었습니다.","전세권, 임차권, 반복된 말소 이력이 함께 보이지 않습니다."],"feedbackCorrect":"맞았습니다. 이 샘플은 단독 근저당권이 남아 있지만 부담 비율이 매우 낮고 다른 권리가 없어 정상형으로 분류한 사례입니다.","feedbackWrong":"이번 사례는 위험보다 정상에 가깝습니다. 근저당권이 있더라도 비율이 매우 낮고 다른 부담 권리가 없으면 본 퀴즈 기준에서는 정상형으로 봅니다."}$$::jsonb),
+    ('EULGU', '현재 근저당권은 1건이지만 채권최고액이 매매가 대비 매우 높아 매수인이 부담 규모를 크게 의식해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"근저당권설정","receipt":"2025년 2월 21일","reason":"2025년 2월 12일 설정계약","details":"채권최고액 {max_claim_amount} 채무자 박서진 근저당권자 주식회사 새론저축은행","rendering":{"max_claim_amount":{"source":"sale_price_ratio","ratio_percent":90,"rounding_unit":"만원"}}}],"issueSummary":"현재 근저당권은 1건이지만 채권최고액이 매매가 대비 매우 높아 매수인이 부담 규모를 크게 의식해야 하는 사례입니다.","keyPoints":["현재 살아 있는 근저당권이 확인됩니다.","채권최고액이 매매가 대비 매우 높은 비율로 설정돼 있습니다.","단독 권리여도 부담 규모만으로 위험 신호가 충분히 분명합니다."],"feedbackCorrect":"맞았습니다. 이 사례는 현재 근저당권 1건만 있더라도 채권최고액 비율이 매우 높아 위험으로 보는 것이 맞습니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 단독 근저당권이어도 채권최고액이 과도하게 높으면 매수인이 주의해야 하는 위험 사례입니다."}$$::jsonb),
+    ('EULGU', '현재 근저당권이 2건 병존하고 있어 을구 부담 관계가 단순하지 않은 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"근저당권설정","receipt":"2024년 11월 8일","reason":"2024년 11월 1일 설정계약","details":"채권최고액 {first_max_claim_amount} 채무자 김예준 근저당권자 주식회사 다온저축은행","rendering":{"first_max_claim_amount":{"source":"sale_price_ratio","ratio_percent":50,"rounding_unit":"만원"}}},{"rank_no":"2","purpose":"근저당권설정","receipt":"2025년 1월 23일","reason":"2025년 1월 15일 설정계약","details":"채권최고액 {second_max_claim_amount} 채무자 김예준 근저당권자 주식회사 미래자산대부","rendering":{"second_max_claim_amount":{"source":"sale_price_ratio","ratio_percent":30,"rounding_unit":"만원"}}}],"issueSummary":"현재 근저당권이 2건 병존하고 있어 을구 부담 관계가 단순하지 않은 사례입니다.","keyPoints":["선순위와 후순위 근저당권이 함께 남아 있습니다.","현재 권리가 하나가 아니라 둘 이상 겹쳐 있어 정리 부담이 큽니다.","을구만 보더라도 단순한 대출 1건 수준으로 보기 어렵습니다."],"feedbackCorrect":"맞았습니다. 근저당권이 복수로 병존하는 경우는 현재 부담 관계가 복잡하므로 위험 신호로 보는 편이 맞습니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 여러 근저당권이 함께 남아 있으면 매수인은 권리 정리 가능성을 더 신중하게 확인해야 합니다."}$$::jsonb),
+    ('EULGU', '현재 전세권이 그대로 남아 있어 매수인이 권리관계를 먼저 확인해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"전세권설정","receipt":"2025년 2월 10일","reason":"2025년 2월 1일 설정계약","details":"전세금 {jeonse_amount} 전세권자 오하린","rendering":{"jeonse_amount":{"source":"sale_price_ratio","ratio_percent":70,"rounding_unit":"만원"}}}],"issueSummary":"현재 전세권이 그대로 남아 있어 매수인이 권리관계를 먼저 확인해야 하는 사례입니다.","keyPoints":["을구에 현재 유효한 전세권이 기재되어 있습니다.","전세권은 단독으로도 매수인에게 명확한 부담 신호가 됩니다.","다른 권리가 없더라도 현재 전세권 존속만으로 주의가 필요합니다."],"feedbackCorrect":"맞았습니다. 현재 전세권이 남아 있는 경우는 매수인이 그대로 지나치기 어려운 대표적인 위험 신호입니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 전세권이 현재 살아 있으면 을구만 봐도 권리관계 확인이 필요한 위험 사례입니다."}$$::jsonb),
+    ('EULGU', '현재 임차권등기가 남아 있어 보증금 반환 관련 부담을 의심해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"임차권등기","receipt":"2025년 3월 4일","reason":"2025년 2월 25일 임차권등기명령","details":"임차보증금 {deposit_amount} 임차권자 정시윤","rendering":{"deposit_amount":{"source":"sale_price_ratio","ratio_percent":60,"rounding_unit":"만원"}}}],"issueSummary":"현재 임차권등기가 남아 있어 보증금 반환 관련 부담을 의심해야 하는 사례입니다.","keyPoints":["임차권등기가 현재 유효하게 보입니다.","임차권은 매수인에게 직접적인 보증금 반환 이슈를 떠올리게 합니다.","을구만 보더라도 거래를 서두르기보다 현재 권리 정리를 먼저 확인해야 합니다."],"feedbackCorrect":"맞았습니다. 임차권등기가 현재 남아 있는 경우는 매수인 기준에서 매우 직접적인 위험 신호입니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 임차권등기가 남아 있다는 점만으로도 매수인은 보증금 반환 문제를 먼저 의심해야 합니다."}$$::jsonb),
+    ('EULGU', '근저당권과 임차권등기가 함께 남아 있어 을구 부담 관계가 복합적인 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"근저당권설정","receipt":"2024년 10월 18일","reason":"2024년 10월 9일 설정계약","details":"채권최고액 {max_claim_amount} 채무자 윤도현 근저당권자 주식회사 청명저축은행","rendering":{"max_claim_amount":{"source":"sale_price_ratio","ratio_percent":35,"rounding_unit":"만원"}}},{"rank_no":"2","purpose":"임차권등기","receipt":"2025년 2월 28일","reason":"2025년 2월 19일 임차권등기명령","details":"임차보증금 {deposit_amount} 임차권자 강세아","rendering":{"deposit_amount":{"source":"sale_price_ratio","ratio_percent":45,"rounding_unit":"만원"}}}],"issueSummary":"근저당권과 임차권등기가 함께 남아 있어 을구 부담 관계가 복합적인 사례입니다.","keyPoints":["담보권과 임차 관련 권리가 동시에 보입니다.","각 권리가 따로 있을 때보다 매수인이 확인해야 할 범위가 더 넓습니다.","을구만 봐도 단순한 정상 매물로 보기 어려운 구조입니다."],"feedbackCorrect":"맞았습니다. 근저당권과 임차권이 함께 남아 있는 경우는 매수인이 특히 보수적으로 접근해야 하는 위험 사례입니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 현재 담보권과 임차권이 병존하면 권리 정리 부담이 분명히 커집니다."}$$::jsonb),
+    ('EULGU', '근저당권이 한 차례 말소된 뒤 다시 높은 비율로 재설정되어 을구 이력이 불안정하게 보이는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"근저당권설정","receipt":"2024년 6월 28일","reason":"2024년 6월 20일 설정계약","details":"채권최고액 {first_max_claim_amount} 채무자 최이준 근저당권자 주식회사 선일저축은행","rendering":{"first_max_claim_amount":{"source":"sale_price_ratio","ratio_percent":20,"rounding_unit":"만원"}}},{"rank_no":"2","purpose":"1번근저당권설정등기말소","receipt":"2024년 9월 2일","reason":"해제","details":"2024년 6월 28일 접수 근저당권설정등기 말소"},{"rank_no":"3","purpose":"근저당권설정","receipt":"2025년 1월 31일","reason":"2025년 1월 23일 설정계약","details":"채권최고액 {second_max_claim_amount} 채무자 최이준 근저당권자 주식회사 대영저축은행","rendering":{"second_max_claim_amount":{"source":"sale_price_ratio","ratio_percent":85,"rounding_unit":"만원"}}}],"issueSummary":"근저당권이 한 차례 말소된 뒤 다시 높은 비율로 재설정되어 을구 이력이 불안정하게 보이는 사례입니다.","keyPoints":["근저당권 설정과 말소 이력이 짧은 기간 안에 반복됩니다.","후속 근저당권은 매매가 대비 매우 높은 비율로 다시 설정돼 있습니다.","현재 권리 상태와 과거 이력을 함께 보면 안정적인 을구로 보기 어렵습니다."],"feedbackCorrect":"맞았습니다. 반복된 설정·말소 뒤 다시 높은 비율의 근저당권이 잡힌 경우는 매수인이 경계해야 하는 위험 사례입니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 근저당권이 반복해서 정리되고 다시 크게 설정된 흐름은 을구 이력 자체로도 불안 신호입니다."}$$::jsonb)
+)
+insert into real_estate_documents (
+  property_id,
+  document_type,
+  registry_section,
+  quiz_sample_payload
+)
+select
+  tp.property_id,
+  'REGISTRY',
+  rds.registry_section,
+  rds.quiz_sample_payload
+from target_property tp
+cross join registry_document_samples rds
+where not exists (
+  select 1
+  from real_estate_documents d
+  where d.property_id = tp.property_id
+    and d.document_type = 'REGISTRY'
+    and d.registry_section = rds.registry_section
+    and d.quiz_sample_payload ->> 'issueSummary' = rds.issue_summary
+);
+
 insert into game_sessions (
   user_id,
   slot_number,
