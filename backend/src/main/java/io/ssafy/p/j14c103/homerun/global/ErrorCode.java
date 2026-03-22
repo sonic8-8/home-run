@@ -35,6 +35,9 @@ public enum ErrorCode {
     CHARACTER_RESPONSE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "CHAR_011", "캐릭터 응답 데이터 구성이 올바르지 않습니다."),
     CHARACTER_ACTION_TYPE_UNSUPPORTED(HttpStatus.BAD_REQUEST, "CHAR_012", "지원하지 않는 행동 타입입니다."),
 
+    HOUSING_PROPERTY_NOT_FOUND(HttpStatus.NOT_FOUND, "HOUSING_001", "존재하지 않는 부동산 매물입니다."),
+    HOUSING_REGISTRY_SAMPLE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "HOUSING_002", "등기부 샘플 데이터 구성이 올바르지 않습니다."),
+
     WORLD_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "WORLD_001", "존재하지 않는 게임 세션입니다."),
     WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),
     WORLD_RESULT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_003", "월드 결과 데이터가 올바르지 않습니다."),

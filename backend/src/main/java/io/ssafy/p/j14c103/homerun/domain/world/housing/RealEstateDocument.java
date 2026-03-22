@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,36 +32,37 @@ public class RealEstateDocument {
     @Column(name = "document_type")
     private RealEstateDocumentType documentType;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "registry_section")
+    private RealEstateRegistrySection registrySection;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "checklist")
-    private List<RealEstateChecklistItem> checklist;
+    @Column(name = "quiz_sample_payload")
+    private RealEstateRegistryQuizSample quizSamplePayload;
 
     private RealEstateDocument(
         Long propertyId,
         RealEstateDocumentType documentType,
-        String imageUrl,
-        List<RealEstateChecklistItem> checklist
+        RealEstateRegistrySection registrySection,
+        RealEstateRegistryQuizSample quizSamplePayload
     ) {
         this.propertyId = propertyId;
         this.documentType = documentType;
-        this.imageUrl = imageUrl;
-        this.checklist = checklist;
+        this.registrySection = registrySection;
+        this.quizSamplePayload = quizSamplePayload;
     }
 
     public static RealEstateDocument create(
         Long propertyId,
         RealEstateDocumentType documentType,
-        String imageUrl,
-        List<RealEstateChecklistItem> checklist
+        RealEstateRegistrySection registrySection,
+        RealEstateRegistryQuizSample quizSamplePayload
     ) {
         return new RealEstateDocument(
             propertyId,
             documentType,
-            imageUrl,
-            checklist
+            registrySection,
+            quizSamplePayload
         );
     }
 }
