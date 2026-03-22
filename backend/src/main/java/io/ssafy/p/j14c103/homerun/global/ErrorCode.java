@@ -54,6 +54,7 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_002", "서버 내부 오류가 발생했습니다."),
     GLOBAL_CONFIGURATION_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_003", "서버 설정이 올바르지 않습니다."),
     GLOBAL_SERIALIZATION_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_004", "데이터 직렬화 처리 중 오류가 발생했습니다."),
+    GLOBAL_EXTERNAL_RESPONSE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "GLOBAL_005", "외부 연동 응답이 올바르지 않습니다."),
 
     LOAN_APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "LOAN_001", "대출 신청을 찾을 수 없습니다."),
     LOAN_NOT_APPROVED(HttpStatus.BAD_REQUEST, "LOAN_002", "승인되지 않은 대출입니다."),

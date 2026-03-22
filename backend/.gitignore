@@ -36,3 +36,5 @@ out/
 ### VS Code ###
 .vscode/
 ../.agent/private/character-domain-config.md
+
+.env

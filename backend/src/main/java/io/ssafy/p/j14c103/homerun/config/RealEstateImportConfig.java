@@ -1,8 +1,7 @@
 package io.ssafy.p.j14c103.homerun.config;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.housing.RealEstateMasterSyncService;
-import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncServiceRequest;
-import java.util.List;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncRequest;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -20,24 +19,13 @@ public class RealEstateImportConfig {
         RealEstateMasterSyncService realEstateMasterSyncService
     ) {
         return arguments -> {
-            validateDatasetTypes(properties.getDatasetTypes());
-
             realEstateMasterSyncService.sync(
-                RealEstateMasterSyncServiceRequest.of(
+                RealEstateMasterSyncRequest.of(
                     properties.getRegions(),
                     properties.getFromYearMonth(),
                     properties.getToYearMonth()
                 )
             );
         };
-    }
-
-    private void validateDatasetTypes(List<String> datasetTypes) {
-        if (datasetTypes == null || datasetTypes.isEmpty()) {
-            throw new IllegalArgumentException("적재 대상 데이터셋은 필수입니다.");
-        }
-        if (datasetTypes.stream().anyMatch(datasetType -> !"APT_SALE".equals(datasetType))) {
-            throw new IllegalArgumentException("현재 지원하는 적재 데이터셋은 APT_SALE만 가능합니다.");
-        }
     }
 }

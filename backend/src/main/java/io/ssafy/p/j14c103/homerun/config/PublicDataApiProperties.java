@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.config;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "public-data.api")
@@ -16,37 +18,31 @@ public class PublicDataApiProperties {
         String serviceKey,
         int pageSize
     ) {
+        validate(legalDongBaseUrl, apartmentTradeBaseUrl, serviceKey, pageSize);
         this.legalDongBaseUrl = legalDongBaseUrl;
         this.apartmentTradeBaseUrl = apartmentTradeBaseUrl;
         this.serviceKey = serviceKey;
         this.pageSize = pageSize;
     }
 
-    public static PublicDataApiProperties of(
+    private void validate(
         String legalDongBaseUrl,
         String apartmentTradeBaseUrl,
         String serviceKey,
         int pageSize
     ) {
         if (legalDongBaseUrl == null || legalDongBaseUrl.isBlank()) {
-            throw new IllegalArgumentException("법정동 API base URL은 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (apartmentTradeBaseUrl == null || apartmentTradeBaseUrl.isBlank()) {
-            throw new IllegalArgumentException("아파트 실거래가 API base URL은 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (serviceKey == null || serviceKey.isBlank()) {
-            throw new IllegalArgumentException("공공데이터 API service key는 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (pageSize <= 0) {
-            throw new IllegalArgumentException("공공데이터 API page size는 0보다 커야 합니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
-
-        return new PublicDataApiProperties(
-            legalDongBaseUrl,
-            apartmentTradeBaseUrl,
-            serviceKey,
-            pageSize
-        );
     }
 
     public String getLegalDongBaseUrl() {

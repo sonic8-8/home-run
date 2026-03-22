@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.config;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "naver.geocoding")
@@ -14,27 +16,26 @@ public class NaverGeocodingProperties {
         String clientId,
         String clientSecret
     ) {
+        validate(baseUrl, clientId, clientSecret);
         this.baseUrl = baseUrl;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
     }
 
-    public static NaverGeocodingProperties of(
+    private void validate(
         String baseUrl,
         String clientId,
         String clientSecret
     ) {
         if (baseUrl == null || baseUrl.isBlank()) {
-            throw new IllegalArgumentException("네이버 지오코딩 base URL은 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (clientId == null || clientId.isBlank()) {
-            throw new IllegalArgumentException("네이버 지오코딩 client id는 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (clientSecret == null || clientSecret.isBlank()) {
-            throw new IllegalArgumentException("네이버 지오코딩 client secret은 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
-
-        return new NaverGeocodingProperties(baseUrl, clientId, clientSecret);
     }
 
     public String getBaseUrl() {

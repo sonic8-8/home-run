@@ -5,5 +5,5 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(NaverGeocodingProperties.class)
-public class NaverRestClientConfig {
+public class NaverGeocodingPropertiesConfig {
 }

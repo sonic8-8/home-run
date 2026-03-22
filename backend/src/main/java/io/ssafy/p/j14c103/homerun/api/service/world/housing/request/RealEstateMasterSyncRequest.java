@@ -3,13 +3,13 @@ package io.ssafy.p.j14c103.homerun.api.service.world.housing.request;
 import java.time.YearMonth;
 import java.util.List;
 
-public class RealEstateMasterSyncServiceRequest {
+public class RealEstateMasterSyncRequest {
 
     private final List<String> regions;
     private final YearMonth fromYearMonth;
     private final YearMonth toYearMonth;
 
-    private RealEstateMasterSyncServiceRequest(
+    private RealEstateMasterSyncRequest(
         List<String> regions,
         YearMonth fromYearMonth,
         YearMonth toYearMonth
@@ -19,12 +19,12 @@ public class RealEstateMasterSyncServiceRequest {
         this.toYearMonth = toYearMonth;
     }
 
-    public static RealEstateMasterSyncServiceRequest of(
+    public static RealEstateMasterSyncRequest of(
         List<String> regions,
         YearMonth fromYearMonth,
         YearMonth toYearMonth
     ) {
-        return new RealEstateMasterSyncServiceRequest(regions, fromYearMonth, toYearMonth);
+        return new RealEstateMasterSyncRequest(regions, fromYearMonth, toYearMonth);
     }
 
     public List<String> getRegions() {

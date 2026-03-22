@@ -1,11 +1,15 @@
 package io.ssafy.p.j14c103.homerun.config;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.YearMonth;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "app.real-estate-import")
 public class RealEstateImportProperties {
+
+    private static final String SUPPORTED_DATASET_TYPE = "APT_SALE";
 
     private final boolean enabled;
     private final List<String> regions;
@@ -20,6 +24,7 @@ public class RealEstateImportProperties {
         YearMonth toYearMonth,
         List<String> datasetTypes
     ) {
+        validate(regions, fromYearMonth, toYearMonth, datasetTypes);
         this.enabled = enabled;
         this.regions = regions;
         this.fromYearMonth = fromYearMonth;
@@ -27,30 +32,27 @@ public class RealEstateImportProperties {
         this.datasetTypes = datasetTypes;
     }
 
-    public static RealEstateImportProperties of(
-        boolean enabled,
+    private void validate(
         List<String> regions,
         YearMonth fromYearMonth,
         YearMonth toYearMonth,
         List<String> datasetTypes
     ) {
         if (regions == null || regions.isEmpty()) {
-            throw new IllegalArgumentException("적재 대상 지역은 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (fromYearMonth == null || toYearMonth == null) {
-            throw new IllegalArgumentException("적재 대상 기간은 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+        if (fromYearMonth.isAfter(toYearMonth)) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         if (datasetTypes == null || datasetTypes.isEmpty()) {
-            throw new IllegalArgumentException("적재 대상 데이터셋은 필수입니다.");
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
-
-        return new RealEstateImportProperties(
-            enabled,
-            regions,
-            fromYearMonth,
-            toYearMonth,
-            datasetTypes
-        );
+        if (datasetTypes.stream().anyMatch(datasetType -> !SUPPORTED_DATASET_TYPE.equals(datasetType))) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
     }
 
     public boolean isEnabled() {

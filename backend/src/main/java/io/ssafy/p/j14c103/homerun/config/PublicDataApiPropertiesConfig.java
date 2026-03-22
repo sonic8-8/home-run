@@ -5,5 +5,5 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(PublicDataApiProperties.class)
-public class PublicDataRestClientConfig {
+public class PublicDataApiPropertiesConfig {
 }

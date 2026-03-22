@@ -1,15 +1,18 @@
 package io.ssafy.p.j14c103.homerun.api.service.world.housing;
 
-import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterImportServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterImportRequest;
 import io.ssafy.p.j14c103.homerun.client.naver.NaverGeocodingClient;
-import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.ApartmentTradeXmlParser;
-import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeXmlParser;
+import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.ApartmentTradeResponseParser;
+import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeResponseParser;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrict;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrictRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.GeocodingStatus;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingLegalDong;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingLegalDongRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegion;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateGeocodeCache;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateGeocodeCacheRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.PropertyType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
@@ -17,47 +20,53 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyReposit
 import io.ssafy.p.j14c103.homerun.domain.world.housing.TransactionType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.trade.ApartmentTradeRaw;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.trade.ApartmentTradeRawRepository;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @Transactional
 @RequiredArgsConstructor
 public class RealEstateMasterImportService {
 
-    private final LegalDongCodeXmlParser legalDongCodeXmlParser;
-    private final ApartmentTradeXmlParser apartmentTradeXmlParser;
+    private final LegalDongCodeResponseParser legalDongCodeResponseParser;
+    private final ApartmentTradeResponseParser apartmentTradeResponseParser;
     private final HousingRegionRepository housingRegionRepository;
     private final HousingDistrictRepository housingDistrictRepository;
     private final HousingLegalDongRepository housingLegalDongRepository;
     private final ApartmentTradeRawRepository apartmentTradeRawRepository;
+    private final RealEstateGeocodeCacheRepository realEstateGeocodeCacheRepository;
     private final RealEstatePropertyRepository realEstatePropertyRepository;
     private final NaverGeocodingClient naverGeocodingClient;
 
-    public void importMaster(RealEstateMasterImportServiceRequest request) {
-        List<LegalDongCodeXmlParser.LegalDongCodeRow> legalDongRows =
-            legalDongCodeXmlParser.parse(request.getLegalDongXml());
+    public void importMaster(RealEstateMasterImportRequest request) {
+        List<LegalDongCodeResponseParser.LegalDongCodeRow> legalDongRows =
+            legalDongCodeResponseParser.parse(request.getLegalDongXml());
 
         upsertLegalDongMasters(legalDongRows);
 
         List<ResolvedTradeCandidate> resolvedTradeCandidates = new ArrayList<>();
-        List<String> apartmentTradeXmls = request.getApartmentTradeXmls() != null
-            ? request.getApartmentTradeXmls()
+        List<String> apartmentTradeResponses = request.getApartmentTradeResponses() != null
+            ? request.getApartmentTradeResponses()
             : List.of();
 
-        for (String apartmentTradeXml : apartmentTradeXmls) {
-            List<ApartmentTradeXmlParser.ApartmentTradeRow> tradeRows =
-                apartmentTradeXmlParser.parse(apartmentTradeXml);
+        for (int index = 0; index < apartmentTradeResponses.size(); index++) {
+            String apartmentTradeResponse = apartmentTradeResponses.get(index);
+            List<ApartmentTradeResponseParser.ApartmentTradeRow> tradeRows =
+                parseApartmentTradeResponse(index, apartmentTradeResponse);
 
-            for (ApartmentTradeXmlParser.ApartmentTradeRow tradeRow : tradeRows) {
+            for (ApartmentTradeResponseParser.ApartmentTradeRow tradeRow : tradeRows) {
                 Optional<HousingLegalDong> legalDong = housingLegalDongRepository
                     .findByDistrictCodeAndLegalDongName(
                         tradeRow.districtCode(),
@@ -74,11 +83,29 @@ public class RealEstateMasterImportService {
         upsertRepresentativeProperties(resolvedTradeCandidates);
     }
 
-    private void upsertLegalDongMasters(List<LegalDongCodeXmlParser.LegalDongCodeRow> legalDongRows) {
-        Map<String, LegalDongCodeXmlParser.LegalDongCodeRow> districtRowsByDistrictCode = new HashMap<>();
-        List<LegalDongCodeXmlParser.LegalDongCodeRow> leafRows = new ArrayList<>();
+    private List<ApartmentTradeResponseParser.ApartmentTradeRow> parseApartmentTradeResponse(
+        int responseIndex,
+        String apartmentTradeResponse
+    ) {
+        try {
+            return apartmentTradeResponseParser.parse(apartmentTradeResponse);
+        } catch (RuntimeException exception) {
+            log.error(
+                "아파트 실거래가 응답 처리 실패 responseIndex={}, responseLength={}, responsePrefix={}",
+                responseIndex,
+                lengthOf(apartmentTradeResponse),
+                preview(apartmentTradeResponse, 200),
+                exception
+            );
+            throw exception;
+        }
+    }
 
-        for (LegalDongCodeXmlParser.LegalDongCodeRow row : legalDongRows) {
+    private void upsertLegalDongMasters(List<LegalDongCodeResponseParser.LegalDongCodeRow> legalDongRows) {
+        Map<String, LegalDongCodeResponseParser.LegalDongCodeRow> districtRowsByDistrictCode = new HashMap<>();
+        List<LegalDongCodeResponseParser.LegalDongCodeRow> leafRows = new ArrayList<>();
+
+        for (LegalDongCodeResponseParser.LegalDongCodeRow row : legalDongRows) {
             if (row.districtLevel()) {
                 districtRowsByDistrictCode.put(row.districtCode(), row);
                 continue;
@@ -90,14 +117,14 @@ public class RealEstateMasterImportService {
         Map<String, HousingDistrict> districts = new LinkedHashMap<>();
         Map<String, HousingLegalDong> legalDongs = new LinkedHashMap<>();
 
-        for (LegalDongCodeXmlParser.LegalDongCodeRow leafRow : leafRows) {
+        for (LegalDongCodeResponseParser.LegalDongCodeRow leafRow : leafRows) {
             String regionName = extractRegionName(leafRow.fullAddressName());
             regions.put(
                 leafRow.regionCode(),
                 HousingRegion.create(leafRow.regionCode(), regionName)
             );
 
-            LegalDongCodeXmlParser.LegalDongCodeRow districtRow =
+            LegalDongCodeResponseParser.LegalDongCodeRow districtRow =
                 districtRowsByDistrictCode.get(leafRow.districtCode());
             String districtName = districtRow != null
                 ? districtRow.legalDongName()
@@ -165,7 +192,7 @@ public class RealEstateMasterImportService {
     }
 
     private void upsertTradeRaw(
-        ApartmentTradeXmlParser.ApartmentTradeRow tradeRow,
+        ApartmentTradeResponseParser.ApartmentTradeRow tradeRow,
         HousingLegalDong legalDong
     ) {
         String legalDongCode = legalDong != null ? legalDong.getLegalDongCode() : null;
@@ -211,17 +238,12 @@ public class RealEstateMasterImportService {
                     .thenComparing(candidate -> candidate.tradeRow().exclusiveArea()))
                 .orElseThrow();
 
-            String address = representative.legalDong().getFullAddressName()
-                + " "
-                + representative.tradeRow().jibun();
-
-            NaverGeocodingClient.GeocodingResult geocodingResult;
-            try {
-                geocodingResult = naverGeocodingClient.geocode(address);
-            } catch (RuntimeException exception) {
-                // geocoding 실패는 raw 보존 후 대표 매물 생성만 생략한다.
-                continue;
-            }
+            String address = buildRepresentativeAddress(representative);
+            GeocodingResolution geocodingResolution = resolveGeocoding(
+                entry.getKey(),
+                representative,
+                address
+            );
 
             realEstatePropertyRepository.findByProviderId(entry.getKey())
                 .ifPresentOrElse(
@@ -232,8 +254,8 @@ public class RealEstateMasterImportService {
                         representative.legalDong().getDistrictCode(),
                         representative.legalDong().getLegalDongCode(),
                         representative.tradeRow().dealAmount(),
-                        geocodingResult.latitude(),
-                        geocodingResult.longitude(),
+                        resolveLatitude(existing, geocodingResolution),
+                        resolveLongitude(existing, geocodingResolution),
                         PropertyType.APARTMENT,
                         TransactionType.SALE,
                         HousingType.OWNED_APT,
@@ -248,8 +270,8 @@ public class RealEstateMasterImportService {
                             representative.legalDong().getDistrictCode(),
                             representative.legalDong().getLegalDongCode(),
                             representative.tradeRow().dealAmount(),
-                            geocodingResult.latitude(),
-                            geocodingResult.longitude(),
+                            geocodingResolution.latitude(),
+                            geocodingResolution.longitude(),
                             PropertyType.APARTMENT,
                             TransactionType.SALE,
                             HousingType.OWNED_APT,
@@ -260,7 +282,191 @@ public class RealEstateMasterImportService {
         }
     }
 
-    private String buildTradeKey(ApartmentTradeXmlParser.ApartmentTradeRow tradeRow) {
+    private GeocodingResolution resolveGeocoding(
+        String providerId,
+        ResolvedTradeCandidate representative,
+        String address
+    ) {
+        Optional<NaverGeocodingClient.GeocodingResult> geocodingResult = geocodeRepresentative(
+            providerId,
+            representative,
+            address
+        );
+        if (geocodingResult.isEmpty()) {
+            return GeocodingResolution.unresolved();
+        }
+
+        return GeocodingResolution.of(
+            geocodingResult.get().latitude(),
+            geocodingResult.get().longitude()
+        );
+    }
+
+    private Optional<NaverGeocodingClient.GeocodingResult> geocodeRepresentative(
+        String providerId,
+        ResolvedTradeCandidate representative,
+        String address
+    ) {
+        List<String> queries = buildGeocodingQueries(representative);
+        RuntimeException lastException = null;
+
+        for (String query : queries) {
+            Optional<RealEstateGeocodeCache> cache = realEstateGeocodeCacheRepository
+                .findByGeocodingQuery(query);
+            if (cache.isPresent()) {
+                if (cache.get().getGeocodingStatus() == GeocodingStatus.NO_RESULT) {
+                    continue;
+                }
+                if (!query.equals(address)) {
+                    log.info(
+                        "대표 매물 지오코딩 캐시 사용 providerId={}, primaryQuery={}, resolvedQuery={}",
+                        providerId,
+                        address,
+                        query
+                    );
+                }
+                return Optional.of(NaverGeocodingClient.GeocodingResult.of(
+                    cache.get().getLatitude(),
+                    cache.get().getLongitude(),
+                    cache.get().getResolvedRoadAddress(),
+                    cache.get().getResolvedJibunAddress()
+                ));
+            }
+
+            try {
+                Optional<NaverGeocodingClient.GeocodingResult> result = naverGeocodingClient.geocode(query);
+                if (result.isEmpty()) {
+                    cacheGeocodingNoResult(query);
+                    continue;
+                }
+
+                cacheGeocodingSuccess(query, result.get());
+                if (!query.equals(address)) {
+                    log.info(
+                        "대표 매물 지오코딩 fallback 성공 providerId={}, primaryQuery={}, resolvedQuery={}",
+                        providerId,
+                        address,
+                        query
+                    );
+                }
+                return result;
+            } catch (RuntimeException exception) {
+                log.warn(
+                    "대표 매물 지오코딩 호출 실패 providerId={}, query={}",
+                    providerId,
+                    query,
+                    exception
+                );
+                lastException = exception;
+            }
+        }
+
+        if (lastException == null) {
+            log.warn(
+                "대표 매물 지오코딩 결과 없음 providerId={}, address={}, legalDongCode={}, queries={}",
+                providerId,
+                address,
+                representative.legalDong().getLegalDongCode(),
+                queries
+            );
+            return Optional.empty();
+        }
+
+        log.warn(
+            "대표 매물 지오코딩 실패 providerId={}, address={}, legalDongCode={}, queries={}",
+            providerId,
+            address,
+            representative.legalDong().getLegalDongCode(),
+            queries,
+            lastException
+        );
+        return Optional.empty();
+    }
+
+    private void cacheGeocodingSuccess(
+        String query,
+        NaverGeocodingClient.GeocodingResult geocodingResult
+    ) {
+        realEstateGeocodeCacheRepository.findByGeocodingQuery(query)
+            .ifPresentOrElse(
+                existing -> existing.updateSuccess(
+                    geocodingResult.latitude(),
+                    geocodingResult.longitude(),
+                    geocodingResult.roadAddress(),
+                    geocodingResult.jibunAddress()
+                ),
+                () -> realEstateGeocodeCacheRepository.save(
+                    RealEstateGeocodeCache.success(
+                        query,
+                        geocodingResult.latitude(),
+                        geocodingResult.longitude(),
+                        geocodingResult.roadAddress(),
+                        geocodingResult.jibunAddress()
+                    )
+                )
+            );
+    }
+
+    private void cacheGeocodingNoResult(String query) {
+        realEstateGeocodeCacheRepository.findByGeocodingQuery(query)
+            .ifPresentOrElse(
+                RealEstateGeocodeCache::updateNoResult,
+                () -> realEstateGeocodeCacheRepository.save(
+                    RealEstateGeocodeCache.noResult(query)
+                )
+            );
+    }
+
+    private List<String> buildGeocodingQueries(ResolvedTradeCandidate representative) {
+        LinkedHashSet<String> queries = new LinkedHashSet<>();
+        String fullAddressName = representative.legalDong().getFullAddressName();
+        String apartmentName = representative.tradeRow().apartmentName();
+        String jibun = representative.tradeRow().jibun();
+
+        addQuery(queries, fullAddressName + " " + jibun);
+        addQuery(queries, fullAddressName + " " + apartmentName);
+        addQuery(queries, apartmentName + " " + fullAddressName);
+
+        return new ArrayList<>(queries);
+    }
+
+    private void addQuery(LinkedHashSet<String> queries, String query) {
+        String normalized = normalizeWhitespace(query);
+        if (normalized.isBlank()) {
+            return;
+        }
+        queries.add(normalized);
+    }
+
+    private String buildRepresentativeAddress(ResolvedTradeCandidate representative) {
+        return normalizeWhitespace(
+            representative.legalDong().getFullAddressName()
+                + " "
+                + representative.tradeRow().jibun()
+        );
+    }
+
+    private BigDecimal resolveLatitude(
+        RealEstateProperty existing,
+        GeocodingResolution geocodingResolution
+    ) {
+        if (geocodingResolution.hasCoordinates()) {
+            return geocodingResolution.latitude();
+        }
+        return existing.getLatitude();
+    }
+
+    private BigDecimal resolveLongitude(
+        RealEstateProperty existing,
+        GeocodingResolution geocodingResolution
+    ) {
+        if (geocodingResolution.hasCoordinates()) {
+            return geocodingResolution.longitude();
+        }
+        return existing.getLongitude();
+    }
+
+    private String buildTradeKey(ApartmentTradeResponseParser.ApartmentTradeRow tradeRow) {
         return String.join(
             "|",
             tradeRow.districtCode(),
@@ -276,7 +482,7 @@ public class RealEstateMasterImportService {
 
     private String buildProviderId(
         HousingLegalDong legalDong,
-        ApartmentTradeXmlParser.ApartmentTradeRow tradeRow
+        ApartmentTradeResponseParser.ApartmentTradeRow tradeRow
     ) {
         return String.join(
             "|",
@@ -310,9 +516,57 @@ public class RealEstateMasterImportService {
         return fullAddressName.trim().split("\\s+");
     }
 
+    private int lengthOf(String value) {
+        return value == null ? 0 : value.length();
+    }
+
+    private String normalizeWhitespace(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private String preview(String value, int limit) {
+        if (value == null) {
+            return "null";
+        }
+
+        String escaped = value
+            .replace("\r", "\\r")
+            .replace("\n", "\\n")
+            .replace("\t", "\\t");
+
+        if (escaped.length() <= limit) {
+            return escaped;
+        }
+        return escaped.substring(0, limit) + "...";
+    }
+
     private record ResolvedTradeCandidate(
         HousingLegalDong legalDong,
-        ApartmentTradeXmlParser.ApartmentTradeRow tradeRow
+        ApartmentTradeResponseParser.ApartmentTradeRow tradeRow
     ) {
+    }
+
+    private record GeocodingResolution(
+        BigDecimal latitude,
+        BigDecimal longitude
+    ) {
+
+        private static GeocodingResolution of(
+            BigDecimal latitude,
+            BigDecimal longitude
+        ) {
+            return new GeocodingResolution(latitude, longitude);
+        }
+
+        private static GeocodingResolution unresolved() {
+            return new GeocodingResolution(null, null);
+        }
+
+        private boolean hasCoordinates() {
+            return latitude != null && longitude != null;
+        }
     }
 }

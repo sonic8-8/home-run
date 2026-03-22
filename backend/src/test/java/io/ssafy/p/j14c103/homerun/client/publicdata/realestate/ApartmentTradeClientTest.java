@@ -7,7 +7,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import io.ssafy.p.j14c103.homerun.config.PublicDataRestClientConfig;
+import io.ssafy.p.j14c103.homerun.config.PublicDataApiPropertiesConfig;
 import java.time.YearMonth;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
     }
 )
 @AutoConfigureWebClient(registerRestTemplate = true)
-@Import(PublicDataRestClientConfig.class)
+@Import(PublicDataApiPropertiesConfig.class)
 class ApartmentTradeClientTest {
 
     @Autowired

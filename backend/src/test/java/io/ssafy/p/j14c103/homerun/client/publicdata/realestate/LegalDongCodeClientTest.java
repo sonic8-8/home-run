@@ -7,7 +7,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import io.ssafy.p.j14c103.homerun.config.PublicDataRestClientConfig;
+import io.ssafy.p.j14c103.homerun.config.PublicDataApiPropertiesConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
     }
 )
 @AutoConfigureWebClient(registerRestTemplate = true)
-@Import(PublicDataRestClientConfig.class)
+@Import(PublicDataApiPropertiesConfig.class)
 class LegalDongCodeClientTest {
 
     @Autowired
@@ -48,7 +48,7 @@ class LegalDongCodeClientTest {
             .andExpect(requestTo(containsString("pageNo=1")))
             .andExpect(requestTo(containsString("numOfRows=500")))
             .andExpect(requestTo(containsString("type=xml")))
-            .andExpect(requestTo(containsString("locatadd_nm=")))
+            .andExpect(requestTo(containsString("locatadd_nm=%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C")))
             .andRespond(withSuccess("<StanReginCd/>", MediaType.APPLICATION_XML));
 
         // when

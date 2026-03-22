@@ -1,6 +1,7 @@
 package io.ssafy.p.j14c103.homerun.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,6 +13,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 public class SecurityConfig {
+
+    @Value("${spring.h2.console.enabled:false}")
+    private boolean h2ConsoleEnabled;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -28,11 +32,17 @@ public class SecurityConfig {
         http.exceptionHandling(exception -> exception
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
         );
-        http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/**").authenticated()
-                .anyRequest().denyAll()
-        );
+        http.authorizeHttpRequests(authorize -> {
+            authorize.requestMatchers("/api/auth/**").permitAll();
+            if (h2ConsoleEnabled) {
+                authorize.requestMatchers("/h2-console/**").permitAll();
+            }
+            authorize.requestMatchers("/api/**").authenticated();
+            authorize.anyRequest().denyAll();
+        });
+        if (h2ConsoleEnabled) {
+            http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
+        }
         http.addFilterBefore(
                 jwtAuthenticationFilter,
                 UsernamePasswordAuthenticationFilter.class

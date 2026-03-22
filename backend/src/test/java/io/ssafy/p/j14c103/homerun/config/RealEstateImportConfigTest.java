@@ -5,7 +5,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.housing.RealEstateMasterSyncService;
-import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncRequest;
 import java.time.YearMonth;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,8 +45,8 @@ class RealEstateImportConfigTest {
                 runner.run(new DefaultApplicationArguments(new String[0]));
 
                 // then
-                ArgumentCaptor<RealEstateMasterSyncServiceRequest> captor =
-                    ArgumentCaptor.forClass(RealEstateMasterSyncServiceRequest.class);
+                ArgumentCaptor<RealEstateMasterSyncRequest> captor =
+                    ArgumentCaptor.forClass(RealEstateMasterSyncRequest.class);
 
                 then(realEstateMasterSyncService).should().sync(captor.capture());
                 assertThat(captor.getValue().getRegions()).containsExactly("SEOUL", "GWANGJU");
@@ -70,5 +70,19 @@ class RealEstateImportConfigTest {
                 assertThat(context).doesNotHaveBean(ApplicationRunner.class);
                 verifyNoInteractions(realEstateMasterSyncService);
             });
+    }
+
+    @DisplayName("지원하지 않는 dataset type이면 컨텍스트 구성이 실패한다")
+    @Test
+    void realEstateImportRunnerWithUnsupportedDatasetType() {
+        contextRunner
+            .withPropertyValues(
+                "app.real-estate-import.enabled=true",
+                "app.real-estate-import.regions[0]=SEOUL",
+                "app.real-estate-import.from-year-month=2024-01",
+                "app.real-estate-import.to-year-month=2024-01",
+                "app.real-estate-import.dataset-types[0]=VILLA_SALE"
+            )
+            .run(context -> assertThat(context).hasFailed());
     }
 }

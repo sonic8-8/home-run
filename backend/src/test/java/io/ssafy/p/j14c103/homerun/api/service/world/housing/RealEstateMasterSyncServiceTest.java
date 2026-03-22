@@ -7,11 +7,13 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncRequest;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.ApartmentTradeClient;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeClient;
-import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeXmlParser;
+import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeResponseParser;
 import io.ssafy.p.j14c103.homerun.config.PublicDataApiProperties;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.YearMonth;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +60,7 @@ class RealEstateMasterSyncServiceTest {
 
         // when
         realEstateMasterSyncService.sync(
-            RealEstateMasterSyncServiceRequest.of(
+            RealEstateMasterSyncRequest.of(
                 List.of("SEOUL", "GWANGJU"),
                 YearMonth.of(2024, 1),
                 YearMonth.of(2024, 2)
@@ -80,12 +82,14 @@ class RealEstateMasterSyncServiceTest {
     void syncWithUnsupportedRegion() {
         // when & then
         assertThatThrownBy(() -> realEstateMasterSyncService.sync(
-            RealEstateMasterSyncServiceRequest.of(
+            RealEstateMasterSyncRequest.of(
                 List.of("BUSAN"),
                 YearMonth.of(2024, 1),
                 YearMonth.of(2024, 1)
             )
-        )).isInstanceOf(IllegalArgumentException.class);
+        )).isInstanceOf(HomerunException.class)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.INVALID_INPUT_VALUE);
 
         verifyNoInteractions(legalDongCodeClient, apartmentTradeClient, realEstateMasterImportService);
     }
@@ -105,7 +109,7 @@ class RealEstateMasterSyncServiceTest {
 
         // when
         pageLoopSyncService.sync(
-            RealEstateMasterSyncServiceRequest.of(
+            RealEstateMasterSyncRequest.of(
                 List.of("SEOUL"),
                 YearMonth.of(2024, 1),
                 YearMonth.of(2024, 1)
@@ -120,13 +124,33 @@ class RealEstateMasterSyncServiceTest {
         then(realEstateMasterImportService).should().importMaster(any());
     }
 
+    @DisplayName("법정동 조회 결과가 비어 있으면 예외를 던지고 적재를 진행하지 않는다")
+    @Test
+    void syncWithEmptyLegalDongRows() {
+        // given
+        given(legalDongCodeClient.fetch("서울특별시", 1, 1000)).willReturn(LEGAL_DONG_NO_DATA_XML);
+
+        // when & then
+        assertThatThrownBy(() -> realEstateMasterSyncService.sync(
+            RealEstateMasterSyncRequest.of(
+                List.of("SEOUL"),
+                YearMonth.of(2024, 1),
+                YearMonth.of(2024, 1)
+            )
+        )).isInstanceOf(HomerunException.class)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID);
+
+        verifyNoInteractions(apartmentTradeClient, realEstateMasterImportService);
+    }
+
     private RealEstateMasterSyncService createSyncService(int pageSize) {
         return new RealEstateMasterSyncService(
             legalDongCodeClient,
             apartmentTradeClient,
-            new LegalDongCodeXmlParser(),
+            new LegalDongCodeResponseParser(),
             realEstateMasterImportService,
-            PublicDataApiProperties.of(
+            new PublicDataApiProperties(
                 "https://apis.data.go.kr/1741000/StanReginCd",
                 "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade",
                 "test-service-key",
@@ -323,5 +347,12 @@ class RealEstateMasterSyncServiceTest {
             <totalCount>2</totalCount>
           </body>
         </response>
+        """;
+
+    private static final String LEGAL_DONG_NO_DATA_XML = """
+        <RESULT>
+          <resultCode>INFO-3</resultCode>
+          <resultMsg>데이터없음 에러</resultMsg>
+        </RESULT>
         """;
 }

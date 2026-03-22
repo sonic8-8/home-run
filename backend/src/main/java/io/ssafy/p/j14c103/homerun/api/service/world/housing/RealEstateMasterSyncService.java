@@ -1,11 +1,13 @@
 package io.ssafy.p.j14c103.homerun.api.service.world.housing;
 
-import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterImportServiceRequest;
-import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterImportRequest;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMasterSyncRequest;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.ApartmentTradeClient;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeClient;
-import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeXmlParser;
+import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeResponseParser;
 import io.ssafy.p.j14c103.homerun.config.PublicDataApiProperties;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,74 +17,103 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RealEstateMasterSyncService {
 
+    private static final String REGION_CODE_SEOUL = "SEOUL";
+    private static final String REGION_CODE_GWANGJU = "GWANGJU";
+    private static final String REGION_ADDRESS_SEOUL = "서울특별시";
+    private static final String REGION_ADDRESS_GWANGJU = "광주광역시";
+    private static final String DISTRICT_LEVEL_UMD_CODE = "000";
+    private static final String DEFAULT_RI_CODE = "00";
+    private static final String MERGED_RESULT_CODE = "INFO-0";
+    private static final String MERGED_RESULT_MESSAGE = "NOMAL SERVICE";
     private static final Pattern TOTAL_COUNT_PATTERN =
         Pattern.compile("<totalCount>\\s*(\\d+)\\s*</totalCount>");
+    private static final Pattern JSON_TOTAL_COUNT_PATTERN =
+        Pattern.compile("\"totalCount\"\\s*:\\s*\"?(\\d+)\"?");
+    private static final Map<String, String> SUPPORTED_REGION_ADDRESSES = Map.of(
+        REGION_CODE_SEOUL, REGION_ADDRESS_SEOUL,
+        REGION_CODE_GWANGJU, REGION_ADDRESS_GWANGJU
+    );
 
     private final LegalDongCodeClient legalDongCodeClient;
     private final ApartmentTradeClient apartmentTradeClient;
-    private final LegalDongCodeXmlParser legalDongCodeXmlParser;
+    private final LegalDongCodeResponseParser legalDongCodeResponseParser;
     private final RealEstateMasterImportService realEstateMasterImportService;
     private final PublicDataApiProperties publicDataApiProperties;
 
-    public void sync(RealEstateMasterSyncServiceRequest request) {
+    public void sync(RealEstateMasterSyncRequest request) {
         validateRequest(request);
 
         for (String regionCode : request.getRegions()) {
             String regionAddress = resolveRegionAddress(regionCode);
             List<String> legalDongXmlPages = fetchLegalDongXmlPages(regionAddress);
             String mergedLegalDongXml = mergeLegalDongXmlPages(legalDongXmlPages);
+            List<LegalDongCodeResponseParser.LegalDongCodeRow> legalDongRows =
+                legalDongCodeResponseParser.parse(mergedLegalDongXml);
 
-            List<String> districtCodes = legalDongCodeXmlParser.parse(mergedLegalDongXml).stream()
+            if (legalDongRows.isEmpty()) {
+                throw new HomerunException(ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID);
+            }
+
+            List<String> districtCodes = legalDongRows.stream()
                 .filter(row -> !row.districtLevel())
-                .map(LegalDongCodeXmlParser.LegalDongCodeRow::districtCode)
+                .map(LegalDongCodeResponseParser.LegalDongCodeRow::districtCode)
                 .distinct()
                 .collect(Collectors.toList());
 
-            List<String> apartmentTradeXmlPages = new ArrayList<>();
+            List<String> apartmentTradeResponses = new ArrayList<>();
             for (String districtCode : districtCodes) {
                 for (YearMonth cursor = request.getFromYearMonth();
                      !cursor.isAfter(request.getToYearMonth());
                      cursor = cursor.plusMonths(1)) {
-                    apartmentTradeXmlPages.addAll(fetchApartmentTradeXmlPages(districtCode, cursor));
+                    apartmentTradeResponses.addAll(fetchApartmentTradeResponses(districtCode, cursor));
                 }
             }
 
+            log.info(
+                "부동산 마스터 동기화 준비 regionCode={}, regionAddress={}, legalDongPages={}, districtCount={}, apartmentTradePageCount={}",
+                regionCode,
+                regionAddress,
+                legalDongXmlPages.size(),
+                districtCodes.size(),
+                apartmentTradeResponses.size()
+            );
+
             realEstateMasterImportService.importMaster(
-                RealEstateMasterImportServiceRequest.of(
+                RealEstateMasterImportRequest.of(
                     mergedLegalDongXml,
-                    apartmentTradeXmlPages
+                    apartmentTradeResponses
                 )
             );
         }
     }
 
-    private void validateRequest(RealEstateMasterSyncServiceRequest request) {
+    private void validateRequest(RealEstateMasterSyncRequest request) {
         if (request.getRegions() == null || request.getRegions().isEmpty()) {
-            throw new IllegalArgumentException("적재 대상 지역은 필수입니다.");
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
         if (request.getFromYearMonth() == null || request.getToYearMonth() == null) {
-            throw new IllegalArgumentException("적재 대상 기간은 필수입니다.");
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
         if (request.getFromYearMonth().isAfter(request.getToYearMonth())) {
-            throw new IllegalArgumentException("시작 월은 종료 월보다 늦을 수 없습니다.");
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }
 
     private String resolveRegionAddress(String regionCode) {
-        if ("SEOUL".equals(regionCode)) {
-            return "서울특별시";
+        String regionAddress = SUPPORTED_REGION_ADDRESSES.get(regionCode);
+        if (regionAddress == null) {
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        if ("GWANGJU".equals(regionCode)) {
-            return "광주광역시";
-        }
-        throw new IllegalArgumentException("MVP 범위를 벗어난 지역 코드입니다.");
+        return regionAddress;
     }
 
     private List<String> fetchLegalDongXmlPages(String regionAddress) {
@@ -105,31 +136,34 @@ public class RealEstateMasterSyncService {
         return xmlPages;
     }
 
-    private List<String> fetchApartmentTradeXmlPages(String districtCode, YearMonth yearMonth) {
-        List<String> xmlPages = new ArrayList<>();
+    private List<String> fetchApartmentTradeResponses(String districtCode, YearMonth yearMonth) {
+        List<String> responses = new ArrayList<>();
         int totalPages = 1;
 
         for (int pageNo = 1; pageNo <= totalPages; pageNo++) {
-            String xml = apartmentTradeClient.fetch(
+            String response = apartmentTradeClient.fetch(
                 districtCode,
                 yearMonth,
                 pageNo,
                 publicDataApiProperties.getPageSize()
             );
-            xmlPages.add(xml);
+            responses.add(response);
 
             if (pageNo == 1) {
-                totalPages = calculateTotalPages(xml);
+                totalPages = calculateTotalPages(response);
             }
         }
 
-        return xmlPages;
+        return responses;
     }
 
     private int calculateTotalPages(String xml) {
         Matcher matcher = TOTAL_COUNT_PATTERN.matcher(xml);
         if (!matcher.find()) {
-            return 1;
+            matcher = JSON_TOTAL_COUNT_PATTERN.matcher(xml);
+            if (!matcher.find()) {
+                return 1;
+            }
         }
 
         int totalCount = Integer.parseInt(matcher.group(1));
@@ -145,27 +179,34 @@ public class RealEstateMasterSyncService {
             return xmlPages.get(0);
         }
 
-        List<LegalDongCodeXmlParser.LegalDongCodeRow> rows = new ArrayList<>();
+        List<LegalDongCodeResponseParser.LegalDongCodeRow> rows = new ArrayList<>();
         for (String xmlPage : xmlPages) {
-            rows.addAll(legalDongCodeXmlParser.parse(xmlPage));
+            rows.addAll(legalDongCodeResponseParser.parse(xmlPage));
         }
 
-        Map<String, LegalDongCodeXmlParser.LegalDongCodeRow> distinctRows = new LinkedHashMap<>();
-        for (LegalDongCodeXmlParser.LegalDongCodeRow row : rows) {
+        Map<String, LegalDongCodeResponseParser.LegalDongCodeRow> distinctRows = new LinkedHashMap<>();
+        for (LegalDongCodeResponseParser.LegalDongCodeRow row : rows) {
             distinctRows.put(row.legalDongCode(), row);
         }
 
         StringBuilder builder = new StringBuilder();
         builder.append("<StanReginCd>");
-        builder.append("<head><RESULT><resultCode>INFO-0</resultCode><resultMsg>NOMAL SERVICE</resultMsg></RESULT></head>");
+        builder.append("<head><RESULT><resultCode>")
+            .append(MERGED_RESULT_CODE)
+            .append("</resultCode><resultMsg>")
+            .append(MERGED_RESULT_MESSAGE)
+            .append("</resultMsg></RESULT></head>");
 
-        for (LegalDongCodeXmlParser.LegalDongCodeRow row : new LinkedHashSet<>(distinctRows.values())) {
+        for (LegalDongCodeResponseParser.LegalDongCodeRow row : new LinkedHashSet<>(distinctRows.values())) {
             builder.append("<row>");
             builder.append(tag("region_cd", row.legalDongCode()));
             builder.append(tag("sido_cd", row.regionCode()));
             builder.append(tag("sgg_cd", row.districtCode().substring(2)));
-            builder.append(tag("umd_cd", row.districtLevel() ? "000" : row.legalDongCode().substring(5, 8)));
-            builder.append(tag("ri_cd", "00"));
+            builder.append(tag(
+                "umd_cd",
+                row.districtLevel() ? DISTRICT_LEVEL_UMD_CODE : row.legalDongCode().substring(5, 8)
+            ));
+            builder.append(tag("ri_cd", DEFAULT_RI_CODE));
             builder.append(tag("locatadd_nm", row.fullAddressName()));
             builder.append(tag("locathigh_cd", row.parentLegalDongCode()));
             builder.append(tag("locallow_nm", row.legalDongName()));

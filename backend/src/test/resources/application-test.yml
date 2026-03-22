@@ -37,3 +37,9 @@ naver:
 app:
   real-estate-import:
     enabled: false
+    regions:
+      - SEOUL
+    from-year-month: 2024-01
+    to-year-month: 2024-12
+    dataset-types:
+      - APT_SALE
