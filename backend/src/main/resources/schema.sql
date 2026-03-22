@@ -258,8 +258,8 @@ create table if not exists real_estate_documents (
   real_estate_document_id integer generated always as identity primary key,
   property_id integer not null,
   document_type varchar(20),
-  image_url varchar(255),
-  checklist jsonb,
+  registry_section varchar(20),
+  quiz_sample_payload jsonb,
   constraint fk_real_estate_documents__property
     foreign key (property_id) references real_estate_properties (property_id)
 );
