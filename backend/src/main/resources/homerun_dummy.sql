@@ -1278,7 +1278,7 @@ insert into game_sessions (
   target_district_code,
   data_source_type,
   current_turn,
-  current_date,
+  "current_date",
   economic_cycle_type,
   cash,
   net_assets,
