@@ -13,6 +13,22 @@
 -- The category IDs and names follow SSAFY_금융망_API/카드.md.
 -- Card metadata is maintained directly in this SQL file.
 
+create table if not exists member_payment_histories (
+  payment_history_id integer generated always as identity primary key,
+  user_id integer not null,
+  category_id varchar(50) not null,
+  category_name varchar(50) not null,
+  merchant_name varchar(100) not null,
+  payment_amount integer not null,
+  payment_date date not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_member_payment_histories__user
+    foreign key (user_id) references users (user_id)
+);
+
+alter table if exists game_sessions
+  add column if not exists selected_card_monthly_saving_amount integer not null default 0;
+
 insert into users (
   email,
   user_name,
@@ -1195,3 +1211,188 @@ insert into card_products (
     'card-shinhan-deep-dream-front.png',
     true
   );
+
+delete from member_payment_histories
+where user_id = (select user_id from users where email = 'homerun@example.com')
+  and payment_date between date '2026-02-01' and date '2026-02-28';
+
+insert into member_payment_histories (
+  user_id,
+  category_id,
+  category_name,
+  merchant_name,
+  payment_amount,
+  payment_date
+)
+select
+  u.user_id,
+  payments.category_id,
+  payments.category_name,
+  payments.merchant_name,
+  payments.payment_amount,
+  payments.payment_date
+from users u
+cross join (
+  values
+    ('CG-9ca85f66311a23d', '생활', '스타벅스', 28000, date '2026-02-02'),
+    ('CG-9ca85f66311a23d', '생활', 'GS25', 22000, date '2026-02-03'),
+    ('CG-9ca85f66311a23d', '생활', '맘스터치', 35000, date '2026-02-04'),
+    ('CG-9ca85f66311a23d', '생활', '올리브영', 18000, date '2026-02-06'),
+    ('CG-9ca85f66311a23d', '생활', '배달의민족', 26000, date '2026-02-07'),
+    ('CG-9ca85f66311a23d', '생활', '이디야', 24000, date '2026-02-10'),
+    ('CG-9ca85f66311a23d', '생활', 'CU', 31000, date '2026-02-12'),
+    ('CG-9ca85f66311a23d', '생활', '파리바게뜨', 29000, date '2026-02-15'),
+    ('CG-9ca85f66311a23d', '생활', '다이소', 33000, date '2026-02-18'),
+    ('CG-9ca85f66311a23d', '생활', '메가MGC커피', 21000, date '2026-02-20'),
+    ('CG-9ca85f66311a23d', '생활', '요기요', 27000, date '2026-02-23'),
+    ('CG-9ca85f66311a23d', '생활', '교보문고', 26000, date '2026-02-26'),
+    ('CG-4fa85f6455cad4a', '교통', '카카오T', 32000, date '2026-02-01'),
+    ('CG-4fa85f6455cad4a', '교통', '카카오T', 24000, date '2026-02-08'),
+    ('CG-4fa85f6455cad4a', '교통', '서울교통공사', 18000, date '2026-02-11'),
+    ('CG-4fa85f6455cad4a', '교통', '카카오T', 41000, date '2026-02-17'),
+    ('CG-4fa85f6455cad4a', '교통', '티머니', 35000, date '2026-02-24'),
+    ('CG-4fa85f6425ad1d3', '대형마트', '이마트', 38000, date '2026-02-05'),
+    ('CG-4fa85f6425ad1d3', '대형마트', '홈플러스', 22000, date '2026-02-09'),
+    ('CG-4fa85f6425ad1d3', '대형마트', '롯데마트', 27000, date '2026-02-14'),
+    ('CG-4fa85f6425ad1d3', '대형마트', '코스트코', 33000, date '2026-02-22'),
+    ('CG-7fa85f6425bc311', '통신', 'SKT', 55000, date '2026-02-13'),
+    ('CG-7fa85f6425bc311', '통신', 'KT 인터넷', 15000, date '2026-02-16'),
+    ('CG-7fa85f6425bc311', '통신', 'LG U+ IPTV', 20000, date '2026-02-27'),
+    ('CG-3fa85f6425e811e', '주유', 'GS칼텍스', 20000, date '2026-02-04'),
+    ('CG-3fa85f6425e811e', '주유', 'SK에너지', 18000, date '2026-02-19'),
+    ('CG-3fa85f6425e811e', '주유', 'S-OIL', 22000, date '2026-02-28'),
+    ('CG-8fa85f6425e1123', '해외', '아마존', 17000, date '2026-02-18'),
+    ('CG-8fa85f6425e1123', '해외', '알리익스프레스', 23000, date '2026-02-25'),
+    ('CG-6dd85f6425ez11o', '교육/육아', '메가스터디', 20000, date '2026-02-21')
+) as payments(category_id, category_name, merchant_name, payment_amount, payment_date)
+where u.email = 'homerun@example.com';
+
+insert into game_sessions (
+  user_id,
+  slot_number,
+  character_name,
+  character_type,
+  job_type,
+  housing_type,
+  target_region_code,
+  target_district_code,
+  data_source_type,
+  current_turn,
+  current_date,
+  economic_cycle_type,
+  cash,
+  net_assets,
+  session_status,
+  last_played_at,
+  selected_card_monthly_saving_amount,
+  owned_property_id
+)
+select
+  u.user_id,
+  1,
+  'Homer',
+  'MALE',
+  'STARTUP',
+  'STUDIO',
+  'SEOUL',
+  'GANGNAM',
+  'DUMMY',
+  3,
+  date '2026-03-01',
+  'RECOVERY',
+  3200000,
+  3250000,
+  'IN_PROGRESS',
+  timestamp '2026-03-01 09:00:00',
+  0,
+  null
+from users u
+where u.email = 'homerun@example.com'
+  and not exists (
+    select 1
+    from game_sessions gs
+    where gs.user_id = u.user_id
+      and gs.slot_number = 1
+  );
+
+insert into game_cards (
+  game_session_id,
+  card_product_id,
+  card_status_type,
+  recommended_at,
+  registered_at,
+  active_yn
+)
+select
+  gs.game_session_id,
+  cp.card_product_id,
+  'REGISTERED',
+  timestamp '2026-03-01 09:00:00',
+  timestamp '2026-03-01 09:00:00',
+  true
+from game_sessions gs
+join users u on u.user_id = gs.user_id
+join card_products cp on cp.card_name = '삼성 iD ON 카드'
+where u.email = 'homerun@example.com'
+  and gs.slot_number = 1
+  and not exists (
+    select 1
+    from game_cards gc
+    where gc.game_session_id = gs.game_session_id
+      and gc.card_product_id = cp.card_product_id
+      and gc.card_status_type = 'REGISTERED'
+      and gc.active_yn = true
+  );
+
+with latest_month as (
+  select date_trunc('month', max(payment_date))::date as month_start
+  from member_payment_histories
+  where user_id = (select user_id from users where email = 'homerun@example.com')
+),
+latest_month_payments as (
+  select mph.user_id, mph.category_id, mph.payment_amount
+  from member_payment_histories mph
+  join latest_month lm
+    on mph.payment_date >= lm.month_start
+   and mph.payment_date < (lm.month_start + interval '1 month')::date
+  where mph.user_id = (select user_id from users where email = 'homerun@example.com')
+),
+category_spend as (
+  select category_id, sum(payment_amount)::numeric as total_amount
+  from latest_month_payments
+  group by category_id
+),
+selected_card as (
+  select
+    gs.game_session_id,
+    cp.max_benefit_limit_amount,
+    cp.active_benefits
+  from game_sessions gs
+  join users u on u.user_id = gs.user_id
+  join game_cards gc
+    on gc.game_session_id = gs.game_session_id
+   and gc.card_status_type = 'REGISTERED'
+   and gc.active_yn = true
+  join card_products cp on cp.card_product_id = gc.card_product_id
+  where u.email = 'homerun@example.com'
+    and gs.slot_number = 1
+  order by gc.registered_at desc nulls last, gc.game_card_id desc
+  limit 1
+),
+raw_saving as (
+  select
+    sc.game_session_id,
+    coalesce(sum(coalesce(cs.total_amount, 0) * ((benefit ->> 'discountRate')::numeric) / 100), 0::numeric) as raw_amount,
+    sc.max_benefit_limit_amount
+  from selected_card sc
+  left join lateral jsonb_array_elements(sc.active_benefits) benefit on true
+  left join category_spend cs on cs.category_id = benefit ->> 'categoryId'
+  group by sc.game_session_id, sc.max_benefit_limit_amount
+)
+update game_sessions gs
+set selected_card_monthly_saving_amount = case
+  when rs.max_benefit_limit_amount is null or rs.max_benefit_limit_amount <= 0 then floor(rs.raw_amount)::integer
+  else least(floor(rs.raw_amount)::integer, rs.max_benefit_limit_amount)
+end
+from raw_saving rs
+where gs.game_session_id = rs.game_session_id;
