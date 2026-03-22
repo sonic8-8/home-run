@@ -54,7 +54,10 @@ class CardControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.cards[0].cardProductId").value(1L))
                 .andExpect(jsonPath("$.data.cards[0].cardName").value("Alpha Card"))
-                .andExpect(jsonPath("$.data.cards[0].activeBenefits[0].categoryName").value("생활"));
+                .andExpect(jsonPath("$.data.cards[0].activeBenefits[0].categoryName").value("생활"))
+                .andExpect(jsonPath("$.data.cards[0].activeBenefits[1].categoryName").value("생활"))
+                .andExpect(jsonPath("$.data.cards[0].activeBenefits[1].discountRate").value(5.0))
+                .andExpect(jsonPath("$.data.cards[0].activeBenefits[2].categoryName").value("교통"));
     }
 
     @DisplayName("카드 추천 조회는 ApiResponse로 감싼 추천 목록을 반환한다")
@@ -81,13 +84,29 @@ class CardControllerTest {
                 300000,
                 40000,
                 "card.png",
-                List.of(CardBenefitResponse.of(
-                        "CG-001",
-                        "생활",
-                        "생활 업종",
-                        BigDecimal.valueOf(10.0),
-                        List.of("스타벅스")
-                ))
+                List.of(
+                        CardBenefitResponse.of(
+                                "CG-9ca85f66311a23d",
+                                "생활",
+                                "(음식점, 커피전문점, 편의점, 약국 ..)",
+                                BigDecimal.valueOf(10.0),
+                                List.of("스타벅스")
+                        ),
+                        CardBenefitResponse.of(
+                                "CG-9ca85f66311a23d",
+                                "생활",
+                                "(음식점, 커피전문점, 편의점, 약국 ..)",
+                                BigDecimal.valueOf(5.0),
+                                List.of("배달의민족")
+                        ),
+                        CardBenefitResponse.of(
+                                "CG-4fa85f6455cad4a",
+                                "교통",
+                                "(버스, 지하철, 택시)",
+                                BigDecimal.valueOf(3.0),
+                                List.of("택시")
+                        )
+                )
         );
     }
 
