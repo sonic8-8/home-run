@@ -27,11 +27,25 @@ class CardServiceTest {
     private static final String BENEFITS_JSON = """
             [
               {
-                "categoryId": "CG-001",
+                "categoryId": "CG-9ca85f66311a23d",
                 "categoryName": "생활",
-                "categoryDescription": "생활 업종",
+                "categoryDescription": "(음식점, 커피전문점, 편의점, 약국 ..)",
                 "discountRate": 10.0,
                 "exampleMerchants": ["스타벅스"]
+              },
+              {
+                "categoryId": "CG-9ca85f66311a23d",
+                "categoryName": "생활",
+                "categoryDescription": "(음식점, 커피전문점, 편의점, 약국 ..)",
+                "discountRate": 5.0,
+                "exampleMerchants": ["배달의민족"]
+              },
+              {
+                "categoryId": "CG-4fa85f6455cad4a",
+                "categoryName": "교통",
+                "categoryDescription": "(버스, 지하철, 택시)",
+                "discountRate": 3.0,
+                "exampleMerchants": ["택시"]
               }
             ]
             """;
@@ -60,8 +74,12 @@ class CardServiceTest {
         assertThat(response.getCards()).hasSize(2);
         assertThat(response.getCards().get(0).getCardName()).isEqualTo("Alpha Card");
         assertThat(response.getCards().get(1).getCardName()).isEqualTo("Charlie Card");
-        assertThat(response.getCards().get(0).getActiveBenefits()).hasSize(1);
+        assertThat(response.getCards().get(0).getActiveBenefits()).hasSize(3);
         assertThat(response.getCards().get(0).getActiveBenefits().get(0).getCategoryName()).isEqualTo("생활");
+        assertThat(response.getCards().get(0).getActiveBenefits().get(1).getCategoryName()).isEqualTo("생활");
+        assertThat(response.getCards().get(0).getActiveBenefits().get(1).getDiscountRate())
+                .isEqualByComparingTo("5.0");
+        assertThat(response.getCards().get(0).getActiveBenefits().get(2).getCategoryName()).isEqualTo("교통");
     }
 
     @DisplayName("카드 추천은 사용자 결제 유형이 없어도 이름순 상위 5건을 반환한다")
