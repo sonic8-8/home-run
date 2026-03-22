@@ -453,7 +453,7 @@ create table if not exists news_master (
   source_name varchar(255),
   article_text text,
   economic_cycle_type varchar(50),
-  reason text,
+  reason text, -- economic_cycle_type 라벨링 이유
   sector_impact jsonb,
   exchange_rate_impact integer,
   real_estate_impact integer,
