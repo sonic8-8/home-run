@@ -24,18 +24,18 @@ class GameStartProfileServiceTest {
         final ProfileOptionsResponse response = gameStartProfileService.getProfileOptions();
 
         // then
-        assertThat(response.profiles())
+        assertThat(response.getProfiles())
             .extracting(
-                ProfileOptionsResponse.ProfileOptionResponse::profileCode,
-                ProfileOptionsResponse.ProfileOptionResponse::name,
-                ProfileOptionsResponse.ProfileOptionResponse::jobType,
-                ProfileOptionsResponse.ProfileOptionResponse::annualSalary,
-                ProfileOptionsResponse.ProfileOptionResponse::initialCash,
-                option -> option.stats().salary(),
-                option -> option.stats().health(),
-                option -> option.stats().stability(),
-                option -> option.stats().growthSpeed(),
-                option -> option.stats().difficulty()
+                ProfileOptionsResponse.ProfileOptionResponse::getProfileCode,
+                ProfileOptionsResponse.ProfileOptionResponse::getName,
+                ProfileOptionsResponse.ProfileOptionResponse::getJobType,
+                ProfileOptionsResponse.ProfileOptionResponse::getAnnualSalary,
+                ProfileOptionsResponse.ProfileOptionResponse::getInitialCash,
+                option -> option.getStats().getSalary(),
+                option -> option.getStats().getHealth(),
+                option -> option.getStats().getStability(),
+                option -> option.getStats().getGrowthSpeed(),
+                option -> option.getStats().getDifficulty()
             )
             .containsExactly(
                 tuple("JUNIOR_DEVELOPER", "신입 개발자", io.ssafy.p.j14c103.homerun.domain.character.career.JobType.MID_BIZ, 32_000_000L, 10_000_000L, 60, 70, 70, 50, 50),

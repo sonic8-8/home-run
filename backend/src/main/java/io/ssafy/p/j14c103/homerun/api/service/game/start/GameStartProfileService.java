@@ -13,6 +13,7 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +25,9 @@ public class GameStartProfileService {
 
     private static final CharacterType PROFILE_REFERENCE_CHARACTER_TYPE = CharacterType.FEMALE;
     private static final List<ProfileDefinition> PROFILE_DEFINITIONS = List.of(
-        new ProfileDefinition("JUNIOR_DEVELOPER", "신입 개발자", JobType.MID_BIZ),
-        new ProfileDefinition("CORPORATE_OFFICE_WORKER", "대기업 사무직", JobType.LARGE_BIZ),
-        new ProfileDefinition("IT_STARTUP", "IT 스타트업", JobType.STARTUP)
+        ProfileDefinition.of("JUNIOR_DEVELOPER", "신입 개발자", JobType.MID_BIZ),
+        ProfileDefinition.of("CORPORATE_OFFICE_WORKER", "대기업 사무직", JobType.LARGE_BIZ),
+        ProfileDefinition.of("IT_STARTUP", "IT 스타트업", JobType.STARTUP)
     );
 
     private final CareerQueryService careerQueryService;
@@ -59,19 +60,19 @@ public class GameStartProfileService {
         final Map<JobType, CharacterSeedPolicy.JobTypeSeedProfile> seedProfiles
     ) {
         final JobTypeOptionsResponse.JobTypeOptionResponse jobTypeOption =
-            findJobTypeOption(definition.jobType(), jobTypeOptions);
+            findJobTypeOption(definition.getJobType(), jobTypeOptions);
         final CharacterSeedPolicy.JobTypeSeedProfile seedProfile =
-            findSeedProfile(definition.jobType(), seedProfiles);
+            findSeedProfile(definition.getJobType(), seedProfiles);
         final CharacterSeedPolicy.CharacterSeedPlan profileSeed = characterSeedPolicy.calculate(
             PROFILE_REFERENCE_CHARACTER_TYPE,
-            definition.jobType(),
+            definition.getJobType(),
             SeedType.PROFILE
         );
 
         return ProfileOptionsResponse.ProfileOptionResponse.of(
-            definition.profileCode(),
-            definition.name(),
-            definition.jobType(),
+            definition.getProfileCode(),
+            definition.getName(),
+            definition.getJobType(),
             seedProfile.initialAnnualSalary(),
             profileSeed.session().initialCash(),
             jobTypeOption.stats().salary(),
@@ -106,10 +107,29 @@ public class GameStartProfileService {
         throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
     }
 
-    private record ProfileDefinition(
-        String profileCode,
-        String name,
-        JobType jobType
-    ) {
+    @Getter
+    private static class ProfileDefinition {
+
+        private final String profileCode;
+        private final String name;
+        private final JobType jobType;
+
+        private ProfileDefinition(
+            final String profileCode,
+            final String name,
+            final JobType jobType
+        ) {
+            this.profileCode = profileCode;
+            this.name = name;
+            this.jobType = jobType;
+        }
+
+        public static ProfileDefinition of(
+            final String profileCode,
+            final String name,
+            final JobType jobType
+        ) {
+            return new ProfileDefinition(profileCode, name, jobType);
+        }
     }
 }
