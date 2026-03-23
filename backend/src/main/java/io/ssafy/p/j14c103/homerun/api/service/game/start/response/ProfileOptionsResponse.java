@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -11,13 +12,16 @@ public class ProfileOptionsResponse {
 
     private final List<ProfileOptionResponse> profiles;
 
+    @Builder
     private ProfileOptionsResponse(final List<ProfileOptionResponse> profiles) {
         validateProfiles(profiles);
         this.profiles = List.copyOf(profiles);
     }
 
     public static ProfileOptionsResponse from(final List<ProfileOptionResponse> profiles) {
-        return new ProfileOptionsResponse(profiles);
+        return ProfileOptionsResponse.builder()
+            .profiles(profiles)
+            .build();
     }
 
     @Getter
@@ -30,6 +34,7 @@ public class ProfileOptionsResponse {
         private final long initialCash;
         private final ProfileStatsResponse stats;
 
+        @Builder
         private ProfileOptionResponse(
             final String profileCode,
             final String name,
@@ -64,14 +69,14 @@ public class ProfileOptionsResponse {
             final int growthSpeed,
             final int difficulty
         ) {
-            return new ProfileOptionResponse(
-                profileCode,
-                name,
-                jobType,
-                annualSalary,
-                initialCash,
-                ProfileStatsResponse.of(salary, health, stability, growthSpeed, difficulty)
-            );
+            return ProfileOptionResponse.builder()
+                .profileCode(profileCode)
+                .name(name)
+                .jobType(jobType)
+                .annualSalary(annualSalary)
+                .initialCash(initialCash)
+                .stats(ProfileStatsResponse.of(salary, health, stability, growthSpeed, difficulty))
+                .build();
         }
     }
 
@@ -84,6 +89,7 @@ public class ProfileOptionsResponse {
         private final int growthSpeed;
         private final int difficulty;
 
+        @Builder
         private ProfileStatsResponse(
             final int salary,
             final int health,
@@ -110,7 +116,13 @@ public class ProfileOptionsResponse {
             final int growthSpeed,
             final int difficulty
         ) {
-            return new ProfileStatsResponse(salary, health, stability, growthSpeed, difficulty);
+            return ProfileStatsResponse.builder()
+                .salary(salary)
+                .health(health)
+                .stability(stability)
+                .growthSpeed(growthSpeed)
+                .difficulty(difficulty)
+                .build();
         }
     }
 

@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.util.List;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -11,13 +12,16 @@ public class TargetPropertyListResponse {
 
     private final List<TargetPropertyResponse> properties;
 
+    @Builder
     private TargetPropertyListResponse(final List<TargetPropertyResponse> properties) {
         validateProperties(properties);
         this.properties = List.copyOf(properties);
     }
 
     public static TargetPropertyListResponse from(final List<TargetPropertyResponse> properties) {
-        return new TargetPropertyListResponse(properties);
+        return TargetPropertyListResponse.builder()
+            .properties(properties)
+            .build();
     }
 
     @Getter
@@ -29,6 +33,7 @@ public class TargetPropertyListResponse {
         private final BigDecimal latitude;
         private final BigDecimal longitude;
 
+        @Builder
         private TargetPropertyResponse(
             final Long propertyId,
             final String name,
@@ -53,13 +58,13 @@ public class TargetPropertyListResponse {
             final BigDecimal latitude,
             final BigDecimal longitude
         ) {
-            return new TargetPropertyResponse(
-                propertyId,
-                name,
-                recentPrice,
-                latitude,
-                longitude
-            );
+            return TargetPropertyResponse.builder()
+                .propertyId(propertyId)
+                .name(name)
+                .recentPrice(recentPrice)
+                .latitude(latitude)
+                .longitude(longitude)
+                .build();
         }
     }
 

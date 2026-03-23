@@ -3,6 +3,7 @@ package io.ssafy.p.j14c103.homerun.api.service.game.start.response;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -11,6 +12,7 @@ public class DistrictListResponse {
     private final String regionCode;
     private final List<DistrictResponse> districts;
 
+    @Builder
     private DistrictListResponse(
         final String regionCode,
         final List<DistrictResponse> districts
@@ -25,7 +27,10 @@ public class DistrictListResponse {
         final String regionCode,
         final List<DistrictResponse> districts
     ) {
-        return new DistrictListResponse(regionCode, districts);
+        return DistrictListResponse.builder()
+            .regionCode(regionCode)
+            .districts(districts)
+            .build();
     }
 
     @Getter
@@ -34,6 +39,7 @@ public class DistrictListResponse {
         private final String districtCode;
         private final String name;
 
+        @Builder
         private DistrictResponse(
             final String districtCode,
             final String name
@@ -48,7 +54,10 @@ public class DistrictListResponse {
             final String districtCode,
             final String name
         ) {
-            return new DistrictResponse(districtCode, name);
+            return DistrictResponse.builder()
+                .districtCode(districtCode)
+                .name(name)
+                .build();
         }
     }
 
