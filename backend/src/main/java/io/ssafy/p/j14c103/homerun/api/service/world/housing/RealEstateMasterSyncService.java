@@ -5,6 +5,7 @@ import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMa
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.ApartmentTradeClient;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeClient;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeResponseParser;
+import io.ssafy.p.j14c103.homerun.config.ConditionalOnRealEstateImportEnabled;
 import io.ssafy.p.j14c103.homerun.config.PublicDataApiProperties;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@ConditionalOnRealEstateImportEnabled
 @Slf4j
 @RequiredArgsConstructor
 public class RealEstateMasterSyncService {

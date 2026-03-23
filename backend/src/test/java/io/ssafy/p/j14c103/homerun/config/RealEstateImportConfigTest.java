@@ -59,13 +59,6 @@ class RealEstateImportConfigTest {
     @Test
     void realEstateImportRunnerWhenDisabled() throws Exception {
         contextRunner
-            .withPropertyValues(
-                "app.real-estate-import.enabled=false",
-                "app.real-estate-import.regions[0]=SEOUL",
-                "app.real-estate-import.from-year-month=2024-01",
-                "app.real-estate-import.to-year-month=2024-01",
-                "app.real-estate-import.dataset-types[0]=APT_SALE"
-            )
             .run(context -> {
                 assertThat(context).doesNotHaveBean(ApplicationRunner.class);
                 verifyNoInteractions(realEstateMasterSyncService);
