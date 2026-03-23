@@ -1,10 +1,10 @@
 import { injectable } from 'tsyringe';
 import type { GameSessionsResponseModel } from '../models/GameSessionModel';
+import { apiClient } from '@core/network/apiClient';
 
 @injectable()
 export class GameSessionRemoteDataSource {
   async getSlots(): Promise<GameSessionsResponseModel> {
-    // TODO: apiClient.get<GameSessionsResponseModel>('/games/sessions')
-    throw new Error('Not implemented: API client not configured yet');
+    return apiClient.get<GameSessionsResponseModel>('/api/games/sessions');
   }
 }
