@@ -57,6 +57,20 @@
 - 엔티티는 `@Getter`, `@Entity`, `@NoArgsConstructor(access = PROTECTED)` 패턴을 우선 검토하고, 생성은 Builder 또는 정적 팩토리 메서드를 우선 검토한다.
 - Validation 메시지는 DTO에 하드코딩하지 않고 메시지 키를 사용하며, 실제 문구는 `ValidationMessages.properties`에서 관리하는 것을 우선 검토한다.
 
+### DTO 컨벤션
+- 기준 예시는 `LoginRequest`, `LoginServiceRequest`, `LoginResponse`를 따른다.
+- Controller Request DTO는 HTTP 입력 검증과 테스트용 요청 객체 생성을 위한 DTO다.
+- Controller Request DTO는 기본적으로 `class`, `@Getter`, `@NoArgsConstructor`를 사용하고, 생성은 `private` 생성자에 `@Builder`를 붙이는 패턴을 우선 사용한다.
+- Controller Request DTO는 Bean Validation annotation으로 입력을 검증하고, Service DTO가 필요하면 `toServiceRequest()` 메서드로 변환한다.
+- Service Request DTO는 Controller 계층과 분리된 서비스 입력 DTO다.
+- Service Request DTO는 기본적으로 `class`, `@Getter`, `@NoArgsConstructor`를 사용하고, 생성은 `private` 생성자에 `@Builder`를 붙이는 패턴을 우선 사용한다.
+- Controller Request DTO와 구분이 필요할 때 이름은 `...ServiceRequest`를 사용한다.
+- Service Response DTO는 도메인 객체나 조회 결과를 반환 형태로 변환하는 DTO다.
+- Service Response DTO는 기본적으로 `class`, `@Getter`를 사용하고, 생성은 `private` 생성자에 `@Builder`를 붙이는 패턴을 우선 사용한다.
+- Service Response DTO는 외부에서 builder를 직접 조합하기보다 `of(...)` 또는 `from(...)` 정적 팩토리 메서드로 생성하는 것을 우선 사용한다.
+- `of(...)`와 `from(...)`은 도메인 객체나 조회 결과를 Response DTO로 변환하는 공개 진입점으로 사용한다.
+- DTO는 기본적으로 `record` 대신 `class`를 사용한다.
+
 ### 금융 도메인 규칙
 - 돈 계산은 정밀도 문제 방지를 위해 `BigDecimal` 사용을 우선 검토한다. `double`/`float`는 지양한다.
 - 금액 데이터는 `Money` VO로 포장할지 우선 검토한다.
