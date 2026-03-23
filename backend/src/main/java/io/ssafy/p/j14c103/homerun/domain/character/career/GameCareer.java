@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.domain.character.career;
 
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,6 +22,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class GameCareer {
+
+    private static final int INITIAL_TENURE_TURNS = 0;
 
     @Id
     @Column(name = "게임번호", nullable = false)
@@ -65,4 +69,54 @@ public class GameCareer {
 
     @Column(name = "퇴사전연봉")
     private Integer salaryBeforeResignation;
+
+    public void acceptTransfer(
+        final JobTransferPolicy.JobOffer offer,
+        final JobTitlePolicy jobTitlePolicy,
+        final int currentTurn
+    ) {
+        validateOffer(offer);
+        validateJobTitlePolicy(jobTitlePolicy);
+        validateCurrentTurn(currentTurn);
+
+        this.jobType = offer.jobType();
+        this.jobTitle = jobTitlePolicy.calculate(offer.jobType(), INITIAL_TENURE_TURNS);
+        this.salary = offer.offeredSalary();
+        this.tenureTurns = INITIAL_TENURE_TURNS;
+        this.rehireAvailableTurn = null;
+        this.remainingUnemploymentBenefitTurns = 0;
+        this.salaryBeforeResignation = null;
+
+        if (offer.probationTurns() == null) {
+            this.employmentStatus = EmploymentStatus.EMPLOYED;
+            this.probationEndTurn = null;
+            return;
+        }
+
+        startProbation(currentTurn + offer.probationTurns());
+    }
+
+    public void startProbation(final int probationEndTurn) {
+        validateCurrentTurn(probationEndTurn);
+        this.employmentStatus = EmploymentStatus.PROBATION;
+        this.probationEndTurn = probationEndTurn;
+    }
+
+    private void validateOffer(final JobTransferPolicy.JobOffer offer) {
+        if (offer == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private void validateJobTitlePolicy(final JobTitlePolicy jobTitlePolicy) {
+        if (jobTitlePolicy == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+    }
+
+    private void validateCurrentTurn(final int currentTurn) {
+        if (currentTurn < 1) {
+            throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
+        }
+    }
 }

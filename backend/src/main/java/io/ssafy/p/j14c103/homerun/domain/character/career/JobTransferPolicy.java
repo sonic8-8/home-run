@@ -85,6 +85,20 @@ public class JobTransferPolicy {
         );
     }
 
+    public JobOffer resolveOffer(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int recentMeetFriendCount,
+        final String offerId
+    ) {
+        validateOfferId(offerId);
+
+        return calculateOfferPool(gameCareer, gameStat, recentMeetFriendCount).offers().stream()
+            .filter(offer -> offer.offerId().equals(offerId))
+            .findFirst()
+            .orElseThrow(() -> new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID));
+    }
+
     private void validateGameCareer(final GameCareer gameCareer) {
         if (gameCareer == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
@@ -99,6 +113,12 @@ public class JobTransferPolicy {
 
     private void validateRecentMeetFriendCount(final int recentMeetFriendCount) {
         if (recentMeetFriendCount < 0) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private void validateOfferId(final String offerId) {
+        if (offerId == null || offerId.isBlank()) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
     }
