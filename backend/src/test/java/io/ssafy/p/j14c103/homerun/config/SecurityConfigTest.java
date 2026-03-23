@@ -26,6 +26,8 @@ import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
 import io.ssafy.p.j14c103.homerun.api.service.character.CharacterQueryService;
 import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterOptionsResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.CardService;
+import io.ssafy.p.j14c103.homerun.api.service.game.start.GameStartLocationService;
+import io.ssafy.p.j14c103.homerun.api.service.game.start.GameStartProfileService;
 import io.ssafy.p.j14c103.homerun.api.service.home.CreditScoreService;
 import io.ssafy.p.j14c103.homerun.api.service.home.DashboardService;
 import io.ssafy.p.j14c103.homerun.api.service.home.LoanRecommendationService;
@@ -77,6 +79,12 @@ class SecurityConfigTest {
 
     @MockitoBean
     private CardService cardService;
+
+    @MockitoBean
+    private GameStartProfileService gameStartProfileService;
+
+    @MockitoBean
+    private GameStartLocationService gameStartLocationService;
 
     @MockitoBean
     private DashboardService dashboardService;
@@ -184,6 +192,8 @@ class SecurityConfigTest {
         verifyNoInteractions(
                 characterQueryService,
                 cardService,
+                gameStartProfileService,
+                gameStartLocationService,
                 dashboardService,
                 spendingService,
                 loanRecommendationService,
@@ -272,6 +282,10 @@ class SecurityConfigTest {
     private static Stream<Arguments> protectedPaths() {
         return Stream.of(
                 Arguments.of("/api/games/characters"),
+                Arguments.of("/api/games/profiles"),
+                Arguments.of("/api/games/regions"),
+                Arguments.of("/api/games/regions/11/districts"),
+                Arguments.of("/api/games/regions/11/districts/11710/properties"),
                 Arguments.of("/api/cards"),
                 Arguments.of("/api/cards/recommendations"),
                 Arguments.of("/api/home/dashboard"),
