@@ -18,6 +18,7 @@
 - 이력성 데이터나 보조 하위 도메인은 `domain/history/...`처럼 의미 단위로 묶되, 상위 애그리거트에 종속되면 그 애그리거트 내부 하위 패키지를 우선 검토한다.
 - Controller는 HTTP 요청 수신, 입력 검증, Service 호출, `ApiResponse` 반환만 담당한다.
 - Service는 유스케이스 실행, 트랜잭션 처리, Repository 조합, Domain과 DTO 연결을 담당한다.
+- Service 명명은 기본적으로 `...Service`를 사용하고, 조회/변경 책임 분리가 필요해질 때 `...QueryService`, `...CommandService`로 구체화한다.
 - Domain은 핵심 상태와 비즈니스 규칙을 가진다. Repository는 조회/저장 책임에 집중한다.
 - Controller Request DTO와 Service DTO는 분리한다.
 - 보호 API를 추가하거나 보안 설정을 변경할 때는, 컨트롤러와 서비스가 요청 파라미터의 `userId`/`userKey` 대신 인증 principal을 사용해야 하는지 함께 검토한다.
@@ -25,6 +26,7 @@
 - 예외 응답은 공통 `ErrorResponse`로 반환한다.
 - Validation 예외는 `ErrorResponse`의 `errors` 목록에 필드별 상세를 포함하는 것을 우선 검토한다.
 - 새 코드는 기존 구조와 네이밍을 우선 따르고, 과한 추상화보다 명확한 구현을 우선한다.
+- `Reader`, `Provider` 같은 추가 추상화는 기본 규칙으로 도입하지 않고, 구현 교체 필요나 외부 시스템 경계가 분명할 때만 예외적으로 검토한다.
 - 이름은 `Controller`, `Service`, `Client`, `Repository`, `Request`, `ServiceRequest`, `Response`, `Config`, `Test`, `TestSupport` 접미사를 사용한다.
 - Value Object는 기본값으로 만들지 않고, 도메인 의미, 불변성/생성 검증, 값 비교 규칙이 분명할 때만 도입한다.
 

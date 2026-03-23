@@ -4,38 +4,46 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.util.List;
+import lombok.Getter;
 
-public record TargetPropertyListResponse(
-    List<TargetPropertyResponse> properties
-) {
+@Getter
+public class TargetPropertyListResponse {
 
-    public TargetPropertyListResponse {
-        if (properties == null) {
-            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
-        }
-        properties = List.copyOf(properties);
+    private final List<TargetPropertyResponse> properties;
+
+    private TargetPropertyListResponse(final List<TargetPropertyResponse> properties) {
+        validateProperties(properties);
+        this.properties = List.copyOf(properties);
     }
 
     public static TargetPropertyListResponse from(final List<TargetPropertyResponse> properties) {
         return new TargetPropertyListResponse(properties);
     }
 
-    public record TargetPropertyResponse(
-        Long propertyId,
-        String name,
-        long recentPrice,
-        BigDecimal latitude,
-        BigDecimal longitude
-    ) {
+    @Getter
+    public static class TargetPropertyResponse {
 
-        public TargetPropertyResponse {
-            if (propertyId == null) {
-                throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
-            }
+        private final Long propertyId;
+        private final String name;
+        private final long recentPrice;
+        private final BigDecimal latitude;
+        private final BigDecimal longitude;
+
+        private TargetPropertyResponse(
+            final Long propertyId,
+            final String name,
+            final long recentPrice,
+            final BigDecimal latitude,
+            final BigDecimal longitude
+        ) {
+            validatePropertyId(propertyId);
             validateText(name);
-            if (recentPrice < 0) {
-                throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
-            }
+            validateRecentPrice(recentPrice);
+            this.propertyId = propertyId;
+            this.name = name;
+            this.recentPrice = recentPrice;
+            this.latitude = latitude;
+            this.longitude = longitude;
         }
 
         public static TargetPropertyResponse of(
@@ -45,7 +53,31 @@ public record TargetPropertyListResponse(
             final BigDecimal latitude,
             final BigDecimal longitude
         ) {
-            return new TargetPropertyResponse(propertyId, name, recentPrice, latitude, longitude);
+            return new TargetPropertyResponse(
+                propertyId,
+                name,
+                recentPrice,
+                latitude,
+                longitude
+            );
+        }
+    }
+
+    private static void validateProperties(final List<TargetPropertyResponse> properties) {
+        if (properties == null) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+    }
+
+    private static void validatePropertyId(final Long propertyId) {
+        if (propertyId == null) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+    }
+
+    private static void validateRecentPrice(final long recentPrice) {
+        if (recentPrice < 0) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
     }
 

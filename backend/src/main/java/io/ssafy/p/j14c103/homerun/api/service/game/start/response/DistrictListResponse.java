@@ -3,18 +3,22 @@ package io.ssafy.p.j14c103.homerun.api.service.game.start.response;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import lombok.Getter;
 
-public record DistrictListResponse(
-    String regionCode,
-    List<DistrictResponse> districts
-) {
+@Getter
+public class DistrictListResponse {
 
-    public DistrictListResponse {
+    private final String regionCode;
+    private final List<DistrictResponse> districts;
+
+    private DistrictListResponse(
+        final String regionCode,
+        final List<DistrictResponse> districts
+    ) {
         validateText(regionCode);
-        if (districts == null) {
-            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
-        }
-        districts = List.copyOf(districts);
+        validateDistricts(districts);
+        this.regionCode = regionCode;
+        this.districts = List.copyOf(districts);
     }
 
     public static DistrictListResponse of(
@@ -24,14 +28,20 @@ public record DistrictListResponse(
         return new DistrictListResponse(regionCode, districts);
     }
 
-    public record DistrictResponse(
-        String districtCode,
-        String name
-    ) {
+    @Getter
+    public static class DistrictResponse {
 
-        public DistrictResponse {
+        private final String districtCode;
+        private final String name;
+
+        private DistrictResponse(
+            final String districtCode,
+            final String name
+        ) {
             validateText(districtCode);
             validateText(name);
+            this.districtCode = districtCode;
+            this.name = name;
         }
 
         public static DistrictResponse of(
@@ -39,6 +49,12 @@ public record DistrictListResponse(
             final String name
         ) {
             return new DistrictResponse(districtCode, name);
+        }
+    }
+
+    private static void validateDistricts(final List<DistrictResponse> districts) {
+        if (districts == null) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
     }
 

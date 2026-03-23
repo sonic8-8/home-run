@@ -3,30 +3,36 @@ package io.ssafy.p.j14c103.homerun.api.service.game.start.response;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import lombok.Getter;
 
-public record RegionListResponse(
-    List<RegionResponse> regions
-) {
+@Getter
+public class RegionListResponse {
 
-    public RegionListResponse {
-        if (regions == null) {
-            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
-        }
-        regions = List.copyOf(regions);
+    private final List<RegionResponse> regions;
+
+    private RegionListResponse(final List<RegionResponse> regions) {
+        validateRegions(regions);
+        this.regions = List.copyOf(regions);
     }
 
     public static RegionListResponse from(final List<RegionResponse> regions) {
         return new RegionListResponse(regions);
     }
 
-    public record RegionResponse(
-        String regionCode,
-        String name
-    ) {
+    @Getter
+    public static class RegionResponse {
 
-        public RegionResponse {
+        private final String regionCode;
+        private final String name;
+
+        private RegionResponse(
+            final String regionCode,
+            final String name
+        ) {
             validateText(regionCode);
             validateText(name);
+            this.regionCode = regionCode;
+            this.name = name;
         }
 
         public static RegionResponse of(
@@ -34,6 +40,12 @@ public record RegionListResponse(
             final String name
         ) {
             return new RegionResponse(regionCode, name);
+        }
+    }
+
+    private static void validateRegions(final List<RegionResponse> regions) {
+        if (regions == null) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
     }
 

@@ -60,10 +60,10 @@ class GameStartLocationServiceTest {
         final RegionListResponse response = gameStartLocationService.getRegions();
 
         // then
-        assertThat(response.regions())
+        assertThat(response.getRegions())
             .extracting(
-                RegionListResponse.RegionResponse::regionCode,
-                RegionListResponse.RegionResponse::name
+                RegionListResponse.RegionResponse::getRegionCode,
+                RegionListResponse.RegionResponse::getName
             )
             .containsExactly(
                 tuple("11", "서울특별시"),
@@ -85,11 +85,11 @@ class GameStartLocationServiceTest {
         final DistrictListResponse response = gameStartLocationService.getDistricts("11");
 
         // then
-        assertThat(response.regionCode()).isEqualTo("11");
-        assertThat(response.districts())
+        assertThat(response.getRegionCode()).isEqualTo("11");
+        assertThat(response.getDistricts())
             .extracting(
-                DistrictListResponse.DistrictResponse::districtCode,
-                DistrictListResponse.DistrictResponse::name
+                DistrictListResponse.DistrictResponse::getDistrictCode,
+                DistrictListResponse.DistrictResponse::getName
             )
             .containsExactly(
                 tuple("11680", "강남구"),
@@ -135,11 +135,11 @@ class GameStartLocationServiceTest {
         final TargetPropertyListResponse response = gameStartLocationService.getTargetProperties("11", "11710");
 
         // then
-        assertThat(response.properties())
+        assertThat(response.getProperties())
             .extracting(
-                TargetPropertyListResponse.TargetPropertyResponse::propertyId,
-                TargetPropertyListResponse.TargetPropertyResponse::name,
-                TargetPropertyListResponse.TargetPropertyResponse::recentPrice
+                TargetPropertyListResponse.TargetPropertyResponse::getPropertyId,
+                TargetPropertyListResponse.TargetPropertyResponse::getName,
+                TargetPropertyListResponse.TargetPropertyResponse::getRecentPrice
             )
             .containsExactly(
                 tuple(properties.get(0).getPropertyId(), "헬리오시티", 1_550_000_000L),
@@ -158,7 +158,7 @@ class GameStartLocationServiceTest {
         final TargetPropertyListResponse response = gameStartLocationService.getTargetProperties("11", "11710");
 
         // then
-        assertThat(response.properties()).isEmpty();
+        assertThat(response.getProperties()).isEmpty();
     }
 
     @DisplayName("존재하지 않는 지역 코드는 HOUSING_REGION_NOT_FOUND 예외가 발생한다.")
