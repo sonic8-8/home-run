@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.client.publicdata.realestate;
 
+import io.ssafy.p.j14c103.homerun.config.ConditionalOnRealEstateImportEnabled;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.io.StringReader;
@@ -14,6 +15,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 @Component
+@ConditionalOnRealEstateImportEnabled
 @Slf4j
 public class LegalDongCodeResponseParser {
 

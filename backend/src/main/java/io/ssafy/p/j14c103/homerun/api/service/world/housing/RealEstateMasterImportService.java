@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.api.service.world.housing.request.RealEstateMa
 import io.ssafy.p.j14c103.homerun.client.naver.NaverGeocodingClient;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.ApartmentTradeResponseParser;
 import io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeResponseParser;
+import io.ssafy.p.j14c103.homerun.config.ConditionalOnRealEstateImportEnabled;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrict;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrictRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.GeocodingStatus;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@ConditionalOnRealEstateImportEnabled
 @Slf4j
 @Transactional
 @RequiredArgsConstructor

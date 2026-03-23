@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.client.publicdata.realestate;
 
+import io.ssafy.p.j14c103.homerun.config.ConditionalOnRealEstateImportEnabled;
 import io.ssafy.p.j14c103.homerun.config.PublicDataApiProperties;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -13,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
+@ConditionalOnRealEstateImportEnabled
 @Slf4j
 @RequiredArgsConstructor
 public class ApartmentTradeClient {
