@@ -162,4 +162,36 @@ class RealEstatePropertyRepositoryTest {
             .extracting(trap -> trap.getPenalty().getStress())
             .containsExactly(20, 50);
     }
+
+    @DisplayName("대표 매물 분류값과 법정동 코드를 함께 저장 후 다시 조회할 수 있다.")
+    @Test
+    void savePropertyClassification() {
+        // given
+        RealEstateProperty property = RealEstateProperty.create(
+            "PROP-SONGPA-001",
+            "잠실 대표 매물",
+            "서울특별시 송파구 잠실동 35",
+            "11",
+            "11710",
+            "1171010100",
+            Money.of(2_300_000_000L),
+            BigDecimal.valueOf(37.5133012),
+            BigDecimal.valueOf(127.1029384),
+            PropertyType.APARTMENT,
+            TransactionType.SALE,
+            HousingType.OWNED_APT,
+            List.of()
+        );
+
+        // when
+        RealEstateProperty saved = realEstatePropertyRepository.saveAndFlush(property);
+        RealEstateProperty found = realEstatePropertyRepository.findById(saved.getPropertyId())
+            .orElseThrow();
+
+        // then
+        assertThat(found.getLegalDongCode()).isEqualTo("1171010100");
+        assertThat(found.getPropertyType()).isEqualTo(PropertyType.APARTMENT);
+        assertThat(found.getTransactionType()).isEqualTo(TransactionType.SALE);
+        assertThat(found.getHousingType()).isEqualTo(HousingType.OWNED_APT);
+    }
 }

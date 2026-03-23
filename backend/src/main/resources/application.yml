@@ -45,3 +45,20 @@ oci:
   region: ${OCI_REGION:ap-singapore-1}
   namespace: ${OCI_NAMESPACE:axyqj6o2a3yw}
   bucket-name: ${OCI_BUCKET_NAME:bucket-20260316-1523}
+
+public-data:
+  api:
+    legal-dong-base-url: ${PUBLIC_DATA_LEGAL_DONG_BASE_URL:https://apis.data.go.kr/1741000/StanReginCd}
+    apartment-trade-base-url: ${PUBLIC_DATA_APARTMENT_TRADE_BASE_URL:https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade}
+    service-key: ${PUBLIC_DATA_SERVICE_KEY:}
+    page-size: ${PUBLIC_DATA_PAGE_SIZE:1000}
+
+naver:
+  geocoding:
+    base-url: ${NAVER_GEOCODING_BASE_URL:https://maps.apigw.ntruss.com/map-geocode/v2/geocode}
+    client-id: ${NAVER_GEOCODING_CLIENT_ID:}
+    client-secret: ${NAVER_GEOCODING_CLIENT_SECRET:}
+
+app:
+  real-estate-import:
+    enabled: ${REAL_ESTATE_IMPORT_ENABLED:false}
