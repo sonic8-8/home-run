@@ -5,21 +5,14 @@ import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 
-public record JobOfferQueryRequest(
+public record ForcedResignationServiceRequest(
     GameCareer gameCareer,
     GameStat gameStat,
-    int recentMeetFriendCount,
     int currentTurn
 ) {
 
-    public JobOfferQueryRequest {
-        if (gameCareer == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-        }
-        if (gameStat == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-        }
-        if (recentMeetFriendCount < 0) {
+    public ForcedResignationServiceRequest {
+        if (gameCareer == null || gameStat == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
         if (currentTurn < 1) {
@@ -27,17 +20,11 @@ public record JobOfferQueryRequest(
         }
     }
 
-    public static JobOfferQueryRequest of(
+    public static ForcedResignationServiceRequest of(
         final GameCareer gameCareer,
         final GameStat gameStat,
-        final int recentMeetFriendCount,
         final int currentTurn
     ) {
-        return new JobOfferQueryRequest(
-            gameCareer,
-            gameStat,
-            recentMeetFriendCount,
-            currentTurn
-        );
+        return new ForcedResignationServiceRequest(gameCareer, gameStat, currentTurn);
     }
 }

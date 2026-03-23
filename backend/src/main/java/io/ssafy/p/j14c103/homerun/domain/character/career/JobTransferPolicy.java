@@ -21,7 +21,10 @@ public class JobTransferPolicy {
     private static final int OFFER_CHANCE_BONUS_RATE = 10;
     private static final int MIN_MULTIPLIER_BASIS_POINTS = 9_000;
     private static final int MULTIPLIER_SPAN_BASIS_POINTS = 6_000;
+    private static final int REHIRE_MIN_MULTIPLIER_BASIS_POINTS = 7_500;
+    private static final int REHIRE_MULTIPLIER_SPAN_BASIS_POINTS = 2_500;
     private static final int BASIS_POINTS_DIVISOR = 10_000;
+    private static final int MIN_TURN = 1;
     private static final int STANDARD_PROBATION_TURNS = 1;
     private static final int EXTENDED_PROBATION_TURNS = 2;
 
@@ -59,27 +62,30 @@ public class JobTransferPolicy {
     public JobOfferPool calculateOfferPool(
         final GameCareer gameCareer,
         final GameStat gameStat,
-        final int recentMeetFriendCount
+        final int recentMeetFriendCount,
+        final int currentTurn
     ) {
         validateGameCareer(gameCareer);
         validateGameStat(gameStat);
         validateRecentMeetFriendCount(recentMeetFriendCount);
+        validateCurrentTurn(currentTurn);
 
         final EmploymentStatus employmentStatus = requireEmploymentStatus(
             gameCareer.getEmploymentStatus()
         );
-        if (employmentStatus == EmploymentStatus.UNEMPLOYED) {
+        if (isRehireLocked(gameCareer, employmentStatus, currentTurn)) {
             return JobOfferPool.empty();
         }
 
         final JobType currentJobType = requireJobType(gameCareer.getJobType());
-        final int currentSalary = requirePositiveSalary(gameCareer.getSalary());
+        final int currentSalary = resolveCurrentSalary(gameCareer, employmentStatus);
         final int knowledge = requireKnowledge(gameStat.getKnowledge());
         final List<JobType> offerJobTypes = resolveOfferJobTypes(currentJobType, knowledge);
         final int offerChanceBonusRate = resolveOfferChanceBonusRate(recentMeetFriendCount);
+        final boolean rehireOffer = employmentStatus == EmploymentStatus.UNEMPLOYED;
 
         return JobOfferPool.of(
-            createOffers(currentJobType, currentSalary, knowledge, offerJobTypes),
+            createOffers(currentJobType, currentSalary, knowledge, offerJobTypes, rehireOffer),
             offerChanceBonusRate,
             offerChanceBonusRate > 0
         );
@@ -89,11 +95,13 @@ public class JobTransferPolicy {
         final GameCareer gameCareer,
         final GameStat gameStat,
         final int recentMeetFriendCount,
+        final int currentTurn,
         final String offerId
     ) {
         validateOfferId(offerId);
 
-        return calculateOfferPool(gameCareer, gameStat, recentMeetFriendCount).offers().stream()
+        return calculateOfferPool(gameCareer, gameStat, recentMeetFriendCount, currentTurn)
+            .offers().stream()
             .filter(offer -> offer.offerId().equals(offerId))
             .findFirst()
             .orElseThrow(() -> new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID));
@@ -114,6 +122,12 @@ public class JobTransferPolicy {
     private void validateRecentMeetFriendCount(final int recentMeetFriendCount) {
         if (recentMeetFriendCount < 0) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private void validateCurrentTurn(final int currentTurn) {
+        if (currentTurn < MIN_TURN) {
+            throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
         }
     }
 
@@ -148,6 +162,17 @@ public class JobTransferPolicy {
         }
 
         return salary;
+    }
+
+    private int requireRehireAvailableTurn(final Integer rehireAvailableTurn) {
+        if (rehireAvailableTurn == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
+        }
+        if (rehireAvailableTurn < MIN_TURN) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+
+        return rehireAvailableTurn;
     }
 
     private int requireKnowledge(final Integer knowledge) {
@@ -259,11 +284,35 @@ public class JobTransferPolicy {
         return OFFER_CHANCE_BONUS_RATE;
     }
 
+    private boolean isRehireLocked(
+        final GameCareer gameCareer,
+        final EmploymentStatus employmentStatus,
+        final int currentTurn
+    ) {
+        if (employmentStatus != EmploymentStatus.UNEMPLOYED) {
+            return false;
+        }
+
+        return currentTurn < requireRehireAvailableTurn(gameCareer.getRehireAvailableTurn());
+    }
+
+    private int resolveCurrentSalary(
+        final GameCareer gameCareer,
+        final EmploymentStatus employmentStatus
+    ) {
+        if (employmentStatus == EmploymentStatus.UNEMPLOYED) {
+            return requirePositiveSalary(gameCareer.getSalaryBeforeResignation());
+        }
+
+        return requirePositiveSalary(gameCareer.getSalary());
+    }
+
     private List<JobOffer> createOffers(
         final JobType currentJobType,
         final int currentSalary,
         final int knowledge,
-        final List<JobType> offerJobTypes
+        final List<JobType> offerJobTypes,
+        final boolean rehireOffer
     ) {
         final List<JobOffer> offers = new ArrayList<>();
 
@@ -274,7 +323,7 @@ public class JobTransferPolicy {
                 offerJobType,
                 DISPLAY_COMPANY_NAMES.get(offerJobType),
                 currentSalary,
-                calculateOfferedSalary(currentSalary, knowledge, offerJobType),
+                calculateOfferedSalary(currentSalary, knowledge, offerJobType, rehireOffer),
                 resolveProbationTurns(currentJobType, offerJobType)
             ));
         }
@@ -285,18 +334,29 @@ public class JobTransferPolicy {
     private int calculateOfferedSalary(
         final int currentSalary,
         final int knowledge,
-        final JobType offerJobType
+        final JobType offerJobType,
+        final boolean rehireOffer
     ) {
-        final BigDecimal multiplier = BigDecimal.valueOf(resolveMultiplierBasisPoints(knowledge));
+        final BigDecimal multiplier = BigDecimal.valueOf(
+            resolveMultiplierBasisPoints(knowledge, rehireOffer)
+        );
         final int calculatedSalary = BigDecimal.valueOf(currentSalary)
             .multiply(multiplier)
             .divide(BigDecimal.valueOf(BASIS_POINTS_DIVISOR), 0, RoundingMode.DOWN)
             .intValue();
+        if (rehireOffer) {
+            return calculatedSalary;
+        }
 
         return Math.max(calculatedSalary, MARKET_BASE_SALARIES.get(offerJobType));
     }
 
-    private int resolveMultiplierBasisPoints(final int knowledge) {
+    private int resolveMultiplierBasisPoints(final int knowledge, final boolean rehireOffer) {
+        if (rehireOffer) {
+            return REHIRE_MIN_MULTIPLIER_BASIS_POINTS
+                + ((knowledge * REHIRE_MULTIPLIER_SPAN_BASIS_POINTS) / MAX_KNOWLEDGE);
+        }
+
         return MIN_MULTIPLIER_BASIS_POINTS
             + ((knowledge * MULTIPLIER_SPAN_BASIS_POINTS) / MAX_KNOWLEDGE);
     }

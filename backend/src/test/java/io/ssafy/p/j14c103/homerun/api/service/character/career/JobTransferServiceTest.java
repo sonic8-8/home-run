@@ -74,6 +74,34 @@ class JobTransferServiceTest {
             .isEqualTo(ErrorCode.CHARACTER_REQUEST_INVALID);
     }
 
+    @DisplayName("실직 상태에서 재취업 오퍼를 수락하면 재취업 메시지와 초기화된 실업 상태를 반환한다.")
+    @Test
+    void transferForUnemployedCareer() {
+        // given
+        final GameCareer gameCareer = createUnemployedCareer(JobType.SMALL_BIZ, 40_000_000, 12);
+        final JobTransferServiceRequest request = JobTransferServiceRequest.of(
+            gameCareer,
+            createStat(60),
+            1,
+            "OFFER-002",
+            12
+        );
+
+        // when
+        final JobTransferServiceResponse response = jobTransferService.transfer(request);
+
+        // then
+        assertThat(response.previousJobType()).isEqualTo(JobType.SMALL_BIZ);
+        assertThat(response.newJobType()).isEqualTo(JobType.MID_BIZ);
+        assertThat(response.newSalary()).isEqualTo(36_000_000);
+        assertThat(response.probationEndTurn()).isEqualTo(14);
+        assertThat(response.message()).isEqualTo("OO 중견기업에 재취업했습니다.");
+        assertThat(gameCareer.getEmploymentStatus()).isEqualTo(EmploymentStatus.PROBATION);
+        assertThat(gameCareer.getRehireAvailableTurn()).isNull();
+        assertThat(gameCareer.getRemainingUnemploymentBenefitTurns()).isZero();
+        assertThat(gameCareer.getSalaryBeforeResignation()).isNull();
+    }
+
     private GameCareer createCareer(final JobType jobType, final int salary) {
         return GameCareer.builder()
             .gameId(1)
@@ -90,6 +118,29 @@ class JobTransferServiceTest {
             .rehireAvailableTurn(null)
             .remainingUnemploymentBenefitTurns(0)
             .salaryBeforeResignation(null)
+            .build();
+    }
+
+    private GameCareer createUnemployedCareer(
+        final JobType jobType,
+        final int salaryBeforeResignation,
+        final int rehireAvailableTurn
+    ) {
+        return GameCareer.builder()
+            .gameId(1)
+            .jobType(jobType)
+            .jobTitle("사원")
+            .salary(salaryBeforeResignation)
+            .tenureTurns(14)
+            .recentStudyCount(1)
+            .recentNetworkingCount(1)
+            .negotiationPreparationScore(0)
+            .lastNegotiatedTurn(0)
+            .employmentStatus(EmploymentStatus.UNEMPLOYED)
+            .probationEndTurn(null)
+            .rehireAvailableTurn(rehireAvailableTurn)
+            .remainingUnemploymentBenefitTurns(3)
+            .salaryBeforeResignation(salaryBeforeResignation)
             .build();
     }
 

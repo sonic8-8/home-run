@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.api.service.character.career;
 
 import io.ssafy.p.j14c103.homerun.api.service.character.career.request.JobTransferServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.response.JobTransferServiceResponse;
+import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobTitlePolicy;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobTransferPolicy;
@@ -39,10 +40,12 @@ public class JobTransferService {
 
         final GameCareer gameCareer = request.gameCareer();
         final JobType previousJobType = gameCareer.getJobType();
+        final EmploymentStatus previousEmploymentStatus = gameCareer.getEmploymentStatus();
         final JobTransferPolicy.JobOffer jobOffer = jobTransferPolicy.resolveOffer(
             request.gameCareer(),
             request.gameStat(),
             request.recentMeetFriendCount(),
+            request.currentTurn(),
             request.offerId()
         );
 
@@ -54,7 +57,18 @@ public class JobTransferService {
             gameCareer.getSalary(),
             gameCareer.getProbationEndTurn(),
             true,
-            jobOffer.displayCompanyName() + "으로 이직했습니다."
+            buildTransferMessage(jobOffer, previousEmploymentStatus)
         );
+    }
+
+    private String buildTransferMessage(
+        final JobTransferPolicy.JobOffer jobOffer,
+        final EmploymentStatus previousEmploymentStatus
+    ) {
+        if (previousEmploymentStatus == EmploymentStatus.UNEMPLOYED) {
+            return jobOffer.displayCompanyName() + "에 재취업했습니다.";
+        }
+
+        return jobOffer.displayCompanyName() + "으로 이직했습니다.";
     }
 }
