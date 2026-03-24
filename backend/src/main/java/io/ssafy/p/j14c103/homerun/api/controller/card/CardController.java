@@ -3,6 +3,8 @@ package io.ssafy.p.j14c103.homerun.api.controller.card;
 import io.ssafy.p.j14c103.homerun.api.service.card.CardService;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardListResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardRecommendationResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.CardTransactionListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.OwnedCardListResponse;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,22 @@ public class CardController {
             @AuthenticationPrincipal final AuthenticatedUser authenticatedUser
     ) {
         final CardRecommendationResponse response = cardService.getRecommendations(authenticatedUser.getUserId());
+        return ApiResponse.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<OwnedCardListResponse> getMyCards(
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser
+    ) {
+        final OwnedCardListResponse response = cardService.getMyCards(authenticatedUser.getUserId());
+        return ApiResponse.ok(response);
+    }
+
+    @GetMapping("/me/transactions")
+    public ApiResponse<CardTransactionListResponse> getMyTransactions(
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser
+    ) {
+        final CardTransactionListResponse response = cardService.getMyTransactions(authenticatedUser.getUserId());
         return ApiResponse.ok(response);
     }
 }

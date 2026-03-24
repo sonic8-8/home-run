@@ -13,19 +13,14 @@ public class PassSaveRequest {
     @NotNull(message = "{validation.pass.save.subscriptionId.notNull}")
     private Long subscriptionId;
 
-    @NotNull(message = "{validation.pass.save.sourceAccountId.notNull}")
-    private String sourceAccountId;
-
     @Builder
-    private PassSaveRequest(final Long subscriptionId, final String sourceAccountId) {
+    private PassSaveRequest(final Long subscriptionId) {
         this.subscriptionId = subscriptionId;
-        this.sourceAccountId = sourceAccountId;
     }
 
     public PassSaveServiceRequest toServiceRequest() {
         return PassSaveServiceRequest.builder()
                 .subscriptionId(subscriptionId)
-                .sourceAccountId(sourceAccountId)
                 .build();
     }
 }

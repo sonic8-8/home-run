@@ -1,23 +1,30 @@
 package io.ssafy.p.j14c103.homerun.api.service.home.credit;
 
-import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
+import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransaction;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.OwnedCardRepository;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductType;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProduct;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProductRepository;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummary;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransaction;
 import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransactionRepository;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContext;
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
 
 /**
  * FICO 프레임워크 기반 자체 CSS (Credit Scoring System).
@@ -27,14 +34,10 @@ import java.util.Map;
  * </p>
  * <p>
  * 데이터 인식:
- * - 시드머니 거래유형: SAVE(PASS 저축), DEPOSIT(입금), TRANSFER(출금/송금)
- * - 카드 거래: SSAFY 금융망 inquireCreditCardTransactionList
- * - PASS 이행: UserPassTransaction (구독별 저축 거래)
- * </p>
- * <p>
- * 2분기 로직 (보수적):
- * - 이력 있음: 실제 금융 활동 기반 비례식 산출
- * - 이력 없음: 보수적 기본 점수 (증명 불가 = 낮게)
+ * - 계좌 거래유형: DEPOSIT, WITHDRAW, PASS_SAVE_OUT, PASS_SAVE_IN, INTERNAL_TRANSFER
+ * - 카드 거래: 로컬 card_transactions
+ * - PASS 이행: UserPassTransaction
+ * - 자산/부채: UserFinancialSummary
  * </p>
  */
 @Slf4j
@@ -42,43 +45,35 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FicoCreditScoringService implements CreditScoreProvider {
 
-    /** 모든 금융 활동 기준 기간: 1년 */
     private static final int BASE_PERIOD_DAYS = 365;
-
-    /** New Credit 기준 기간: 6개월 */
     private static final int NEW_CREDIT_PERIOD_DAYS = 180;
-
-    /** Credit Length 만점 기준: 1년 */
     private static final int LENGTH_MAX_DAYS = 365;
 
-    // Payment History
     private static final int MIN_PAYMENT = 35;
     private static final int MAX_PAYMENT = 350;
-    private static final int NO_HISTORY_PAYMENT = 175; // 보수적: 만점의 50%
+    private static final int NO_HISTORY_PAYMENT = 175;
 
-    // Amounts Owed
     private static final int MIN_OWED = 30;
     private static final int MAX_OWED = 300;
-    private static final int NO_HISTORY_OWED = 200; // 보수적: 만점의 67%
+    private static final int NO_HISTORY_OWED = 200;
 
-    // Credit Length
     private static final int MIN_LENGTH = 15;
     private static final int MAX_LENGTH = 150;
 
-    // Credit Mix
     private static final int MIN_MIX = 20;
     private static final int MAX_MIX = 100;
 
-    // New Credit
     private static final int MIN_NEW_CREDIT = 20;
     private static final int MAX_NEW_CREDIT = 100;
 
     private final PassSubscriptionRepository passSubscriptionRepository;
     private final UserPassTransactionRepository passTransactionRepository;
-    private final SeedmoneyAccountRepository seedmoneyAccountRepository;
-    private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
-    private final SsafyCreditCardClient creditCardClient;
-    private final UserAuthContextService userAuthContextService;
+    private final UserAccountRepository userAccountRepository;
+    private final UserAccountTransactionRepository userAccountTransactionRepository;
+    private final OwnedCardRepository ownedCardRepository;
+    private final CardTransactionRepository cardTransactionRepository;
+    private final UserFinancialProductRepository userFinancialProductRepository;
+    private final UserFinancialSummaryService userFinancialSummaryService;
 
     @Override
     public CreditScore calculate(final Long userId) {
@@ -91,30 +86,39 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         final int newCredit = calcNewCredit(userId);
 
         final CreditScore result = CreditScore.of(
-                paymentHistory, amountsOwed, creditLength, creditMix, newCredit);
+                paymentHistory,
+                amountsOwed,
+                creditLength,
+                creditMix,
+                newCredit
+        );
         log.info("CSS 점수 산출 [userId={}, 이력={}]: {} ({}등급 {})",
                 userId, hasCreditHistory, result.getScore(), result.getGrade(), result.getGradeLabel());
         return result;
     }
 
-    /**
-     * 금융 이력 존재 여부.
-     * PASS 구독 또는 카드 보유 시 이력 있음.
-     */
     private boolean hasCreditHistory(final Long userId) {
-        final List<PassSubscription> activeSubs =
-                passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
-        if (!activeSubs.isEmpty()) {
+        if (!userAccountRepository.findByUserIdAndActiveYnTrue(userId).isEmpty()) {
             return true;
         }
-        return getCardCount(userId) > 0;
+        if (!userAccountTransactionRepository.findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(
+                userId,
+                LocalDateTime.of(1970, 1, 1, 0, 0)
+        ).isEmpty()) {
+            return true;
+        }
+        if (!passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId).isEmpty()) {
+            return true;
+        }
+        if (!ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId).isEmpty()) {
+            return true;
+        }
+        if (!cardTransactionRepository.findAllByUserIdOrderByPaymentDateDescCreatedAtDesc(userId).isEmpty()) {
+            return true;
+        }
+        return !userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).isEmpty();
     }
 
-    // ──────────────────────────────────────────────────
-    // 1. Payment History (350점)
-    //    이력 있음: PASS 1년 이행률 + 카드 1년 거래 활동 (비례, 가중 평균)
-    //    이력 없음: 175점 (보수적 — 증명 불가)
-    // ──────────────────────────────────────────────────
     private int calcPaymentHistory(final Long userId, final boolean hasCreditHistory) {
         if (!hasCreditHistory) {
             return NO_HISTORY_PAYMENT;
@@ -123,7 +127,6 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         int totalScore = 0;
         int factors = 0;
 
-        // PASS 1년 이행률 → 비례 점수
         final List<PassSubscription> activeSubscriptions =
                 passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
         if (!activeSubscriptions.isEmpty()) {
@@ -132,7 +135,6 @@ public class FicoCreditScoringService implements CreditScoreProvider {
             factors++;
         }
 
-        // 카드 1년 거래 활동
         final int cardScore = calcCardActivity(userId);
         if (cardScore >= 0) {
             totalScore += cardScore;
@@ -142,104 +144,90 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         if (factors == 0) {
             return NO_HISTORY_PAYMENT;
         }
-
         return clamp(totalScore / factors, MIN_PAYMENT, MAX_PAYMENT);
     }
 
-    /**
-     * PASS 저축 이행률 (1년 기준, 0.0 ~ 1.0).
-     * 인식 방법: UserPassTransaction 테이블에서 구독별 저축 거래 수를 카운트.
-     */
     private double calcPassFulfillmentRate(final List<PassSubscription> activeSubscriptions) {
         final LocalDateTime oneYearAgo = LocalDateTime.now().minusDays(BASE_PERIOD_DAYS);
         long actualSaves = 0;
         final long expectedSaves = activeSubscriptions.size() * (long) BASE_PERIOD_DAYS;
 
-        for (final PassSubscription sub : activeSubscriptions) {
-            final List<UserPassTransaction> txns = passTransactionRepository
-                    .findBySubscriptionIdAndTransactionDateAfter(sub.getId(), oneYearAgo.toString());
-            actualSaves += txns.size();
+        for (final PassSubscription subscription : activeSubscriptions) {
+            final List<UserPassTransaction> transactions = passTransactionRepository
+                    .findBySubscriptionIdAndTransactionDateAfter(subscription.getId(), oneYearAgo.toString());
+            actualSaves += transactions.size();
         }
 
         if (expectedSaves == 0) {
             return 1.0;
         }
-
         return Math.min((double) actualSaves / expectedSaves, 1.0);
     }
 
-    /**
-     * 카드 거래 활동 점수 (1년 기준).
-     * 인식 방법: SSAFY 금융망 inquireCreditCardTransactionList API.
-     * 카드 미보유 시 -1 반환 (factors에서 제외).
-     */
     private int calcCardActivity(final Long userId) {
-        try {
-            final UserAuthContext ctx = userAuthContextService.getContext(userId);
-            if (!ctx.hasSsafyUserKey()) {
-                return -1;
-            }
-
-            final List<Map<String, Object>> cards = creditCardClient.inquireSignUpCreditCardList(ctx.ssafyUserKey());
-            if (cards.isEmpty()) {
-                return -1;
-            }
-
-            final String endDate = LocalDateTime.now().toLocalDate().toString().replace("-", "");
-            final String startDate = LocalDateTime.now().minusDays(BASE_PERIOD_DAYS)
-                    .toLocalDate().toString().replace("-", "");
-
-            boolean hasTransaction = false;
-            for (final Map<String, Object> card : cards) {
-                final String cardNo = (String) card.get("cardNo");
-                final String cvc = (String) card.get("cvc");
-                if (cardNo == null || cvc == null) continue;
-
-                final List<Map<String, Object>> txns = creditCardClient.inquireCreditCardTransactionList(
-                        ctx.ssafyUserKey(), cardNo, cvc, startDate, endDate);
-                if (!txns.isEmpty()) {
-                    hasTransaction = true;
-                    break;
-                }
-            }
-
-            return hasTransaction ? MAX_PAYMENT : (int) (MAX_PAYMENT * 0.5);
-        } catch (final Exception e) {
-            log.debug("카드 활동 조회 실패, Payment History에서 카드 제외", e);
+        if (ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId).isEmpty()) {
             return -1;
         }
+
+        final LocalDate startDate = LocalDate.now().minusDays(BASE_PERIOD_DAYS);
+        final LocalDate endDate = LocalDate.now();
+        final boolean hasTransaction = !cardTransactionRepository
+                .findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(userId, startDate, endDate)
+                .isEmpty();
+
+        if (hasTransaction) {
+            return MAX_PAYMENT;
+        }
+        return (int) (MAX_PAYMENT * 0.5);
     }
 
-    // ──────────────────────────────────────────────────
-    // 2. Amounts Owed (300점)
-    //    소비율 = 1년간 출금(TRANSFER) 합계 / 입금(DEPOSIT+SAVE) 합계
-    //    비례식: 300 × (1 - 소비율)
-    //    이력 없음: 200점 (보수적 — 부채 없으나 건전성 증명 불가)
-    //
-    //    인식 방법:
-    //    - 입금: transactionType = "DEPOSIT" (외부 입금) + "SAVE" (PASS 저축)
-    //    - 출금: transactionType = "TRANSFER" (외부 송금)
-    // ──────────────────────────────────────────────────
     private int calcAmountsOwed(final Long userId, final boolean hasCreditHistory) {
         if (!hasCreditHistory) {
             return NO_HISTORY_OWED;
         }
 
+        final List<Integer> scores = new ArrayList<>();
+
+        final Integer cashFlowScore = calcCashFlowScore(userId);
+        if (cashFlowScore != null) {
+            scores.add(cashFlowScore);
+        }
+
+        final Integer debtScore = calcDebtRatioScore(userId);
+        if (debtScore != null) {
+            scores.add(debtScore);
+        }
+
+        if (scores.isEmpty()) {
+            return NO_HISTORY_OWED;
+        }
+
+        return clamp(
+                (int) Math.round(scores.stream().mapToInt(Integer::intValue).average().orElse(NO_HISTORY_OWED)),
+                MIN_OWED,
+                MAX_OWED
+        );
+    }
+
+    private Integer calcCashFlowScore(final Long userId) {
         final LocalDateTime oneYearAgo = LocalDateTime.now().minusDays(BASE_PERIOD_DAYS);
+        final List<UserAccountTransaction> transactions = userAccountTransactionRepository
+                .findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(userId, oneYearAgo);
 
-        final List<SeedmoneyTransaction> deposits = seedmoneyTransactionRepository
-                .findByUserIdAndTransactionTypeAndCreatedAtAfter(userId, "DEPOSIT", oneYearAgo);
-        final List<SeedmoneyTransaction> saves = seedmoneyTransactionRepository
-                .findByUserIdAndTransactionTypeAndCreatedAtAfter(userId, "SAVE", oneYearAgo);
-        final List<SeedmoneyTransaction> transfers = seedmoneyTransactionRepository
-                .findByUserIdAndTransactionTypeAndCreatedAtAfter(userId, "TRANSFER", oneYearAgo);
-
-        final long totalIncome = deposits.stream().mapToLong(t -> Math.abs(t.getAmount().longValue())).sum()
-                + saves.stream().mapToLong(t -> Math.abs(t.getAmount().longValue())).sum();
-        final long totalOutflow = transfers.stream().mapToLong(t -> Math.abs(t.getAmount().longValue())).sum();
+        final long totalIncome = transactions.stream()
+                .filter(transaction -> transaction.getTransactionType() == AccountTransactionType.DEPOSIT)
+                .mapToLong(transaction -> transaction.getAmount().longValue())
+                .sum();
+        final long totalOutflow = transactions.stream()
+                .filter(transaction -> transaction.getTransactionType() == AccountTransactionType.WITHDRAW)
+                .mapToLong(transaction -> transaction.getAmount().longValue())
+                .sum();
 
         if (totalIncome == 0) {
-            return totalOutflow == 0 ? NO_HISTORY_OWED : MIN_OWED;
+            if (totalOutflow == 0) {
+                return null;
+            }
+            return MIN_OWED;
         }
 
         final double spendingRatio = Math.min((double) totalOutflow / totalIncome, 1.5);
@@ -247,71 +235,101 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         return clamp((int) Math.round(score), MIN_OWED, MAX_OWED);
     }
 
-    // ──────────────────────────────────────────────────
-    // 3. Credit Length (150점)
-    //    비례식: 150 × min(일수 / 365, 1.0)
-    //    만점 기준: 1년 (365일)
-    // ──────────────────────────────────────────────────
+    private Integer calcDebtRatioScore(final Long userId) {
+        final UserFinancialSummary summary = userFinancialSummaryService.getSummary(userId);
+        final long totalAssetAmount = summary.getTotalAssetAmount().longValue();
+        final long totalDebtAmount = summary.getTotalDebtAmount().longValue();
+
+        if (totalAssetAmount == 0 && totalDebtAmount == 0) {
+            return null;
+        }
+        if (totalAssetAmount == 0) {
+            return MIN_OWED;
+        }
+
+        final double debtRatio = Math.min((double) totalDebtAmount / totalAssetAmount, 1.5);
+        final double score = MAX_OWED * (1.0 - debtRatio);
+        return clamp((int) Math.round(score), MIN_OWED, MAX_OWED);
+    }
+
     private int calcCreditLength(final Long userId) {
-        return seedmoneyAccountRepository.findByUserId(userId)
-                .map(account -> {
-                    final long days = ChronoUnit.DAYS.between(account.getUpdatedAt(), LocalDateTime.now());
+        final List<LocalDateTime> openedDates = new ArrayList<>();
+
+        userAccountRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .map(UserAccount::getOpenedAt)
+                .forEach(openedDates::add);
+        ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId).stream()
+                .map(ownedCard -> ownedCard.getOpenedAt())
+                .forEach(openedDates::add);
+        userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .map(UserFinancialProduct::getOpenedAt)
+                .forEach(openedDates::add);
+
+        return openedDates.stream()
+                .min(LocalDateTime::compareTo)
+                .map(openedAt -> {
+                    final long days = ChronoUnit.DAYS.between(openedAt, LocalDateTime.now());
                     final double ratio = Math.min((double) days / LENGTH_MAX_DAYS, 1.0);
                     return clamp((int) Math.round(MAX_LENGTH * ratio), MIN_LENGTH, MAX_LENGTH);
                 })
                 .orElse(MIN_LENGTH);
     }
 
-    // ──────────────────────────────────────────────────
-    // 4. Credit Mix (100점)
-    //    비례식: 100 × (유형수 / 3)
-    // ──────────────────────────────────────────────────
     private int calcCreditMix(final Long userId) {
         int productTypes = 0;
+        final List<UserFinancialProduct> products = userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId);
 
-        if (seedmoneyAccountRepository.findByUserId(userId).isPresent()) {
+        if (userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN).isPresent()) {
+            productTypes++;
+        }
+        if (userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY).isPresent()) {
+            productTypes++;
+        }
+        if (!passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId).isEmpty()) {
+            productTypes++;
+        }
+        if (!ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId).isEmpty()) {
+            productTypes++;
+        }
+        if (products.stream().anyMatch(product -> product.getProductType() == FinancialProductType.SAVING_DEPOSIT)) {
+            productTypes++;
+        }
+        if (products.stream().anyMatch(product -> product.getProductType() == FinancialProductType.INVESTMENT)) {
+            productTypes++;
+        }
+        if (products.stream().anyMatch(product -> product.getProductType() == FinancialProductType.LOAN)) {
             productTypes++;
         }
 
-        final List<PassSubscription> activeSubs =
-                passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
-        if (!activeSubs.isEmpty()) {
-            productTypes++;
-        }
-
-        if (getCardCount(userId) > 0) {
-            productTypes++;
-        }
-
-        final double ratio = (double) productTypes / 3.0;
+        final double ratio = (double) productTypes / 7.0;
         return clamp((int) Math.round(MAX_MIX * ratio), MIN_MIX, MAX_MIX);
     }
 
-    // ──────────────────────────────────────────────────
-    // 5. New Credit (100점)
-    //    기준 기간: 6개월 (180일)
-    //    비례식: 100 × max(1 - (구독수 - 1) × 0.12, 0.2)
-    //    0~1건 = 만점, 이후 건당 12% 감소
-    // ──────────────────────────────────────────────────
     private int calcNewCredit(final Long userId) {
         final LocalDateTime sixMonthsAgo = LocalDateTime.now().minusDays(NEW_CREDIT_PERIOD_DAYS);
 
-        final List<PassSubscription> allSubs =
-                passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
-        final long recentNewSubs = allSubs.stream()
-                .filter(sub -> sub.getSubscribedAt() != null && sub.getSubscribedAt().isAfter(sixMonthsAgo))
+        final long recentPassCount = passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId).stream()
+                .filter(subscription -> subscription.getSubscribedAt() != null)
+                .filter(subscription -> subscription.getSubscribedAt().isAfter(sixMonthsAgo))
+                .count();
+        final long recentOwnedCardCount = ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId)
+                .stream()
+                .filter(card -> card.getOpenedAt().isAfter(sixMonthsAgo))
+                .count();
+        final long recentLoanCount = userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .filter(product -> product.getProductType() == FinancialProductType.LOAN)
+                .filter(product -> product.getOpenedAt().isAfter(sixMonthsAgo))
                 .count();
 
-        if (recentNewSubs <= 1) {
+        final long recentNewCredits = recentPassCount + recentOwnedCardCount + recentLoanCount;
+        if (recentNewCredits <= 1) {
             return MAX_NEW_CREDIT;
         }
 
-        final double penalty = (recentNewSubs - 1) * 0.12;
+        final double penalty = (recentNewCredits - 1) * 0.12;
         final double ratio = Math.max(1.0 - penalty, 0.2);
         return clamp((int) Math.round(MAX_NEW_CREDIT * ratio), MIN_NEW_CREDIT, MAX_NEW_CREDIT);
     }
-
-    // ── 유틸 ──
 
     private int proportional(final double ratio, final int min, final int max) {
         return clamp((int) Math.round(max * ratio), min, max);
@@ -319,18 +337,5 @@ public class FicoCreditScoringService implements CreditScoreProvider {
 
     private int clamp(final int value, final int min, final int max) {
         return Math.max(min, Math.min(value, max));
-    }
-
-    private int getCardCount(final Long userId) {
-        try {
-            final UserAuthContext ctx = userAuthContextService.getContext(userId);
-            if (!ctx.hasSsafyUserKey()) {
-                return 0;
-            }
-            return creditCardClient.inquireSignUpCreditCardList(ctx.ssafyUserKey()).size();
-        } catch (final Exception e) {
-            log.debug("카드 보유 조회 실패", e);
-            return 0;
-        }
     }
 }
