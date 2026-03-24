@@ -1296,7 +1296,11 @@ where not exists (
   where provider_id = 'SEOCHO-ART-XI'
 );
 
-with registry_document_samples(registry_section, issue_summary, quiz_sample_payload) as (
+with target_property as (
+  select property_id
+  from real_estate_properties
+  where provider_id = 'SEOCHO-ART-XI'
+), registry_document_samples(registry_section, issue_summary, quiz_sample_payload) as (
   values
     ('GAPGU', '현재 소유권이전 이후 가압류가 말소되지 않고 남아 있어 매수인이 바로 주의해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2021년 3월 15일","reason":"보존","details":"소유자 주식회사 청명하우징"},{"rank_no":"2","purpose":"소유권이전","receipt":"2024년 10월 21일","reason":"2024년 10월 3일 매매","details":"소유자 김서준"},{"rank_no":"3","purpose":"가압류","receipt":"2025년 2월 7일","reason":"가압류결정","details":"청구금액 {claim_amount} 가압류권자 주식회사 한빛자산관리 서울중앙지방법원의 가압류결정","rendering":{"claim_amount":{"source":"sale_price_ratio","ratio_percent":12,"rounding_unit":"만원"}}}],"issueSummary":"현재 소유권이전 이후 가압류가 말소되지 않고 남아 있어 매수인이 바로 주의해야 하는 사례입니다.","keyPoints":["현재 소유자 앞으로 소유권이전이 완료된 뒤 가압류가 추가로 기재되어 있습니다.","갑구만 보더라도 현재 권리관계가 깨끗하지 않은 상태로 읽힙니다.","가압류는 매수 전 말소 여부를 반드시 확인해야 하는 대표 신호입니다."],"feedbackCorrect":"맞았습니다. 이 사례는 현재 가압류가 살아 있어 위험으로 보는 것이 맞습니다. 매수 전 말소 여부와 거래 진행 가능 여부를 반드시 확인해야 합니다.","feedbackWrong":"이 사례는 정상으로 보기 어렵습니다. 현재 소유권이전 이후 가압류가 남아 있으므로, 갑구만 봐도 매수인이 주의해야 하는 위험 사례입니다."}$$::jsonb),
     ('GAPGU', '현재 소유자 명의 뒤에 소유권이전등기청구권가처분이 남아 있어 소유권 분쟁 가능성을 의심해야 하는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"소유권보존","receipt":"2020년 8월 26일","reason":"보존","details":"소유자 이지안"},{"rank_no":"2","purpose":"소유권이전","receipt":"2024년 12월 4일","reason":"2024년 11월 20일 매매","details":"소유자 박시우"},{"rank_no":"3","purpose":"소유권이전등기청구권가처분","receipt":"2025년 1월 17일","reason":"가처분결정","details":"가처분권자 정유진 서울서부지방법원의 가처분결정"}],"issueSummary":"현재 소유자 명의 뒤에 소유권이전등기청구권가처분이 남아 있어 소유권 분쟁 가능성을 의심해야 하는 사례입니다.","keyPoints":["현재 소유권이전 이후 바로 분쟁성 보전처분이 기재되어 있습니다.","소유권이전등기청구권가처분은 매수인 입장에서 가장 직접적인 경고 신호 중 하나입니다.","갑구만 보더라도 거래를 서두르기보다 권리관계를 먼저 확인해야 합니다."],"feedbackCorrect":"맞았습니다. 소유권이전등기청구권가처분이 현재 남아 있는 경우는 소유권 분쟁 위험을 먼저 의심해야 합니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 소유권이전등기청구권가처분이 남아 있다는 점만으로도 매수인은 신중해야 합니다."}$$::jsonb),
@@ -1314,17 +1318,24 @@ with registry_document_samples(registry_section, issue_summary, quiz_sample_payl
     ('EULGU', '근저당권이 한 차례 말소된 뒤 다시 높은 비율로 재설정되어 을구 이력이 불안정하게 보이는 사례입니다.', $${"quizVerdict":"위험","rows":[{"rank_no":"1","purpose":"근저당권설정","receipt":"2024년 6월 28일","reason":"2024년 6월 20일 설정계약","details":"채권최고액 {first_max_claim_amount} 채무자 최이준 근저당권자 주식회사 선일저축은행","rendering":{"first_max_claim_amount":{"source":"sale_price_ratio","ratio_percent":20,"rounding_unit":"만원"}}},{"rank_no":"2","purpose":"1번근저당권설정등기말소","receipt":"2024년 9월 2일","reason":"해제","details":"2024년 6월 28일 접수 근저당권설정등기 말소"},{"rank_no":"3","purpose":"근저당권설정","receipt":"2025년 1월 31일","reason":"2025년 1월 23일 설정계약","details":"채권최고액 {second_max_claim_amount} 채무자 최이준 근저당권자 주식회사 대영저축은행","rendering":{"second_max_claim_amount":{"source":"sale_price_ratio","ratio_percent":85,"rounding_unit":"만원"}}}],"issueSummary":"근저당권이 한 차례 말소된 뒤 다시 높은 비율로 재설정되어 을구 이력이 불안정하게 보이는 사례입니다.","keyPoints":["근저당권 설정과 말소 이력이 짧은 기간 안에 반복됩니다.","후속 근저당권은 매매가 대비 매우 높은 비율로 다시 설정돼 있습니다.","현재 권리 상태와 과거 이력을 함께 보면 안정적인 을구로 보기 어렵습니다."],"feedbackCorrect":"맞았습니다. 반복된 설정·말소 뒤 다시 높은 비율의 근저당권이 잡힌 경우는 매수인이 경계해야 하는 위험 사례입니다.","feedbackWrong":"이번 사례는 정상으로 보기 어렵습니다. 근저당권이 반복해서 정리되고 다시 크게 설정된 흐름은 을구 이력 자체로도 불안 신호입니다."}$$::jsonb)
 )
 insert into real_estate_documents (
+  property_id,
+  document_type,
   registry_section,
   quiz_sample_payload
 )
 select
+  tp.property_id,
+  'REGISTRY',
   rds.registry_section,
   rds.quiz_sample_payload
-from registry_document_samples rds
+from target_property tp
+cross join registry_document_samples rds
 where not exists (
   select 1
   from real_estate_documents d
-  where d.registry_section = rds.registry_section
+  where d.property_id = tp.property_id
+    and d.document_type = 'REGISTRY'
+    and d.registry_section = rds.registry_section
     and d.quiz_sample_payload ->> 'issueSummary' = rds.issue_summary
 );
 
@@ -1335,14 +1346,15 @@ insert into game_sessions (
   character_type,
   job_type,
   housing_type,
-  target_region_code,
-  target_district_code,
+  region_code,
+  district_code,
+  target_property_id,
   data_source_type,
   current_turn,
   "current_date",
-  economic_cycle_type,
-  cash,
-  net_assets,
+  cycle_phase,
+  cash_balance_amount,
+  net_worth_amount,
   session_status,
   last_played_at,
   selected_card_monthly_saving_amount,
@@ -1357,7 +1369,8 @@ select
   'STUDIO',
   'SEOUL',
   'GANGNAM',
-  'DUMMY',
+  1,
+  'PROFILE',
   3,
   date '2026-03-01',
   'RECOVERY',
@@ -1457,172 +1470,3 @@ set selected_card_monthly_saving_amount = case
 end
 from raw_saving rs
 where gs.game_session_id = rs.game_session_id;
-
-insert into financial_product_templates (
-  product_type,
-  institution_name,
-  product_name,
-  active_yn
-)
-select
-  candidate.product_type,
-  candidate.institution_name,
-  candidate.product_name,
-  candidate.active_yn
-from (
-  values
-    ('SAVING_DEPOSIT', 'KB국민은행', 'KB Star 정기예금', true),
-    ('SAVING_DEPOSIT', 'KB국민은행', 'KB Star 자유적금', true),
-    ('SAVING_DEPOSIT', 'KB국민은행', 'KB내맘대로적금', true),
-    ('SAVING_DEPOSIT', '신한은행', '쏠편한 정기예금', true),
-    ('SAVING_DEPOSIT', '신한은행', '쏠편한 작심3일 적금', true),
-    ('SAVING_DEPOSIT', '신한은행', '신한 안녕, 반가워 적금', true),
-    ('SAVING_DEPOSIT', '하나은행', '하나의정기예금', true),
-    ('SAVING_DEPOSIT', '하나은행', '급여하나 월복리 적금', true),
-    ('SAVING_DEPOSIT', '하나은행', '하나 원큐 적금', true),
-    ('SAVING_DEPOSIT', '우리은행', 'WON플러스 예금', true),
-    ('SAVING_DEPOSIT', '우리은행', '우리 퍼스트 정기적금', true),
-    ('SAVING_DEPOSIT', '우리은행', '우리 청년우대형 적금', true),
-    ('SAVING_DEPOSIT', 'NH농협은행', 'NH올원e예금', true),
-    ('SAVING_DEPOSIT', 'NH농협은행', 'NH직장인월복리적금', true),
-    ('SAVING_DEPOSIT', 'NH농협은행', 'NH1934월복리적금', true),
-    ('SAVING_DEPOSIT', '카카오뱅크', '카카오뱅크 정기예금', true),
-    ('SAVING_DEPOSIT', '카카오뱅크', '카카오뱅크 자유적금', true),
-    ('SAVING_DEPOSIT', '카카오뱅크', '카카오뱅크 26주적금', true),
-    ('SAVING_DEPOSIT', '케이뱅크', 'codeK 정기예금', true),
-    ('SAVING_DEPOSIT', '케이뱅크', 'codeK 자유적금', true),
-    ('SAVING_DEPOSIT', '케이뱅크', '궁금한 적금', true),
-    ('SAVING_DEPOSIT', '토스뱅크', '먼저 이자 받는 정기예금', true),
-    ('SAVING_DEPOSIT', '토스뱅크', '키워봐요 적금', true),
-    ('SAVING_DEPOSIT', '토스뱅크', '토스뱅크 자유적금', true),
-    ('INVESTMENT', '키움증권', '국내주식 위탁종합계좌', true),
-    ('INVESTMENT', '키움증권', '영웅문 글로벌 투자계좌', true),
-    ('INVESTMENT', '한국투자증권', '뱅키스 주식거래계좌', true),
-    ('INVESTMENT', '한국투자증권', 'CMA 종합자산계좌', true),
-    ('INVESTMENT', '미래에셋증권', '다이렉트 주식거래계좌', true),
-    ('INVESTMENT', '미래에셋증권', 'CMA-RP 네이버통장', true),
-    ('INVESTMENT', 'NH투자증권', '나무 종합매매계좌', true),
-    ('INVESTMENT', 'NH투자증권', '나무 CMA', true),
-    ('INVESTMENT', '삼성증권', '종합주식거래계좌', true),
-    ('INVESTMENT', '삼성증권', '연금저축 투자계좌', true),
-    ('INVESTMENT', 'KB증권', 'able 주식종합계좌', true),
-    ('INVESTMENT', 'KB증권', 'able CMA', true),
-    ('INVESTMENT', '신한투자증권', '알파 주식거래계좌', true),
-    ('INVESTMENT', '신한투자증권', 'CMA RP형 계좌', true),
-    ('INVESTMENT', '대신증권', '크레온 주식종합계좌', true),
-    ('INVESTMENT', '토스증권', '국내주식 거래계좌', true),
-    ('LOAN', 'KB국민은행', 'KB 직장인든든 신용대출', true),
-    ('LOAN', 'KB국민은행', 'KB 비상금대출', true),
-    ('LOAN', 'KB국민은행', 'KB 전세금안심대출', true),
-    ('LOAN', 'KB국민은행', 'KB 주택담보대출', true),
-    ('LOAN', '신한은행', '쏠편한 직장인대출S', true),
-    ('LOAN', '신한은행', '쏠편한 비상금대출', true),
-    ('LOAN', '신한은행', '신한 전세자금대출', true),
-    ('LOAN', '신한은행', '신한 주택담보대출', true),
-    ('LOAN', '우리은행', 'WON플러스 직장인대출', true),
-    ('LOAN', '우리은행', '우리 비상금대출', true),
-    ('LOAN', '우리은행', '우리WON전세대출', true),
-    ('LOAN', '우리은행', '우리WON주택대출', true),
-    ('LOAN', 'NH농협은행', 'NH직장인대출V', true),
-    ('LOAN', 'NH농협은행', 'NH올원 비상금대출', true),
-    ('LOAN', 'NH농협은행', 'NH전세대출', true),
-    ('LOAN', 'NH농협은행', 'NH주택담보대출', true),
-    ('LOAN', '카카오뱅크', '카카오뱅크 비상금대출', true),
-    ('LOAN', '카카오뱅크', '카카오뱅크 신용대출', true),
-    ('LOAN', '케이뱅크', '케이뱅크 신용대출 플러스', true),
-    ('LOAN', '토스뱅크', '토스뱅크 신용대출', true)
-) as candidate(product_type, institution_name, product_name, active_yn)
-where not exists (
-  select 1
-  from financial_product_templates template
-  where template.product_type = candidate.product_type
-    and template.institution_name = candidate.institution_name
-    and template.product_name = candidate.product_name
-);
-
-insert into stock_markets (
-  stock_code,
-  stock_name,
-  kis_stock_code,
-  sector,
-  base_price_amount,
-  year_low_price_amount,
-  year_high_price_amount,
-  volatility_rate
-)
-select
-  candidate.stock_code,
-  candidate.stock_name,
-  candidate.kis_stock_code,
-  candidate.sector,
-  candidate.base_price_amount,
-  candidate.year_low_price_amount,
-  candidate.year_high_price_amount,
-  candidate.volatility_rate
-from (
-  values
-    ('005930', '삼성전자', '005930', '반도체', 186200, 52900, 223000, 0.0215),
-    ('000660', 'SK하이닉스', '000660', '반도체', 979000, 162700, 1099000, 0.0280),
-    ('005380', '현대차', '005380', '자동차', 491000, 175800, 687000, 0.0220),
-    ('000270', '기아', '000270', '자동차', 158100, 81300, 212500, null),
-    ('035420', 'NAVER', '035420', '플랫폼', 212500, 176200, 295000, 0.0240),
-    ('035720', '카카오', '035720', '플랫폼', 47700, 36300, 71600, 0.0310),
-    ('207940', '삼성바이오로직스', '207940', '바이오', 1629000, 1501000, 1987000, 0.0175),
-    ('068270', '셀트리온', '068270', '바이오', 194700, 144615, 251000, null),
-    ('373220', 'LG에너지솔루션', '373220', '2차전지', 388500, 266000, 527000, null),
-    ('055550', '신한지주', '055550', '금융', 89100, 42500, 107200, null),
-    ('028260', '삼성물산', '028260', '산업재', 277500, 108100, 364000, null),
-    ('034020', '두산에너빌리티', '034020', '에너지', 99800, 19960, 112100, null),
-    ('012450', '한화에어로스페이스', '012450', '방산', 1328000, 603000, 1655000, null),
-    ('005490', 'POSCO홀딩스', '005490', '철강/소재', 337000, 230000, 427500, null),
-    ('105560', 'KB금융', '105560', '금융', 148800, 69300, 172500, null),
-    ('086790', '하나금융지주', '086790', '금융', 111500, 51500, 133700, null),
-    ('032830', '삼성생명', '032830', '보험', 217000, 73300, 259500, null),
-    ('138040', '메리츠금융지주', '138040', '금융', 112700, 99700, 149800, null),
-    ('017670', 'SK텔레콤', '017670', '통신', 79800, 50400, 88600, null),
-    ('030200', 'KT', '030200', '통신', 65800, 44550, 70500, null),
-    ('066570', 'LG전자', '066570', '가전', 97600, 59500, 127500, null),
-    ('006400', '삼성SDI', '006400', '2차전지', 248500, 130000, 302000, null),
-    ('051910', 'LG화학', '051910', '화학/소재', 363000, 196000, 425500, null),
-    ('003670', '포스코퓨처엠', '003670', '2차전지', 120400, 107100, 221000, null),
-    ('042700', '한미반도체', '042700', '반도체', 101100, 56200, 156600, null),
-    ('000810', '삼성화재', '000810', '보험', 544000, 264500, 576000, null),
-    ('316140', '우리금융지주', '316140', '금융', 20150, 13330, 21300, null),
-    ('329180', 'HD현대중공업', '329180', '조선/기계', 403000, 200500, 464500, null),
-    ('042660', '한화오션', '042660', '조선/기계', 134300, 24950, 137600, null),
-    ('064350', '현대로템', '064350', '방산', 135900, 41350, 143900, null),
-    ('267260', 'HD현대일렉트릭', '267260', '에너지', 465000, 172000, 509000, null),
-    ('000720', '현대건설', '000720', '건설', 79200, 29300, 85800, null),
-    ('011200', 'HMM', '011200', '물류', 31950, 15500, 33950, null),
-    ('009540', 'HD한국조선해양', '009540', '조선/기계', 433500, 119400, 435000, null),
-    ('018260', '삼성SDS', '018260', 'IT서비스', 228000, 102400, 245500, null),
-    ('096770', 'SK이노베이션', '096770', '에너지', 99000, 78300, 161700, null),
-    ('010130', '고려아연', '010130', '철강/소재', 1139000, 510000, 1139000, null),
-    ('003550', 'LG', '003550', '지주', 73500, 65000, 95400, null),
-    ('010950', 'S-Oil', '010950', '에너지', 93500, 38000, 98600, null),
-    ('352820', '하이브', '352820', '엔터', 249500, 190500, 320500, null),
-    ('051900', 'LG생활건강', '051900', '소비재', 415000, 227000, 424500, null),
-    ('139480', '이마트', '139480', '유통', 94500, 57200, 99200, null),
-    ('097950', 'CJ제일제당', '097950', '소비재', 388500, 196500, 409500, null),
-    ('000100', '유한양행', '000100', '바이오', 184200, 116400, 193100, null),
-    ('323410', '카카오뱅크', '323410', '금융', 49800, 18200, 50300, null),
-    ('086280', '현대글로비스', '086280', '물류', 278500, 105700, 337500, null),
-    ('090430', '아모레퍼시픽', '090430', '소비재', 138600, 81900, 158800, null),
-    ('271560', '오리온', '271560', '소비재', 135600, 88300, 169300, null),
-    ('034730', 'SK', '034730', '지주', 153100, 111800, 166800, null),
-    ('015760', '한국전력', '015760', '유틸리티', 42500, 17110, 43450, null)
-) as candidate(
-  stock_code,
-  stock_name,
-  kis_stock_code,
-  sector,
-  base_price_amount,
-  year_low_price_amount,
-  year_high_price_amount,
-  volatility_rate
-)
-where not exists (
-  select 1
-  from stock_markets market
-  where market.stock_code = candidate.stock_code
-);

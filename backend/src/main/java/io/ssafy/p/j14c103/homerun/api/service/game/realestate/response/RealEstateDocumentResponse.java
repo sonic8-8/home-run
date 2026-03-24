@@ -2,7 +2,6 @@ package io.ssafy.p.j14c103.homerun.api.service.game.realestate.response;
 
 import java.math.BigDecimal;
 import java.util.List;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -14,11 +13,11 @@ public class RealEstateDocumentResponse {
     private final BigDecimal latitude;
     private final BigDecimal longitude;
     private final Long salePrice;
+    private final String documentType;
     private final List<RegistryRowResponse> gapguRows;
     private final List<RegistryRowResponse> eulguRows;
     private final SolutionResponse solution;
 
-    @Builder
     private RealEstateDocumentResponse(
         final Long propertyId,
         final String propertyName,
@@ -26,6 +25,7 @@ public class RealEstateDocumentResponse {
         final BigDecimal latitude,
         final BigDecimal longitude,
         final Long salePrice,
+        final String documentType,
         final List<RegistryRowResponse> gapguRows,
         final List<RegistryRowResponse> eulguRows,
         final SolutionResponse solution
@@ -36,6 +36,7 @@ public class RealEstateDocumentResponse {
         this.latitude = latitude;
         this.longitude = longitude;
         this.salePrice = salePrice;
+        this.documentType = documentType;
         this.gapguRows = List.copyOf(gapguRows);
         this.eulguRows = List.copyOf(eulguRows);
         this.solution = solution;
@@ -48,21 +49,63 @@ public class RealEstateDocumentResponse {
         final BigDecimal latitude,
         final BigDecimal longitude,
         final Long salePrice,
+        final String documentType,
         final List<RegistryRowResponse> gapguRows,
         final List<RegistryRowResponse> eulguRows,
         final SolutionResponse solution
     ) {
-        return RealEstateDocumentResponse.builder()
-            .propertyId(propertyId)
-            .propertyName(propertyName)
-            .address(address)
-            .latitude(latitude)
-            .longitude(longitude)
-            .salePrice(salePrice)
-            .gapguRows(gapguRows)
-            .eulguRows(eulguRows)
-            .solution(solution)
-            .build();
+        return new RealEstateDocumentResponse(
+            propertyId,
+            propertyName,
+            address,
+            latitude,
+            longitude,
+            salePrice,
+            documentType,
+            gapguRows,
+            eulguRows,
+            solution
+        );
+    }
+
+    public Long propertyId() {
+        return propertyId;
+    }
+
+    public String propertyName() {
+        return propertyName;
+    }
+
+    public String address() {
+        return address;
+    }
+
+    public BigDecimal latitude() {
+        return latitude;
+    }
+
+    public BigDecimal longitude() {
+        return longitude;
+    }
+
+    public Long salePrice() {
+        return salePrice;
+    }
+
+    public String documentType() {
+        return documentType;
+    }
+
+    public List<RegistryRowResponse> gapguRows() {
+        return gapguRows;
+    }
+
+    public List<RegistryRowResponse> eulguRows() {
+        return eulguRows;
+    }
+
+    public SolutionResponse solution() {
+        return solution;
     }
 
     @Getter
@@ -74,7 +117,6 @@ public class RealEstateDocumentResponse {
         private final String reason;
         private final String details;
 
-        @Builder
         private RegistryRowResponse(
             final String rankNo,
             final String purpose,
@@ -96,13 +138,27 @@ public class RealEstateDocumentResponse {
             final String reason,
             final String details
         ) {
-            return RegistryRowResponse.builder()
-                .rankNo(rankNo)
-                .purpose(purpose)
-                .receipt(receipt)
-                .reason(reason)
-                .details(details)
-                .build();
+            return new RegistryRowResponse(rankNo, purpose, receipt, reason, details);
+        }
+
+        public String rankNo() {
+            return rankNo;
+        }
+
+        public String purpose() {
+            return purpose;
+        }
+
+        public String receipt() {
+            return receipt;
+        }
+
+        public String reason() {
+            return reason;
+        }
+
+        public String details() {
+            return details;
         }
     }
 
@@ -113,7 +169,6 @@ public class RealEstateDocumentResponse {
         private final SectionSolutionResponse gapgu;
         private final SectionSolutionResponse eulgu;
 
-        @Builder
         private SolutionResponse(
             final String verdict,
             final SectionSolutionResponse gapgu,
@@ -129,11 +184,19 @@ public class RealEstateDocumentResponse {
             final SectionSolutionResponse gapgu,
             final SectionSolutionResponse eulgu
         ) {
-            return SolutionResponse.builder()
-                .verdict(verdict)
-                .gapgu(gapgu)
-                .eulgu(eulgu)
-                .build();
+            return new SolutionResponse(verdict, gapgu, eulgu);
+        }
+
+        public String verdict() {
+            return verdict;
+        }
+
+        public SectionSolutionResponse gapgu() {
+            return gapgu;
+        }
+
+        public SectionSolutionResponse eulgu() {
+            return eulgu;
         }
     }
 
@@ -146,7 +209,6 @@ public class RealEstateDocumentResponse {
         private final String feedbackCorrect;
         private final String feedbackWrong;
 
-        @Builder
         private SectionSolutionResponse(
             final String verdict,
             final String issueSummary,
@@ -168,13 +230,33 @@ public class RealEstateDocumentResponse {
             final String feedbackCorrect,
             final String feedbackWrong
         ) {
-            return SectionSolutionResponse.builder()
-                .verdict(verdict)
-                .issueSummary(issueSummary)
-                .keyPoints(keyPoints)
-                .feedbackCorrect(feedbackCorrect)
-                .feedbackWrong(feedbackWrong)
-                .build();
+            return new SectionSolutionResponse(
+                verdict,
+                issueSummary,
+                keyPoints,
+                feedbackCorrect,
+                feedbackWrong
+            );
+        }
+
+        public String verdict() {
+            return verdict;
+        }
+
+        public String issueSummary() {
+            return issueSummary;
+        }
+
+        public List<String> keyPoints() {
+            return keyPoints;
+        }
+
+        public String feedbackCorrect() {
+            return feedbackCorrect;
+        }
+
+        public String feedbackWrong() {
+            return feedbackWrong;
         }
     }
 }

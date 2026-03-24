@@ -38,6 +38,27 @@ public class DashboardResponse {
             final Money monthlyExpense,
             final Money incomeChangeFromLastMonth,
             final Money expenseChangeFromLastMonth,
+            final Integer nextPaydayDays) {
+        if (totalAssets == null) {
+            throw new IllegalArgumentException("총자산은 null일 수 없습니다.");
+        }
+        if (monthlyIncome == null) {
+            throw new IllegalArgumentException("월 수입은 null일 수 없습니다.");
+        }
+        if (monthlyExpense == null) {
+            throw new IllegalArgumentException("월 지출은 null일 수 없습니다.");
+        }
+        return new DashboardResponse(totalAssets, monthlyIncome, monthlyExpense,
+                incomeChangeFromLastMonth, expenseChangeFromLastMonth, nextPaydayDays,
+                Money.zero(), Money.zero());
+    }
+
+    public static DashboardResponse of(
+            final Money totalAssets,
+            final Money monthlyIncome,
+            final Money monthlyExpense,
+            final Money incomeChangeFromLastMonth,
+            final Money expenseChangeFromLastMonth,
             final Integer nextPaydayDays,
             final Money mainAccountBalance,
             final Money seedmoneyBalance) {

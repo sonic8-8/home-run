@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface StockHoldingRepository
         extends JpaRepository<StockHolding, StockHoldingId> {
 
-    List<StockHolding> findAllByGameSessionId(Integer gameSessionId);
+    List<StockHolding> findAllByGameSessionId(Long gameSessionId);
 }

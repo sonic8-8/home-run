@@ -50,7 +50,7 @@ public class LoanApprovalService {
             final int cssGrade,
             final String regionCode,
             final Integer propertyPrice,
-            final Integer sessionId
+            final Long sessionId
     ) {
         return switch (loanType) {
             case CREDIT -> evaluateCredit(annualSalary, jobType, cssGrade);
@@ -80,7 +80,7 @@ public class LoanApprovalService {
      */
     private ApprovalResult evaluateJeonse(
             final int annualSalary, final String regionCode,
-            final Integer propertyPrice, final Integer sessionId
+            final Integer propertyPrice, final Long sessionId
     ) {
         if (propertyPrice == null || propertyPrice <= 0) {
             return ApprovalResult.reject("매물 가격 정보가 필요합니다.");
@@ -103,7 +103,7 @@ public class LoanApprovalService {
      */
     private ApprovalResult evaluateMortgage(
             final int annualSalary, final String regionCode,
-            final Integer propertyPrice, final Integer sessionId
+            final Integer propertyPrice, final Long sessionId
     ) {
         if (propertyPrice == null || propertyPrice <= 0) {
             return ApprovalResult.reject("매물 가격 정보가 필요합니다.");
@@ -131,7 +131,7 @@ public class LoanApprovalService {
      * DSR 한도: (연봉 × 0.40 - 기존 대출 연간 상환액) / 12 → 월 상환 가능액 → 원금 환산
      * 간소화: 연봉 × 0.40 - 기존월상환합 × 12 가 양수면 해당 금액을 한도로 사용
      */
-    private int calculateDsrLimit(final int annualSalary, final Integer sessionId) {
+    private int calculateDsrLimit(final int annualSalary, final Long sessionId) {
         final int existingAnnualPayment = getExistingAnnualPayment(sessionId);
         final int maxAnnualPayment = (int) (annualSalary * 0.40);
         return maxAnnualPayment - existingAnnualPayment;
@@ -140,12 +140,12 @@ public class LoanApprovalService {
     /**
      * DTI 한도: (연봉 × dtiRate - 기타대출 월이자 × 12) 를 한도로 사용
      */
-    private int calculateDtiLimit(final int annualSalary, final double dtiRate, final Integer sessionId) {
+    private int calculateDtiLimit(final int annualSalary, final double dtiRate, final Long sessionId) {
         final int existingAnnualInterest = getExistingAnnualInterest(sessionId);
         return (int) (annualSalary * dtiRate) - existingAnnualInterest;
     }
 
-    private int getExistingAnnualPayment(final Integer sessionId) {
+    private int getExistingAnnualPayment(final Long sessionId) {
         if (sessionId == null) {
             return 0;
         }
@@ -156,7 +156,7 @@ public class LoanApprovalService {
                 .sum();
     }
 
-    private int getExistingAnnualInterest(final Integer sessionId) {
+    private int getExistingAnnualInterest(final Long sessionId) {
         if (sessionId == null) {
             return 0;
         }

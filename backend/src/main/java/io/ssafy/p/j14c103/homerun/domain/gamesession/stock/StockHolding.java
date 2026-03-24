@@ -21,7 +21,7 @@ public class StockHolding {
 
     @Id
     @Column(name = "game_session_id")
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Id
     @Column(name = "stock_code", length = 20)
@@ -34,7 +34,7 @@ public class StockHolding {
     private Integer quantity;
 
     private StockHolding(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer averagePurchasePriceAmount,
             final Integer quantity
@@ -46,7 +46,7 @@ public class StockHolding {
     }
 
     public static StockHolding create(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer purchasePrice,
             final Integer quantity

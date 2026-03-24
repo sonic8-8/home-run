@@ -28,7 +28,7 @@ public class GamePendingEvent {
     private Integer gamePendingEventId;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Column(name = "turn_number", nullable = false)
     private Integer turnNumber;
@@ -51,7 +51,7 @@ public class GamePendingEvent {
     private LocalDateTime createdAt;
 
     private GamePendingEvent(
-        Integer gameSessionId,
+        Long gameSessionId,
         Integer turnNumber,
         Integer gameEventId,
         EventPresentationType eventPresentationType,
@@ -69,7 +69,7 @@ public class GamePendingEvent {
     }
 
     public static GamePendingEvent create(
-        Integer gameSessionId,
+        Long gameSessionId,
         Integer turnNumber,
         Integer gameEventId,
         EventPresentationType eventPresentationType,

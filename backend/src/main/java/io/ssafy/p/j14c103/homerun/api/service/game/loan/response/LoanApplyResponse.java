@@ -1,21 +1,79 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan.response;
 
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanApplication;
+import lombok.Getter;
 
 /**
  * 대출 심사 신청 응답.
  */
-public record LoanApplyResponse(
-        Integer applicationId,
-        String status,
-        RequestInfo requestInfo,
-        Result result
-) {
+@Getter
+public class LoanApplyResponse {
 
-    public record RequestInfo(String applicationDate) {
+    private final Integer applicationId;
+    private final String status;
+    private final RequestInfo requestInfo;
+    private final Result result;
+
+    private LoanApplyResponse(
+        final Integer applicationId,
+        final String status,
+        final RequestInfo requestInfo,
+        final Result result
+    ) {
+        this.applicationId = applicationId;
+        this.status = status;
+        this.requestInfo = requestInfo;
+        this.result = result;
     }
 
-    public record Result(Integer maxLoanAmount, String rejectionReason) {
+    public Integer applicationId() {
+        return applicationId;
+    }
+
+    public String status() {
+        return status;
+    }
+
+    public RequestInfo requestInfo() {
+        return requestInfo;
+    }
+
+    public Result result() {
+        return result;
+    }
+
+    @Getter
+    public static class RequestInfo {
+
+        private final String applicationDate;
+
+        private RequestInfo(final String applicationDate) {
+            this.applicationDate = applicationDate;
+        }
+
+        public String applicationDate() {
+            return applicationDate;
+        }
+    }
+
+    @Getter
+    public static class Result {
+
+        private final Integer maxLoanAmount;
+        private final String rejectionReason;
+
+        private Result(final Integer maxLoanAmount, final String rejectionReason) {
+            this.maxLoanAmount = maxLoanAmount;
+            this.rejectionReason = rejectionReason;
+        }
+
+        public Integer maxLoanAmount() {
+            return maxLoanAmount;
+        }
+
+        public String rejectionReason() {
+            return rejectionReason;
+        }
     }
 
     public static LoanApplyResponse from(final LoanApplication application) {

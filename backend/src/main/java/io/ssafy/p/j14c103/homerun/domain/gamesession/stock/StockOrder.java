@@ -28,7 +28,7 @@ public class StockOrder {
     private Integer stockOrderId;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Column(name = "stock_code", nullable = false, length = 20)
     private String stockCode;
@@ -51,7 +51,7 @@ public class StockOrder {
     private OrderStatus orderStatus;
 
     private StockOrder(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final OrderType orderType,
             final Integer quantity,
@@ -67,7 +67,7 @@ public class StockOrder {
     }
 
     public static StockOrder createBuyOrder(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer quantity,
             final Integer currentTurn
@@ -76,7 +76,7 @@ public class StockOrder {
     }
 
     public static StockOrder createSellOrder(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer quantity,
             final Integer currentTurn

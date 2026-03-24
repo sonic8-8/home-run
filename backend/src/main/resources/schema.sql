@@ -88,89 +88,6 @@ create table if not exists seedmoney_transactions (
     foreign key (pass_subscription_id) references pass_subscriptions (pass_subscription_id)
 );
 
--- Unified user account model for MAIN and SEEDMONEY accounts.
-create table if not exists user_accounts (
-  user_account_id integer generated always as identity primary key,
-  user_id integer not null,
-  account_type varchar(20) not null,
-  bank_code varchar(3) not null,
-  bank_name varchar(100) not null,
-  account_number varchar(50) not null,
-  balance_snapshot_amount integer not null,
-  opened_at timestamp not null,
-  active_yn boolean not null default true,
-  constraint fk_user_accounts__user
-    foreign key (user_id) references users (user_id),
-  constraint uk_user_accounts__user_id__account_type
-    unique (user_id, account_type)
-);
-
--- Unified account transaction history for dashboard, PASS, and CSS.
-create table if not exists user_account_transactions (
-  user_account_transaction_id integer generated always as identity primary key,
-  user_id integer not null,
-  account_type varchar(20) not null,
-  pass_subscription_id integer,
-  transaction_type varchar(30) not null,
-  amount integer not null,
-  counterparty_account_number varchar(50),
-  created_at timestamp not null default current_timestamp,
-  constraint fk_user_account_transactions__user
-    foreign key (user_id) references users (user_id),
-  constraint fk_user_account_transactions__pass_subscription
-    foreign key (pass_subscription_id) references pass_subscriptions (pass_subscription_id)
-);
-
--- Template master for validating real-world financial product snapshots.
-create table if not exists financial_product_templates (
-  financial_product_template_id integer generated always as identity primary key,
-  product_type varchar(30) not null,
-  institution_name varchar(100) not null,
-  product_name varchar(100) not null,
-  active_yn boolean not null default true
-);
-
--- Mock financial products used for total asset, debt, and CSS.
-create table if not exists user_financial_products (
-  user_financial_product_id integer generated always as identity primary key,
-  user_id integer not null,
-  product_type varchar(30) not null,
-  institution_name varchar(100) not null,
-  product_name varchar(100) not null,
-  current_balance_amount integer not null,
-  opened_at timestamp not null,
-  active_yn boolean not null default true,
-  constraint fk_user_financial_products__user
-    foreign key (user_id) references users (user_id)
-);
-
-create table if not exists user_financial_transactions (
-  user_financial_transaction_id integer generated always as identity primary key,
-  user_id integer not null,
-  user_financial_product_id integer not null,
-  transaction_type varchar(30) not null,
-  amount integer not null,
-  occurred_at timestamp not null,
-  created_at timestamp not null default current_timestamp,
-  constraint fk_user_financial_transactions__user
-    foreign key (user_id) references users (user_id),
-  constraint fk_user_financial_transactions__product
-    foreign key (user_financial_product_id) references user_financial_products (user_financial_product_id)
-);
-
-create table if not exists user_financial_summaries (
-  user_id integer primary key,
-  total_asset_amount integer not null,
-  total_debt_amount integer not null,
-  net_asset_amount integer not null,
-  cash_asset_amount integer not null,
-  saving_asset_amount integer not null,
-  investment_asset_amount integer not null,
-  updated_at timestamp not null default current_timestamp,
-  constraint fk_user_financial_summaries__user
-    foreign key (user_id) references users (user_id)
-);
-
 -- User card payment history used for card recommendation scoring.
 create table if not exists member_payment_histories (
   payment_history_id integer generated always as identity primary key,
@@ -236,7 +153,7 @@ create table if not exists real_estate_geocode_caches (
 );
 
 create table if not exists real_estate_properties (
-  property_id integer generated always as identity primary key,
+  property_id bigint generated always as identity primary key,
   provider_id varchar(255),
   property_name varchar(200),
   address varchar(255),
@@ -255,28 +172,31 @@ create table if not exists real_estate_properties (
 
 -- Top-level game session aggregate for one save slot.
 create table if not exists game_sessions (
-  game_session_id integer generated always as identity primary key,
+  game_session_id bigint generated always as identity primary key,
   user_id integer not null,
   slot_number integer not null,
-  character_name varchar(100),
-  character_type varchar(20),
-  job_type varchar(50),
-  housing_type varchar(50),
-  target_region_code varchar(30),
-  target_district_code varchar(30),
-  data_source_type varchar(20),
+  character_name varchar(100) not null,
+  character_type varchar(20) not null,
+  job_type varchar(50) not null,
+  housing_type varchar(50) not null,
+  region_code varchar(30) not null,
+  district_code varchar(30) not null,
+  target_property_id bigint not null,
+  data_source_type varchar(20) not null,
   current_turn integer not null,
   "current_date" date,
-  economic_cycle_type varchar(50),
-  cash integer not null,
-  net_assets integer,
-  session_status varchar(20),
+  cycle_phase varchar(50),
+  cash_balance_amount numeric(19,0) not null,
+  net_worth_amount numeric(19,0) not null,
+  session_status varchar(20) not null,
   created_at timestamp not null default current_timestamp,
   last_played_at timestamp,
   selected_card_monthly_saving_amount integer not null default 0,
-  owned_property_id integer,
+  owned_property_id bigint,
   constraint fk_game_sessions__user
     foreign key (user_id) references users (user_id),
+  constraint fk_game_sessions__target_property
+    foreign key (target_property_id) references real_estate_properties (property_id),
   constraint fk_game_sessions__owned_property
     foreign key (owned_property_id) references real_estate_properties (property_id),
   constraint uq_game_sessions__user_id__slot_number
@@ -285,7 +205,7 @@ create table if not exists game_sessions (
 
 -- Current core character stats for a game session.
 create table if not exists game_stats (
-  game_session_id integer primary key,
+  game_session_id bigint primary key,
   health integer not null,
   fatigue integer not null,
   stress integer not null,
@@ -300,7 +220,7 @@ create table if not exists game_stats (
 
 -- Career and employment progression state for a game session.
 create table if not exists game_careers (
-  game_session_id integer primary key,
+  game_session_id bigint primary key,
   job_type varchar(50),
   job_title varchar(100),
   salary_amount integer,
@@ -330,7 +250,7 @@ create table if not exists action_masters (
 -- Actual action selections for each session, turn, and slot.
 create table if not exists game_turn_slots (
   game_turn_slot_id integer generated always as identity primary key,
-  game_session_id integer not null,
+  game_session_id bigint not null,
   turn_number integer not null,
   slot_index integer not null,
   action_type varchar(30) not null,
@@ -347,7 +267,7 @@ create table if not exists game_turn_slots (
 -- Turn settlement logs describing what changed and why.
 create table if not exists settlement_logs (
   settlement_log_id integer generated always as identity primary key,
-  game_session_id integer not null,
+  game_session_id bigint not null,
   turn_number integer not null,
   settlement_phase_type varchar(50),
   description text,
@@ -357,29 +277,24 @@ create table if not exists settlement_logs (
     foreign key (game_session_id) references game_sessions (game_session_id)
 );
 
--- Current housing state, target house, and current occupied property.
+-- Current housing state for a game session.
 create table if not exists game_housings (
-  game_session_id integer primary key,
-  target_region_code varchar(30),
-  target_house_price_amount integer,
-  housing_type varchar(50),
-  current_deposit_amount integer,
-  monthly_rent_amount integer,
-  maintenance_fee_amount integer,
-  current_property_id integer,
-  target_property_id integer,
+  game_session_id bigint primary key,
+  current_housing_type varchar(50),
+  current_deposit_amount numeric(19,0),
+  monthly_rent_amount numeric(19,0),
+  maintenance_fee_amount numeric(19,0),
+  current_property_id bigint,
   constraint fk_game_housings__game_session
     foreign key (game_session_id) references game_sessions (game_session_id),
   constraint fk_game_housings__current_property
-    foreign key (current_property_id) references real_estate_properties (property_id),
-  constraint fk_game_housings__target_property
-    foreign key (target_property_id) references real_estate_properties (property_id)
+    foreign key (current_property_id) references real_estate_properties (property_id)
 );
 
 -- Session-scoped real-estate market prices derived from cycle/news updates.
 create table if not exists game_property_market_states (
-  game_session_id integer not null,
-  property_id integer not null,
+  game_session_id bigint not null,
+  property_id bigint not null,
   current_price_amount integer not null,
   last_updated_turn integer not null,
   primary key (game_session_id, property_id),
@@ -389,18 +304,22 @@ create table if not exists game_property_market_states (
     foreign key (property_id) references real_estate_properties (property_id)
 );
 
--- Shared registry document samples used across real-estate listings.
+-- Contract and registry documents attached to a real-estate listing.
 create table if not exists real_estate_documents (
   real_estate_document_id integer generated always as identity primary key,
-  registry_section varchar(20) not null,
-  quiz_sample_payload jsonb not null
+  property_id bigint not null,
+  document_type varchar(20),
+  registry_section varchar(20),
+  quiz_sample_payload jsonb,
+  constraint fk_real_estate_documents__property
+    foreign key (property_id) references real_estate_properties (property_id)
 );
 
 -- Player review results for property contract inspection.
 create table if not exists game_contract_reviews (
   game_contract_review_id integer generated always as identity primary key,
-  game_session_id integer not null,
-  property_id integer not null,
+  game_session_id bigint not null,
+  property_id bigint not null,
   review_status varchar(20),
   checked_traps jsonb,
   detected_traps jsonb,
@@ -419,28 +338,7 @@ create table if not exists stock_markets (
   kis_stock_code varchar(10),             -- 한투 OpenAPI 종목코드 (예: '005930')
   sector varchar(100),
   base_price_amount integer,
-  year_low_price_amount integer,
-  year_high_price_amount integer,
   volatility_rate numeric(8,4)
-);
-
-create table if not exists user_investment_holdings (
-  user_investment_holding_id integer generated always as identity primary key,
-  user_id integer not null,
-  user_financial_product_id integer not null,
-  stock_code varchar(20) not null,
-  quantity integer not null,
-  average_purchase_price_amount integer not null,
-  current_price_amount integer not null,
-  price_updated_at timestamp not null default current_timestamp,
-  active_yn boolean not null default true,
-  created_at timestamp not null default current_timestamp,
-  constraint fk_user_investment_holdings__user
-    foreign key (user_id) references users (user_id),
-  constraint fk_user_investment_holdings__product
-    foreign key (user_financial_product_id) references user_financial_products (user_financial_product_id),
-  constraint fk_user_investment_holdings__stock_market
-    foreign key (stock_code) references stock_markets (stock_code)
 );
 
 -- Session-scoped current stock prices used for valuation and execution.
@@ -532,38 +430,6 @@ create table if not exists card_products (
   active_benefits jsonb,
   card_image_url varchar(255),
   active_yn boolean not null default true
-);
-
--- User-owned cards linked to the shared card product catalog.
-create table if not exists owned_cards (
-  owned_card_id integer generated always as identity primary key,
-  user_id integer not null,
-  card_product_id integer not null,
-  card_alias varchar(100),
-  masked_card_no varchar(30) not null,
-  opened_at timestamp not null,
-  active_yn boolean not null default true,
-  constraint fk_owned_cards__user
-    foreign key (user_id) references users (user_id),
-  constraint fk_owned_cards__card_product
-    foreign key (card_product_id) references card_products (card_product_id)
-);
-
--- User card transactions used by dashboard, recommendation, and CSS.
-create table if not exists card_transactions (
-  card_transaction_id integer generated always as identity primary key,
-  user_id integer not null,
-  owned_card_id integer not null,
-  category_id varchar(50) not null,
-  category_name varchar(50) not null,
-  merchant_name varchar(100) not null,
-  payment_amount integer not null,
-  payment_date date not null,
-  created_at timestamp not null default current_timestamp,
-  constraint fk_card_transactions__user
-    foreign key (user_id) references users (user_id),
-  constraint fk_card_transactions__owned_card
-    foreign key (owned_card_id) references owned_cards (owned_card_id)
 );
 
 -- Session-scoped card selections referencing a real card product.

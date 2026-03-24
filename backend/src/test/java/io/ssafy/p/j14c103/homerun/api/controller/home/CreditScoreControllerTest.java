@@ -46,9 +46,7 @@ class CreditScoreControllerTest {
     final CreditScoreResponse response = CreditScoreResponse.of(
             CreditScore.of(300, 250, 120, 90, 80),
             "A",
-            12_345_678L,
-            2_000_000L,
-            10_345_678L
+                12_345_678L
     );
     given(creditScoreService.getCreditScore(1L)).willReturn(response);
 
@@ -59,9 +57,7 @@ class CreditScoreControllerTest {
                 .andExpect(jsonPath("$.data.score").value(840))
                 .andExpect(jsonPath("$.data.grade").value(2))
                 .andExpect(jsonPath("$.data.ratingName").value("A"))
-                .andExpect(jsonPath("$.data.totalAsset").value(12345678))
-                .andExpect(jsonPath("$.data.totalDebt").value(2000000))
-                .andExpect(jsonPath("$.data.netAsset").value(10345678));
+                .andExpect(jsonPath("$.data.totalAsset").value(12345678));
     }
 
     private RequestPostProcessor currentUser() {

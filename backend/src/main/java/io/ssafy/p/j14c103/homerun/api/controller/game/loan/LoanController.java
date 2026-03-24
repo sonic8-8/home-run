@@ -43,7 +43,7 @@ public class LoanController {
      */
     @GetMapping("/products")
     public ApiResponse<List<LoanProductResponse>> getProducts(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @RequestParam(defaultValue = "ALL") final String category,
             @RequestParam(defaultValue = "0") final int page,
             @RequestParam(defaultValue = "20") final int size
@@ -58,7 +58,7 @@ public class LoanController {
      */
     @GetMapping("/products/{productId}")
     public ApiResponse<LoanProductDetailResponse> getProductDetail(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @PathVariable final String productId
     ) {
         final LoanProductDetailResponse detail = loanProductService.getProductDetail(productId)
@@ -72,7 +72,7 @@ public class LoanController {
      */
     @PostMapping("/calculate")
     public ApiResponse<LoanCalculateResponse> calculate(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @RequestBody final LoanCalculateRequest request
     ) {
         final LoanCalculateResponse response = loanService.calculate(
@@ -87,7 +87,7 @@ public class LoanController {
      */
     @PostMapping("/apply")
     public ApiResponse<LoanApplyResponse> apply(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @RequestBody final LoanApplyRequest request
     ) {
         final LoanApplyResponse response = loanService.apply(
@@ -101,7 +101,7 @@ public class LoanController {
      */
     @PostMapping("/confirm")
     public ApiResponse<LoanConfirmResponse> confirm(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @RequestBody final LoanConfirmRequest request
     ) {
         final LoanConfirmResponse response = loanService.confirm(
@@ -116,7 +116,7 @@ public class LoanController {
      */
     @PostMapping("/repay")
     public ApiResponse<LoanRepayResponse> repay(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @RequestBody final LoanRepayRequest request
     ) {
         final LoanRepayResponse response = loanService.repay(

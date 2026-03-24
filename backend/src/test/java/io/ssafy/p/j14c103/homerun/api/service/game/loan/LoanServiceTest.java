@@ -26,7 +26,7 @@ class LoanServiceTest {
     @DisplayName("싸피론 대출 - 세션당 1건 정상 생성")
     void applySsafyLoan() {
         // given
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
         final int principal = 10_000_000;
 
         // when
@@ -44,7 +44,7 @@ class LoanServiceTest {
     @DisplayName("싸피론 대출 - 이미 존재하면 예외 발생")
     void applySsafyLoanDuplicateThrows() {
         // given
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
         gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 5_000_000));
 
         // when & then
@@ -56,7 +56,7 @@ class LoanServiceTest {
     @DisplayName("중도 상환 - 부분 상환 시 잔액 감소")
     void repayPartial() {
         // given
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
         final GameLoan loan = gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 10_000_000));
         final Integer loanId = loan.getGameLoanId();
 
@@ -73,7 +73,7 @@ class LoanServiceTest {
     @DisplayName("중도 상환 - 전액 상환 시 CLOSED 상태")
     void repayFullClosed() {
         // given
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
         final GameLoan loan = gameLoanRepository.save(GameLoan.createSsafyLoan(sessionId, 5_000_000));
         final Integer loanId = loan.getGameLoanId();
 

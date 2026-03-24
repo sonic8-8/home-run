@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface GameStockMarketStateRepository
         extends JpaRepository<GameStockMarketState, GameStockMarketStateId> {
 
-    List<GameStockMarketState> findAllByGameSessionId(Integer gameSessionId);
+    List<GameStockMarketState> findAllByGameSessionId(Long gameSessionId);
 }

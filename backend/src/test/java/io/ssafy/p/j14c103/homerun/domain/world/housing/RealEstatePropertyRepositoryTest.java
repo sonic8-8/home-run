@@ -8,9 +8,13 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-@DataJpaTest
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class RealEstatePropertyRepositoryTest {
 
     @Autowired
@@ -124,12 +128,14 @@ class RealEstatePropertyRepositoryTest {
                 ContractTrap.create(
                     "TRAP-01",
                     "HIGH_MORTGAGE",
+                    "REGISTRY",
                     "과도한 근저당 설정 발견",
                     ContractTrapPenalty.create("-5000000", 20)
                 ),
                 ContractTrap.create(
                     "TRAP-02",
                     "FAKE_OWNER",
+                    "CONTRACT",
                     "집주인 신분증 도용 의심",
                     ContractTrapPenalty.create("ALL_DEPOSIT_LOST", 50)
                 )

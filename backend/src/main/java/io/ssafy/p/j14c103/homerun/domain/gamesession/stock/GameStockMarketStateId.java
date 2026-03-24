@@ -8,13 +8,13 @@ import java.util.Objects;
  */
 public class GameStockMarketStateId implements Serializable {
 
-    private Integer gameSessionId;
+    private Long gameSessionId;
     private String stockCode;
 
     public GameStockMarketStateId() {
     }
 
-    public GameStockMarketStateId(final Integer gameSessionId, final String stockCode) {
+    public GameStockMarketStateId(final Long gameSessionId, final String stockCode) {
         this.gameSessionId = gameSessionId;
         this.stockCode = stockCode;
     }
