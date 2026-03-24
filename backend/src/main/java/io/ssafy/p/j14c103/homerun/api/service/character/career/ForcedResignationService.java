@@ -12,19 +12,7 @@ public class ForcedResignationService {
 
     private static final String FORCED_RESIGNATION_MESSAGE = "건강 악화로 강제 퇴사했습니다.";
 
-    private final ForcedResignationPolicy forcedResignationPolicy;
-
-    public ForcedResignationService() {
-        this(new ForcedResignationPolicy());
-    }
-
-    ForcedResignationService(final ForcedResignationPolicy forcedResignationPolicy) {
-        if (forcedResignationPolicy == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
-        }
-
-        this.forcedResignationPolicy = forcedResignationPolicy;
-    }
+    private final ForcedResignationPolicy forcedResignationPolicy = new ForcedResignationPolicy();
 
     public ForcedResignationServiceResponse forceResign(
         final ForcedResignationServiceRequest request
@@ -35,18 +23,18 @@ public class ForcedResignationService {
 
         final ForcedResignationPolicy.ForcedResignationResult result =
             forcedResignationPolicy.apply(
-                request.gameCareer(),
-                request.gameStat(),
-                request.currentTurn()
+                request.getGameCareer(),
+                request.getGameStat(),
+                request.getCurrentTurn()
             );
 
-        request.gameCareer().forceResign(result);
+        request.getGameCareer().forceResign(result);
         return ForcedResignationServiceResponse.of(
             true,
-            request.gameCareer().getEmploymentStatus(),
-            request.gameCareer().getRehireAvailableTurn(),
-            request.gameCareer().getRemainingUnemploymentBenefitTurns(),
-            request.gameCareer().getSalaryBeforeResignation(),
+            request.getGameCareer().getEmploymentStatus(),
+            request.getGameCareer().getRehireAvailableTurn(),
+            request.getGameCareer().getRemainingUnemploymentBenefitTurns(),
+            request.getGameCareer().getSalaryBeforeResignation(),
             FORCED_RESIGNATION_MESSAGE
         );
     }

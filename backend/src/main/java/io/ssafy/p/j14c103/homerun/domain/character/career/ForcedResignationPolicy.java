@@ -5,7 +5,7 @@ import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 
-public class ForcedResignationPolicy {
+public class  ForcedResignationPolicy {
 
     private static final int MIN_KNOWLEDGE = 0;
     private static final int MAX_KNOWLEDGE = 100;

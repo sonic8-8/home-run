@@ -28,20 +28,20 @@ public class JobTransferService {
     public JobTransferServiceResponse transfer(final JobTransferServiceRequest request) {
         validateRequest(request);
 
-        final GameCareer gameCareer = request.gameCareer();
+        final GameCareer gameCareer = request.getGameCareer();
         final GameplayHistoryWriter.CareerSnapshot previousCareer =
             GameplayHistoryWriter.CareerSnapshot.from(gameCareer);
         final JobType previousJobType = gameCareer.getJobType();
         final EmploymentStatus previousEmploymentStatus = gameCareer.getEmploymentStatus();
         final JobTransferPolicy.JobOffer jobOffer = jobTransferPolicy.resolveOffer(
-            request.gameCareer(),
-            request.gameStat(),
-            request.recentMeetFriendCount(),
-            request.currentTurn(),
-            request.offerId()
+            request.getGameCareer(),
+            request.getGameStat(),
+            request.getRecentMeetFriendCount(),
+            request.getCurrentTurn(),
+            request.getOfferId()
         );
 
-        gameCareer.acceptTransfer(jobOffer, jobTitlePolicy, request.currentTurn());
+        gameCareer.acceptTransfer(jobOffer, jobTitlePolicy, request.getCurrentTurn());
         gameCareerRepository.save(gameCareer);
         final String transferMessage = buildTransferMessage(
             jobOffer.displayCompanyName(),
@@ -50,7 +50,7 @@ public class JobTransferService {
         gameplayHistoryWriter.writeJobTransfer(
             previousCareer,
             gameCareer,
-            request.currentTurn(),
+            request.getCurrentTurn(),
             transferMessage
         );
         return JobTransferServiceResponse.of(

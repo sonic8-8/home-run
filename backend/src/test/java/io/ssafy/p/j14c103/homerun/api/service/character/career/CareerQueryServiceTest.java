@@ -25,15 +25,15 @@ class CareerQueryServiceTest {
         final JobTypeOptionsResponse response = careerQueryService.getJobTypeOptions();
 
         // then
-        assertThat(response.jobTypes())
+        assertThat(response.getJobTypes())
             .extracting(
-                JobTypeOptionsResponse.JobTypeOptionResponse::jobType,
-                JobTypeOptionsResponse.JobTypeOptionResponse::label,
-                option -> option.stats().salary(),
-                option -> option.stats().health(),
-                option -> option.stats().stability(),
-                option -> option.stats().growthSpeed(),
-                option -> option.stats().difficulty()
+                JobTypeOptionsResponse.JobTypeOptionResponse::getJobType,
+                JobTypeOptionsResponse.JobTypeOptionResponse::getLabel,
+                option -> option.getStats().getSalary(),
+                option -> option.getStats().getHealth(),
+                option -> option.getStats().getStability(),
+                option -> option.getStats().getGrowthSpeed(),
+                option -> option.getStats().getDifficulty()
             )
             .containsExactly(
                 tuple(JobType.LARGE_BIZ, "대기업 직장인", 80, 60, 90, 40, 70),

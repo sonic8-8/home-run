@@ -40,15 +40,15 @@ class UnemploymentBenefitServiceTest {
             unemploymentBenefitService.consume(request);
 
         // then
-        assertThat(firstResponse.benefitGranted()).isTrue();
-        assertThat(firstResponse.benefitAmount()).isEqualTo(1_500_000);
-        assertThat(firstResponse.remainingUnemploymentBenefitTurns()).isEqualTo(2);
-        assertThat(secondResponse.remainingUnemploymentBenefitTurns()).isEqualTo(1);
-        assertThat(thirdResponse.remainingUnemploymentBenefitTurns()).isZero();
-        assertThat(fourthResponse.benefitGranted()).isFalse();
-        assertThat(fourthResponse.benefitAmount()).isZero();
-        assertThat(fourthResponse.remainingUnemploymentBenefitTurns()).isZero();
-        assertThat(fourthResponse.message()).isEqualTo("실업 급여 지급 대상이 아닙니다.");
+        assertThat(firstResponse.isBenefitGranted()).isTrue();
+        assertThat(firstResponse.getBenefitAmount()).isEqualTo(1_500_000);
+        assertThat(firstResponse.getRemainingUnemploymentBenefitTurns()).isEqualTo(2);
+        assertThat(secondResponse.getRemainingUnemploymentBenefitTurns()).isEqualTo(1);
+        assertThat(thirdResponse.getRemainingUnemploymentBenefitTurns()).isZero();
+        assertThat(fourthResponse.isBenefitGranted()).isFalse();
+        assertThat(fourthResponse.getBenefitAmount()).isZero();
+        assertThat(fourthResponse.getRemainingUnemploymentBenefitTurns()).isZero();
+        assertThat(fourthResponse.getMessage()).isEqualTo("실업 급여 지급 대상이 아닙니다.");
     }
 
     private GameCareer createUnemployedCareer() {
