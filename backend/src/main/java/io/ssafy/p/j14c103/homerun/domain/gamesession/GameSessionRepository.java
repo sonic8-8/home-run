@@ -2,5 +2,5 @@ package io.ssafy.p.j14c103.homerun.domain.gamesession;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface GameSessionRepository extends JpaRepository<GameSession, Integer> {
+public interface GameSessionRepository extends JpaRepository<GameSession, Long> {
 }

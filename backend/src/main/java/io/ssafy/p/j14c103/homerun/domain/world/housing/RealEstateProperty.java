@@ -27,7 +27,7 @@ public class RealEstateProperty {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "property_id")
-    private Integer propertyId;
+    private Long propertyId;
 
     @Column(name = "provider_id", unique = true)
     private String providerId;

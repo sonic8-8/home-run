@@ -6,9 +6,9 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegion;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryQuizSample;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy.DistrictSeed;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy.DocumentSeed;
@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class WorldHousingSeedService {
 
-    private static final RealEstateDocumentType REGISTRY_DOCUMENT_TYPE = RealEstateDocumentType.REGISTRY;
     private static final Map<String, RegionMasterSeed> REGION_MASTER_SEEDS = Map.of(
         "SEOUL", new RegionMasterSeed("11", "서울특별시"),
         "GWANGJU", new RegionMasterSeed("24", "광주광역시")
@@ -156,26 +155,30 @@ public class WorldHousingSeedService {
     }
 
     private void seedDocument(final DocumentSeed documentSeed) {
-        final RealEstateProperty property = realEstatePropertyRepository
-            .findByProviderId(documentSeed.propertyProviderId())
+        realEstatePropertyRepository.findByProviderId(documentSeed.propertyProviderId())
             .orElseThrow(() -> new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID));
 
-        if (realEstateDocumentRepository.existsByPropertyIdAndDocumentTypeAndRegistrySection(
-            property.getPropertyId(),
-            REGISTRY_DOCUMENT_TYPE,
-            documentSeed.registrySection()
-        )) {
+        if (hasSameQuizSample(documentSeed)) {
             return;
         }
 
         realEstateDocumentRepository.save(
             RealEstateDocument.create(
-                property.getPropertyId(),
-                REGISTRY_DOCUMENT_TYPE,
                 documentSeed.registrySection(),
                 documentSeed.quizSamplePayload()
             )
         );
+    }
+
+    private boolean hasSameQuizSample(final DocumentSeed documentSeed) {
+        final String issueSummary = documentSeed.quizSamplePayload().getIssueSummary();
+
+        return realEstateDocumentRepository
+            .findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(documentSeed.registrySection())
+            .stream()
+            .map(RealEstateDocument::getQuizSamplePayload)
+            .map(RealEstateRegistryQuizSample::getIssueSummary)
+            .anyMatch(issueSummary::equals);
     }
 
     private RegionMasterSeed toRegionMasterSeed(final String regionSeedCode) {

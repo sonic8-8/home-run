@@ -24,7 +24,7 @@ public class TargetPropertyValidationService {
     public TargetPropertyValidationResponse validateTargetProperty(
         final String regionCode,
         final String districtCode,
-        final Integer propertyId
+        final Long propertyId
     ) {
         validateRegion(regionCode);
         validateDistrict(regionCode, districtCode);

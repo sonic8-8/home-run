@@ -41,14 +41,12 @@ public class WorldHousingSeedPolicy {
                 trapDefinition(
                     "TRAP-HN-001",
                     "HIGH_MORTGAGE",
-                    "REGISTRY",
                     "과도한 근저당이 설정된 매물",
                     penaltyDefinition("-5000000", 20)
                 ),
                 trapDefinition(
                     "TRAP-HN-002",
                     "OWNER_MISMATCH",
-                    "CONTRACT",
                     "계약서와 소유자 정보가 일치하지 않음",
                     penaltyDefinition("-10000000", 30)
                 )
@@ -68,7 +66,6 @@ public class WorldHousingSeedPolicy {
                 trapDefinition(
                     "TRAP-HN-003",
                     "LEASE_SCAM",
-                    "REGISTRY",
                     "보증금 회수 위험이 있는 매물",
                     penaltyDefinition("ALL_DEPOSIT_LOST", 40)
                 )
@@ -88,7 +85,6 @@ public class WorldHousingSeedPolicy {
                 trapDefinition(
                     "TRAP-SP-001",
                     "NOTICE_DEFECT",
-                    "CONTRACT",
                     "특약 누락으로 분쟁 위험이 있음",
                     penaltyDefinition("-3000000", 10)
                 )
@@ -108,7 +104,6 @@ public class WorldHousingSeedPolicy {
                 trapDefinition(
                     "TRAP-MP-001",
                     "ILLEGAL_EXTENSION",
-                    "REGISTRY",
                     "불법 증축 이력이 확인된 매물",
                     penaltyDefinition("-2000000", 8)
                 )
@@ -128,7 +123,6 @@ public class WorldHousingSeedPolicy {
                 trapDefinition(
                     "TRAP-GJN-001",
                     "UNPAID_TAX",
-                    "REGISTRY",
                     "체납 이력이 있는 매물",
                     penaltyDefinition("-1500000", 12)
                 )
@@ -148,7 +142,6 @@ public class WorldHousingSeedPolicy {
                 trapDefinition(
                     "TRAP-GWJ-001",
                     "MAINTENANCE_ARREARS",
-                    "CONTRACT",
                     "관리비 체납 이력이 있는 매물",
                     penaltyDefinition("-1000000", 6)
                 )
@@ -577,7 +570,6 @@ public class WorldHousingSeedPolicy {
         return ContractTrap.create(
             requiredText(trapDefinition, "trapId"),
             requiredText(trapDefinition, "type"),
-            requiredText(trapDefinition, "documentType"),
             requiredText(trapDefinition, "description"),
             toPenalty(requiredMap(trapDefinition, "penalty"))
         );
@@ -844,14 +836,12 @@ public class WorldHousingSeedPolicy {
     private static Map<String, Object> trapDefinition(
         final String trapId,
         final String type,
-        final String documentType,
         final String description,
         final Map<String, Object> penalty
     ) {
         return Map.of(
             "trapId", trapId,
             "type", type,
-            "documentType", documentType,
             "description", description,
             "penalty", penalty
         );

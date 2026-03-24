@@ -19,9 +19,9 @@ public class GameSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "game_session_id")
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
-    private GameSession(final Integer gameSessionId) {
+    private GameSession(final Long gameSessionId) {
         this.gameSessionId = gameSessionId;
     }
 

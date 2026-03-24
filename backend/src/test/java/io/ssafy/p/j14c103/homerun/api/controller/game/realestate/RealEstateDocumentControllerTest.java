@@ -33,7 +33,7 @@ class RealEstateDocumentControllerTest {
     @Test
     void getDocuments() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(1001, 7)).willReturn(sampleResponse());
+        given(realEstateDocumentService.getDocument(1001L, 7L)).willReturn(sampleResponse());
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/1001/real-estate/properties/7/documents"))
@@ -41,7 +41,6 @@ class RealEstateDocumentControllerTest {
             .andExpect(jsonPath("$.status").value(200))
             .andExpect(jsonPath("$.data.propertyId").value(7L))
             .andExpect(jsonPath("$.data.propertyName").value("서초아트자이"))
-            .andExpect(jsonPath("$.data.documentType").value("등기사항전부증명서"))
             .andExpect(jsonPath("$.data.gapguRows[0].purpose").value("소유권보존"))
             .andExpect(jsonPath("$.data.eulguRows[0].details").value("채권최고액 금195,000,000원 채무자 김도윤 근저당권자 주식회사 한울저축은행"))
             .andExpect(jsonPath("$.data.solution.verdict").value("위험"))
@@ -53,7 +52,7 @@ class RealEstateDocumentControllerTest {
     @Test
     void getDocumentsWithUnknownProperty() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(1001, 999))
+        given(realEstateDocumentService.getDocument(1001L, 999L))
             .willThrow(new HomerunException(ErrorCode.HOUSING_PROPERTY_NOT_FOUND));
 
         // when & then
@@ -67,7 +66,7 @@ class RealEstateDocumentControllerTest {
     @Test
     void getDocumentsWithUnknownSession() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(9999, 7))
+        given(realEstateDocumentService.getDocument(9999L, 7L))
             .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then
@@ -79,13 +78,12 @@ class RealEstateDocumentControllerTest {
 
     private RealEstateDocumentResponse sampleResponse() {
         return RealEstateDocumentResponse.of(
-            7,
+            7L,
             "서초아트자이",
             "서울특별시 서초구 반포대로 58",
             BigDecimal.valueOf(37.485551),
             BigDecimal.valueOf(127.011500),
             1_300_000_000L,
-            "등기사항전부증명서",
             List.of(
                 RealEstateDocumentResponse.RegistryRowResponse.of(
                     "1",
