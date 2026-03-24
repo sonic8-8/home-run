@@ -78,16 +78,20 @@
 ### 빌드/테스트
 - 테스트 실행은 `./gradlew test`를 우선 사용한다.
 - 프론트엔드 패키지 매니저는 `npm` 사용을 우선한다.
-- 테스트는 JUnit 5, AssertJ를 사용하고, `@DisplayName` 한글 문장, `given / when / then`, Controller 슬라이스 테스트, Service 통합 테스트, `*TestSupport` 공통 설정, 저장소 테스트 후 상태 정리 규칙을 우선 따른다.
+- 테스트는 JUnit 5, AssertJ를 사용하고, `@DisplayName` 한글 문장과 `given / when / then` 구조를 우선 따른다.
 - 테스트는 계층 책임에 맞춰 분리한다.
-- Controller 테스트는 `@WebMvcTest` 기반 슬라이스 테스트를 우선 검토한다.
-- Service 테스트는 `@SpringBootTest` 기반 통합 테스트를 우선 검토한다.
+- Controller 테스트는 `@WebMvcTest` 기반 슬라이스 테스트를 기본으로 사용한다.
+- Service 테스트는 `@SpringBootTest` 기반 통합 테스트를 기본으로 사용한다.
+- Repository 테스트도 `@SpringBootTest` 기반 통합 테스트를 기본으로 사용한다.
+- Repository 테스트는 `@ActiveProfiles("test")`, `@Transactional` 조합을 기본으로 검토한다.
+- `@DataJpaTest`는 기본 선택지가 아니며, 매핑 조사나 제한적 실험이 필요할 때만 예외적으로 사용한다.
 - 외부 HTTP Client 테스트는 `@RestClientTest`와 `MockRestServiceServer` 기반 슬라이스 테스트를 우선 검토한다.
 - `@ConfigurationProperties` 테스트는 properties bean을 직접 생성하기보다 `properties`, `@TestPropertySource`, `application-test.yml`, `@DynamicPropertySource`로 property source를 주입하는 방식을 우선 검토한다.
 - Config 테스트는 기본적으로 `ApplicationContextRunner`로 bean 생성/조건부 등록/properties binding을 검증하는 방식을 우선 검토한다.
 - Security, MVC, Filter Chain처럼 실제 애플리케이션 동작 결과까지 검증해야 하는 설정은 `@SpringBootTest` 기반 통합 테스트를 우선 검토한다.
 - Parser, Mapper, Policy, Calculator처럼 순수 로직 중심 클래스는 Spring 컨텍스트 없이 unit test를 우선 검토한다.
-- `*TestSupport`는 중복되는 테스트 패턴이 반복될 때 추출을 검토한다.
+- `*TestSupport`는 fixture, setup, 공통 assertion이 반복될 때 추출을 검토한다.
+- 테스트 실행 시간 최적화는 Spring context cache 재사용, 공통 profile 유지, 불필요한 `@DirtiesContext` 제거를 우선 검토한다.
 
 ### 커밋 메시지
 - 백엔드 형식: `[BE] type(scope): 설명 (Jira 티켓번호)`
