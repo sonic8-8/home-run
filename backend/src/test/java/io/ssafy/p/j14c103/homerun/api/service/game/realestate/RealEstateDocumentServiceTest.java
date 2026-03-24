@@ -11,7 +11,6 @@ import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateMoneyRenderingRule;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
@@ -58,8 +57,8 @@ class RealEstateDocumentServiceTest {
         GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
         RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
-            createGapguDocument(property.getPropertyId(), "위험"),
-            createEulguDocument(property.getPropertyId(), "정상")
+            createGapguDocument("위험"),
+            createEulguDocument("정상")
         ));
         given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
@@ -71,18 +70,17 @@ class RealEstateDocumentServiceTest {
         );
 
         // then
-        assertThat(response.propertyName()).isEqualTo("서초아트자이");
-        assertThat(response.salePrice()).isEqualTo(1_300_000_000L);
-        assertThat(response.documentType()).isEqualTo("등기사항전부증명서");
-        assertThat(response.gapguRows()).hasSize(1);
-        assertThat(response.gapguRows().get(0).details())
+        assertThat(response.getPropertyName()).isEqualTo("서초아트자이");
+        assertThat(response.getSalePrice()).isEqualTo(1_300_000_000L);
+        assertThat(response.getGapguRows()).hasSize(1);
+        assertThat(response.getGapguRows().get(0).getDetails())
             .isEqualTo("청구금액 금156,000,000원 가압류권자 주식회사 한빛자산관리 서울중앙지방법원의 가압류결정");
-        assertThat(response.eulguRows()).hasSize(1);
-        assertThat(response.eulguRows().get(0).details())
+        assertThat(response.getEulguRows()).hasSize(1);
+        assertThat(response.getEulguRows().get(0).getDetails())
             .isEqualTo("채권최고액 금195,000,000원 채무자 김도윤 근저당권자 주식회사 한울저축은행");
-        assertThat(response.solution().gapgu().verdict()).isEqualTo("위험");
-        assertThat(response.solution().eulgu().verdict()).isEqualTo("정상");
-        assertThat(response.solution().verdict()).isEqualTo("위험");
+        assertThat(response.getSolution().getGapgu().getVerdict()).isEqualTo("위험");
+        assertThat(response.getSolution().getEulgu().getVerdict()).isEqualTo("정상");
+        assertThat(response.getSolution().getVerdict()).isEqualTo("위험");
     }
 
     @DisplayName("갑구와 을구가 모두 정상 샘플이면 전체 verdict도 정상이다")
@@ -92,8 +90,8 @@ class RealEstateDocumentServiceTest {
         GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
         RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
-            createGapguDocument(property.getPropertyId(), "정상"),
-            createEmptyEulguDocument(property.getPropertyId(), "정상")
+            createGapguDocument("정상"),
+            createEmptyEulguDocument("정상")
         ));
         given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
@@ -105,10 +103,10 @@ class RealEstateDocumentServiceTest {
         );
 
         // then
-        assertThat(response.solution().gapgu().verdict()).isEqualTo("정상");
-        assertThat(response.solution().eulgu().verdict()).isEqualTo("정상");
-        assertThat(response.solution().verdict()).isEqualTo("정상");
-        assertThat(response.eulguRows()).isEmpty();
+        assertThat(response.getSolution().getGapgu().getVerdict()).isEqualTo("정상");
+        assertThat(response.getSolution().getEulgu().getVerdict()).isEqualTo("정상");
+        assertThat(response.getSolution().getVerdict()).isEqualTo("정상");
+        assertThat(response.getEulguRows()).isEmpty();
     }
 
     @DisplayName("등기부 샘플 풀이 비어 있으면 샘플 데이터 구성 에러를 던진다")
@@ -117,7 +115,7 @@ class RealEstateDocumentServiceTest {
         // given
         GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
         RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
-        realEstateDocumentRepository.saveAndFlush(createGapguDocument(property.getPropertyId(), "정상"));
+        realEstateDocumentRepository.saveAndFlush(createGapguDocument("정상"));
 
         // when & then
         assertThatThrownBy(() -> realEstateDocumentService.getDocument(
@@ -136,7 +134,7 @@ class RealEstateDocumentServiceTest {
         RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
 
         // when & then
-        assertThatThrownBy(() -> realEstateDocumentService.getDocument(9999, property.getPropertyId()))
+        assertThatThrownBy(() -> realEstateDocumentService.getDocument(9999L, property.getPropertyId()))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_SESSION_NOT_FOUND);
@@ -149,7 +147,7 @@ class RealEstateDocumentServiceTest {
         GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
 
         // when & then
-        assertThatThrownBy(() -> realEstateDocumentService.getDocument(gameSession.getGameSessionId(), 9999))
+        assertThatThrownBy(() -> realEstateDocumentService.getDocument(gameSession.getGameSessionId(), 9999L))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.HOUSING_PROPERTY_NOT_FOUND);
@@ -170,13 +168,8 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createGapguDocument(
-        final Integer propertyId,
-        final String verdict
-    ) {
+    private RealEstateDocument createGapguDocument(final String verdict) {
         return RealEstateDocument.create(
-            propertyId,
-            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.GAPGU,
             RealEstateRegistryQuizSample.create(
                 verdict,
@@ -201,13 +194,8 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createEulguDocument(
-        final Integer propertyId,
-        final String verdict
-    ) {
+    private RealEstateDocument createEulguDocument(final String verdict) {
         return RealEstateDocument.create(
-            propertyId,
-            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
             RealEstateRegistryQuizSample.create(
                 verdict,
@@ -232,13 +220,8 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createEmptyEulguDocument(
-        final Integer propertyId,
-        final String verdict
-    ) {
+    private RealEstateDocument createEmptyEulguDocument(final String verdict) {
         return RealEstateDocument.create(
-            propertyId,
-            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
             RealEstateRegistryQuizSample.create(
                 verdict,

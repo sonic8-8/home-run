@@ -2,8 +2,6 @@ package io.ssafy.p.j14c103.homerun.domain.world.housing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -15,21 +13,13 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 class RealEstateDocumentRepositoryTest {
 
     @Autowired
-    private RealEstatePropertyRepository realEstatePropertyRepository;
-
-    @Autowired
     private RealEstateDocumentRepository realEstateDocumentRepository;
 
     @DisplayName("RealEstateDocument를 저장하면 registry section과 quiz sample payload를 다시 조회할 수 있다")
     @Test
     void saveRealEstateDocument() {
         // given
-        RealEstateProperty property = createProperty("PROP-SEOUL-101", "GANGNAM");
-        RealEstateProperty savedProperty = realEstatePropertyRepository.saveAndFlush(property);
-
         RealEstateDocument document = RealEstateDocument.create(
-            savedProperty.getPropertyId(),
-            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.GAPGU,
             createGapguSample("위험")
         );
@@ -40,8 +30,6 @@ class RealEstateDocumentRepositoryTest {
             .orElseThrow();
 
         // then
-        assertThat(found.getPropertyId()).isEqualTo(savedProperty.getPropertyId());
-        assertThat(found.getDocumentType()).isEqualTo(RealEstateDocumentType.REGISTRY);
         assertThat(found.getRegistrySection()).isEqualTo(RealEstateRegistrySection.GAPGU);
         assertThat(found.getQuizSamplePayload().getQuizVerdict()).isEqualTo("위험");
         assertThat(found.getQuizSamplePayload().getRows()).hasSize(1);
@@ -51,22 +39,15 @@ class RealEstateDocumentRepositoryTest {
             .containsKey("claim_amount");
     }
 
-    @DisplayName("propertyId와 section으로 해당 매물의 등기부 샘플을 정렬 조회할 수 있다")
+    @DisplayName("registry section으로 공용 등기부 샘플을 정렬 조회할 수 있다")
     @Test
-    void findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc() {
+    void findAllByRegistrySectionOrderByRealEstateDocumentIdAsc() {
         // given
-        RealEstateProperty property = createProperty("PROP-SEOUL-102", "MAPO");
-        RealEstateProperty savedProperty = realEstatePropertyRepository.saveAndFlush(property);
-
         RealEstateDocument gapgu = RealEstateDocument.create(
-            savedProperty.getPropertyId(),
-            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.GAPGU,
             createGapguSample("정상")
         );
         RealEstateDocument eulgu = RealEstateDocument.create(
-            savedProperty.getPropertyId(),
-            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
             createEulguSample("위험")
         );
@@ -75,34 +56,12 @@ class RealEstateDocumentRepositoryTest {
 
         // when
         List<RealEstateDocument> result = realEstateDocumentRepository
-            .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
-                savedProperty.getPropertyId(),
-                RealEstateDocumentType.REGISTRY,
-                RealEstateRegistrySection.GAPGU
-            );
+            .findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(RealEstateRegistrySection.GAPGU);
 
         // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getRegistrySection()).isEqualTo(RealEstateRegistrySection.GAPGU);
         assertThat(result.get(0).getQuizSamplePayload().getQuizVerdict()).isEqualTo("정상");
-    }
-
-    private RealEstateProperty createProperty(
-        final String providerId,
-        final String districtCode
-    ) {
-        return RealEstateProperty.create(
-            providerId,
-            "문서 테스트용 매물",
-            "서울시 어딘가",
-            "SEOUL",
-            districtCode,
-            Money.of(320_000_000L),
-            BigDecimal.valueOf(37.5665),
-            BigDecimal.valueOf(126.9780),
-            HousingType.JEONSE_APT,
-            List.of()
-        );
     }
 
     private RealEstateRegistryQuizSample createGapguSample(final String verdict) {

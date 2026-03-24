@@ -124,14 +124,12 @@ class RealEstatePropertyRepositoryTest {
                 ContractTrap.create(
                     "TRAP-01",
                     "HIGH_MORTGAGE",
-                    "REGISTRY",
                     "과도한 근저당 설정 발견",
                     ContractTrapPenalty.create("-5000000", 20)
                 ),
                 ContractTrap.create(
                     "TRAP-02",
                     "FAKE_OWNER",
-                    "CONTRACT",
                     "집주인 신분증 도용 의심",
                     ContractTrapPenalty.create("ALL_DEPOSIT_LOST", 50)
                 )
@@ -151,9 +149,6 @@ class RealEstatePropertyRepositoryTest {
         assertThat(found.getContractTraps())
             .extracting(ContractTrap::getType)
             .containsExactly("HIGH_MORTGAGE", "FAKE_OWNER");
-        assertThat(found.getContractTraps())
-            .extracting(ContractTrap::getDocumentType)
-            .containsExactly("REGISTRY", "CONTRACT");
         assertThat(found.getContractTraps().get(0).getPenalty().getCash())
             .isEqualTo("-5000000");
         assertThat(found.getContractTraps().get(1).getPenalty().getCash())
