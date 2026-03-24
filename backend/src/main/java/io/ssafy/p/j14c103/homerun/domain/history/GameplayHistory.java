@@ -2,6 +2,8 @@ package io.ssafy.p.j14c103.homerun.domain.history;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
@@ -21,6 +23,7 @@ import lombok.NoArgsConstructor;
 public class GameplayHistory {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "게임플레이이력번호", nullable = false)
     private Integer historyId;
 
