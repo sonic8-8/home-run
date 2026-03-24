@@ -19,7 +19,7 @@ public class RealEstateDocumentController {
     @GetMapping("/{propertyId}/documents")
     public ApiResponse<RealEstateDocumentResponse> getDocuments(
         @PathVariable final Integer sessionId,
-        @PathVariable final Long propertyId
+        @PathVariable final Integer propertyId
     ) {
         final RealEstateDocumentResponse response = realEstateDocumentService.getDocument(sessionId, propertyId);
         return ApiResponse.ok(response);

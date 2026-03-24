@@ -27,8 +27,8 @@ class GameHousingRepositoryTest {
             Money.of(10_000_000L),
             Money.of(500_000L),
             Money.of(80_000L),
-            201L,
-            101L
+            201,
+            101
         );
 
         // when
@@ -42,8 +42,8 @@ class GameHousingRepositoryTest {
         assertThat(saved.getCurrentDeposit()).isEqualTo(Money.of(10_000_000L));
         assertThat(saved.getMonthlyRent()).isEqualTo(Money.of(500_000L));
         assertThat(saved.getMaintenanceFee()).isEqualTo(Money.of(80_000L));
-        assertThat(saved.getCurrentPropertyId()).isEqualTo(201L);
-        assertThat(saved.getTargetPropertyId()).isEqualTo(101L);
+        assertThat(saved.getCurrentPropertyId()).isEqualTo(201);
+        assertThat(saved.getTargetPropertyId()).isEqualTo(101);
     }
 
     @DisplayName("같은 gameSessionId로 다시 저장하면 현재 목표매물(주거) 관련 정보들이 갱신된다.")
@@ -58,8 +58,8 @@ class GameHousingRepositoryTest {
             Money.of(10_000_000L),
             Money.of(500_000L),
             Money.of(80_000L),
-            201L,
-            101L
+            201,
+            101
         );
 
         GameHousing updated = GameHousing.create(
@@ -70,8 +70,8 @@ class GameHousingRepositoryTest {
             Money.of(20_000_000L),
             Money.of(0L),
             Money.of(120_000L),
-            202L,
-            102L
+            202,
+            102
         );
 
         gameHousingRepository.saveAndFlush(first);
@@ -85,7 +85,7 @@ class GameHousingRepositoryTest {
         assertThat(gameHousingRepository.findByGameSessionId(1).orElseThrow().getTargetRegionCode())
             .isEqualTo("GWANGJU");
         assertThat(gameHousingRepository.findByGameSessionId(1).orElseThrow().getCurrentPropertyId())
-            .isEqualTo(202L);
+            .isEqualTo(202);
     }
 
     @DisplayName("gameSessionId로 현재 GameHousing을 조회할 수 있다.")
@@ -100,8 +100,8 @@ class GameHousingRepositoryTest {
             Money.of(10_000_000L),
             Money.of(500_000L),
             Money.of(80_000L),
-            201L,
-            101L
+            201,
+            101
         );
 
         gameHousingRepository.save(gameHousing);
@@ -112,7 +112,7 @@ class GameHousingRepositoryTest {
         // then
         assertThat(result).isPresent();
         assertThat(result.orElseThrow().getGameSessionId()).isEqualTo(1);
-        assertThat(result.orElseThrow().getTargetPropertyId()).isEqualTo(101L);
+        assertThat(result.orElseThrow().getTargetPropertyId()).isEqualTo(101);
         assertThat(result.orElseThrow().getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
     }
 }

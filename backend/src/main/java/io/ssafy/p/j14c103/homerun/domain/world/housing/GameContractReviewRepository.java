@@ -7,6 +7,6 @@ public interface GameContractReviewRepository extends JpaRepository<GameContract
 
     Optional<GameContractReview> findTopByGameSessionIdAndPropertyIdOrderByReviewedAtDesc(
         Integer gameSessionId,
-        Long propertyId
+        Integer propertyId
     );
 }

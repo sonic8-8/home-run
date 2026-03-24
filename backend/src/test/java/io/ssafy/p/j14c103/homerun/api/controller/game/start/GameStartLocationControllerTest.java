@@ -82,14 +82,14 @@ class GameStartLocationControllerTest {
         // given
         final TargetPropertyListResponse response = TargetPropertyListResponse.from(List.of(
             TargetPropertyListResponse.TargetPropertyResponse.of(
-                1L,
+                1,
                 "헬리오시티",
                 1_550_000_000L,
                 BigDecimal.valueOf(37.4979512),
                 BigDecimal.valueOf(127.1127134)
             ),
             TargetPropertyListResponse.TargetPropertyResponse.of(
-                2L,
+                2,
                 "잠실엘스",
                 2_300_000_000L,
                 BigDecimal.valueOf(37.5133012),

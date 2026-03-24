@@ -178,14 +178,14 @@ public class GameWorldResult {
     public static class HousingSnapshot {
 
         private final HousingType currentHousingType;
-        private final Long currentPropertyId;
-        private final Long targetPropertyId;
+        private final Integer currentPropertyId;
+        private final Integer targetPropertyId;
         private final boolean hasHousingLossSignal;
 
         private HousingSnapshot(
             HousingType currentHousingType,
-            Long currentPropertyId,
-            Long targetPropertyId,
+            Integer currentPropertyId,
+            Integer targetPropertyId,
             boolean hasHousingLossSignal
         ) {
             this.currentHousingType = currentHousingType;
@@ -196,8 +196,8 @@ public class GameWorldResult {
 
         public static HousingSnapshot of(
             HousingType currentHousingType,
-            Long currentPropertyId,
-            Long targetPropertyId,
+            Integer currentPropertyId,
+            Integer targetPropertyId,
             boolean hasHousingLossSignal
         ) {
             return new HousingSnapshot(

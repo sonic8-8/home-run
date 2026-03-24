@@ -27,7 +27,7 @@ class GameContractReviewRepositoryTest {
         // given
         GameContractReview review = GameContractReview.create(
                 1,
-                101L,
+                101,
                 ContractReviewStatus.PASSED,
                 List.of("TRAP-01", "TRAP-02"),
                 List.of("TRAP-01", "TRAP-02"),
@@ -46,7 +46,7 @@ class GameContractReviewRepositoryTest {
 
         // then
         assertThat(found.getGameSessionId()).isEqualTo(1);
-        assertThat(found.getPropertyId()).isEqualTo(101L);
+        assertThat(found.getPropertyId()).isEqualTo(101);
         assertThat(found.getReviewStatus()).isEqualTo(ContractReviewStatus.PASSED);
         assertThat(found.getCheckedTraps()).containsExactly("TRAP-01", "TRAP-02");
         assertThat(found.getDetectedTraps()).containsExactly("TRAP-01", "TRAP-02");
@@ -61,7 +61,7 @@ class GameContractReviewRepositoryTest {
         // given
         GameContractReview older = GameContractReview.create(
                 1,
-                101L,
+                101,
                 ContractReviewStatus.FAILED,
                 List.of("TRAP-01"),
                 List.of("TRAP-01", "TRAP-02"),
@@ -71,7 +71,7 @@ class GameContractReviewRepositoryTest {
 
         GameContractReview latest = GameContractReview.create(
                 1,
-                101L,
+                101,
                 ContractReviewStatus.PASSED,
                 List.of("TRAP-01", "TRAP-02"),
                 List.of("TRAP-01", "TRAP-02"),
@@ -87,7 +87,7 @@ class GameContractReviewRepositoryTest {
         Optional<GameContractReview> result =
                 gameContractReviewRepository.findTopByGameSessionIdAndPropertyIdOrderByReviewedAtDesc(
                         1,
-                        101L
+                        101
                 );
 
         // then
