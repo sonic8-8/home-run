@@ -119,6 +119,15 @@ public class GameCareer {
         return true;
     }
 
+    public void applySalaryNegotiation(
+        final SalaryNegotiationPolicy.NegotiationResult negotiationResult
+    ) {
+        validateNegotiationResult(negotiationResult);
+
+        this.salary = negotiationResult.newSalary();
+        this.lastNegotiatedTurn = negotiationResult.lastNegotiatedTurn();
+    }
+
     public void startProbation(final int probationEndTurn) {
         validateCurrentTurn(probationEndTurn);
         this.employmentStatus = EmploymentStatus.PROBATION;
@@ -135,6 +144,14 @@ public class GameCareer {
 
     private void validateOffer(final JobTransferPolicy.JobOffer offer) {
         if (offer == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private void validateNegotiationResult(
+        final SalaryNegotiationPolicy.NegotiationResult negotiationResult
+    ) {
+        if (negotiationResult == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
     }
