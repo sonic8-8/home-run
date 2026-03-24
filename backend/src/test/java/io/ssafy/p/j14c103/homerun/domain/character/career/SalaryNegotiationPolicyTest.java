@@ -65,6 +65,26 @@ class SalaryNegotiationPolicyTest {
         assertThat(lowHealthResult.raiseRate()).isEqualTo(8);
     }
 
+    @DisplayName("협상 준비도 점수 구간이 높아질수록 추가 인상률이 커진다.")
+    @Test
+    void negotiateByPreparationScoreRange() {
+        // given
+        final GameStat gameStat = createGameStat(70, 30);
+
+        // when
+        final SalaryNegotiationPolicy.NegotiationResult lowPreparationResult =
+            salaryNegotiationPolicy.negotiate(createGameCareer(JobType.SMALL_BIZ, 30_000_000, 0, 5), gameStat, 12);
+        final SalaryNegotiationPolicy.NegotiationResult midPreparationResult =
+            salaryNegotiationPolicy.negotiate(createGameCareer(JobType.SMALL_BIZ, 30_000_000, 0, 6), gameStat, 12);
+        final SalaryNegotiationPolicy.NegotiationResult highPreparationResult =
+            salaryNegotiationPolicy.negotiate(createGameCareer(JobType.SMALL_BIZ, 30_000_000, 0, 11), gameStat, 12);
+
+        // then
+        assertThat(lowPreparationResult.raiseRate()).isEqualTo(5);
+        assertThat(midPreparationResult.raiseRate()).isEqualTo(7);
+        assertThat(highPreparationResult.raiseRate()).isEqualTo(10);
+    }
+
     @DisplayName("연봉 협상 결과는 새 연봉과 마지막 협상 턴을 반환한다.")
     @Test
     void negotiate() {
@@ -89,6 +109,15 @@ class SalaryNegotiationPolicyTest {
         final int salary,
         final int lastNegotiatedTurn
     ) {
+        return createGameCareer(jobType, salary, lastNegotiatedTurn, 0);
+    }
+
+    private GameCareer createGameCareer(
+        final JobType jobType,
+        final int salary,
+        final int lastNegotiatedTurn,
+        final int negotiationPreparationScore
+    ) {
         return GameCareer.builder()
             .gameId(1001)
             .jobType(jobType)
@@ -97,7 +126,7 @@ class SalaryNegotiationPolicyTest {
             .tenureTurns(24)
             .recentStudyCount(0)
             .recentNetworkingCount(0)
-            .negotiationPreparationScore(0)
+            .negotiationPreparationScore(negotiationPreparationScore)
             .lastNegotiatedTurn(lastNegotiatedTurn)
             .employmentStatus(EmploymentStatus.EMPLOYED)
             .probationEndTurn(null)
