@@ -48,14 +48,14 @@ class SalaryNegotiationServiceTest {
         );
 
         // then
-        assertThat(response.success()).isTrue();
-        assertThat(response.previousSalary()).isEqualTo(30_000_000);
-        assertThat(response.newSalary()).isEqualTo(33_000_000);
-        assertThat(response.raiseRate()).isEqualTo(10);
-        assertThat(response.lastNegotiatedTurn()).isEqualTo(13);
-        assertThat(response.message()).isEqualTo("연봉 협상에 성공했습니다!");
-        assertThat(request.gameCareer().getSalary()).isEqualTo(33_000_000);
-        assertThat(request.gameCareer().getLastNegotiatedTurn()).isEqualTo(13);
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getPreviousSalary()).isEqualTo(30_000_000);
+        assertThat(response.getNewSalary()).isEqualTo(33_000_000);
+        assertThat(response.getRaiseRate()).isEqualTo(10);
+        assertThat(response.getLastNegotiatedTurn()).isEqualTo(13);
+        assertThat(response.getMessage()).isEqualTo("연봉 협상에 성공했습니다!");
+        assertThat(request.getGameCareer().getSalary()).isEqualTo(33_000_000);
+        assertThat(request.getGameCareer().getLastNegotiatedTurn()).isEqualTo(13);
 
         final List<GameplayHistory> histories =
             gameplayHistoryRepository.findAllByGameIdOrderByOccurredTurnAscHistoryIdAsc(1001);

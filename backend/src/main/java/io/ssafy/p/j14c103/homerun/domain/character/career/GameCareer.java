@@ -128,6 +128,16 @@ public class GameCareer {
         this.lastNegotiatedTurn = negotiationResult.lastNegotiatedTurn();
     }
 
+    public void applyNegotiationPreparation(
+        final NegotiationPreparationPolicy.PreparationResult preparationResult
+    ) {
+        validatePreparationResult(preparationResult);
+
+        this.recentStudyCount = preparationResult.recentStudyCount();
+        this.recentNetworkingCount = preparationResult.recentNetworkingCount();
+        this.negotiationPreparationScore = preparationResult.negotiationPreparationScore();
+    }
+
     public void advanceTurn(
         final JobTitlePolicy jobTitlePolicy,
         final int currentTurn
@@ -179,6 +189,14 @@ public class GameCareer {
         final SalaryNegotiationPolicy.NegotiationResult negotiationResult
     ) {
         if (negotiationResult == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private void validatePreparationResult(
+        final NegotiationPreparationPolicy.PreparationResult preparationResult
+    ) {
+        if (preparationResult == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
     }

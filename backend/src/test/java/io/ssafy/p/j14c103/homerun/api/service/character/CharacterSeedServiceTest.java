@@ -37,21 +37,21 @@ class CharacterSeedServiceTest {
         final CharacterSeedResponse response = characterSeedService.generate(request);
 
         // then
-        assertThat(response.characterType()).isEqualTo(CharacterType.MALE);
-        assertThat(response.session().jobTypeSummary()).isEqualTo(JobType.LARGE_BIZ);
-        assertThat(response.session().seedType()).isEqualTo("MY_DATA");
-        assertThat(response.session().initialCash()).isEqualTo(13_000_000);
-        assertThat(response.session().initialNetAssets()).isEqualTo(13_000_000);
-        assertThat(response.stat().health()).isEqualTo(75);
-        assertThat(response.stat().fatigue()).isEqualTo(5);
-        assertThat(response.stat().stress()).isEqualTo(5);
-        assertThat(response.stat().knowledge()).isEqualTo(50);
-        assertThat(response.stat().happiness()).isEqualTo(50);
-        assertThat(response.career().jobTitle()).isEqualTo("수습/인턴");
-        assertThat(response.career().annualSalary()).isEqualTo(42_000_000);
-        assertThat(response.career().monthlySalary()).isEqualTo(3_500_000);
-        assertThat(response.career().employmentStatus()).isEqualTo(EmploymentStatus.PROBATION);
-        assertThat(response.career().probationEndTurn()).isEqualTo(6);
+        assertThat(response.getCharacterType()).isEqualTo(CharacterType.MALE);
+        assertThat(response.getSession().getJobTypeSummary()).isEqualTo(JobType.LARGE_BIZ);
+        assertThat(response.getSession().getSeedType()).isEqualTo("MY_DATA");
+        assertThat(response.getSession().getInitialCash()).isEqualTo(13_000_000);
+        assertThat(response.getSession().getInitialNetAssets()).isEqualTo(13_000_000);
+        assertThat(response.getStat().getHealth()).isEqualTo(75);
+        assertThat(response.getStat().getFatigue()).isEqualTo(5);
+        assertThat(response.getStat().getStress()).isEqualTo(5);
+        assertThat(response.getStat().getKnowledge()).isEqualTo(50);
+        assertThat(response.getStat().getHappiness()).isEqualTo(50);
+        assertThat(response.getCareer().getJobTitle()).isEqualTo("수습/인턴");
+        assertThat(response.getCareer().getAnnualSalary()).isEqualTo(42_000_000);
+        assertThat(response.getCareer().getMonthlySalary()).isEqualTo(3_500_000);
+        assertThat(response.getCareer().getEmploymentStatus()).isEqualTo(EmploymentStatus.PROBATION);
+        assertThat(response.getCareer().getProbationEndTurn()).isEqualTo(6);
     }
 
     @DisplayName("프리랜서는 신입 직함과 재직 상태로 초기화한다.")
@@ -68,18 +68,18 @@ class CharacterSeedServiceTest {
         final CharacterSeedResponse response = characterSeedService.generate(request);
 
         // then
-        assertThat(response.characterType()).isEqualTo(CharacterType.FEMALE);
-        assertThat(response.session().seedType()).isEqualTo("PROFILE");
-        assertThat(response.session().initialCash()).isEqualTo(10_000_000);
-        assertThat(response.stat().health()).isEqualTo(68);
-        assertThat(response.stat().fatigue()).isEqualTo(12);
-        assertThat(response.stat().stress()).isEqualTo(15);
-        assertThat(response.stat().knowledge()).isEqualTo(53);
-        assertThat(response.stat().happiness()).isEqualTo(55);
-        assertThat(response.career().jobType()).isEqualTo(JobType.FREELANCER);
-        assertThat(response.career().jobTitle()).isEqualTo("신입");
-        assertThat(response.career().employmentStatus()).isEqualTo(EmploymentStatus.EMPLOYED);
-        assertThat(response.career().probationEndTurn()).isNull();
+        assertThat(response.getCharacterType()).isEqualTo(CharacterType.FEMALE);
+        assertThat(response.getSession().getSeedType()).isEqualTo("PROFILE");
+        assertThat(response.getSession().getInitialCash()).isEqualTo(10_000_000);
+        assertThat(response.getStat().getHealth()).isEqualTo(68);
+        assertThat(response.getStat().getFatigue()).isEqualTo(12);
+        assertThat(response.getStat().getStress()).isEqualTo(15);
+        assertThat(response.getStat().getKnowledge()).isEqualTo(53);
+        assertThat(response.getStat().getHappiness()).isEqualTo(55);
+        assertThat(response.getCareer().getJobType()).isEqualTo(JobType.FREELANCER);
+        assertThat(response.getCareer().getJobTitle()).isEqualTo("신입");
+        assertThat(response.getCareer().getEmploymentStatus()).isEqualTo(EmploymentStatus.EMPLOYED);
+        assertThat(response.getCareer().getProbationEndTurn()).isNull();
     }
 
     @DisplayName("지원하지 않는 시작 데이터 유형이면 예외가 발생한다.")

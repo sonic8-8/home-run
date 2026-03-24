@@ -12,10 +12,15 @@ import io.ssafy.p.j14c103.homerun.domain.character.career.ForcedResignationPolic
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobTitlePolicy;
+import io.ssafy.p.j14c103.homerun.domain.character.career.NegotiationPreparationPolicy;
 import io.ssafy.p.j14c103.homerun.domain.character.career.UnemploymentBenefitPolicy;
+import io.ssafy.p.j14c103.homerun.domain.character.schedule.ActionType;
+import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlot;
+import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.TurnSlotPreviewPolicy;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +32,14 @@ public class CharacterTurnResultService {
 
     private final GameStatRepository gameStatRepository;
     private final GameCareerRepository gameCareerRepository;
+    private final GameTurnSlotRepository gameTurnSlotRepository;
     private final GameplayHistoryWriter gameplayHistoryWriter;
 
     private final TurnSlotPreviewPolicy turnSlotPreviewPolicy = new TurnSlotPreviewPolicy();
     private final StatAutoChangePolicy statAutoChangePolicy = new StatAutoChangePolicy();
     private final JobTitlePolicy jobTitlePolicy = new JobTitlePolicy();
+    private final NegotiationPreparationPolicy negotiationPreparationPolicy =
+        new NegotiationPreparationPolicy();
     private final ForcedResignationPolicy forcedResignationPolicy =
         new ForcedResignationPolicy();
     private final UnemploymentBenefitPolicy unemploymentBenefitPolicy =
@@ -49,6 +57,7 @@ public class CharacterTurnResultService {
 
         applyTurnActionResult(gameStat, request);
         applyAutoChange(gameStat, request);
+        applyNegotiationPreparation(gameCareer, gameStat, request);
         gameCareer.advanceTurn(jobTitlePolicy, request.getCurrentTurn());
 
         final HealthRisk healthRisk = gameStat.evaluateHealthRisk();
@@ -111,6 +120,39 @@ public class CharacterTurnResultService {
             autoChange.knowledgeDelta(),
             request.getCurrentTurn()
         );
+    }
+
+    private void applyNegotiationPreparation(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final CharacterTurnResultServiceRequest request
+    ) {
+        final NegotiationPreparationPolicy.PreparationResult preparationResult =
+            negotiationPreparationPolicy.calculate(
+                gameCareer,
+                gameStat,
+                request.getTurnActions()
+                    .stream()
+                    .map(CharacterTurnResultServiceRequest.TurnActionRequest::getActionType)
+                    .toList(),
+                loadExpiredTurnActions(gameCareer.getGameId(), request.getCurrentTurn())
+            );
+
+        gameCareer.applyNegotiationPreparation(preparationResult);
+    }
+
+    private List<ActionType> loadExpiredTurnActions(final Integer gameId, final int currentTurn) {
+        if (currentTurn <= 12) {
+            return List.of();
+        }
+
+        return gameTurnSlotRepository.findAllByGameIdAndTurnNumberOrderBySlotIndex(
+            gameId,
+            currentTurn - 12
+        )
+            .stream()
+            .map(GameTurnSlot::getActionType)
+            .toList();
     }
 
     private boolean applyForcedResignationIfNeeded(

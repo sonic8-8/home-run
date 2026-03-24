@@ -49,13 +49,13 @@ class JobTransferServiceTest {
         final JobTransferServiceResponse response = jobTransferService.transfer(request);
 
         // then
-        assertThat(response.previousJobType()).isEqualTo(JobType.SMALL_BIZ);
-        assertThat(response.newJobType()).isEqualTo(JobType.LARGE_BIZ);
-        assertThat(response.newJobTitle()).isEqualTo("수습/인턴");
-        assertThat(response.newSalary()).isEqualTo(45_000_000);
-        assertThat(response.probationEndTurn()).isEqualTo(17);
-        assertThat(response.tenureReset()).isTrue();
-        assertThat(response.message()).isEqualTo("OO 대기업으로 이직했습니다.");
+        assertThat(response.getPreviousJobType()).isEqualTo(JobType.SMALL_BIZ);
+        assertThat(response.getNewJobType()).isEqualTo(JobType.LARGE_BIZ);
+        assertThat(response.getNewJobTitle()).isEqualTo("수습/인턴");
+        assertThat(response.getNewSalary()).isEqualTo(45_000_000);
+        assertThat(response.getProbationEndTurn()).isEqualTo(17);
+        assertThat(response.isTenureReset()).isTrue();
+        assertThat(response.getMessage()).isEqualTo("OO 대기업으로 이직했습니다.");
         assertThat(gameCareer.getJobType()).isEqualTo(JobType.LARGE_BIZ);
         assertThat(gameCareer.getJobTitle()).isEqualTo("수습/인턴");
         assertThat(gameCareer.getSalary()).isEqualTo(45_000_000);
@@ -109,11 +109,11 @@ class JobTransferServiceTest {
         final JobTransferServiceResponse response = jobTransferService.transfer(request);
 
         // then
-        assertThat(response.previousJobType()).isEqualTo(JobType.SMALL_BIZ);
-        assertThat(response.newJobType()).isEqualTo(JobType.MID_BIZ);
-        assertThat(response.newSalary()).isEqualTo(36_000_000);
-        assertThat(response.probationEndTurn()).isEqualTo(14);
-        assertThat(response.message()).isEqualTo("OO 중견기업에 재취업했습니다.");
+        assertThat(response.getPreviousJobType()).isEqualTo(JobType.SMALL_BIZ);
+        assertThat(response.getNewJobType()).isEqualTo(JobType.MID_BIZ);
+        assertThat(response.getNewSalary()).isEqualTo(36_000_000);
+        assertThat(response.getProbationEndTurn()).isEqualTo(14);
+        assertThat(response.getMessage()).isEqualTo("OO 중견기업에 재취업했습니다.");
         assertThat(gameCareer.getEmploymentStatus()).isEqualTo(EmploymentStatus.PROBATION);
         assertThat(gameCareer.getRehireAvailableTurn()).isNull();
         assertThat(gameCareer.getRemainingUnemploymentBenefitTurns()).isZero();

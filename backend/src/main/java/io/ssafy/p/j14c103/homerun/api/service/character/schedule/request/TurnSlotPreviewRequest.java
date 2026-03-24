@@ -6,51 +6,87 @@ import io.ssafy.p.j14c103.homerun.domain.character.schedule.TurnSlotPreviewPolic
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import java.util.Objects;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public record TurnSlotPreviewRequest(
-    GameStat gameStat,
-    List<TurnSlotRequest> slots
-) {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class TurnSlotPreviewRequest {
 
-    public TurnSlotPreviewRequest {
-        if (gameStat == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-        }
-        if (slots == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-        }
-        if (slots.stream().anyMatch(java.util.Objects::isNull)) {
-            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-        }
-        slots = List.copyOf(slots);
+    private GameStat gameStat;
+    private List<TurnSlotRequest> slots;
+
+    @Builder(access = AccessLevel.PRIVATE)
+    private TurnSlotPreviewRequest(
+        final GameStat gameStat,
+        final List<TurnSlotRequest> slots
+    ) {
+        validateRequest(gameStat, slots);
+
+        this.gameStat = gameStat;
+        this.slots = List.copyOf(slots);
     }
 
     public static TurnSlotPreviewRequest of(
         final GameStat gameStat,
         final List<TurnSlotRequest> slots
     ) {
-        return new TurnSlotPreviewRequest(gameStat, slots);
+        return TurnSlotPreviewRequest.builder()
+            .gameStat(gameStat)
+            .slots(slots)
+            .build();
     }
 
     public List<RequestedSlot> toRequestedSlots() {
         return slots.stream()
-            .map(slot -> RequestedSlot.of(slot.slotIndex(), slot.actionType()))
+            .map(slot -> RequestedSlot.of(slot.getSlotIndex(), slot.getActionType()))
             .toList();
     }
 
-    public record TurnSlotRequest(
-        int slotIndex,
-        ActionType actionType
+    private void validateRequest(
+        final GameStat gameStat,
+        final List<TurnSlotRequest> slots
     ) {
+        if (gameStat == null || slots == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+        if (slots.stream().anyMatch(Objects::isNull)) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
 
-        public TurnSlotRequest {
-            if (actionType == null) {
-                throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-            }
+    @Getter
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class TurnSlotRequest {
+
+        private int slotIndex;
+        private ActionType actionType;
+
+        @Builder(access = AccessLevel.PRIVATE)
+        private TurnSlotRequest(
+            final int slotIndex,
+            final ActionType actionType
+        ) {
+            validateRequest(actionType);
+
+            this.slotIndex = slotIndex;
+            this.actionType = actionType;
         }
 
         public static TurnSlotRequest of(final int slotIndex, final ActionType actionType) {
-            return new TurnSlotRequest(slotIndex, actionType);
+            return TurnSlotRequest.builder()
+                .slotIndex(slotIndex)
+                .actionType(actionType)
+                .build();
+        }
+
+        private void validateRequest(final ActionType actionType) {
+            if (actionType == null) {
+                throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+            }
         }
     }
 }

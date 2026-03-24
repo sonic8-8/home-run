@@ -12,7 +12,10 @@ import io.ssafy.p.j14c103.homerun.domain.character.HealthRisk;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.character.schedule.ActionCategory;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.ActionType;
+import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlot;
+import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
@@ -40,6 +43,9 @@ class CharacterTurnResultServiceTest {
 
     @Autowired
     private GameplayHistoryRepository gameplayHistoryRepository;
+
+    @Autowired
+    private GameTurnSlotRepository gameTurnSlotRepository;
 
     @DisplayName("한 턴 결과를 반영하면 스탯, 커리어, 이력이 함께 갱신된다.")
     @Test
@@ -86,6 +92,9 @@ class CharacterTurnResultServiceTest {
         assertThat(savedStat.getKnowledge()).isEqualTo(56);
         assertThat(savedCareer.getEmploymentStatus()).isEqualTo(EmploymentStatus.EMPLOYED);
         assertThat(savedCareer.getTenureTurns()).isEqualTo(6);
+        assertThat(savedCareer.getRecentStudyCount()).isEqualTo(1);
+        assertThat(savedCareer.getRecentNetworkingCount()).isZero();
+        assertThat(savedCareer.getNegotiationPreparationScore()).isEqualTo(4);
 
         final List<GameplayHistory> histories =
             gameplayHistoryRepository.findAllByGameIdOrderByOccurredTurnAscHistoryIdAsc(2001);
@@ -187,11 +196,55 @@ class CharacterTurnResultServiceTest {
         assertThat(histories.get(0).getTableName()).isEqualTo("게임스탯");
     }
 
+    @DisplayName("13턴부터는 12턴 전 행동을 제외하고 협상 준비도 카운터를 갱신한다.")
+    @Test
+    void applyWithNegotiationPreparationWindow() {
+        // given
+        gameTurnSlotRepository.save(createTurnSlot(3001, 2004, 1, 0, ActionType.STUDY));
+        gameTurnSlotRepository.save(createTurnSlot(3002, 2004, 1, 1, ActionType.REST));
+        gameTurnSlotRepository.save(createTurnSlot(3003, 2004, 1, 2, ActionType.HOBBY));
+
+        final CharacterTurnResultServiceRequest request =
+            CharacterTurnResultServiceRequest.of(
+                createWorkingCareer(2004, 5, EmploymentStatus.EMPLOYED, null, 2, 1),
+                createStableStat(2004),
+                HousingType.VILLA,
+                13,
+                List.of(
+                    TurnActionRequest.of(0, ActionType.STUDY),
+                    TurnActionRequest.of(1, ActionType.NETWORKING),
+                    TurnActionRequest.of(2, ActionType.REST)
+                )
+            );
+
+        // when
+        final CharacterTurnResultServiceResponse response = characterTurnResultService.apply(
+            request
+        );
+
+        // then
+        final GameCareer savedCareer = gameCareerRepository.findById(2004).orElseThrow();
+        assertThat(savedCareer.getRecentStudyCount()).isEqualTo(2);
+        assertThat(savedCareer.getRecentNetworkingCount()).isEqualTo(2);
+        assertThat(savedCareer.getNegotiationPreparationScore()).isEqualTo(12);
+    }
+
     private GameCareer createWorkingCareer(
         final int gameId,
         final int tenureTurns,
         final EmploymentStatus employmentStatus,
         final Integer probationEndTurn
+    ) {
+        return createWorkingCareer(gameId, tenureTurns, employmentStatus, probationEndTurn, 0, 0);
+    }
+
+    private GameCareer createWorkingCareer(
+        final int gameId,
+        final int tenureTurns,
+        final EmploymentStatus employmentStatus,
+        final Integer probationEndTurn,
+        final int recentStudyCount,
+        final int recentNetworkingCount
     ) {
         return GameCareer.builder()
             .gameId(gameId)
@@ -199,8 +252,8 @@ class CharacterTurnResultServiceTest {
             .jobTitle("수습/인턴")
             .salary(36_000_000)
             .tenureTurns(tenureTurns)
-            .recentStudyCount(0)
-            .recentNetworkingCount(0)
+            .recentStudyCount(recentStudyCount)
+            .recentNetworkingCount(recentNetworkingCount)
             .negotiationPreparationScore(0)
             .lastNegotiatedTurn(0)
             .employmentStatus(employmentStatus)
@@ -269,6 +322,26 @@ class CharacterTurnResultServiceTest {
             .burnout(false)
             .burnoutStartedTurn(null)
             .hospitalizedUntilTurn(null)
+            .build();
+    }
+
+    private GameTurnSlot createTurnSlot(
+        final int turnSlotId,
+        final int gameId,
+        final int turnNumber,
+        final int slotIndex,
+        final ActionType actionType
+    ) {
+        return GameTurnSlot.builder()
+            .turnSlotId(turnSlotId)
+            .gameId(gameId)
+            .turnNumber(turnNumber)
+            .slotIndex(slotIndex)
+            .actionType(actionType)
+            .actionCategory(actionType == ActionType.HOBBY
+                ? ActionCategory.SHOPPING
+                : ActionCategory.ACTIVITY)
+            .forcedAction(false)
             .build();
     }
 }

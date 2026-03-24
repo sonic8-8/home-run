@@ -10,19 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class JobOfferQueryService {
 
-    private final JobTransferPolicy jobTransferPolicy;
-
-    public JobOfferQueryService() {
-        this(new JobTransferPolicy());
-    }
-
-    JobOfferQueryService(final JobTransferPolicy jobTransferPolicy) {
-        if (jobTransferPolicy == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
-        }
-
-        this.jobTransferPolicy = jobTransferPolicy;
-    }
+    private final JobTransferPolicy jobTransferPolicy = new JobTransferPolicy();
 
     public JobOfferQueryResponse getJobOffers(final JobOfferQueryRequest request) {
         if (request == null) {
@@ -30,10 +18,10 @@ public class JobOfferQueryService {
         }
 
         return JobOfferQueryResponse.from(jobTransferPolicy.calculateOfferPool(
-            request.gameCareer(),
-            request.gameStat(),
-            request.recentMeetFriendCount(),
-            request.currentTurn()
+            request.getGameCareer(),
+            request.getGameStat(),
+            request.getRecentMeetFriendCount(),
+            request.getCurrentTurn()
         ));
     }
 }

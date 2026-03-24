@@ -41,12 +41,12 @@ class ForcedResignationServiceTest {
         );
 
         // then
-        assertThat(response.forcedResigned()).isTrue();
-        assertThat(response.employmentStatus()).isEqualTo(EmploymentStatus.UNEMPLOYED);
-        assertThat(response.rehireAvailableTurn()).isEqualTo(12);
-        assertThat(response.remainingUnemploymentBenefitTurns()).isEqualTo(3);
-        assertThat(response.salaryBeforeResignation()).isEqualTo(36_000_000);
-        assertThat(response.message()).isEqualTo("건강 악화로 강제 퇴사했습니다.");
+        assertThat(response.isForcedResigned()).isTrue();
+        assertThat(response.getEmploymentStatus()).isEqualTo(EmploymentStatus.UNEMPLOYED);
+        assertThat(response.getRehireAvailableTurn()).isEqualTo(12);
+        assertThat(response.getRemainingUnemploymentBenefitTurns()).isEqualTo(3);
+        assertThat(response.getSalaryBeforeResignation()).isEqualTo(36_000_000);
+        assertThat(response.getMessage()).isEqualTo("건강 악화로 강제 퇴사했습니다.");
         assertThat(gameCareer.getProbationEndTurn()).isNull();
     }
 

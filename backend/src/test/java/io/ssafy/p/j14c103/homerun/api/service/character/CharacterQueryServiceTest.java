@@ -24,10 +24,10 @@ class CharacterQueryServiceTest {
         final CharacterOptionsResponse response = characterQueryService.getCharacterOptions();
 
         // then
-        assertThat(response.characters())
+        assertThat(response.getCharacters())
             .extracting(
-                CharacterOptionsResponse.CharacterOptionResponse::characterType,
-                CharacterOptionsResponse.CharacterOptionResponse::thumbnailUrl
+                CharacterOptionsResponse.CharacterOptionResponse::getCharacterType,
+                CharacterOptionsResponse.CharacterOptionResponse::getThumbnailUrl
             )
             .containsExactly(
                 tuple(io.ssafy.p.j14c103.homerun.domain.character.CharacterType.FEMALE, "/images/characters/female.png"),

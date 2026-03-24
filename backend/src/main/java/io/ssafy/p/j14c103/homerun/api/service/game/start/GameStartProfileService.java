@@ -35,9 +35,9 @@ public class GameStartProfileService {
 
     public ProfileOptionsResponse getProfileOptions() {
         final Map<JobType, JobTypeOptionsResponse.JobTypeOptionResponse> jobTypeOptions =
-            careerQueryService.getJobTypeOptions().jobTypes().stream()
+            careerQueryService.getJobTypeOptions().getJobTypes().stream()
                 .collect(java.util.stream.Collectors.toMap(
-                    JobTypeOptionsResponse.JobTypeOptionResponse::jobType,
+                    JobTypeOptionsResponse.JobTypeOptionResponse::getJobType,
                     identity()
                 ));
         final Map<JobType, CharacterSeedPolicy.JobTypeSeedProfile> seedProfiles =
@@ -75,11 +75,11 @@ public class GameStartProfileService {
             definition.getJobType(),
             seedProfile.initialAnnualSalary(),
             profileSeed.session().initialCash(),
-            jobTypeOption.stats().salary(),
-            jobTypeOption.stats().health(),
-            jobTypeOption.stats().stability(),
-            jobTypeOption.stats().growthSpeed(),
-            jobTypeOption.stats().difficulty()
+            jobTypeOption.getStats().getSalary(),
+            jobTypeOption.getStats().getHealth(),
+            jobTypeOption.getStats().getStability(),
+            jobTypeOption.getStats().getGrowthSpeed(),
+            jobTypeOption.getStats().getDifficulty()
         );
     }
 

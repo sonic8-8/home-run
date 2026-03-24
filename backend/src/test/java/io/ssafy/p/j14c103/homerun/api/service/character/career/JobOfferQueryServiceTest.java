@@ -37,16 +37,16 @@ class JobOfferQueryServiceTest {
         final JobOfferQueryResponse response = jobOfferQueryService.getJobOffers(request);
 
         // then
-        assertThat(response.offerChanceBonusRate()).isEqualTo(10);
-        assertThat(response.meetFriendBonusApplied()).isTrue();
-        assertThat(response.offers())
+        assertThat(response.getOfferChanceBonusRate()).isEqualTo(10);
+        assertThat(response.isMeetFriendBonusApplied()).isTrue();
+        assertThat(response.getOffers())
             .extracting(
-                JobOfferQueryResponse.JobOfferResponse::offerId,
-                JobOfferQueryResponse.JobOfferResponse::jobType,
-                JobOfferQueryResponse.JobOfferResponse::displayCompanyName,
-                JobOfferQueryResponse.JobOfferResponse::currentSalary,
-                JobOfferQueryResponse.JobOfferResponse::offeredSalary,
-                JobOfferQueryResponse.JobOfferResponse::probationTurns
+                JobOfferQueryResponse.JobOfferResponse::getOfferId,
+                JobOfferQueryResponse.JobOfferResponse::getJobType,
+                JobOfferQueryResponse.JobOfferResponse::getDisplayCompanyName,
+                JobOfferQueryResponse.JobOfferResponse::getCurrentSalary,
+                JobOfferQueryResponse.JobOfferResponse::getOfferedSalary,
+                JobOfferQueryResponse.JobOfferResponse::getProbationTurns
             )
             .containsExactly(
                 tuple("OFFER-001", JobType.SMALL_BIZ, "OO 중소기업", 30_000_000, 45_000_000, 1),
@@ -72,12 +72,12 @@ class JobOfferQueryServiceTest {
         final JobOfferQueryResponse response = jobOfferQueryService.getJobOffers(request);
 
         // then
-        assertThat(response.offers())
+        assertThat(response.getOffers())
             .extracting(
-                JobOfferQueryResponse.JobOfferResponse::offerId,
-                JobOfferQueryResponse.JobOfferResponse::jobType,
-                JobOfferQueryResponse.JobOfferResponse::currentSalary,
-                JobOfferQueryResponse.JobOfferResponse::offeredSalary
+                JobOfferQueryResponse.JobOfferResponse::getOfferId,
+                JobOfferQueryResponse.JobOfferResponse::getJobType,
+                JobOfferQueryResponse.JobOfferResponse::getCurrentSalary,
+                JobOfferQueryResponse.JobOfferResponse::getOfferedSalary
             )
             .containsExactly(
                 tuple("OFFER-001", JobType.SMALL_BIZ, 40_000_000, 36_000_000),

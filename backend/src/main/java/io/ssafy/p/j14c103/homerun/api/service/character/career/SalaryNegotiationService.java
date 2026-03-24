@@ -24,14 +24,14 @@ public class SalaryNegotiationService {
     public SalaryNegotiationResultResponse negotiate(final SalaryNegotiationRequest request) {
         validateRequest(request);
 
-        final GameCareer gameCareer = request.gameCareer();
+        final GameCareer gameCareer = request.getGameCareer();
         final GameplayHistoryWriter.CareerSnapshot previousCareer =
             GameplayHistoryWriter.CareerSnapshot.from(gameCareer);
         final SalaryNegotiationPolicy.NegotiationResult negotiationResult =
             salaryNegotiationPolicy.negotiate(
                 gameCareer,
-                request.gameStat(),
-                request.currentTurn()
+                request.getGameStat(),
+                request.getCurrentTurn()
             );
 
         gameCareer.applySalaryNegotiation(negotiationResult);

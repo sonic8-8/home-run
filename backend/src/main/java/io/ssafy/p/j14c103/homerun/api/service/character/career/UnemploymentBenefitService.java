@@ -13,19 +13,8 @@ public class UnemploymentBenefitService {
     private static final String BENEFIT_GRANTED_MESSAGE = "실업 급여를 지급했습니다.";
     private static final String BENEFIT_SKIPPED_MESSAGE = "실업 급여 지급 대상이 아닙니다.";
 
-    private final UnemploymentBenefitPolicy unemploymentBenefitPolicy;
-
-    public UnemploymentBenefitService() {
-        this(new UnemploymentBenefitPolicy());
-    }
-
-    UnemploymentBenefitService(final UnemploymentBenefitPolicy unemploymentBenefitPolicy) {
-        if (unemploymentBenefitPolicy == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
-        }
-
-        this.unemploymentBenefitPolicy = unemploymentBenefitPolicy;
-    }
+    private final UnemploymentBenefitPolicy unemploymentBenefitPolicy =
+        new UnemploymentBenefitPolicy();
 
     public UnemploymentBenefitServiceResponse consume(
         final UnemploymentBenefitServiceRequest request
@@ -35,21 +24,21 @@ public class UnemploymentBenefitService {
         }
 
         final UnemploymentBenefitPolicy.UnemploymentBenefitResult result =
-            unemploymentBenefitPolicy.calculate(request.gameCareer());
+            unemploymentBenefitPolicy.calculate(request.getGameCareer());
         if (!result.benefitGranted()) {
             return UnemploymentBenefitServiceResponse.of(
                 false,
                 0,
-                request.gameCareer().getRemainingUnemploymentBenefitTurns(),
+                request.getGameCareer().getRemainingUnemploymentBenefitTurns(),
                 BENEFIT_SKIPPED_MESSAGE
             );
         }
 
-        request.gameCareer().consumeUnemploymentBenefit();
+        request.getGameCareer().consumeUnemploymentBenefit();
         return UnemploymentBenefitServiceResponse.of(
             true,
             result.benefitAmount(),
-            request.gameCareer().getRemainingUnemploymentBenefitTurns(),
+            request.getGameCareer().getRemainingUnemploymentBenefitTurns(),
             BENEFIT_GRANTED_MESSAGE
         );
     }
