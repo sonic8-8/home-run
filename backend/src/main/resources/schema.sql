@@ -389,15 +389,11 @@ create table if not exists game_property_market_states (
     foreign key (property_id) references real_estate_properties (property_id)
 );
 
--- Contract and registry documents attached to a real-estate listing.
+-- Shared registry document samples used across real-estate listings.
 create table if not exists real_estate_documents (
   real_estate_document_id integer generated always as identity primary key,
-  property_id integer not null,
-  document_type varchar(20),
-  registry_section varchar(20),
-  quiz_sample_payload jsonb,
-  constraint fk_real_estate_documents__property
-    foreign key (property_id) references real_estate_properties (property_id)
+  registry_section varchar(20) not null,
+  quiz_sample_payload jsonb not null
 );
 
 -- Player review results for property contract inspection.
