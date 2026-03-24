@@ -3,25 +3,52 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.RegionsProviderResponse;
-import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryQuizSample;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryRow;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistrySection;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrictRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class WorldRegionProviderServiceTest {
 
-    @DisplayName("기본 정책을 읽어 목표 지역 목록 provider 응답을 반환한다")
+    @Autowired
+    private WorldRegionProviderService worldRegionProviderService;
+
+    @Autowired
+    private WorldHousingSeedService worldHousingSeedService;
+
+    @Autowired
+    private RealEstatePropertyRepository realEstatePropertyRepository;
+
+    @Autowired
+    private RealEstateDocumentRepository realEstateDocumentRepository;
+
+    @Autowired
+    private HousingDistrictRepository housingDistrictRepository;
+
+    @Autowired
+    private HousingRegionRepository housingRegionRepository;
+
+    @AfterEach
+    void tearDown() {
+        realEstateDocumentRepository.deleteAllInBatch();
+        realEstatePropertyRepository.deleteAllInBatch();
+        housingDistrictRepository.deleteAllInBatch();
+        housingRegionRepository.deleteAllInBatch();
+    }
+
+    @DisplayName("seed 적재 후 DB 원천 기준의 목표 지역 목록 provider 응답을 반환한다")
     @Test
     void getRegions() {
         // given
-        final WorldRegionProviderService worldRegionProviderService = new WorldRegionProviderService();
+        worldHousingSeedService.seed();
 
         // when
         final RegionsProviderResponse response = worldRegionProviderService.getRegions();
@@ -29,19 +56,15 @@ class WorldRegionProviderServiceTest {
         // then
         assertThat(response.getRegions())
             .extracting(RegionsProviderResponse.RegionItem::getRegionCode)
-            .containsExactly("SEOUL", "GWANGJU");
+            .containsExactly("11", "24");
         assertThat(response.getRegions())
             .extracting(RegionsProviderResponse.RegionItem::getName)
-            .containsExactly("서울", "광주");
+            .containsExactly("서울특별시", "광주광역시");
     }
 
     @DisplayName("원천 지역 데이터가 비어 있어도 빈 배열 계약을 반환한다")
     @Test
     void getRegionsWithEmptyPlan() {
-        // given
-        final WorldRegionProviderService worldRegionProviderService =
-            new WorldRegionProviderService(new EmptyWorldHousingSeedPolicy());
-
         // when
         final RegionsProviderResponse response = worldRegionProviderService.getRegions();
 
@@ -53,62 +76,14 @@ class WorldRegionProviderServiceTest {
     @Test
     void getRegionsContract() {
         // given
-        final WorldRegionProviderService worldRegionProviderService = new WorldRegionProviderService();
+        worldHousingSeedService.seed();
 
         // when
         final RegionsProviderResponse response = worldRegionProviderService.getRegions();
 
         // then
         assertThat(response.getRegions()).hasSize(2);
-        assertThat(response.getRegions().get(0).getRegionCode()).isEqualTo("SEOUL");
-        assertThat(response.getRegions().get(0).getName()).isEqualTo("서울");
-    }
-
-    private static class EmptyWorldHousingSeedPolicy extends WorldHousingSeedPolicy {
-
-        @Override
-        public WorldHousingSeedPlan calculate() {
-            return new WorldHousingSeedPlan(
-                List.of(),
-                List.of(),
-                List.of(
-                    new PropertySeed(
-                        "IGNORED",
-                        "무시되는 매물",
-                        "서울시 어딘가",
-                        "SEOUL",
-                        "GANGNAM",
-                        Money.of(1000L),
-                        BigDecimal.ONE,
-                        BigDecimal.ONE,
-                        HousingType.STUDIO,
-                        List.of()
-                    )
-                ),
-                List.of(
-                    new DocumentSeed(
-                        "IGNORED",
-                        RealEstateRegistrySection.GAPGU,
-                        RealEstateRegistryQuizSample.create(
-                            "정상",
-                            List.of(
-                                RealEstateRegistryRow.create(
-                                    "1",
-                                    "소유권보존",
-                                    "2025년 1월 1일",
-                                    "보존",
-                                    "무시되는 문서",
-                                    Map.of()
-                                )
-                            ),
-                            "무시",
-                            List.of("무시"),
-                            "무시",
-                            "무시"
-                        )
-                    )
-                )
-            );
-        }
+        assertThat(response.getRegions().get(0).getRegionCode()).isEqualTo("11");
+        assertThat(response.getRegions().get(0).getName()).isEqualTo("서울특별시");
     }
 }
