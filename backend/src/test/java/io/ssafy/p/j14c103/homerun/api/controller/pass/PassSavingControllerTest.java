@@ -60,11 +60,10 @@ class PassSavingControllerTest {
     // when & then
     mockMvc.perform(post("/api/pass/save")
                     .with(currentUser())
-                    .contentType(APPLICATION_JSON)
+                .contentType(APPLICATION_JSON)
                         .content("""
                                 {
-                                  "subscriptionId": 1,
-                                  "sourceAccountId": "110-123-000000"
+                                  "subscriptionId": 1
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -79,10 +78,9 @@ class PassSavingControllerTest {
     // when & then
     mockMvc.perform(post("/api/pass/save")
                     .with(currentUser())
-                    .contentType(APPLICATION_JSON)
+                .contentType(APPLICATION_JSON)
                         .content("""
                                 {
-                                  "sourceAccountId": "110-123-000000"
                                 }
                                 """))
                 .andExpect(status().isBadRequest())

@@ -7,7 +7,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-@EnableConfigurationProperties(SsafyApiProperties.class)
+@EnableConfigurationProperties({SsafyApiProperties.class, SsafyAccountProperties.class})
 public class SsafyRestClientConfig {
 
     @Bean

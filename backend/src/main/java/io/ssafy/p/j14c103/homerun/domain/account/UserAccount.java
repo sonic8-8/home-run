@@ -1,0 +1,111 @@
+package io.ssafy.p.j14c103.homerun.domain.account;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Entity
+@Table(
+        name = "user_accounts",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_user_accounts__user_id__account_type",
+                columnNames = {"user_id", "account_type"}
+        )
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class UserAccount {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_account_id")
+    private Long id;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_type", nullable = false, length = 20)
+    private AccountType accountType;
+
+    @Column(name = "bank_code", nullable = false, length = 3)
+    private String bankCode;
+
+    @Column(name = "bank_name", nullable = false, length = 100)
+    private String bankName;
+
+    @Column(name = "account_number", nullable = false, length = 50)
+    private String accountNumber;
+
+    @Column(name = "balance_snapshot_amount", nullable = false)
+    private Integer balanceSnapshot;
+
+    @Column(name = "opened_at", nullable = false)
+    private LocalDateTime openedAt;
+
+    @Column(name = "active_yn", nullable = false)
+    private Boolean activeYn;
+
+    private UserAccount(
+            final Long userId,
+            final AccountType accountType,
+            final String bankCode,
+            final String bankName,
+            final String accountNumber,
+            final Integer balanceSnapshot) {
+        this.userId = userId;
+        this.accountType = accountType;
+        this.bankCode = bankCode;
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.balanceSnapshot = balanceSnapshot;
+        this.openedAt = LocalDateTime.now();
+        this.activeYn = true;
+    }
+
+    public static UserAccount create(
+            final Long userId,
+            final AccountType accountType,
+            final String bankCode,
+            final String bankName,
+            final String accountNumber,
+            final Integer balanceSnapshot) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+        if (accountType == null) {
+            throw new IllegalArgumentException("계좌 유형은 필수입니다.");
+        }
+        if (bankCode == null || bankCode.isBlank()) {
+            throw new IllegalArgumentException("은행 코드는 필수입니다.");
+        }
+        if (bankName == null || bankName.isBlank()) {
+            throw new IllegalArgumentException("은행명은 필수입니다.");
+        }
+        if (accountNumber == null || accountNumber.isBlank()) {
+            throw new IllegalArgumentException("계좌번호는 필수입니다.");
+        }
+        if (balanceSnapshot == null || balanceSnapshot < 0) {
+            throw new IllegalArgumentException("잔액은 0 이상이어야 합니다.");
+        }
+
+        return new UserAccount(userId, accountType, bankCode, bankName, accountNumber, balanceSnapshot);
+    }
+
+    public void updateBalance(final int newBalance) {
+        if (newBalance < 0) {
+            throw new IllegalArgumentException("잔액은 0 이상이어야 합니다.");
+        }
+        this.balanceSnapshot = newBalance;
+    }
+}

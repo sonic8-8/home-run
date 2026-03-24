@@ -19,6 +19,11 @@ ssafy:
   api:
     base-url: https://finopenapi.ssafy.io/ssafy/api/v1/edu
     api-key: ${SSAFY_API_KEY:f337ce43034b4950bb0c385ddc99c895}
+  account:
+    bank-code: ${SSAFY_BANK_CODE:001}
+    bank-name: ${SSAFY_BANK_NAME:한국은행}
+    account-type-unique-no: ${SSAFY_ACCOUNT_TYPE_UNIQUE_NO:}
+    main-initial-balance: ${SSAFY_MAIN_INITIAL_BALANCE:10000000}
 
 fss:
   api:

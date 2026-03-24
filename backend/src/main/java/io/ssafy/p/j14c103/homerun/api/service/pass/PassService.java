@@ -3,6 +3,9 @@ package io.ssafy.p.j14c103.homerun.api.service.pass;
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSubscribeServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
@@ -29,6 +32,7 @@ public class PassService {
     private final PassProductRepository passProductRepository;
     private final PassSubscriptionRepository passSubscriptionRepository;
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
+    private final UserAccountRepository userAccountRepository;
 
     public List<PassProductResponse> getProducts() {
         return passProductRepository.findAll().stream()
@@ -46,8 +50,8 @@ public class PassService {
 
         return subscriptions.stream()
                 .map(sub -> {
-                    final int totalSaved = calculateTotalSaved(userId, sub.getPassProduct().getId());
-                    final List<Boolean> weeklyHistory = calculateWeeklyHistory(userId, sub.getPassProduct().getId());
+                    final int totalSaved = calculateTotalSaved(userId, sub);
+                    final List<Boolean> weeklyHistory = calculateWeeklyHistory(userId, sub);
                     return PassSubscriptionResponse.from(sub, totalSaved, weeklyHistory);
                 })
                 .toList();
@@ -60,9 +64,11 @@ public class PassService {
         }
         final PassProduct product = passProductRepository.findById(request.getPassId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 PASS 상품입니다."));
+        final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
+                .orElseThrow(() -> new IllegalArgumentException("주계좌가 없습니다."));
 
         final PassSubscription subscription = PassSubscription.create(
-                userId, product, product.getAmountPerSave(), request.getSourceAccountId());
+                userId, product, product.getAmountPerSave(), mainAccount.getAccountNumber());
 
         return PassSubscriptionResponse.fromSubscribe(passSubscriptionRepository.save(subscription));
     }
@@ -83,18 +89,18 @@ public class PassService {
         subscription.cancel();
     }
 
-    private int calculateTotalSaved(final Long userId, final Long passId) {
+    private int calculateTotalSaved(final Long userId, final PassSubscription subscription) {
         final List<SeedmoneyTransaction> transactions =
                 seedmoneyTransactionRepository.findByUserIdAndTransactionTypeAndCreatedAtAfter(
                         userId, "SAVE", LocalDateTime.MIN);
         return transactions.stream()
-                .filter(t -> passId.equals(t.getPassId()))
+                .filter(t -> isMatchingPassSave(subscription, t))
                 .mapToInt(SeedmoneyTransaction::getAmount)
                 .sum();
     }
 
     /** 이번 주 월~일 중 어느 날 저축했는지 boolean 배열 반환 */
-    private List<Boolean> calculateWeeklyHistory(final Long userId, final Long passId) {
+    private List<Boolean> calculateWeeklyHistory(final Long userId, final PassSubscription subscription) {
         final LocalDate monday = LocalDate.now().with(DayOfWeek.MONDAY);
         final LocalDateTime weekStart = monday.atStartOfDay();
 
@@ -103,7 +109,7 @@ public class PassService {
                         userId, "SAVE", weekStart);
 
         final Set<DayOfWeek> savedDays = transactions.stream()
-                .filter(t -> passId.equals(t.getPassId()))
+                .filter(t -> isMatchingPassSave(subscription, t))
                 .map(t -> t.getCreatedAt().getDayOfWeek())
                 .collect(Collectors.toSet());
 
@@ -112,5 +118,13 @@ public class PassService {
             weeklyHistory.add(savedDays.contains(DayOfWeek.of(i + 1)));
         }
         return weeklyHistory;
+    }
+
+    private boolean isMatchingPassSave(final PassSubscription subscription, final SeedmoneyTransaction transaction) {
+        if (subscription.getId() != null && subscription.getId().equals(transaction.getPassId())) {
+            return true;
+        }
+
+        return subscription.getPassProduct().getId().equals(transaction.getPassId());
     }
 }

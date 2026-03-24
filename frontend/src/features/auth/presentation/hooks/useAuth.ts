@@ -13,7 +13,6 @@ interface LoginResponseData {
   refreshToken: string;
   accessTokenExpiresIn: number;
 }
-
 export const useAuth = () => {
   const [view, setView] = useState<AuthView>('onboarding');
   const [isLoading, setIsLoading] = useState(false);

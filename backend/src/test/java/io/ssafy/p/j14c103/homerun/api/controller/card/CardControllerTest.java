@@ -10,8 +10,14 @@ import io.ssafy.p.j14c103.homerun.api.service.card.response.CardBenefitResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardListResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardRecommendationResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.CardTransactionDetailResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.CardTransactionListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.OwnedCardListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.OwnedCardResponse;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -75,6 +81,40 @@ class CardControllerTest {
                 .andExpect(jsonPath("$.data.recommendations[0].cardName").value("Bravo Card"));
     }
 
+    @DisplayName("내 카드 조회는 ApiResponse로 감싼 보유 카드 목록을 반환한다")
+    @Test
+    void getMyCards() throws Exception {
+        // given
+        given(cardService.getMyCards(1L)).willReturn(OwnedCardListResponse.of(List.of(
+                OwnedCardResponse.from(sampleOwnedCard())
+        )));
+
+        // when & then
+        mockMvc.perform(get("/api/cards/me").with(currentUser()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.cards[0].ownedCardId").value(10L))
+                .andExpect(jsonPath("$.data.cards[0].cardName").value("Alpha Card"))
+                .andExpect(jsonPath("$.data.cards[0].cardAlias").value("주카드"));
+    }
+
+    @DisplayName("내 카드 거래내역 조회는 ApiResponse로 감싼 거래 목록을 반환한다")
+    @Test
+    void getMyTransactions() throws Exception {
+        // given
+        given(cardService.getMyTransactions(1L)).willReturn(CardTransactionListResponse.of(List.of(
+                CardTransactionDetailResponse.from(sampleCardTransaction())
+        )));
+
+        // when & then
+        mockMvc.perform(get("/api/cards/me/transactions").with(currentUser()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.transactions[0].cardTransactionId").value(20L))
+                .andExpect(jsonPath("$.data.transactions[0].cardName").value("Alpha Card"))
+                .andExpect(jsonPath("$.data.transactions[0].merchantName").value("스타벅스"));
+    }
+
     private CardResponse sampleCard(final Long cardProductId, final String cardName) {
         return CardResponse.of(
                 cardProductId,
@@ -123,5 +163,45 @@ class CardControllerTest {
             request.setUserPrincipal(authentication);
             return request;
         };
+    }
+
+    private io.ssafy.p.j14c103.homerun.domain.card.OwnedCard sampleOwnedCard() {
+        final io.ssafy.p.j14c103.homerun.domain.card.CardProduct cardProduct = io.ssafy.p.j14c103.homerun.domain.card.CardProduct.create(
+                "Alpha Card", "KB국민카드", "생활형 카드", 300000, 40000, "[]", "card.png", true
+        );
+        setField(cardProduct, "id", 1L);
+
+        final io.ssafy.p.j14c103.homerun.domain.card.OwnedCard ownedCard =
+                io.ssafy.p.j14c103.homerun.domain.card.OwnedCard.create(
+                        1L, cardProduct, "주카드", "1234-****", LocalDateTime.of(2026, 2, 1, 0, 0)
+                );
+        setField(ownedCard, "id", 10L);
+        return ownedCard;
+    }
+
+    private io.ssafy.p.j14c103.homerun.domain.card.CardTransaction sampleCardTransaction() {
+        final io.ssafy.p.j14c103.homerun.domain.card.OwnedCard ownedCard = sampleOwnedCard();
+        final io.ssafy.p.j14c103.homerun.domain.card.CardTransaction transaction =
+                io.ssafy.p.j14c103.homerun.domain.card.CardTransaction.create(
+                        1L,
+                        ownedCard,
+                        "CG-9ca85f66311a23d",
+                        "생활",
+                        "스타벅스",
+                        5600,
+                        LocalDate.of(2026, 2, 7)
+                );
+        setField(transaction, "id", 20L);
+        return transaction;
+    }
+
+    private void setField(final Object target, final String fieldName, final Object value) {
+        try {
+            final java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(target, value);
+        } catch (final ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 }

@@ -2,10 +2,17 @@ package io.ssafy.p.j14c103.homerun.api.service.home;
 
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingCategoryDetail;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingResponse;
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
-import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
-import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransaction;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.CardProduct;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransaction;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.OwnedCard;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,25 +21,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class SpendingServiceTest {
 
     @Mock
-    private SsafyCreditCardClient creditCardClient;
+    private CardTransactionRepository cardTransactionRepository;
 
     @Mock
-    private SsafyDemandDepositClient demandDepositClient;
-
-    @Mock
-    private UserAuthContextService userAuthContextService;
+    private UserAccountTransactionRepository userAccountTransactionRepository;
 
     @InjectMocks
     private SpendingService spendingService;
@@ -42,20 +43,20 @@ class SpendingServiceTest {
   void getSpending_cardCategories() {
     // given
     final Long userId = 1L;
-    final String userKey = "test-user-key";
-
-        given(userAuthContextService.getRequiredSsafyUserKey(userId)).willReturn(userKey);
-        given(creditCardClient.inquireSignUpCreditCardList(userKey))
-                .willReturn(List.of(
-                        Map.of("cardNo", "1003622654847049", "cvc", "713")));
-        given(creditCardClient.inquireCreditCardTransactionList(eq(userKey), eq("1003622654847049"), eq("713"), any(),
-                any()))
-                .willReturn(List.of(
-                        Map.of("categoryName", "생활", "transactionBalance", "350000"),
-                        Map.of("categoryName", "생활", "transactionBalance", "150000"),
-                        Map.of("categoryName", "교통", "transactionBalance", "120000")));
-    given(demandDepositClient.inquireAccountList(userKey))
-            .willReturn(List.of());
+    given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
+            userId,
+            LocalDate.of(2026, 3, 1),
+            LocalDate.of(2026, 3, 31)
+    )).willReturn(List.of(
+            sampleCardTransaction("생활", "CG-9ca85f66311a23d", 350_000, LocalDate.of(2026, 3, 3)),
+            sampleCardTransaction("생활", "CG-9ca85f66311a23d", 150_000, LocalDate.of(2026, 3, 10)),
+            sampleCardTransaction("교통", "CG-4fa85f6455cad4a", 120_000, LocalDate.of(2026, 3, 15))
+    ));
+    given(userAccountTransactionRepository.findByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+            userId,
+            LocalDateTime.of(2026, 3, 1, 0, 0),
+            LocalDateTime.of(2026, 3, 31, 23, 59, 59, 999999999)
+    )).willReturn(List.of());
 
     // when
     final SpendingResponse response = spendingService.getSpending(userId, "202603");
@@ -75,19 +76,44 @@ class SpendingServiceTest {
   void getSpending_transferFromDeposit() {
     // given
     final Long userId = 1L;
-    final String userKey = "test-user-key";
-
-        given(userAuthContextService.getRequiredSsafyUserKey(userId)).willReturn(userKey);
-        given(creditCardClient.inquireSignUpCreditCardList(userKey))
-                .willReturn(List.of());
-        given(demandDepositClient.inquireAccountList(userKey))
-                .willReturn(List.of(
-                        Map.of("accountNo", "001")));
-    given(demandDepositClient.inquireTransactionHistory(eq(userKey), eq("001"), any(), any()))
-            .willReturn(List.of(
-                    Map.of("transactionType", "2", "transactionBalance", "500000"),
-                    Map.of("transactionType", "2", "transactionBalance", "300000"),
-                    Map.of("transactionType", "1", "transactionBalance", "1000000")));
+    given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
+            userId,
+            LocalDate.of(2026, 3, 1),
+            LocalDate.of(2026, 3, 31)
+    )).willReturn(List.of());
+    given(userAccountTransactionRepository.findByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+            userId,
+            LocalDateTime.of(2026, 3, 1, 0, 0),
+            LocalDateTime.of(2026, 3, 31, 23, 59, 59, 999999999)
+    )).willReturn(List.of(
+            UserAccountTransaction.create(
+                    userId,
+                    AccountType.MAIN,
+                    null,
+                    AccountTransactionType.WITHDRAW,
+                    500_000,
+                    null,
+                    LocalDateTime.of(2026, 3, 5, 0, 0)
+            ),
+            UserAccountTransaction.create(
+                    userId,
+                    AccountType.MAIN,
+                    null,
+                    AccountTransactionType.WITHDRAW,
+                    300_000,
+                    null,
+                    LocalDateTime.of(2026, 3, 12, 0, 0)
+            ),
+            UserAccountTransaction.create(
+                    userId,
+                    AccountType.MAIN,
+                    null,
+                    AccountTransactionType.DEPOSIT,
+                    1_000_000,
+                    null,
+                    LocalDateTime.of(2026, 3, 25, 0, 0)
+            )
+    ));
 
     // when
     final SpendingResponse response = spendingService.getSpending(userId, "202603");
@@ -103,21 +129,28 @@ class SpendingServiceTest {
   void getSpending_combined() {
     // given
     final Long userId = 1L;
-    final String userKey = "test-user-key";
-
-        given(userAuthContextService.getRequiredSsafyUserKey(userId)).willReturn(userKey);
-        given(creditCardClient.inquireSignUpCreditCardList(userKey))
-                .willReturn(List.of(
-                        Map.of("cardNo", "card1", "cvc", "123")));
-        given(creditCardClient.inquireCreditCardTransactionList(eq(userKey), eq("card1"), eq("123"), any(), any()))
-                .willReturn(List.of(
-                        Map.of("categoryName", "대형마트", "transactionBalance", "200000")));
-        given(demandDepositClient.inquireAccountList(userKey))
-                .willReturn(List.of(
-                        Map.of("accountNo", "001")));
-    given(demandDepositClient.inquireTransactionHistory(eq(userKey), eq("001"), any(), any()))
-            .willReturn(List.of(
-                    Map.of("transactionType", "2", "transactionBalance", "500000")));
+    given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
+            userId,
+            LocalDate.of(2026, 3, 1),
+            LocalDate.of(2026, 3, 31)
+    )).willReturn(List.of(
+            sampleCardTransaction("대형마트", "CG-9ca85f66311a23d", 200_000, LocalDate.of(2026, 3, 8))
+    ));
+    given(userAccountTransactionRepository.findByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+            userId,
+            LocalDateTime.of(2026, 3, 1, 0, 0),
+            LocalDateTime.of(2026, 3, 31, 23, 59, 59, 999999999)
+    )).willReturn(List.of(
+            UserAccountTransaction.create(
+                    userId,
+                    AccountType.MAIN,
+                    null,
+                    AccountTransactionType.WITHDRAW,
+                    500_000,
+                    null,
+                    LocalDateTime.of(2026, 3, 9, 0, 0)
+            )
+    ));
 
     // when
     final SpendingResponse response = spendingService.getSpending(userId, "202603");
@@ -140,13 +173,16 @@ class SpendingServiceTest {
   void getSpending_nullMonth_currentMonth() {
     // given
     final Long userId = 1L;
-    final String userKey = "test-user-key";
-
-        given(userAuthContextService.getRequiredSsafyUserKey(userId)).willReturn(userKey);
-    given(creditCardClient.inquireSignUpCreditCardList(userKey))
-            .willReturn(List.of());
-    given(demandDepositClient.inquireAccountList(userKey))
-            .willReturn(List.of());
+    given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
+            org.mockito.ArgumentMatchers.eq(userId),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any()
+    )).willReturn(List.of());
+    given(userAccountTransactionRepository.findByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+            org.mockito.ArgumentMatchers.eq(userId),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any()
+    )).willReturn(List.of());
 
     // when
     final SpendingResponse response = spendingService.getSpending(userId, null);
@@ -154,5 +190,35 @@ class SpendingServiceTest {
     // then
     assertThat(response.getTotalExpense()).isEqualTo(Money.zero());
     assertThat(response.getCategories()).isEmpty();
+  }
+
+  private CardTransaction sampleCardTransaction(
+          final String categoryName,
+          final String categoryId,
+          final int amount,
+          final LocalDate paymentDate) {
+    final CardProduct cardProduct = CardProduct.create(
+            "테스트 카드",
+            "테스트 카드사",
+            "테스트 카드",
+            0,
+            0,
+            "[]",
+            null,
+            true);
+    final OwnedCard ownedCard = OwnedCard.create(
+            1L,
+            cardProduct,
+            "메인카드",
+            "1234-****-****-5678",
+            paymentDate.atStartOfDay());
+    return CardTransaction.create(
+            1L,
+            ownedCard,
+            categoryId,
+            categoryName,
+            "테스트 가맹점",
+            amount,
+            paymentDate);
   }
 }

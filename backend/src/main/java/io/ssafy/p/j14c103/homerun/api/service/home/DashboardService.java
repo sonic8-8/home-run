@@ -1,46 +1,52 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
+import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
-import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummary;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final String TRANSACTION_TYPE_DEPOSIT = "1";
-
-    private final SsafyDemandDepositClient demandDepositClient;
-    private final UserAuthContextService userAuthContextService;
+    private final UserAccountRepository userAccountRepository;
+    private final UserAccountTransactionRepository userAccountTransactionRepository;
+    private final CardTransactionRepository cardTransactionRepository;
+    private final UserFinancialSummaryService userFinancialSummaryService;
 
     public DashboardResponse getDashboard(final Long userId) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
-        final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
 
-        final Money totalAssets = calculateTotalAsset(userKey);
-        final Money monthlyIncome = calculateMonthlyIncome(userKey);
-        final Money monthlyExpense = calculateMonthlyExpense(userKey);
-
-        // 전월 대비 변동 (현재는 0으로 설정 - 추후 전월 데이터 비교 구현)
+        final UserFinancialSummary summary = userFinancialSummaryService.getSummary(userId);
+        final Money totalAssets = Money.of(summary.getTotalAssetAmount().longValue());
+        final Money monthlyIncome = calculateMonthlyIncome(userId);
+        final Money monthlyExpense = calculateMonthlyExpense(userId);
         final Money incomeChange = Money.zero();
         final Money expenseChange = Money.zero();
-
-        // 다음 월급일까지 남은 일수 (25일 기준)
         final int nextPaydayDays = calculateNextPaydayDays();
+        final Money mainAccountBalance = Money.of(findAccountBalance(userId, AccountType.MAIN));
+        final Money seedmoneyBalance = Money.of(findAccountBalance(userId, AccountType.SEEDMONEY));
 
-        return DashboardResponse.of(totalAssets, monthlyIncome, monthlyExpense,
-                incomeChange, expenseChange, nextPaydayDays);
+        return DashboardResponse.of(
+                totalAssets,
+                monthlyIncome,
+                monthlyExpense,
+                incomeChange,
+                expenseChange,
+                nextPaydayDays,
+                mainAccountBalance,
+                seedmoneyBalance
+        );
     }
 
     private int calculateNextPaydayDays() {
@@ -53,64 +59,38 @@ public class DashboardService {
         return (int) java.time.temporal.ChronoUnit.DAYS.between(today, nextPayday);
     }
 
-    private Money calculateTotalAsset(final String userKey) {
-        final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
+    private Money calculateMonthlyIncome(final Long userId) {
+        final LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
+        final int amount = userAccountTransactionRepository
+                .findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(userId, monthStart.atStartOfDay())
+                .stream()
+                .filter(transaction -> transaction.getTransactionType() == AccountTransactionType.DEPOSIT)
+                .mapToInt(transaction -> transaction.getAmount().intValue())
+                .sum();
 
-        Money total = Money.zero();
-        for (final Map<String, Object> account : accounts) {
-            final long balance = parseBalance(account.get("accountBalance"));
-            total = total.add(Money.of(balance));
-        }
-        return total;
+        return Money.of(amount);
     }
 
-    private Money calculateMonthlyIncome(final String userKey) {
-        final List<Map<String, Object>> transactions = getThisMonthTransactions(userKey);
+    private Money calculateMonthlyExpense(final Long userId) {
+        final LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
+        final int accountExpense = userAccountTransactionRepository
+                .findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(userId, monthStart.atStartOfDay())
+                .stream()
+                .filter(transaction -> transaction.getTransactionType() == AccountTransactionType.WITHDRAW)
+                .mapToInt(transaction -> transaction.getAmount().intValue())
+                .sum();
+        final int cardExpense = cardTransactionRepository
+                .findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(userId, monthStart, LocalDate.now())
+                .stream()
+                .mapToInt(transaction -> transaction.getPaymentAmount().intValue())
+                .sum();
 
-        Money income = Money.zero();
-        for (final Map<String, Object> tx : transactions) {
-            if (isDeposit(tx)) {
-                income = income.add(Money.of(parseBalance(tx.get("transactionBalance"))));
-            }
-        }
-        return income;
+        return Money.of(accountExpense + cardExpense);
     }
 
-    private Money calculateMonthlyExpense(final String userKey) {
-        final List<Map<String, Object>> transactions = getThisMonthTransactions(userKey);
-
-        Money expense = Money.zero();
-        for (final Map<String, Object> tx : transactions) {
-            if (!isDeposit(tx)) {
-                expense = expense.add(Money.of(parseBalance(tx.get("transactionBalance"))));
-            }
-        }
-        return expense;
-    }
-
-    private List<Map<String, Object>> getThisMonthTransactions(final String userKey) {
-        final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
-
-        final LocalDate now = LocalDate.now();
-        final String startDate = now.withDayOfMonth(1).format(DATE_FORMATTER);
-        final String endDate = now.format(DATE_FORMATTER);
-
-        return accounts.stream()
-                .map(account -> (String) account.get("accountNo"))
-                .flatMap(accountNo -> demandDepositClient
-                        .inquireTransactionHistory(userKey, accountNo, startDate, endDate)
-                        .stream())
-                .toList();
-    }
-
-    private boolean isDeposit(final Map<String, Object> transaction) {
-        return TRANSACTION_TYPE_DEPOSIT.equals(String.valueOf(transaction.get("transactionType")));
-    }
-
-    private long parseBalance(final Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        return Long.parseLong(String.valueOf(value));
+    private long findAccountBalance(final Long userId, final AccountType accountType) {
+        return userAccountRepository.findByUserIdAndAccountType(userId, accountType)
+                .map(account -> account.getBalanceSnapshot().longValue())
+                .orElse(0L);
     }
 }
