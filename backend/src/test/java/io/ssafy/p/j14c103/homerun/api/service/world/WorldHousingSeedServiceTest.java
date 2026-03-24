@@ -2,11 +2,12 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateChecklistItem;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryQuizSample;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistrySection;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +56,7 @@ class WorldHousingSeedServiceTest {
             .distinct()
             .toList())
             .containsExactlyInAnyOrder("GANGNAM", "SONGPA", "MAPO", "GWANGJIN");
+        assertThat(documents).hasSize(properties.size() * 2);
         assertThat(documents)
             .extracting(RealEstateDocument::getPropertyId)
             .allMatch(propertyId -> properties.stream()
@@ -100,10 +102,19 @@ class WorldHousingSeedServiceTest {
         assertThat(property.getBasePrice().getAmount()).isEqualByComparingTo("375000000");
         assertThat(property.getLatitude()).isNotNull();
         assertThat(property.getLongitude()).isNotNull();
-        assertThat(documents).isNotEmpty();
-        assertThat(documents.get(0).getChecklist()).isNotEmpty();
-        assertThat(documents.get(0).getChecklist())
-            .extracting(RealEstateChecklistItem::getTrapId)
-            .doesNotContainNull();
+        assertThat(documents)
+            .extracting(RealEstateDocument::getRegistrySection)
+            .containsExactlyInAnyOrder(RealEstateRegistrySection.GAPGU, RealEstateRegistrySection.EULGU);
+        assertThat(documents)
+            .extracting(RealEstateDocument::getQuizSamplePayload)
+            .allSatisfy(payload -> {
+                final RealEstateRegistryQuizSample quizSample = (RealEstateRegistryQuizSample) payload;
+                assertThat(quizSample).isNotNull();
+                assertThat(quizSample.getRows()).isNotEmpty();
+                assertThat(quizSample.getIssueSummary()).isNotBlank();
+                assertThat(quizSample.getKeyPoints()).isNotEmpty();
+                assertThat(quizSample.getFeedbackCorrect()).isNotBlank();
+                assertThat(quizSample.getFeedbackWrong()).isNotBlank();
+            });
     }
 }

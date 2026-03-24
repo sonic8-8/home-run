@@ -5,11 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.RegionsProviderResponse;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateChecklistItem;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryQuizSample;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryRow;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistrySection;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -86,9 +88,24 @@ class WorldRegionProviderServiceTest {
                 List.of(
                     new DocumentSeed(
                         "IGNORED",
-                        RealEstateDocumentType.CONTRACT,
-                        "/ignored.png",
-                        List.of(RealEstateChecklistItem.create("TRAP", "무시", false))
+                        RealEstateRegistrySection.GAPGU,
+                        RealEstateRegistryQuizSample.create(
+                            "정상",
+                            List.of(
+                                RealEstateRegistryRow.create(
+                                    "1",
+                                    "소유권보존",
+                                    "2025년 1월 1일",
+                                    "보존",
+                                    "무시되는 문서",
+                                    Map.of()
+                                )
+                            ),
+                            "무시",
+                            List.of("무시"),
+                            "무시",
+                            "무시"
+                        )
                     )
                 )
             );

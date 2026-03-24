@@ -31,6 +31,17 @@ class WorldHousingSeedPolicyTest {
             .containsExactly("GANGNAM", "SONGPA", "MAPO", "GWANGJIN");
         assertThat(seedPlan.propertySeeds()).isNotEmpty();
         assertThat(seedPlan.documentSeeds()).isNotEmpty();
+        assertThat(seedPlan.documentSeeds())
+            .extracting(WorldHousingSeedPolicy.DocumentSeed::registrySection)
+            .contains(RealEstateRegistrySection.GAPGU, RealEstateRegistrySection.EULGU);
+        assertThat(seedPlan.documentSeeds())
+            .extracting(WorldHousingSeedPolicy.DocumentSeed::quizSamplePayload)
+            .allSatisfy(payload -> {
+                final RealEstateRegistryQuizSample quizSample = (RealEstateRegistryQuizSample) payload;
+                assertThat(quizSample).isNotNull();
+                assertThat(quizSample.getRows()).isNotEmpty();
+                assertThat(quizSample.getKeyPoints()).isNotEmpty();
+            });
     }
 
     @DisplayName("매물 seed 정의에 housingType이 없으면 예외가 발생한다")

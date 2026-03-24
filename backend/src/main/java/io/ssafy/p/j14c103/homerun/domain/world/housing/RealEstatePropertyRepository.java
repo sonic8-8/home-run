@@ -13,7 +13,5 @@ public interface RealEstatePropertyRepository extends JpaRepository<RealEstatePr
         String districtCode
     );
 
-    Optional<RealEstateProperty> findByProviderId(String providerId);
-
     boolean existsByProviderId(String providerId);
 }

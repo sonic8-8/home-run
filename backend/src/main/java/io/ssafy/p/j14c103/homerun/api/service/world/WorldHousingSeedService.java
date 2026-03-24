@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy;
@@ -16,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class WorldHousingSeedService {
+
+    private static final RealEstateDocumentType REGISTRY_DOCUMENT_TYPE = RealEstateDocumentType.REGISTRY;
 
     private final WorldHousingSeedPolicy worldHousingSeedPolicy;
     private final RealEstatePropertyRepository realEstatePropertyRepository;
@@ -70,9 +73,10 @@ public class WorldHousingSeedService {
             .findByProviderId(documentSeed.propertyProviderId())
             .orElseThrow(() -> new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID));
 
-        if (realEstateDocumentRepository.existsByPropertyIdAndDocumentType(
+        if (realEstateDocumentRepository.existsByPropertyIdAndDocumentTypeAndRegistrySection(
             property.getPropertyId(),
-            documentSeed.documentType()
+            REGISTRY_DOCUMENT_TYPE,
+            documentSeed.registrySection()
         )) {
             return;
         }
@@ -80,9 +84,9 @@ public class WorldHousingSeedService {
         realEstateDocumentRepository.save(
             RealEstateDocument.create(
                 property.getPropertyId(),
-                documentSeed.documentType(),
-                documentSeed.imageUrl(),
-                documentSeed.checklist()
+                REGISTRY_DOCUMENT_TYPE,
+                documentSeed.registrySection(),
+                documentSeed.quizSamplePayload()
             )
         );
     }

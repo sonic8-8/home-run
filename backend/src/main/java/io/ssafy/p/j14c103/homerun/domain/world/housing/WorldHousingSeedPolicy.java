@@ -159,59 +159,260 @@ public class WorldHousingSeedPolicy {
     private static final List<Map<String, Object>> DOCUMENT_DEFINITIONS = List.of(
         documentDefinition(
             "PROP-HN-001",
-            "REGISTRY",
-            "/images/docs/prop-hn-001-registry.png",
-            List.of(
-                checklistItemDefinition("TRAP-HN-001", "근저당 설정 여부 확인", true),
-                checklistItemDefinition("TRAP-HN-002", "소유자 정보 일치 여부 확인", false)
+            "GAPGU",
+            quizSampleDefinition(
+                "위험",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "소유권이전청구권가등기",
+                        "2025년 1월 8일",
+                        "매매예약",
+                        "소유권 이전 청구가등기가 남아 있어 실제 소유 관계를 다시 확인해야 한다",
+                        Map.of()
+                    )
+                ),
+                "갑구에 소유권 관련 선순위 권리 표시가 있어 주의가 필요하다.",
+                List.of("실제 소유자와 계약 당사자 일치 여부 확인", "가등기 말소 여부 확인"),
+                "소유권 관련 위험 신호를 확인했다.",
+                "소유권 관련 권리 표시를 놓쳤다."
             )
         ),
         documentDefinition(
             "PROP-HN-001",
-            "CONTRACT",
-            "/images/docs/prop-hn-001-contract.png",
-            List.of(
-                checklistItemDefinition("TRAP-HN-002", "계약 당사자와 소유자 정보 확인", true)
+            "EULGU",
+            quizSampleDefinition(
+                "위험",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "근저당권설정",
+                        "2025년 2월 7일",
+                        "2025년 2월 1일 설정계약",
+                        "채권최고액 {max_claim_amount} 근저당권이 설정되어 있다",
+                        Map.of(
+                            "max_claim_amount",
+                            moneyRenderingDefinition("sale_price_ratio", 78, "만원")
+                        )
+                    )
+                ),
+                "을구의 근저당 채권최고액이 높아 대출 회수 위험이 크다.",
+                List.of("채권최고액과 매매가 비율 확인", "선순위 담보권 존재 여부 확인"),
+                "근저당 설정 위험을 확인했다.",
+                "과도한 근저당 설정을 놓쳤다."
             )
         ),
         documentDefinition(
             "PROP-HN-002",
-            "REGISTRY",
-            "/images/docs/prop-hn-002-registry.png",
-            List.of(
-                checklistItemDefinition("TRAP-HN-003", "보증금 회수 위험 확인", true)
+            "GAPGU",
+            quizSampleDefinition(
+                "정상",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "소유권보존",
+                        "2024년 11월 3일",
+                        "보존",
+                        "소유권보존 등기 외 특이사항이 없다",
+                        Map.of()
+                    )
+                ),
+                "갑구에는 특이한 권리 침해 요소가 없다.",
+                List.of("현재 소유자 확인", "갑구 특이사항 없음"),
+                "갑구를 정상적으로 확인했다.",
+                "갑구의 기본 소유권 정보를 놓쳤다."
+            )
+        ),
+        documentDefinition(
+            "PROP-HN-002",
+            "EULGU",
+            quizSampleDefinition(
+                "위험",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "근저당권설정",
+                        "2025년 2월 14일",
+                        "2025년 2월 10일 설정계약",
+                        "채권최고액 {max_claim_amount} 근저당권이 설정되어 있다",
+                        Map.of(
+                            "max_claim_amount",
+                            moneyRenderingDefinition("sale_price_ratio", 92, "만원")
+                        )
+                    )
+                ),
+                "을구의 담보 설정 규모가 커 보증금 회수 위험이 높다.",
+                List.of("보증금 대비 선순위 권리 규모 확인", "추가 담보 설정 가능성 점검"),
+                "보증금 회수 위험을 확인했다.",
+                "보증금 회수 위험 신호를 놓쳤다."
             )
         ),
         documentDefinition(
             "PROP-SP-001",
-            "CONTRACT",
-            "/images/docs/prop-sp-001-contract.png",
-            List.of(
-                checklistItemDefinition("TRAP-SP-001", "특약 조항 누락 여부 확인", true)
+            "GAPGU",
+            quizSampleDefinition(
+                "정상",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "소유권보존",
+                        "2024년 9월 12일",
+                        "보존",
+                        "갑구에 기재된 권리 사항이 안정적이다",
+                        Map.of()
+                    )
+                ),
+                "갑구에서 별도 위험 신호가 확인되지 않았다.",
+                List.of("소유권 변동 이력 없음", "갑구 특이사항 없음"),
+                "갑구를 정상적으로 확인했다.",
+                "갑구의 정상 상태를 확인하지 못했다."
+            )
+        ),
+        documentDefinition(
+            "PROP-SP-001",
+            "EULGU",
+            quizSampleDefinition(
+                "정상",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "기록사항 없음",
+                        "2025년 1월 20일",
+                        "없음",
+                        "을구에 현재 등재된 권리 사항이 없다",
+                        Map.of()
+                    )
+                ),
+                "을구에서 추가 담보권이나 압류가 확인되지 않았다.",
+                List.of("을구 권리 사항 없음", "담보권 미설정"),
+                "을구를 정상적으로 확인했다.",
+                "을구의 정상 상태를 확인하지 못했다."
             )
         ),
         documentDefinition(
             "PROP-MP-001",
-            "REGISTRY",
-            "/images/docs/prop-mp-001-registry.png",
-            List.of(
-                checklistItemDefinition("TRAP-MP-001", "불법 증축 여부 확인", true)
+            "GAPGU",
+            quizSampleDefinition(
+                "위험",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "위반건축물 표기",
+                        "2025년 2월 3일",
+                        "행정통보",
+                        "불법 증축 이력이 기재되어 있어 건축물 현황을 추가 확인해야 한다",
+                        Map.of()
+                    )
+                ),
+                "갑구에 건축물 관련 위험 신호가 있어 주의가 필요하다.",
+                List.of("건축물대장 일치 여부 확인", "위반건축물 시정 여부 확인"),
+                "건축물 관련 위험 신호를 확인했다.",
+                "건축물 관련 위험 신호를 놓쳤다."
+            )
+        ),
+        documentDefinition(
+            "PROP-MP-001",
+            "EULGU",
+            quizSampleDefinition(
+                "정상",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "기록사항 없음",
+                        "2025년 2월 3일",
+                        "없음",
+                        "을구에 등재된 권리 사항이 없다",
+                        Map.of()
+                    )
+                ),
+                "을구에서는 별도 담보 위험이 확인되지 않았다.",
+                List.of("을구 권리 사항 없음", "담보권 미설정"),
+                "을구를 정상적으로 확인했다.",
+                "을구의 정상 상태를 확인하지 못했다."
             )
         ),
         documentDefinition(
             "PROP-GJN-001",
-            "REGISTRY",
-            "/images/docs/prop-gjn-001-registry.png",
-            List.of(
-                checklistItemDefinition("TRAP-GJN-001", "체납 이력 확인", true)
+            "GAPGU",
+            quizSampleDefinition(
+                "위험",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "압류",
+                        "2025년 1월 27일",
+                        "지방세 체납",
+                        "지방세 체납으로 인한 압류가 기재되어 있다",
+                        Map.of()
+                    )
+                ),
+                "갑구에 체납 압류 이력이 있어 매수 시 위험하다.",
+                List.of("세금 체납 정리 여부 확인", "압류 말소 가능 여부 확인"),
+                "압류 이력을 확인했다.",
+                "압류 이력을 놓쳤다."
+            )
+        ),
+        documentDefinition(
+            "PROP-GJN-001",
+            "EULGU",
+            quizSampleDefinition(
+                "정상",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "기록사항 없음",
+                        "2025년 1월 27일",
+                        "없음",
+                        "을구에 추가 담보권 설정이 없다",
+                        Map.of()
+                    )
+                ),
+                "을구에서는 추가 담보 위험이 보이지 않는다.",
+                List.of("을구 권리 사항 없음", "추가 담보권 미설정"),
+                "을구를 정상적으로 확인했다.",
+                "을구의 정상 상태를 확인하지 못했다."
             )
         ),
         documentDefinition(
             "PROP-GWJ-001",
-            "CONTRACT",
-            "/images/docs/prop-gwj-001-contract.png",
-            List.of(
-                checklistItemDefinition("TRAP-GWJ-001", "관리비 체납 여부 확인", true)
+            "GAPGU",
+            quizSampleDefinition(
+                "정상",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "소유권보존",
+                        "2024년 8월 21일",
+                        "보존",
+                        "갑구에 특이사항 없이 소유권보존만 기재되어 있다",
+                        Map.of()
+                    )
+                ),
+                "갑구에서 별도 권리 침해 요소가 보이지 않는다.",
+                List.of("소유권 상태 정상", "갑구 특이사항 없음"),
+                "갑구를 정상적으로 확인했다.",
+                "갑구의 정상 상태를 확인하지 못했다."
+            )
+        ),
+        documentDefinition(
+            "PROP-GWJ-001",
+            "EULGU",
+            quizSampleDefinition(
+                "정상",
+                List.of(
+                    registryRowDefinition(
+                        "1",
+                        "기록사항 없음",
+                        "2024년 8월 21일",
+                        "없음",
+                        "을구에 현재 등재된 권리 사항이 없다",
+                        Map.of()
+                    )
+                ),
+                "을구에서 담보권이나 압류가 확인되지 않는다.",
+                List.of("을구 권리 사항 없음", "담보권 미설정"),
+                "을구를 정상적으로 확인했다.",
+                "을구의 정상 상태를 확인하지 못했다."
             )
         )
     );
@@ -352,9 +553,8 @@ public class WorldHousingSeedPolicy {
         try {
             return new DocumentSeed(
                 propertyProviderId,
-                RealEstateDocumentType.valueOf(requiredText(definition, "documentType")),
-                requiredText(definition, "imageUrl"),
-                toChecklist(requiredList(definition, "checklist"))
+                RealEstateRegistrySection.valueOf(requiredText(definition, "registrySection")),
+                toQuizSample(requiredMap(definition, "quizSamplePayload"))
             );
         } catch (IllegalArgumentException exception) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID, exception);
@@ -390,23 +590,79 @@ public class WorldHousingSeedPolicy {
         );
     }
 
-    private List<RealEstateChecklistItem> toChecklist(final List<?> definitions) {
+    private RealEstateRegistryQuizSample toQuizSample(final Map<String, Object> definition) {
+        return RealEstateRegistryQuizSample.create(
+            requiredText(definition, "quizVerdict"),
+            toRegistryRows(requiredList(definition, "rows")),
+            requiredText(definition, "issueSummary"),
+            toTexts(requiredList(definition, "keyPoints")),
+            requiredText(definition, "feedbackCorrect"),
+            requiredText(definition, "feedbackWrong")
+        );
+    }
+
+    private List<RealEstateRegistryRow> toRegistryRows(final List<?> definitions) {
         return definitions.stream()
-            .map(this::toChecklistItem)
+            .map(this::toRegistryRow)
             .toList();
     }
 
-    private RealEstateChecklistItem toChecklistItem(final Object definition) {
+    private RealEstateRegistryRow toRegistryRow(final Object definition) {
         if (!(definition instanceof Map<?, ?> rawDefinition)) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
 
         @SuppressWarnings("unchecked")
-        final Map<String, Object> checklistDefinition = (Map<String, Object>) rawDefinition;
-        return RealEstateChecklistItem.create(
-            requiredText(checklistDefinition, "trapId"),
-            requiredText(checklistDefinition, "label"),
-            requiredBoolean(checklistDefinition, "isTrapped")
+        final Map<String, Object> rowDefinition = (Map<String, Object>) rawDefinition;
+        return RealEstateRegistryRow.create(
+            requiredText(rowDefinition, "rankNo"),
+            requiredText(rowDefinition, "purpose"),
+            requiredText(rowDefinition, "receipt"),
+            requiredText(rowDefinition, "reason"),
+            requiredText(rowDefinition, "details"),
+            toRenderingRules(optionalMap(rowDefinition, "rendering"))
+        );
+    }
+
+    private List<String> toTexts(final List<?> definitions) {
+        return definitions.stream()
+            .map(this::toText)
+            .toList();
+    }
+
+    private String toText(final Object definition) {
+        if (definition instanceof String text && !text.isBlank()) {
+            return text;
+        }
+
+        throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+    }
+
+    private Map<String, RealEstateMoneyRenderingRule> toRenderingRules(final Map<String, Object> definition) {
+        if (definition.isEmpty()) {
+            return Map.of();
+        }
+
+        return definition.entrySet().stream()
+            .collect(
+                java.util.stream.Collectors.toUnmodifiableMap(
+                    Map.Entry::getKey,
+                    entry -> toMoneyRenderingRule(entry.getValue())
+                )
+            );
+    }
+
+    private RealEstateMoneyRenderingRule toMoneyRenderingRule(final Object definition) {
+        if (!(definition instanceof Map<?, ?> rawDefinition)) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> ruleDefinition = (Map<String, Object>) rawDefinition;
+        return RealEstateMoneyRenderingRule.create(
+            requiredText(ruleDefinition, "source"),
+            requiredInt(ruleDefinition, "ratioPercent"),
+            requiredText(ruleDefinition, "roundingUnit")
         );
     }
 
@@ -458,6 +714,20 @@ public class WorldHousingSeedPolicy {
         }
         if (value instanceof List<?> list) {
             return list;
+        }
+
+        throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+    }
+
+    private Map<String, Object> optionalMap(final Map<String, Object> definition, final String key) {
+        final Object value = definition.get(key);
+        if (value == null) {
+            return Map.of();
+        }
+        if (value instanceof Map<?, ?> rawMap) {
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> typedMap = (Map<String, Object>) rawMap;
+            return typedMap;
         }
 
         throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
@@ -599,27 +869,61 @@ public class WorldHousingSeedPolicy {
 
     private static Map<String, Object> documentDefinition(
         final String propertyProviderId,
-        final String documentType,
-        final String imageUrl,
-        final List<Map<String, Object>> checklist
+        final String registrySection,
+        final Map<String, Object> quizSamplePayload
     ) {
         return Map.of(
             "propertyProviderId", propertyProviderId,
-            "documentType", documentType,
-            "imageUrl", imageUrl,
-            "checklist", checklist
+            "registrySection", registrySection,
+            "quizSamplePayload", quizSamplePayload
         );
     }
 
-    private static Map<String, Object> checklistItemDefinition(
-        final String trapId,
-        final String label,
-        final boolean isTrapped
+    private static Map<String, Object> quizSampleDefinition(
+        final String quizVerdict,
+        final List<Map<String, Object>> rows,
+        final String issueSummary,
+        final List<String> keyPoints,
+        final String feedbackCorrect,
+        final String feedbackWrong
     ) {
         return Map.of(
-            "trapId", trapId,
-            "label", label,
-            "isTrapped", isTrapped
+            "quizVerdict", quizVerdict,
+            "rows", rows,
+            "issueSummary", issueSummary,
+            "keyPoints", keyPoints,
+            "feedbackCorrect", feedbackCorrect,
+            "feedbackWrong", feedbackWrong
+        );
+    }
+
+    private static Map<String, Object> registryRowDefinition(
+        final String rankNo,
+        final String purpose,
+        final String receipt,
+        final String reason,
+        final String details,
+        final Map<String, Object> rendering
+    ) {
+        return Map.of(
+            "rankNo", rankNo,
+            "purpose", purpose,
+            "receipt", receipt,
+            "reason", reason,
+            "details", details,
+            "rendering", rendering
+        );
+    }
+
+    private static Map<String, Object> moneyRenderingDefinition(
+        final String source,
+        final int ratioPercent,
+        final String roundingUnit
+    ) {
+        return Map.of(
+            "source", source,
+            "ratioPercent", ratioPercent,
+            "roundingUnit", roundingUnit
         );
     }
 
@@ -660,9 +964,8 @@ public class WorldHousingSeedPolicy {
 
     public record DocumentSeed(
         String propertyProviderId,
-        RealEstateDocumentType documentType,
-        String imageUrl,
-        List<RealEstateChecklistItem> checklist
+        RealEstateRegistrySection registrySection,
+        RealEstateRegistryQuizSample quizSamplePayload
     ) {
     }
 }
