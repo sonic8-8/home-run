@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.PendingEventsProviderResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.EventResolveExecutionResult;
@@ -105,7 +106,7 @@ class WorldPendingResolveFlowIntegrationTest {
         newsMasterRepository.deleteAllInBatch();
     }
 
-    @DisplayName("이벤트 후보 계산부터 pending 조회, resolve 후 재조회까지 end-to-end로 검증한다")
+    @DisplayName("turn commit 이후 pending 조회와 resolve까지 최소 이벤트 흐름을 end-to-end로 검증한다")
     @Test
     void pendingResolveFlow() {
         // given
@@ -141,24 +142,45 @@ class WorldPendingResolveFlowIntegrationTest {
 
         // then
         assertThat(eventCandidates).hasSize(4);
+        assertThat(eventCandidates)
+            .extracting(
+                GameWorldResult.EventCandidate::getEventCode,
+                GameWorldResult.EventCandidate::getEventName,
+                GameWorldResult.EventCandidate::getEventPresentationType
+            )
+            .containsExactly(
+                tuple("EVT-VOICE-001", "보이스피싱", EventPresentationType.PHONE),
+                tuple("EVT-OVERTIME-001", "야근 요청", EventPresentationType.CHOICE),
+                tuple("EVT-FAMILY-001", "경조사", EventPresentationType.CHOICE),
+                tuple("EVT-JOB-001", "열심히 일한 당신! 이직하시겠습니까?", EventPresentationType.JOB_TRANSFER)
+            );
         assertThat(pendingEvents.getEvents()).hasSize(4);
         assertThat(pendingEvents.getEvents())
             .extracting(PendingEventsProviderResponse.PendingEventItem::getTitle)
             .containsExactly("보이스피싱", "야근 요청", "경조사", "열심히 일한 당신! 이직하시겠습니까?");
+        assertThat(familyEvent.getEventId()).isNotNull();
+        assertThat(attendChoice.getChoiceId()).isNotNull();
 
         final GamePendingEvent resolvedPendingEvent = gamePendingEventRepository.findById(familyEvent.getEventId())
             .orElseThrow();
         final List<GameEventLog> logs = gameEventLogRepository.findAll();
 
+        assertThat(resolveResult.getPendingEventId()).isEqualTo(familyEvent.getEventId());
+        assertThat(resolveResult.getGameEventId()).isEqualTo(resolvedPendingEvent.getGameEventId());
+        assertThat(resolveResult.getEventChoiceId()).isEqualTo(attendChoice.getChoiceId());
         assertThat(resolveResult.getSelectedChoiceCode()).isEqualTo("A");
         assertThat(resolveResult.getResultEffects()).hasSize(2);
         assertThat(resolveResult.getResultSummary()).isNotBlank();
 
         assertThat(logs).hasSize(1);
         assertThat(logs.get(0).getGameSessionId()).isEqualTo(sessionId);
+        assertThat(logs.get(0).getTurnNumber()).isEqualTo(12);
+        assertThat(logs.get(0).getGameEventId()).isEqualTo(resolveResult.getGameEventId());
+        assertThat(logs.get(0).getEventChoiceId()).isEqualTo(resolveResult.getEventChoiceId());
         assertThat(logs.get(0).getSelectedChoiceCode()).isEqualTo("A");
         assertThat(logs.get(0).getResultEffects()).containsKey("effects");
         assertThat((List<?>) logs.get(0).getResultEffects().get("effects")).hasSize(2);
+        assertThat(logs.get(0).getResultSummary()).isEqualTo(resolveResult.getResultSummary());
 
         assertThat(resolvedPendingEvent.isResolvedYn()).isTrue();
         assertThat(remainingPendingEvents.getEvents()).hasSize(3);
@@ -167,7 +189,7 @@ class WorldPendingResolveFlowIntegrationTest {
             .containsExactly("보이스피싱", "야근 요청", "열심히 일한 당신! 이직하시겠습니까?");
     }
 
-    @DisplayName("choice required 타입에 null choiceId를 보내면 로그 저장 없이 실패하고 pending 재조회 결과가 유지된다")
+    @DisplayName("choice required 타입에 null choiceId를 보내면 로그 저장 없이 실패하고 pending 재조회 결과가 그대로 유지된다")
     @Test
     void pendingResolveFlowWithChoiceRequiredFailure() {
         // given
@@ -197,6 +219,15 @@ class WorldPendingResolveFlowIntegrationTest {
         assertThat(pendingEvents.getEvents()).hasSize(1);
         final PendingEventsProviderResponse.PendingEventItem phoneEvent = pendingEvents.getEvents().get(0);
         assertThat(phoneEvent.getType()).isEqualTo(EventPresentationType.PHONE);
+        assertThat(phoneEvent.getChoices())
+            .extracting(
+                PendingEventsProviderResponse.PendingEventChoiceItem::getChoiceCode,
+                PendingEventsProviderResponse.PendingEventChoiceItem::getChoiceName
+            )
+            .containsExactly(
+                tuple("A", "무시한다"),
+                tuple("B", "지시에 따른다")
+            );
 
         assertThatThrownBy(() -> worldEventResolveExecutionService.resolveEvent(
             sessionId,
@@ -215,8 +246,15 @@ class WorldPendingResolveFlowIntegrationTest {
         assertThat(gameEventLogRepository.findAll()).isEmpty();
         assertThat(unresolvedPendingEvent.isResolvedYn()).isFalse();
         assertThat(pendingEventsAfterFailure.getEvents()).hasSize(1);
-        assertThat(pendingEventsAfterFailure.getEvents().get(0).getEventId()).isEqualTo(phoneEvent.getEventId());
-        assertThat(pendingEventsAfterFailure.getEvents().get(0).getTitle()).isEqualTo("보이스피싱");
+        assertThat(pendingEventsAfterFailure.getEvents())
+            .extracting(
+                PendingEventsProviderResponse.PendingEventItem::getEventId,
+                PendingEventsProviderResponse.PendingEventItem::getTitle,
+                PendingEventsProviderResponse.PendingEventItem::getType
+            )
+            .containsExactly(
+                tuple(phoneEvent.getEventId(), "보이스피싱", EventPresentationType.PHONE)
+            );
     }
 
     private PendingEventsProviderResponse.PendingEventItem findEventByTitle(
