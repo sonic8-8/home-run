@@ -1,32 +1,25 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.RegionsProviderResponse;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class WorldRegionProviderService {
 
-    private final WorldHousingSeedPolicy worldHousingSeedPolicy;
-
-    public WorldRegionProviderService() {
-        this(new WorldHousingSeedPolicy());
-    }
-
-    WorldRegionProviderService(final WorldHousingSeedPolicy worldHousingSeedPolicy) {
-        this.worldHousingSeedPolicy = worldHousingSeedPolicy;
-    }
+    private final HousingRegionRepository housingRegionRepository;
 
     public RegionsProviderResponse getRegions() {
-        final List<RegionsProviderResponse.RegionItem> regions = worldHousingSeedPolicy.calculate()
-            .regionSeeds()
-            .stream()
-            .map(regionSeed -> RegionsProviderResponse.RegionItem.of(
-                regionSeed.regionCode(),
-                regionSeed.name()
+        final List<RegionsProviderResponse.RegionItem> regions = housingRegionRepository
+            .findAllByOrderByRegionCodeAsc().stream()
+            .map(region -> RegionsProviderResponse.RegionItem.of(
+                region.getRegionCode(),
+                region.getRegionName()
             ))
             .toList();
 

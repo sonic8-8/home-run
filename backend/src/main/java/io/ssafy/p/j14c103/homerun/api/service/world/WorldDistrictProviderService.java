@@ -1,36 +1,32 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.DistrictsProviderResponse;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy.DistrictSeed;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy.WorldHousingSeedPlan;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrictRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class WorldDistrictProviderService {
 
-    private final WorldHousingSeedPolicy worldHousingSeedPolicy;
-
-    public WorldDistrictProviderService() {
-        this(new WorldHousingSeedPolicy());
-    }
-
-    WorldDistrictProviderService(final WorldHousingSeedPolicy worldHousingSeedPolicy) {
-        this.worldHousingSeedPolicy = worldHousingSeedPolicy;
-    }
+    private final HousingRegionRepository housingRegionRepository;
+    private final HousingDistrictRepository housingDistrictRepository;
 
     public DistrictsProviderResponse getDistricts(final String regionCode) {
-        final WorldHousingSeedPlan seedPlan = worldHousingSeedPolicy.calculate();
-        validateRegionCode(regionCode, seedPlan);
+        validateRegionCode(regionCode);
 
-        final List<DistrictsProviderResponse.DistrictItem> districts = seedPlan.districtSeeds().stream()
-            .filter(districtSeed -> districtSeed.regionCode().equals(regionCode))
-            .map(this::toDistrictItem)
+        final List<DistrictsProviderResponse.DistrictItem> districts = housingDistrictRepository
+            .findAllByRegionCodeOrderByDistrictCodeAsc(regionCode).stream()
+            .map(district -> DistrictsProviderResponse.DistrictItem.of(
+                district.getDistrictCode(),
+                district.getDistrictName()
+            ))
             .toList();
 
         if (districts.isEmpty()) {
@@ -40,26 +36,13 @@ public class WorldDistrictProviderService {
         return DistrictsProviderResponse.of(regionCode, districts);
     }
 
-    private void validateRegionCode(
-        final String regionCode,
-        final WorldHousingSeedPlan seedPlan
-    ) {
+    private void validateRegionCode(final String regionCode) {
         if (regionCode == null || regionCode.isBlank()) {
             throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
-        final boolean exists = seedPlan.regionSeeds().stream()
-            .anyMatch(regionSeed -> regionSeed.regionCode().equals(regionCode));
-
-        if (!exists) {
+        if (!housingRegionRepository.existsById(regionCode)) {
             throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
-    }
-
-    private DistrictsProviderResponse.DistrictItem toDistrictItem(final DistrictSeed districtSeed) {
-        return DistrictsProviderResponse.DistrictItem.of(
-            districtSeed.districtCode(),
-            districtSeed.name()
-        );
     }
 }
