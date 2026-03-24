@@ -1,35 +1,36 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.DistrictsProviderResponse;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy.DistrictSeed;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.WorldHousingSeedPolicy.WorldHousingSeedPlan;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class WorldDistrictProviderService {
 
-    private final WorldHousingSeedPolicy worldHousingSeedPolicy;
-
-    public WorldDistrictProviderService() {
-        this(new WorldHousingSeedPolicy());
-    }
-
-    WorldDistrictProviderService(final WorldHousingSeedPolicy worldHousingSeedPolicy) {
-        this.worldHousingSeedPolicy = worldHousingSeedPolicy;
-    }
+    private final RealEstatePropertyRepository realEstatePropertyRepository;
+    private final WorldHousingSeedPolicy worldHousingSeedPolicy = new WorldHousingSeedPolicy();
 
     public DistrictsProviderResponse getDistricts(final String regionCode) {
         final WorldHousingSeedPlan seedPlan = worldHousingSeedPolicy.calculate();
         validateRegionCode(regionCode, seedPlan);
+        final Set<String> availableDistrictCodes = Set.copyOf(
+            realEstatePropertyRepository.findDistinctDistrictCodesByRegionCode(regionCode)
+        );
 
         final List<DistrictsProviderResponse.DistrictItem> districts = seedPlan.districtSeeds().stream()
             .filter(districtSeed -> districtSeed.regionCode().equals(regionCode))
+            .filter(districtSeed -> availableDistrictCodes.contains(districtSeed.districtCode()))
             .map(this::toDistrictItem)
             .toList();
 
