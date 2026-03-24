@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record RealEstateDocumentResponse(
-    Long propertyId,
+    Integer propertyId,
     String propertyName,
     String address,
     BigDecimal latitude,
@@ -22,7 +22,7 @@ public record RealEstateDocumentResponse(
     }
 
     public static RealEstateDocumentResponse of(
-        final Long propertyId,
+        final Integer propertyId,
         final String propertyName,
         final String address,
         final BigDecimal latitude,

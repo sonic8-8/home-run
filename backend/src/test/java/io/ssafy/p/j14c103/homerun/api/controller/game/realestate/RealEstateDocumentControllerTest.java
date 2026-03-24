@@ -33,7 +33,7 @@ class RealEstateDocumentControllerTest {
     @Test
     void getDocuments() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(1001, 7L)).willReturn(sampleResponse());
+        given(realEstateDocumentService.getDocument(1001, 7)).willReturn(sampleResponse());
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/1001/real-estate/properties/7/documents"))
@@ -53,7 +53,7 @@ class RealEstateDocumentControllerTest {
     @Test
     void getDocumentsWithUnknownProperty() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(1001, 999L))
+        given(realEstateDocumentService.getDocument(1001, 999))
             .willThrow(new HomerunException(ErrorCode.HOUSING_PROPERTY_NOT_FOUND));
 
         // when & then
@@ -67,7 +67,7 @@ class RealEstateDocumentControllerTest {
     @Test
     void getDocumentsWithUnknownSession() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(9999, 7L))
+        given(realEstateDocumentService.getDocument(9999, 7))
             .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then
@@ -79,7 +79,7 @@ class RealEstateDocumentControllerTest {
 
     private RealEstateDocumentResponse sampleResponse() {
         return RealEstateDocumentResponse.of(
-            7L,
+            7,
             "서초아트자이",
             "서울특별시 서초구 반포대로 58",
             BigDecimal.valueOf(37.485551),

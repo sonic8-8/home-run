@@ -149,7 +149,7 @@ class RealEstateDocumentServiceTest {
         GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
 
         // when & then
-        assertThatThrownBy(() -> realEstateDocumentService.getDocument(gameSession.getGameSessionId(), 9999L))
+        assertThatThrownBy(() -> realEstateDocumentService.getDocument(gameSession.getGameSessionId(), 9999))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.HOUSING_PROPERTY_NOT_FOUND);
@@ -171,7 +171,7 @@ class RealEstateDocumentServiceTest {
     }
 
     private RealEstateDocument createGapguDocument(
-        final Long propertyId,
+        final Integer propertyId,
         final String verdict
     ) {
         return RealEstateDocument.create(
@@ -202,7 +202,7 @@ class RealEstateDocumentServiceTest {
     }
 
     private RealEstateDocument createEulguDocument(
-        final Long propertyId,
+        final Integer propertyId,
         final String verdict
     ) {
         return RealEstateDocument.create(
@@ -233,7 +233,7 @@ class RealEstateDocumentServiceTest {
     }
 
     private RealEstateDocument createEmptyEulguDocument(
-        final Long propertyId,
+        final Integer propertyId,
         final String verdict
     ) {
         return RealEstateDocument.create(
