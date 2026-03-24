@@ -82,6 +82,18 @@
 .submitButton:hover:not(:disabled) { opacity: 0.85; }
 .submitButton:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.backLink {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: center;
+  cursor: pointer;
+  width: 100%;
+  text-decoration: underline;
+}
+
 .termsLink {
   background: none;
   border: none;

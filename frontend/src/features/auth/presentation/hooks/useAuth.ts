@@ -15,7 +15,7 @@ interface LoginResponseData {
 }
 
 export const useAuth = () => {
-  const [view, setView] = useState<AuthView>('onboarding');
+  const [view, setView] = useState<AuthView>('emailLogin');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();

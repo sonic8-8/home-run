@@ -109,12 +109,14 @@ interface SignUpFormProps {
   isLoading: boolean;
   error: string | null;
   onSubmit: (credentials: SignUpCredentials) => void;
+  onBack: () => void;
 }
 
 export const SignUpForm: React.FC<SignUpFormProps> = ({
   isLoading,
   error,
   onSubmit,
+  onBack,
 }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -228,6 +230,9 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
           disabled={isLoading || !agreed}
         >
           {isLoading ? '가입 중...' : '회원가입'}
+        </button>
+        <button type="button" className={styles.backLink} onClick={onBack}>
+          로그인으로 돌아가기
         </button>
       </form>
 
