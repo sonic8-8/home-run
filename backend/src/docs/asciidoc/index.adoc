@@ -1,0 +1,73 @@
+= Homerun API Docs
+:toc: left
+:toclevels: 2
+:sectnums:
+:source-highlighter: highlight.js
+
+== 문서 개요
+
+이 문서는 Spring REST Docs 기반으로 생성된 Homerun 백엔드 API 문서입니다.
+
+== 공통 규약
+
+=== 성공 응답
+
+모든 성공 응답은 `status`, `message`, `data` 구조의 `ApiResponse` 로 반환합니다.
+
+=== 에러 응답
+
+모든 에러 응답은 `code`, `message`, `errors` 구조의 `ErrorResponse` 로 반환합니다.
+
+=== 인증
+
+보호 API는 `Authorization: Bearer <access-token>` 헤더를 사용합니다.
+
+== 인증 API
+
+=== 회원가입
+
+operation::auth/signup/success[snippets='http-request,request-fields,http-response,response-fields']
+
+=== 회원가입 검증 실패
+
+operation::auth/signup/validation-error[snippets='http-request,http-response,response-fields']
+
+=== 로그인
+
+operation::auth/login/success[snippets='http-request,request-fields,http-response,response-fields']
+
+=== 토큰 재발급
+
+operation::auth/refresh/success[snippets='http-request,request-headers,http-response,response-fields']
+
+=== 토큰 재발급 실패
+
+operation::auth/refresh/unauthorized[snippets='http-request,request-headers,http-response,response-fields']
+
+== 홈 API
+
+=== 대시보드 조회
+
+operation::home/dashboard/success[snippets='http-request,request-headers,http-response,response-fields']
+
+== 시드머니 API
+
+=== 시드머니 계좌 생성
+
+operation::seedmoney/create/success[snippets='http-request,request-headers,request-fields,http-response,response-fields']
+
+=== 시드머니 계좌 생성 검증 실패
+
+operation::seedmoney/create/validation-error[snippets='http-request,request-headers,http-response,response-fields']
+
+=== 시드머니 계좌 조회
+
+operation::seedmoney/account/success[snippets='http-request,request-headers,http-response,response-fields']
+
+=== 시드머니 송금
+
+operation::seedmoney/transfer/success[snippets='http-request,request-headers,request-fields,http-response,response-fields']
+
+=== 시드머니 입금
+
+operation::seedmoney/deposit/success[snippets='http-request,request-headers,request-fields,http-response,response-fields']

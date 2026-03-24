@@ -65,6 +65,8 @@ naver:
     client-secret: ${NAVER_GEOCODING_CLIENT_SECRET:}
 
 app:
+  docs:
+    enabled: ${APP_DOCS_ENABLED:false}
   real-estate-import:
     enabled: ${REAL_ESTATE_IMPORT_ENABLED:false}
     regions: ${REAL_ESTATE_IMPORT_REGIONS:SEOUL}

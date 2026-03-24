@@ -19,6 +19,7 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    asciidoctorExt
 }
 
 repositories {
@@ -64,6 +65,7 @@ dependencies {
     implementation "com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:${ociSdkVersion}"
 
     // Test
+    asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
     testImplementation 'org.springframework.security:spring-security-test'
@@ -85,6 +87,18 @@ tasks.named('test') {
 }
 
 tasks.named('asciidoctor') {
+    configurations 'asciidoctorExt'
     inputs.dir snippetsDir
+    attributes 'snippets': snippetsDir
+    sourceDir file('src/docs/asciidoc')
+    outputDir file("$buildDir/docs/asciidoc")
+    baseDirFollowsSourceFile()
     dependsOn test
+}
+
+tasks.named('bootJar') {
+    dependsOn tasks.named('asciidoctor')
+    from(file("$buildDir/docs/asciidoc")) {
+        into 'static/docs'
+    }
 }
