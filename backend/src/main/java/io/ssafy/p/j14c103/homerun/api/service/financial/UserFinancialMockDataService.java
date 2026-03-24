@@ -46,6 +46,7 @@ public class UserFinancialMockDataService {
     private static final Duration INVESTMENT_PRICE_TTL = Duration.ofMinutes(5);
     private static final int MIN_INVESTMENT_HOLDING_COUNT = 3;
     private static final int MAX_INVESTMENT_HOLDING_COUNT = 8;
+    private static final int LOAN_CREATION_RATE = 30;
     private static final int INVESTMENT_BUY_EVENT_COUNT = 6;
     private static final String DEFAULT_LIVING_CATEGORY_ID = "CG-9ca85f66311a23d";
     private static final String DEFAULT_LIVING_CATEGORY_NAME = "생활";
@@ -79,7 +80,9 @@ public class UserFinancialMockDataService {
 
         createSavingProduct(userId);
         createInvestmentProduct(userId);
-        createLoanProduct(userId);
+        if (shouldCreateLoanProduct(userId)) {
+            createLoanProduct(userId);
+        }
         createOwnedCards(userId);
         createAccountTransactions(userId);
         userFinancialSummaryService.getSummary(userId);
@@ -268,6 +271,10 @@ public class UserFinancialMockDataService {
                     LocalDate.now().minusMonths(month).withDayOfMonth(21).atStartOfDay()
             ));
         }
+    }
+
+    private boolean shouldCreateLoanProduct(final Long userId) {
+        return randomOf(userId, "LOAN_FLAG_V1").nextInt(100) < LOAN_CREATION_RATE;
     }
 
     private void createOwnedCards(final Long userId) {

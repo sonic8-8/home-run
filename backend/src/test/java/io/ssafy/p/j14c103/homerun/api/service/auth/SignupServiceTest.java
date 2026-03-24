@@ -9,6 +9,7 @@ import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
 import io.ssafy.p.j14c103.homerun.client.kis.KisStockClient;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyMemberClient;
+import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialMockDataService;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
@@ -41,6 +42,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -48,6 +50,9 @@ class SignupServiceTest {
 
     @Autowired
     private SignupService signupService;
+
+    @Autowired
+    private UserFinancialMockDataService userFinancialMockDataService;
 
     @Autowired
     private UserRepository userRepository;
@@ -160,7 +165,12 @@ class SignupServiceTest {
         assertThat(seedmoneyAccount.getBankName()).isEqualTo("한국은행");
         assertThat(seedmoneyAccount.getBalanceSnapshot()).isZero();
         assertThat(userAccountTransactionRepository.findAll().size()).isGreaterThan(1);
-        assertThat(userFinancialProductRepository.findByUserIdAndActiveYnTrue(savedUser.getId())).hasSize(3);
+        final var financialProducts = userFinancialProductRepository.findByUserIdAndActiveYnTrue(savedUser.getId());
+        final boolean hasLoan = shouldHaveLoan(savedUser.getId());
+        assertThat(financialProducts).hasSize(hasLoan ? 3 : 2);
+        assertThat(financialProducts.stream()
+                .filter(product -> product.getProductType() == FinancialProductType.LOAN)
+                .count()).isEqualTo(hasLoan ? 1 : 0);
         final var investmentHoldings = userInvestmentHoldingRepository.findByUserIdAndActiveYnTrue(savedUser.getId());
         assertThat(investmentHoldings.size()).isBetween(3, 6);
         assertThat(userFinancialTransactionRepository.findAll()).isNotEmpty();
@@ -181,6 +191,13 @@ class SignupServiceTest {
         assertThat(userFinancialSummaryRepository.findById(savedUser.getId())).isPresent();
         assertThat(ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(savedUser.getId())).isNotEmpty();
         assertThat(cardTransactionRepository.findAll()).isNotEmpty();
+    }
+
+    @DisplayName("대출 생성 여부는 사용자 ID 기반 시드 랜덤으로 결정된다.")
+    @Test
+    void loanCreationIsDeterministicPerUserId() {
+        assertThat(shouldHaveLoan(1L)).isTrue();
+        assertThat(shouldHaveLoan(3L)).isFalse();
     }
 
     @DisplayName("SSAFY 회원 생성이 실패하면 회원 조회로 userKey를 확보해 가입을 완료한다.")
@@ -256,6 +273,14 @@ class SignupServiceTest {
                 FinancialProductType.LOAN,
                 "KB국민은행",
                 "KB 직장인든든 신용대출"
+        ));
+    }
+
+    private boolean shouldHaveLoan(final Long userId) {
+        return Boolean.TRUE.equals(ReflectionTestUtils.invokeMethod(
+                userFinancialMockDataService,
+                "shouldCreateLoanProduct",
+                userId
         ));
     }
 

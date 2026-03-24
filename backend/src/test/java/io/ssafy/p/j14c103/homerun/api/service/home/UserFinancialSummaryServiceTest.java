@@ -197,7 +197,9 @@ class UserFinancialSummaryServiceTest {
         assertThat(summary.getCashAssetAmount()).isEqualTo(2_500_000);
         assertThat(summary.getSavingAssetAmount()).isEqualTo(2_500_000);
         assertThat(summary.getInvestmentAssetAmount()).isEqualTo(1_500_000);
+        assertThat(summary.getTotalDebtAmount()).isZero();
         assertThat(summary.getTotalAssetAmount()).isEqualTo(6_500_000);
+        assertThat(summary.getNetAssetAmount()).isEqualTo(6_500_000);
         verifyNoInteractions(stockMarketRepository, kisStockClient);
     }
 
