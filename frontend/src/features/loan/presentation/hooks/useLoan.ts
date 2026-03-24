@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { LoanCategory, LoanProduct, LoanProductDetail, LoanProductPage } from '../../domain/entities/LoanProduct';
+import type { LoanCategory, LoanProductDetail, LoanProductPage } from '../../domain/entities/LoanProduct';
 import type { LoanCalculateParams, LoanCalculation } from '../../domain/entities/LoanCalculation';
 import type { LoanApplication } from '../../domain/entities/LoanApplication';
 import type { LoanConfirmResult, LoanRepayResult } from '../../domain/entities/ActiveLoan';
