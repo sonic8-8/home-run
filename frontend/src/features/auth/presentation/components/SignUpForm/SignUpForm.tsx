@@ -30,7 +30,13 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
       return;
     }
     setValidationError(null);
-    onSubmit({ name, email, password });
+    onSubmit({
+      name,
+      email,
+      password,
+      passwordConfirm,
+      termsAgreed: agreed,
+    });
   };
 
   const displayError = validationError ?? error;

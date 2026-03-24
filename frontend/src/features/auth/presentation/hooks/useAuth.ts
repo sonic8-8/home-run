@@ -8,6 +8,7 @@ import type { SignUpCredentials } from '../../domain/entities/SignUpCredentials'
 type AuthView = 'onboarding' | 'emailLogin' | 'signUp';
 
 export const useAuth = () => {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
   const [view, setView] = useState<AuthView>('onboarding');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,17 +33,37 @@ export const useAuth = () => {
     [navigate, setAccessToken],
   );
 
-  const signUp = useCallback(async (_credentials: SignUpCredentials) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // TODO: container.resolve(SignUpUseCase).execute(credentials)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '회원가입에 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const signUp = useCallback(
+    async (credentials: SignUpCredentials) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/auth/signup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(credentials),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          const message =
+            payload && typeof payload.message === 'string'
+              ? payload.message
+              : '회원가입에 실패했습니다.';
+          throw new Error(message);
+        }
+
+        setView('emailLogin');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '회원가입에 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [apiBaseUrl],
+  );
 
   return {
     view,
