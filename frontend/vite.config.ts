@@ -16,7 +16,7 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': 'https://j14c103.p.ssafy.io',
     },
   },
   resolve: {
