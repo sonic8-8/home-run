@@ -27,7 +27,7 @@ public class TargetPropertyListResponse {
     @Getter
     public static class TargetPropertyResponse {
 
-        private final Integer propertyId;
+        private final Long propertyId;
         private final String name;
         private final long recentPrice;
         private final BigDecimal latitude;
@@ -35,7 +35,7 @@ public class TargetPropertyListResponse {
 
         @Builder
         private TargetPropertyResponse(
-            final Integer propertyId,
+            final Long propertyId,
             final String name,
             final long recentPrice,
             final BigDecimal latitude,
@@ -52,7 +52,7 @@ public class TargetPropertyListResponse {
         }
 
         public static TargetPropertyResponse of(
-            final Integer propertyId,
+            final Long propertyId,
             final String name,
             final long recentPrice,
             final BigDecimal latitude,
@@ -74,7 +74,7 @@ public class TargetPropertyListResponse {
         }
     }
 
-    private static void validatePropertyId(final Integer propertyId) {
+    private static void validatePropertyId(final Long propertyId) {
         if (propertyId == null) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
