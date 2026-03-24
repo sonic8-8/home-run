@@ -27,6 +27,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 @RestClientTest(
     value = NaverGeocodingClient.class,
     properties = {
+        "app.real-estate-import.enabled=true",
         "naver.geocoding.base-url=https://maps.apigw.ntruss.com/map-geocode/v2/geocode",
         "naver.geocoding.client-id=test-client-id",
         "naver.geocoding.client-secret=test-client-secret"

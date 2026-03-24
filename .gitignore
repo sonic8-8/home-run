@@ -2,6 +2,7 @@
 /.vscode/
 /.gradle-cache/
 /.agent/private/
+/.env.runtime
 
 .DS_Store
 Thumbs.db

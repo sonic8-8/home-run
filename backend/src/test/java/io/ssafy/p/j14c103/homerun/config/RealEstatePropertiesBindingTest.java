@@ -107,6 +107,25 @@ class RealEstatePropertiesBindingTest {
             });
     }
 
+    @DisplayName("부동산 적재 설정은 쉼표로 구분한 문자열도 목록으로 바인딩한다")
+    @Test
+    void bindRealEstateImportPropertiesFromCommaSeparatedValues() {
+        realEstateImportRunner
+            .withPropertyValues(
+                "app.real-estate-import.enabled=true",
+                "app.real-estate-import.regions=SEOUL,GWANGJU",
+                "app.real-estate-import.from-year-month=2024-01",
+                "app.real-estate-import.to-year-month=2024-12",
+                "app.real-estate-import.dataset-types=APT_SALE"
+            )
+            .run(context -> {
+                assertThat(context).hasSingleBean(RealEstateImportProperties.class);
+                RealEstateImportProperties properties = context.getBean(RealEstateImportProperties.class);
+                assertThat(properties.getRegions()).containsExactly("SEOUL", "GWANGJU");
+                assertThat(properties.getDatasetTypes()).containsExactly("APT_SALE");
+            });
+    }
+
     @Configuration(proxyBeanMethods = false)
     @EnableConfigurationProperties(PublicDataApiProperties.class)
     static class PublicDataPropertiesTestConfig {

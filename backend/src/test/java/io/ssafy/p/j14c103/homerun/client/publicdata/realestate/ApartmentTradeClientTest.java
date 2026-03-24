@@ -21,6 +21,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 @RestClientTest(
     value = ApartmentTradeClient.class,
     properties = {
+        "app.real-estate-import.enabled=true",
         "public-data.api.legal-dong-base-url=https://apis.data.go.kr/1741000/StanReginCd",
         "public-data.api.apartment-trade-base-url=https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade",
         "public-data.api.service-key=test-service-key",
