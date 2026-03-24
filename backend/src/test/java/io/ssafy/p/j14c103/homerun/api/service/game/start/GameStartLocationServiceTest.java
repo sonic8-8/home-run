@@ -7,12 +7,14 @@ import static org.assertj.core.api.Assertions.tuple;
 import io.ssafy.p.j14c103.homerun.api.service.game.start.response.DistrictListResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.start.response.RegionListResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.start.response.TargetPropertyListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.world.WorldHousingSeedService;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrict;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrictRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegion;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -34,6 +36,9 @@ class GameStartLocationServiceTest {
     private GameStartLocationService gameStartLocationService;
 
     @Autowired
+    private WorldHousingSeedService worldHousingSeedService;
+
+    @Autowired
     private HousingRegionRepository housingRegionRepository;
 
     @Autowired
@@ -42,8 +47,12 @@ class GameStartLocationServiceTest {
     @Autowired
     private RealEstatePropertyRepository realEstatePropertyRepository;
 
+    @Autowired
+    private RealEstateDocumentRepository realEstateDocumentRepository;
+
     @AfterEach
     void tearDown() {
+        realEstateDocumentRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
         housingDistrictRepository.deleteAllInBatch();
         housingRegionRepository.deleteAllInBatch();
@@ -145,6 +154,28 @@ class GameStartLocationServiceTest {
                 tuple(properties.get(0).getPropertyId(), "헬리오시티", 1_550_000_000L),
                 tuple(properties.get(1).getPropertyId(), "잠실엘스", 2_300_000_000L)
             );
+    }
+
+    @DisplayName("주거 seed만 적재되어 있어도 DB 마스터 코드 기준 목표 매물 목록을 바로 조회할 수 있어야 한다.")
+    @Test
+    void getTargetPropertiesWithWorldHousingSeed() {
+        // given
+        worldHousingSeedService.seed();
+
+        // when
+        final TargetPropertyListResponse response = gameStartLocationService.getTargetProperties("11", "11680");
+
+        // then
+        assertThat(response.getProperties()).hasSize(2);
+        assertThat(response.getProperties().get(0).getName()).isEqualTo("하남3지구 모아엘가 더 퍼스트");
+        assertThat(response.getProperties().get(0).getRecentPrice()).isEqualTo(375_000_000L);
+        assertThat(response.getProperties().get(0).getLatitude()).isEqualByComparingTo("37.5172");
+        assertThat(response.getProperties().get(0).getLongitude()).isEqualByComparingTo("127.0473");
+
+        assertThat(response.getProperties().get(1).getName()).isEqualTo("하남 포레스트 힐");
+        assertThat(response.getProperties().get(1).getRecentPrice()).isEqualTo(420_000_000L);
+        assertThat(response.getProperties().get(1).getLatitude()).isEqualByComparingTo("37.5200");
+        assertThat(response.getProperties().get(1).getLongitude()).isEqualByComparingTo("127.0500");
     }
 
     @DisplayName("유효한 지역과 구에 매물이 없으면 빈 목록을 반환한다.")

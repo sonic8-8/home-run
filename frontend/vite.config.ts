@@ -14,6 +14,11 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/api': 'https://j14c103.p.ssafy.io',
+    },
+  },
   resolve: {
     alias: {
       '@':         path.resolve(__dirname, 'src'),

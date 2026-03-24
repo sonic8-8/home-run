@@ -26,7 +26,7 @@ public class RealEstateDocument {
     private Long realEstateDocumentId;
 
     @Column(name = "property_id", nullable = false)
-    private Long propertyId;
+    private Integer propertyId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "document_type")
@@ -41,7 +41,7 @@ public class RealEstateDocument {
     private RealEstateRegistryQuizSample quizSamplePayload;
 
     private RealEstateDocument(
-        Long propertyId,
+        Integer propertyId,
         RealEstateDocumentType documentType,
         RealEstateRegistrySection registrySection,
         RealEstateRegistryQuizSample quizSamplePayload
@@ -53,7 +53,7 @@ public class RealEstateDocument {
     }
 
     public static RealEstateDocument create(
-        Long propertyId,
+        Integer propertyId,
         RealEstateDocumentType documentType,
         RealEstateRegistrySection registrySection,
         RealEstateRegistryQuizSample quizSamplePayload

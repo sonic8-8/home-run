@@ -42,7 +42,7 @@ public class RealEstateDocumentService {
     private final RealEstateDocumentRepository realEstateDocumentRepository;
     private final RealEstateRegistryRandomService realEstateRegistryRandomService;
 
-    public RealEstateDocumentResponse getDocument(final Integer sessionId, final Long propertyId) {
+    public RealEstateDocumentResponse getDocument(final Integer sessionId, final Integer propertyId) {
         validateSession(sessionId);
 
         final RealEstateProperty property = realEstatePropertyRepository.findById(propertyId)
@@ -89,7 +89,7 @@ public class RealEstateDocumentService {
         throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
     }
 
-    private RealEstateDocument selectGapguDocument(final Long propertyId) {
+    private RealEstateDocument selectGapguDocument(final Integer propertyId) {
         final List<RealEstateDocument> gapguDocuments = realEstateDocumentRepository
             .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
                 propertyId,
@@ -101,7 +101,7 @@ public class RealEstateDocumentService {
         return gapguDocuments.get(realEstateRegistryRandomService.nextGapguIndex(gapguDocuments.size()));
     }
 
-    private RealEstateDocument selectEulguDocument(final Long propertyId) {
+    private RealEstateDocument selectEulguDocument(final Integer propertyId) {
         final List<RealEstateDocument> eulguDocuments = realEstateDocumentRepository
             .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
                 propertyId,

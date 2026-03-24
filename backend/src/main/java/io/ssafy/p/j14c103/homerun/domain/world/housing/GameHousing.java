@@ -46,10 +46,10 @@ public class GameHousing {
     private Money maintenanceFee;
 
     @Column(name = "current_property_id")
-    private Long currentPropertyId;
+    private Integer currentPropertyId;
 
     @Column(name = "target_property_id")
-    private Long targetPropertyId;
+    private Integer targetPropertyId;
 
     private GameHousing(
         Integer gameSessionId,
@@ -59,8 +59,8 @@ public class GameHousing {
         Money currentDeposit,
         Money monthlyRent,
         Money maintenanceFee,
-        Long currentPropertyId,
-        Long targetPropertyId
+        Integer currentPropertyId,
+        Integer targetPropertyId
     ) {
         this.gameSessionId = gameSessionId;
         this.targetRegionCode = targetRegionCode;
@@ -81,8 +81,8 @@ public class GameHousing {
         Money currentDeposit,
         Money monthlyRent,
         Money maintenanceFee,
-        Long currentPropertyId,
-        Long targetPropertyId
+        Integer currentPropertyId,
+        Integer targetPropertyId
     ) {
         return new GameHousing(
             gameSessionId,

@@ -196,7 +196,6 @@ class CharacterPersistenceRepositoryTest {
     void findGameplayHistoriesByGameId() {
         // given
         gameplayHistoryRepository.save(GameplayHistory.builder()
-            .historyId(3002)
             .gameId(1001)
             .eventId(9001)
             .tableName("게임커리어")
@@ -211,7 +210,6 @@ class CharacterPersistenceRepositoryTest {
             .occurredTurn(2)
             .build());
         gameplayHistoryRepository.save(GameplayHistory.builder()
-            .historyId(3001)
             .gameId(1001)
             .eventId(9000)
             .tableName("게임스탯")

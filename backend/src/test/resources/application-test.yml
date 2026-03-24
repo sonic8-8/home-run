@@ -21,6 +21,16 @@ jwt:
   access-token-ttl-seconds: 1800
   refresh-token-ttl-seconds: 1209600
 
+ssafy:
+  api:
+    base-url: https://finopenapi.ssafy.io/ssafy/api/v1/edu
+    api-key: test-api-key
+  account:
+    bank-code: "001"
+    bank-name: 한국은행
+    account-type-unique-no: test-account-type
+    main-initial-balance: 10000000
+
 public-data:
   api:
     legal-dong-base-url: https://apis.data.go.kr/1741000/StanReginCd

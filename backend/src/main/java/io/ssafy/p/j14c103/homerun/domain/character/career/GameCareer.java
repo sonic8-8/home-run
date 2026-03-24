@@ -119,6 +119,42 @@ public class GameCareer {
         return true;
     }
 
+    public void applySalaryNegotiation(
+        final SalaryNegotiationPolicy.NegotiationResult negotiationResult
+    ) {
+        validateNegotiationResult(negotiationResult);
+
+        this.salary = negotiationResult.newSalary();
+        this.lastNegotiatedTurn = negotiationResult.lastNegotiatedTurn();
+    }
+
+    public void advanceTurn(
+        final JobTitlePolicy jobTitlePolicy,
+        final int currentTurn
+    ) {
+        validateJobTitlePolicy(jobTitlePolicy);
+        validateCurrentTurn(currentTurn);
+
+        final EmploymentStatus currentEmploymentStatus = requireEmploymentStatus();
+        if (currentEmploymentStatus == EmploymentStatus.UNEMPLOYED) {
+            return;
+        }
+
+        this.tenureTurns = requireTenureTurns() + 1;
+        this.jobTitle = jobTitlePolicy.calculate(requireJobType(), tenureTurns);
+
+        if (currentEmploymentStatus != EmploymentStatus.PROBATION) {
+            return;
+        }
+
+        if (currentTurn < requireProbationEndTurn()) {
+            return;
+        }
+
+        this.employmentStatus = EmploymentStatus.EMPLOYED;
+        this.probationEndTurn = null;
+    }
+
     public void startProbation(final int probationEndTurn) {
         validateCurrentTurn(probationEndTurn);
         this.employmentStatus = EmploymentStatus.PROBATION;
@@ -135,6 +171,14 @@ public class GameCareer {
 
     private void validateOffer(final JobTransferPolicy.JobOffer offer) {
         if (offer == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private void validateNegotiationResult(
+        final SalaryNegotiationPolicy.NegotiationResult negotiationResult
+    ) {
+        if (negotiationResult == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
     }
@@ -164,6 +208,36 @@ public class GameCareer {
         }
 
         return employmentStatus;
+    }
+
+    private JobType requireJobType() {
+        if (jobType == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
+        }
+
+        return jobType;
+    }
+
+    private int requireTenureTurns() {
+        if (tenureTurns == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
+        }
+        if (tenureTurns < 0) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+
+        return tenureTurns;
+    }
+
+    private int requireProbationEndTurn() {
+        if (probationEndTurn == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
+        }
+        if (probationEndTurn < 1) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+
+        return probationEndTurn;
     }
 
     private int requireRemainingUnemploymentBenefitTurns() {
