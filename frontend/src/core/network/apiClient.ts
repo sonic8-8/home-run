@@ -56,8 +56,8 @@ async function request<T>(
 
   let res = await fetch(`${BASE_URL}${path}`, init);
 
-  // 401 → 토큰 갱신 후 1회 재시도
-  if (res.status === 401) {
+  // 401 → 리프레시 토큰이 있을 때만 갱신 후 1회 재시도
+  if (res.status === 401 && useAuthStore.getState().refreshToken) {
     if (!refreshPromise) {
       refreshPromise = refreshAccessToken().finally(() => {
         refreshPromise = null;
