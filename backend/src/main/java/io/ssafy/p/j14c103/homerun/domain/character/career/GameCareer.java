@@ -24,6 +24,8 @@ import lombok.NoArgsConstructor;
 public class GameCareer {
 
     private static final int INITIAL_TENURE_TURNS = 0;
+    private static final int INITIAL_UNEMPLOYMENT_BENEFIT_TURNS = 3;
+    private static final int NO_UNEMPLOYMENT_BENEFIT_TURNS = 0;
 
     @Id
     @Column(name = "게임번호", nullable = false)
@@ -84,7 +86,7 @@ public class GameCareer {
         this.salary = offer.offeredSalary();
         this.tenureTurns = INITIAL_TENURE_TURNS;
         this.rehireAvailableTurn = null;
-        this.remainingUnemploymentBenefitTurns = 0;
+        this.remainingUnemploymentBenefitTurns = NO_UNEMPLOYMENT_BENEFIT_TURNS;
         this.salaryBeforeResignation = null;
 
         if (offer.probationTurns() == null) {
@@ -96,10 +98,39 @@ public class GameCareer {
         startProbation(currentTurn + offer.probationTurns());
     }
 
+    public void forceResign(final ForcedResignationPolicy.ForcedResignationResult result) {
+        validateForcedResignationResult(result);
+        validateEmploymentStatusForForcedResignation();
+
+        this.employmentStatus = EmploymentStatus.UNEMPLOYED;
+        this.probationEndTurn = null;
+        this.rehireAvailableTurn = result.rehireAvailableTurn();
+        this.remainingUnemploymentBenefitTurns = INITIAL_UNEMPLOYMENT_BENEFIT_TURNS;
+        this.salaryBeforeResignation = result.previousSalary();
+    }
+
+    public boolean consumeUnemploymentBenefit() {
+        final int remainingTurns = requireRemainingUnemploymentBenefitTurns();
+        if (remainingTurns == NO_UNEMPLOYMENT_BENEFIT_TURNS) {
+            return false;
+        }
+
+        this.remainingUnemploymentBenefitTurns = remainingTurns - 1;
+        return true;
+    }
+
     public void startProbation(final int probationEndTurn) {
         validateCurrentTurn(probationEndTurn);
         this.employmentStatus = EmploymentStatus.PROBATION;
         this.probationEndTurn = probationEndTurn;
+    }
+
+    private void validateForcedResignationResult(
+        final ForcedResignationPolicy.ForcedResignationResult result
+    ) {
+        if (result == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
     }
 
     private void validateOffer(final JobTransferPolicy.JobOffer offer) {
@@ -118,5 +149,31 @@ public class GameCareer {
         if (currentTurn < 1) {
             throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
         }
+    }
+
+    private void validateEmploymentStatusForForcedResignation() {
+        final EmploymentStatus currentEmploymentStatus = requireEmploymentStatus();
+        if (currentEmploymentStatus == EmploymentStatus.UNEMPLOYED) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    private EmploymentStatus requireEmploymentStatus() {
+        if (employmentStatus == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
+        }
+
+        return employmentStatus;
+    }
+
+    private int requireRemainingUnemploymentBenefitTurns() {
+        if (remainingUnemploymentBenefitTurns == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
+        }
+        if (remainingUnemploymentBenefitTurns < 0) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+
+        return remainingUnemploymentBenefitTurns;
     }
 }

@@ -32,7 +32,8 @@ public class JobOfferQueryService {
         return JobOfferQueryResponse.from(jobTransferPolicy.calculateOfferPool(
             request.gameCareer(),
             request.gameStat(),
-            request.recentMeetFriendCount()
+            request.recentMeetFriendCount(),
+            request.currentTurn()
         ));
     }
 }

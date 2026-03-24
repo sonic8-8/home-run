@@ -29,7 +29,8 @@ class JobOfferQueryServiceTest {
         final JobOfferQueryRequest request = JobOfferQueryRequest.of(
             createCareer(JobType.SMALL_BIZ, 30_000_000),
             createStat(100),
-            2
+            2,
+            15
         );
 
         // when
@@ -56,6 +57,36 @@ class JobOfferQueryServiceTest {
             );
     }
 
+    @DisplayName("강제 퇴사 이후 재취업 가능 턴이 되면 하향 연봉 기준의 오퍼를 반환한다.")
+    @Test
+    void getJobOffersForUnemployedCareer() {
+        // given
+        final JobOfferQueryRequest request = JobOfferQueryRequest.of(
+            createUnemployedCareer(JobType.SMALL_BIZ, 40_000_000, 12),
+            createStat(60),
+            1,
+            12
+        );
+
+        // when
+        final JobOfferQueryResponse response = jobOfferQueryService.getJobOffers(request);
+
+        // then
+        assertThat(response.offers())
+            .extracting(
+                JobOfferQueryResponse.JobOfferResponse::offerId,
+                JobOfferQueryResponse.JobOfferResponse::jobType,
+                JobOfferQueryResponse.JobOfferResponse::currentSalary,
+                JobOfferQueryResponse.JobOfferResponse::offeredSalary
+            )
+            .containsExactly(
+                tuple("OFFER-001", JobType.SMALL_BIZ, 40_000_000, 36_000_000),
+                tuple("OFFER-002", JobType.MID_BIZ, 40_000_000, 36_000_000),
+                tuple("OFFER-003", JobType.STARTUP, 40_000_000, 36_000_000),
+                tuple("OFFER-004", JobType.FREELANCER, 40_000_000, 36_000_000)
+            );
+    }
+
     private GameCareer createCareer(final JobType jobType, final int salary) {
         return GameCareer.builder()
             .gameId(1)
@@ -72,6 +103,29 @@ class JobOfferQueryServiceTest {
             .rehireAvailableTurn(null)
             .remainingUnemploymentBenefitTurns(0)
             .salaryBeforeResignation(null)
+            .build();
+    }
+
+    private GameCareer createUnemployedCareer(
+        final JobType jobType,
+        final int salaryBeforeResignation,
+        final int rehireAvailableTurn
+    ) {
+        return GameCareer.builder()
+            .gameId(1)
+            .jobType(jobType)
+            .jobTitle("사원")
+            .salary(salaryBeforeResignation)
+            .tenureTurns(12)
+            .recentStudyCount(0)
+            .recentNetworkingCount(0)
+            .negotiationPreparationScore(0)
+            .lastNegotiatedTurn(0)
+            .employmentStatus(EmploymentStatus.UNEMPLOYED)
+            .probationEndTurn(null)
+            .rehireAvailableTurn(rehireAvailableTurn)
+            .remainingUnemploymentBenefitTurns(2)
+            .salaryBeforeResignation(salaryBeforeResignation)
             .build();
     }
 
