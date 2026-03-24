@@ -3,11 +3,13 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.RegionsProviderResponse;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrictRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -28,10 +30,18 @@ class WorldRegionProviderServiceTest {
     @Autowired
     private RealEstateDocumentRepository realEstateDocumentRepository;
 
+    @Autowired
+    private HousingDistrictRepository housingDistrictRepository;
+
+    @Autowired
+    private HousingRegionRepository housingRegionRepository;
+
     @AfterEach
     void tearDown() {
         realEstateDocumentRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
+        housingDistrictRepository.deleteAllInBatch();
+        housingRegionRepository.deleteAllInBatch();
     }
 
     @DisplayName("seed 적재 후 DB 원천 기준의 목표 지역 목록 provider 응답을 반환한다")
@@ -46,10 +56,10 @@ class WorldRegionProviderServiceTest {
         // then
         assertThat(response.getRegions())
             .extracting(RegionsProviderResponse.RegionItem::getRegionCode)
-            .containsExactly("SEOUL", "GWANGJU");
+            .containsExactly("11", "24");
         assertThat(response.getRegions())
             .extracting(RegionsProviderResponse.RegionItem::getName)
-            .containsExactly("서울", "광주");
+            .containsExactly("서울특별시", "광주광역시");
     }
 
     @DisplayName("원천 지역 데이터가 비어 있어도 빈 배열 계약을 반환한다")
@@ -73,7 +83,7 @@ class WorldRegionProviderServiceTest {
 
         // then
         assertThat(response.getRegions()).hasSize(2);
-        assertThat(response.getRegions().get(0).getRegionCode()).isEqualTo("SEOUL");
-        assertThat(response.getRegions().get(0).getName()).isEqualTo("서울");
+        assertThat(response.getRegions().get(0).getRegionCode()).isEqualTo("11");
+        assertThat(response.getRegions().get(0).getName()).isEqualTo("서울특별시");
     }
 }
