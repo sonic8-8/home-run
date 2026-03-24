@@ -9,13 +9,13 @@ import lombok.Getter;
 @Getter
 public class TargetPropertyValidationResponse {
 
-    private final Integer propertyId;
+    private final Long propertyId;
     private final long priceSnapshot;
     private final HousingType housingType;
 
     @Builder
     private TargetPropertyValidationResponse(
-        final Integer propertyId,
+        final Long propertyId,
         final long priceSnapshot,
         final HousingType housingType
     ) {
@@ -28,7 +28,7 @@ public class TargetPropertyValidationResponse {
     }
 
     public static TargetPropertyValidationResponse of(
-        final Integer propertyId,
+        final Long propertyId,
         final long priceSnapshot,
         final HousingType housingType
     ) {
@@ -39,7 +39,7 @@ public class TargetPropertyValidationResponse {
             .build();
     }
 
-    private static void validatePropertyId(final Integer propertyId) {
+    private static void validatePropertyId(final Long propertyId) {
         if (propertyId == null) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }

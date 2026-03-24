@@ -78,7 +78,7 @@ class TargetPropertyValidationServiceTest {
         worldHousingSeedService.seed();
 
         // when & then
-        assertThatThrownBy(() -> targetPropertyValidationService.validateTargetProperty("11", "11680", 999_999))
+        assertThatThrownBy(() -> targetPropertyValidationService.validateTargetProperty("11", "11680", 999_999L))
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
             .isEqualTo(ErrorCode.HOUSING_PROPERTY_NOT_FOUND);
