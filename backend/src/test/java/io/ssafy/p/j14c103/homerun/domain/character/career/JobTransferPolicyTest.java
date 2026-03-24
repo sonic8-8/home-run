@@ -19,8 +19,7 @@ class JobTransferPolicyTest {
         final JobTransferPolicy.JobOfferPool result = jobTransferPolicy.calculateOfferPool(
             createCareer(JobType.MID_BIZ, 40_000_000, EmploymentStatus.EMPLOYED),
             createStat(30),
-            0,
-            12
+            0
         );
 
         // then
@@ -36,8 +35,7 @@ class JobTransferPolicyTest {
         final JobTransferPolicy.JobOfferPool result = jobTransferPolicy.calculateOfferPool(
             createCareer(JobType.SMALL_BIZ, 30_000_000, EmploymentStatus.EMPLOYED),
             createStat(60),
-            0,
-            12
+            0
         );
 
         // then
@@ -58,8 +56,7 @@ class JobTransferPolicyTest {
         final JobTransferPolicy.JobOfferPool result = jobTransferPolicy.calculateOfferPool(
             createCareer(JobType.SMALL_BIZ, 30_000_000, EmploymentStatus.EMPLOYED),
             createStat(61),
-            0,
-            12
+            0
         );
 
         // then
@@ -81,8 +78,7 @@ class JobTransferPolicyTest {
         final JobTransferPolicy.JobOfferPool result = jobTransferPolicy.calculateOfferPool(
             createCareer(JobType.LARGE_BIZ, 30_000_000, EmploymentStatus.EMPLOYED),
             createStat(0),
-            0,
-            12
+            0
         );
 
         // then
@@ -107,8 +103,7 @@ class JobTransferPolicyTest {
         final JobTransferPolicy.JobOfferPool result = jobTransferPolicy.calculateOfferPool(
             createCareer(JobType.SMALL_BIZ, 30_000_000, EmploymentStatus.EMPLOYED),
             createStat(50),
-            2,
-            12
+            2
         );
 
         // then
@@ -121,42 +116,15 @@ class JobTransferPolicyTest {
     void returnEmptyOfferPoolForUnemployed() {
         // when
         final JobTransferPolicy.JobOfferPool result = jobTransferPolicy.calculateOfferPool(
-            createUnemployedCareer(JobType.SMALL_BIZ, 30_000_000, 15),
+            createCareer(JobType.SMALL_BIZ, 30_000_000, EmploymentStatus.UNEMPLOYED),
             createStat(80),
-            3,
-            14
+            3
         );
 
         // then
         assertThat(result.offers()).isEmpty();
         assertThat(result.offerChanceBonusRate()).isZero();
         assertThat(result.meetFriendBonusApplied()).isFalse();
-    }
-
-    @DisplayName("재취업 가능 턴이 되면 실직 전 연봉 기반의 하향 재취업 오퍼를 반환한다.")
-    @Test
-    void calculateRehireOfferPool() {
-        // when
-        final JobTransferPolicy.JobOfferPool result = jobTransferPolicy.calculateOfferPool(
-            createUnemployedCareer(JobType.SMALL_BIZ, 40_000_000, 15),
-            createStat(60),
-            1,
-            15
-        );
-
-        // then
-        assertThat(result.offers())
-            .extracting(
-                JobTransferPolicy.JobOffer::jobType,
-                JobTransferPolicy.JobOffer::currentSalary,
-                JobTransferPolicy.JobOffer::offeredSalary
-            )
-            .containsExactly(
-                tuple(JobType.SMALL_BIZ, 40_000_000, 36_000_000),
-                tuple(JobType.MID_BIZ, 40_000_000, 36_000_000),
-                tuple(JobType.STARTUP, 40_000_000, 36_000_000),
-                tuple(JobType.FREELANCER, 40_000_000, 36_000_000)
-            );
     }
 
     private GameCareer createCareer(
@@ -179,29 +147,6 @@ class JobTransferPolicyTest {
             .rehireAvailableTurn(null)
             .remainingUnemploymentBenefitTurns(0)
             .salaryBeforeResignation(null)
-            .build();
-    }
-
-    private GameCareer createUnemployedCareer(
-        final JobType jobType,
-        final int salaryBeforeResignation,
-        final int rehireAvailableTurn
-    ) {
-        return GameCareer.builder()
-            .gameId(1)
-            .jobType(jobType)
-            .jobTitle("사원")
-            .salary(salaryBeforeResignation)
-            .tenureTurns(12)
-            .recentStudyCount(0)
-            .recentNetworkingCount(0)
-            .negotiationPreparationScore(0)
-            .lastNegotiatedTurn(0)
-            .employmentStatus(EmploymentStatus.UNEMPLOYED)
-            .probationEndTurn(null)
-            .rehireAvailableTurn(rehireAvailableTurn)
-            .remainingUnemploymentBenefitTurns(2)
-            .salaryBeforeResignation(salaryBeforeResignation)
             .build();
     }
 

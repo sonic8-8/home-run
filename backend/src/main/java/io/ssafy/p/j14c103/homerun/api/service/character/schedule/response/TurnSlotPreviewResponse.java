@@ -6,8 +6,6 @@ import io.ssafy.p.j14c103.homerun.domain.character.schedule.TurnSlotPreviewPolic
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -17,14 +15,14 @@ public class TurnSlotPreviewResponse {
     private final StatPreviewResponse statPreview;
     private final CashPreviewResponse cashPreview;
 
-    @Builder(access = AccessLevel.PRIVATE)
     private TurnSlotPreviewResponse(
         final List<TurnSlotResponse> slots,
         final StatPreviewResponse statPreview,
         final CashPreviewResponse cashPreview
     ) {
-        validateRequest(slots, statPreview, cashPreview);
-
+        if (slots == null || statPreview == null || cashPreview == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+        }
         this.slots = List.copyOf(slots);
         this.statPreview = statPreview;
         this.cashPreview = cashPreview;
@@ -33,23 +31,25 @@ public class TurnSlotPreviewResponse {
     public static TurnSlotPreviewResponse from(
         final TurnSlotPreviewPolicy.PreviewResult previewResult
     ) {
-        return TurnSlotPreviewResponse.builder()
-            .slots(previewResult.slots().stream()
+        return new TurnSlotPreviewResponse(
+            previewResult.slots().stream()
                 .map(TurnSlotResponse::from)
-                .toList())
-            .statPreview(StatPreviewResponse.from(previewResult.statPreview()))
-            .cashPreview(CashPreviewResponse.from(previewResult.cashPreview()))
-            .build();
+                .toList(),
+            StatPreviewResponse.from(previewResult.statPreview()),
+            CashPreviewResponse.from(previewResult.cashPreview())
+        );
     }
 
-    private void validateRequest(
-        final List<TurnSlotResponse> slots,
-        final StatPreviewResponse statPreview,
-        final CashPreviewResponse cashPreview
-    ) {
-        if (slots == null || statPreview == null || cashPreview == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-        }
+    public List<TurnSlotResponse> slots() {
+        return slots;
+    }
+
+    public StatPreviewResponse statPreview() {
+        return statPreview;
+    }
+
+    public CashPreviewResponse cashPreview() {
+        return cashPreview;
     }
 
     @Getter
@@ -60,14 +60,15 @@ public class TurnSlotPreviewResponse {
         private final ActionCategory actionCategory;
         private final boolean forcedAction;
 
-        @Builder(access = AccessLevel.PRIVATE)
         private TurnSlotResponse(
             final int slotIndex,
             final ActionType actionType,
             final ActionCategory actionCategory,
             final boolean forcedAction
         ) {
-            validateRequest(actionType, actionCategory);
+            if (actionType == null || actionCategory == null) {
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+            }
 
             this.slotIndex = slotIndex;
             this.actionType = actionType;
@@ -76,21 +77,28 @@ public class TurnSlotPreviewResponse {
         }
 
         private static TurnSlotResponse from(final TurnSlotPreviewPolicy.PreviewSlot previewSlot) {
-            return TurnSlotResponse.builder()
-                .slotIndex(previewSlot.slotIndex())
-                .actionType(previewSlot.actionType())
-                .actionCategory(previewSlot.actionCategory())
-                .forcedAction(previewSlot.forcedAction())
-                .build();
+            return new TurnSlotResponse(
+                previewSlot.slotIndex(),
+                previewSlot.actionType(),
+                previewSlot.actionCategory(),
+                previewSlot.forcedAction()
+            );
         }
 
-        private void validateRequest(
-            final ActionType actionType,
-            final ActionCategory actionCategory
-        ) {
-            if (actionType == null || actionCategory == null) {
-                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-            }
+        public int slotIndex() {
+            return slotIndex;
+        }
+
+        public ActionType actionType() {
+            return actionType;
+        }
+
+        public ActionCategory actionCategory() {
+            return actionCategory;
+        }
+
+        public boolean forcedAction() {
+            return forcedAction;
         }
     }
 
@@ -103,7 +111,6 @@ public class TurnSlotPreviewResponse {
         private final int happinessDelta;
         private final int knowledgeDelta;
 
-        @Builder(access = AccessLevel.PRIVATE)
         private StatPreviewResponse(
             final int healthDelta,
             final int fatigueDelta,
@@ -121,13 +128,33 @@ public class TurnSlotPreviewResponse {
         private static StatPreviewResponse from(
             final TurnSlotPreviewPolicy.StatPreview statPreview
         ) {
-            return StatPreviewResponse.builder()
-                .healthDelta(statPreview.healthDelta())
-                .fatigueDelta(statPreview.fatigueDelta())
-                .stressDelta(statPreview.stressDelta())
-                .happinessDelta(statPreview.happinessDelta())
-                .knowledgeDelta(statPreview.knowledgeDelta())
-                .build();
+            return new StatPreviewResponse(
+                statPreview.healthDelta(),
+                statPreview.fatigueDelta(),
+                statPreview.stressDelta(),
+                statPreview.happinessDelta(),
+                statPreview.knowledgeDelta()
+            );
+        }
+
+        public int healthDelta() {
+            return healthDelta;
+        }
+
+        public int fatigueDelta() {
+            return fatigueDelta;
+        }
+
+        public int stressDelta() {
+            return stressDelta;
+        }
+
+        public int happinessDelta() {
+            return happinessDelta;
+        }
+
+        public int knowledgeDelta() {
+            return knowledgeDelta;
         }
     }
 
@@ -138,7 +165,6 @@ public class TurnSlotPreviewResponse {
         private final int maximumCashDelta;
         private final boolean rangePreview;
 
-        @Builder(access = AccessLevel.PRIVATE)
         private CashPreviewResponse(
             final int minimumCashDelta,
             final int maximumCashDelta,
@@ -152,11 +178,23 @@ public class TurnSlotPreviewResponse {
         private static CashPreviewResponse from(
             final TurnSlotPreviewPolicy.CashPreview cashPreview
         ) {
-            return CashPreviewResponse.builder()
-                .minimumCashDelta(cashPreview.minimumCashDelta())
-                .maximumCashDelta(cashPreview.maximumCashDelta())
-                .rangePreview(cashPreview.rangePreview())
-                .build();
+            return new CashPreviewResponse(
+                cashPreview.minimumCashDelta(),
+                cashPreview.maximumCashDelta(),
+                cashPreview.rangePreview()
+            );
+        }
+
+        public int minimumCashDelta() {
+            return minimumCashDelta;
+        }
+
+        public int maximumCashDelta() {
+            return maximumCashDelta;
+        }
+
+        public boolean rangePreview() {
+            return rangePreview;
         }
     }
 }

@@ -29,24 +29,23 @@ class JobOfferQueryServiceTest {
         final JobOfferQueryRequest request = JobOfferQueryRequest.of(
             createCareer(JobType.SMALL_BIZ, 30_000_000),
             createStat(100),
-            2,
-            15
+            2
         );
 
         // when
         final JobOfferQueryResponse response = jobOfferQueryService.getJobOffers(request);
 
         // then
-        assertThat(response.getOfferChanceBonusRate()).isEqualTo(10);
-        assertThat(response.isMeetFriendBonusApplied()).isTrue();
-        assertThat(response.getOffers())
+        assertThat(response.offerChanceBonusRate()).isEqualTo(10);
+        assertThat(response.meetFriendBonusApplied()).isTrue();
+        assertThat(response.offers())
             .extracting(
-                JobOfferQueryResponse.JobOfferResponse::getOfferId,
-                JobOfferQueryResponse.JobOfferResponse::getJobType,
-                JobOfferQueryResponse.JobOfferResponse::getDisplayCompanyName,
-                JobOfferQueryResponse.JobOfferResponse::getCurrentSalary,
-                JobOfferQueryResponse.JobOfferResponse::getOfferedSalary,
-                JobOfferQueryResponse.JobOfferResponse::getProbationTurns
+                JobOfferQueryResponse.JobOfferResponse::offerId,
+                JobOfferQueryResponse.JobOfferResponse::jobType,
+                JobOfferQueryResponse.JobOfferResponse::displayCompanyName,
+                JobOfferQueryResponse.JobOfferResponse::currentSalary,
+                JobOfferQueryResponse.JobOfferResponse::offeredSalary,
+                JobOfferQueryResponse.JobOfferResponse::probationTurns
             )
             .containsExactly(
                 tuple("OFFER-001", JobType.SMALL_BIZ, "OO 중소기업", 30_000_000, 45_000_000, 1),
@@ -54,36 +53,6 @@ class JobOfferQueryServiceTest {
                 tuple("OFFER-003", JobType.STARTUP, "OO 스타트업", 30_000_000, 45_000_000, 2),
                 tuple("OFFER-004", JobType.LARGE_BIZ, "OO 대기업", 30_000_000, 45_000_000, 2),
                 tuple("OFFER-005", JobType.FREELANCER, "OO 프리랜서 프로젝트", 30_000_000, 45_000_000, null)
-            );
-    }
-
-    @DisplayName("강제 퇴사 이후 재취업 가능 턴이 되면 하향 연봉 기준의 오퍼를 반환한다.")
-    @Test
-    void getJobOffersForUnemployedCareer() {
-        // given
-        final JobOfferQueryRequest request = JobOfferQueryRequest.of(
-            createUnemployedCareer(JobType.SMALL_BIZ, 40_000_000, 12),
-            createStat(60),
-            1,
-            12
-        );
-
-        // when
-        final JobOfferQueryResponse response = jobOfferQueryService.getJobOffers(request);
-
-        // then
-        assertThat(response.getOffers())
-            .extracting(
-                JobOfferQueryResponse.JobOfferResponse::getOfferId,
-                JobOfferQueryResponse.JobOfferResponse::getJobType,
-                JobOfferQueryResponse.JobOfferResponse::getCurrentSalary,
-                JobOfferQueryResponse.JobOfferResponse::getOfferedSalary
-            )
-            .containsExactly(
-                tuple("OFFER-001", JobType.SMALL_BIZ, 40_000_000, 36_000_000),
-                tuple("OFFER-002", JobType.MID_BIZ, 40_000_000, 36_000_000),
-                tuple("OFFER-003", JobType.STARTUP, 40_000_000, 36_000_000),
-                tuple("OFFER-004", JobType.FREELANCER, 40_000_000, 36_000_000)
             );
     }
 
@@ -103,29 +72,6 @@ class JobOfferQueryServiceTest {
             .rehireAvailableTurn(null)
             .remainingUnemploymentBenefitTurns(0)
             .salaryBeforeResignation(null)
-            .build();
-    }
-
-    private GameCareer createUnemployedCareer(
-        final JobType jobType,
-        final int salaryBeforeResignation,
-        final int rehireAvailableTurn
-    ) {
-        return GameCareer.builder()
-            .gameId(1)
-            .jobType(jobType)
-            .jobTitle("사원")
-            .salary(salaryBeforeResignation)
-            .tenureTurns(12)
-            .recentStudyCount(0)
-            .recentNetworkingCount(0)
-            .negotiationPreparationScore(0)
-            .lastNegotiatedTurn(0)
-            .employmentStatus(EmploymentStatus.UNEMPLOYED)
-            .probationEndTurn(null)
-            .rehireAvailableTurn(rehireAvailableTurn)
-            .remainingUnemploymentBenefitTurns(2)
-            .salaryBeforeResignation(salaryBeforeResignation)
             .build();
     }
 

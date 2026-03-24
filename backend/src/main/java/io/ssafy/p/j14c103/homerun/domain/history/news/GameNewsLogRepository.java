@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameNewsLogRepository extends JpaRepository<GameNewsLog, Integer> {
 
-    List<GameNewsLog> findAllByGameSessionIdOrderByTurnNumberDescGameNewsLogIdDesc(Integer gameSessionId);
+    List<GameNewsLog> findAllByGameSessionIdOrderByTurnNumberDescGameNewsLogIdDesc(Long gameSessionId);
 }

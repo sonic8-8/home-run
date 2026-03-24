@@ -4,16 +4,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMaster;
 import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMasterRepository;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-@DataJpaTest
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class GameNewsLogRepositoryTest {
 
     @Autowired
@@ -23,7 +27,7 @@ class GameNewsLogRepositoryTest {
     private GameNewsLogRepository gameNewsLogRepository;
 
     @Autowired
-    private TestEntityManager entityManager;
+    private EntityManager entityManager;
 
     @DisplayName("GameNewsLog는 세션 기준 최근 턴 순으로 지난 뉴스 이력을 조회할 수 있다")
     @Test
@@ -56,7 +60,7 @@ class GameNewsLogRepositoryTest {
 
         gameNewsLogRepository.saveAndFlush(
             GameNewsLog.create(
-                1001,
+                1001L,
                 9,
                 firstNews.getNewsId(),
                 "금리 인하 기조 지속",
@@ -65,7 +69,7 @@ class GameNewsLogRepositoryTest {
         );
         gameNewsLogRepository.saveAndFlush(
             GameNewsLog.create(
-                1001,
+                1001L,
                 10,
                 secondNews.getNewsId(),
                 "채용 한파 심화",
@@ -76,7 +80,7 @@ class GameNewsLogRepositoryTest {
 
         // when
         List<GameNewsLog> result =
-            gameNewsLogRepository.findAllByGameSessionIdOrderByTurnNumberDescGameNewsLogIdDesc(1001);
+            gameNewsLogRepository.findAllByGameSessionIdOrderByTurnNumberDescGameNewsLogIdDesc(1001L);
 
         // then
         assertThat(result).hasSize(2);

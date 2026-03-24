@@ -6,7 +6,6 @@ import io.ssafy.p.j14c103.homerun.domain.character.schedule.TurnSlotPreviewPolic
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
-import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,22 +39,33 @@ public class TurnSlotPreviewRequest {
             .build();
     }
 
-    public List<RequestedSlot> toRequestedSlots() {
-        return slots.stream()
-            .map(slot -> RequestedSlot.of(slot.getSlotIndex(), slot.getActionType()))
-            .toList();
+    public GameStat gameStat() {
+        return gameStat;
+    }
+
+    public List<TurnSlotRequest> slots() {
+        return slots;
     }
 
     private void validateRequest(
         final GameStat gameStat,
         final List<TurnSlotRequest> slots
     ) {
-        if (gameStat == null || slots == null) {
+        if (gameStat == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
-        if (slots.stream().anyMatch(Objects::isNull)) {
+        if (slots == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
+        if (slots.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+    }
+
+    public List<RequestedSlot> toRequestedSlots() {
+        return slots.stream()
+            .map(slot -> RequestedSlot.of(slot.slotIndex(), slot.actionType()))
+            .toList();
     }
 
     @Getter
@@ -66,10 +76,7 @@ public class TurnSlotPreviewRequest {
         private ActionType actionType;
 
         @Builder(access = AccessLevel.PRIVATE)
-        private TurnSlotRequest(
-            final int slotIndex,
-            final ActionType actionType
-        ) {
+        private TurnSlotRequest(final int slotIndex, final ActionType actionType) {
             validateRequest(actionType);
 
             this.slotIndex = slotIndex;
@@ -81,6 +88,14 @@ public class TurnSlotPreviewRequest {
                 .slotIndex(slotIndex)
                 .actionType(actionType)
                 .build();
+        }
+
+        public int slotIndex() {
+            return slotIndex;
+        }
+
+        public ActionType actionType() {
+            return actionType;
         }
 
         private void validateRequest(final ActionType actionType) {

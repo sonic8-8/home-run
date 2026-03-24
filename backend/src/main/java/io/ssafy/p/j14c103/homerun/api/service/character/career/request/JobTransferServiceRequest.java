@@ -52,6 +52,26 @@ public class JobTransferServiceRequest {
             .build();
     }
 
+    public GameCareer gameCareer() {
+        return gameCareer;
+    }
+
+    public GameStat gameStat() {
+        return gameStat;
+    }
+
+    public int recentMeetFriendCount() {
+        return recentMeetFriendCount;
+    }
+
+    public String offerId() {
+        return offerId;
+    }
+
+    public int currentTurn() {
+        return currentTurn;
+    }
+
     private void validateRequest(
         final GameCareer gameCareer,
         final GameStat gameStat,
@@ -59,7 +79,10 @@ public class JobTransferServiceRequest {
         final String offerId,
         final int currentTurn
     ) {
-        if (gameCareer == null || gameStat == null) {
+        if (gameCareer == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+        if (gameStat == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
         if (recentMeetFriendCount < 0) {
