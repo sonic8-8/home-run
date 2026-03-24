@@ -6,4 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface StockMarketRepository extends JpaRepository<StockMarket, String> {
 
     List<StockMarket> findAllByKisStockCodeIsNotNull();
+
+    List<StockMarket> findAllByKisStockCodeIsNotNullOrderByStockCodeAsc();
+
+    List<StockMarket> findAllByOrderByStockCodeAsc();
 }

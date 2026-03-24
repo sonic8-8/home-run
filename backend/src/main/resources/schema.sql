@@ -88,6 +88,89 @@ create table if not exists seedmoney_transactions (
     foreign key (pass_subscription_id) references pass_subscriptions (pass_subscription_id)
 );
 
+-- Unified user account model for MAIN and SEEDMONEY accounts.
+create table if not exists user_accounts (
+  user_account_id integer generated always as identity primary key,
+  user_id integer not null,
+  account_type varchar(20) not null,
+  bank_code varchar(3) not null,
+  bank_name varchar(100) not null,
+  account_number varchar(50) not null,
+  balance_snapshot_amount integer not null,
+  opened_at timestamp not null,
+  active_yn boolean not null default true,
+  constraint fk_user_accounts__user
+    foreign key (user_id) references users (user_id),
+  constraint uk_user_accounts__user_id__account_type
+    unique (user_id, account_type)
+);
+
+-- Unified account transaction history for dashboard, PASS, and CSS.
+create table if not exists user_account_transactions (
+  user_account_transaction_id integer generated always as identity primary key,
+  user_id integer not null,
+  account_type varchar(20) not null,
+  pass_subscription_id integer,
+  transaction_type varchar(30) not null,
+  amount integer not null,
+  counterparty_account_number varchar(50),
+  created_at timestamp not null default current_timestamp,
+  constraint fk_user_account_transactions__user
+    foreign key (user_id) references users (user_id),
+  constraint fk_user_account_transactions__pass_subscription
+    foreign key (pass_subscription_id) references pass_subscriptions (pass_subscription_id)
+);
+
+-- Template master for validating real-world financial product snapshots.
+create table if not exists financial_product_templates (
+  financial_product_template_id integer generated always as identity primary key,
+  product_type varchar(30) not null,
+  institution_name varchar(100) not null,
+  product_name varchar(100) not null,
+  active_yn boolean not null default true
+);
+
+-- Mock financial products used for total asset, debt, and CSS.
+create table if not exists user_financial_products (
+  user_financial_product_id integer generated always as identity primary key,
+  user_id integer not null,
+  product_type varchar(30) not null,
+  institution_name varchar(100) not null,
+  product_name varchar(100) not null,
+  current_balance_amount integer not null,
+  opened_at timestamp not null,
+  active_yn boolean not null default true,
+  constraint fk_user_financial_products__user
+    foreign key (user_id) references users (user_id)
+);
+
+create table if not exists user_financial_transactions (
+  user_financial_transaction_id integer generated always as identity primary key,
+  user_id integer not null,
+  user_financial_product_id integer not null,
+  transaction_type varchar(30) not null,
+  amount integer not null,
+  occurred_at timestamp not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_user_financial_transactions__user
+    foreign key (user_id) references users (user_id),
+  constraint fk_user_financial_transactions__product
+    foreign key (user_financial_product_id) references user_financial_products (user_financial_product_id)
+);
+
+create table if not exists user_financial_summaries (
+  user_id integer primary key,
+  total_asset_amount integer not null,
+  total_debt_amount integer not null,
+  net_asset_amount integer not null,
+  cash_asset_amount integer not null,
+  saving_asset_amount integer not null,
+  investment_asset_amount integer not null,
+  updated_at timestamp not null default current_timestamp,
+  constraint fk_user_financial_summaries__user
+    foreign key (user_id) references users (user_id)
+);
+
 -- User card payment history used for card recommendation scoring.
 create table if not exists member_payment_histories (
   payment_history_id integer generated always as identity primary key,
@@ -340,7 +423,28 @@ create table if not exists stock_markets (
   kis_stock_code varchar(10),             -- 한투 OpenAPI 종목코드 (예: '005930')
   sector varchar(100),
   base_price_amount integer,
+  year_low_price_amount integer,
+  year_high_price_amount integer,
   volatility_rate numeric(8,4)
+);
+
+create table if not exists user_investment_holdings (
+  user_investment_holding_id integer generated always as identity primary key,
+  user_id integer not null,
+  user_financial_product_id integer not null,
+  stock_code varchar(20) not null,
+  quantity integer not null,
+  average_purchase_price_amount integer not null,
+  current_price_amount integer not null,
+  price_updated_at timestamp not null default current_timestamp,
+  active_yn boolean not null default true,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_user_investment_holdings__user
+    foreign key (user_id) references users (user_id),
+  constraint fk_user_investment_holdings__product
+    foreign key (user_financial_product_id) references user_financial_products (user_financial_product_id),
+  constraint fk_user_investment_holdings__stock_market
+    foreign key (stock_code) references stock_markets (stock_code)
 );
 
 -- Session-scoped current stock prices used for valuation and execution.
@@ -432,6 +536,38 @@ create table if not exists card_products (
   active_benefits jsonb,
   card_image_url varchar(255),
   active_yn boolean not null default true
+);
+
+-- User-owned cards linked to the shared card product catalog.
+create table if not exists owned_cards (
+  owned_card_id integer generated always as identity primary key,
+  user_id integer not null,
+  card_product_id integer not null,
+  card_alias varchar(100),
+  masked_card_no varchar(30) not null,
+  opened_at timestamp not null,
+  active_yn boolean not null default true,
+  constraint fk_owned_cards__user
+    foreign key (user_id) references users (user_id),
+  constraint fk_owned_cards__card_product
+    foreign key (card_product_id) references card_products (card_product_id)
+);
+
+-- User card transactions used by dashboard, recommendation, and CSS.
+create table if not exists card_transactions (
+  card_transaction_id integer generated always as identity primary key,
+  user_id integer not null,
+  owned_card_id integer not null,
+  category_id varchar(50) not null,
+  category_name varchar(50) not null,
+  merchant_name varchar(100) not null,
+  payment_amount integer not null,
+  payment_date date not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_card_transactions__user
+    foreign key (user_id) references users (user_id),
+  constraint fk_card_transactions__owned_card
+    foreign key (owned_card_id) references owned_cards (owned_card_id)
 );
 
 -- Session-scoped card selections referencing a real card product.
