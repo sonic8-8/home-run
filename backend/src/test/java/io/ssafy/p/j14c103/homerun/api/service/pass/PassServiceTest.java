@@ -3,6 +3,9 @@ package io.ssafy.p.j14c103.homerun.api.service.pass;
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSubscribeServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
@@ -35,6 +38,9 @@ class PassServiceTest {
 
     @Mock
     private SeedmoneyTransactionRepository seedmoneyTransactionRepository;
+
+    @Mock
+    private UserAccountRepository userAccountRepository;
 
     @InjectMocks
     private PassService passService;
@@ -79,15 +85,18 @@ class PassServiceTest {
 
   @DisplayName("PASS 구독을 신청한다")
   @Test
-  void subscribe() {
-    // given
-    final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
-    final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
-            .passId(1L)
-            .sourceAccountId("0012345678")
-            .build();
+    void subscribe() {
+        // given
+        final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
+        final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
+                .passId(1L)
+                .build();
+        final UserAccount mainAccount = UserAccount.create(
+                1L, AccountType.MAIN, "001", "한국은행", "0012345678", 100000);
 
     given(passProductRepository.findById(1L)).willReturn(Optional.of(product));
+    given(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.MAIN))
+            .willReturn(Optional.of(mainAccount));
     given(passSubscriptionRepository.save(any(PassSubscription.class)))
             .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -101,12 +110,11 @@ class PassServiceTest {
 
   @DisplayName("존재하지 않는 상품으로 구독하면 예외가 발생한다")
   @Test
-  void subscribe_notFound_exception() {
-    // given
-    final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
-            .passId(999L)
-            .sourceAccountId("0012345678")
-            .build();
+    void subscribe_notFound_exception() {
+        // given
+        final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
+                .passId(999L)
+                .build();
 
     given(passProductRepository.findById(999L)).willReturn(Optional.empty());
 

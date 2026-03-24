@@ -46,10 +46,12 @@ class DashboardControllerTest {
     final DashboardResponse response = DashboardResponse.of(
             Money.of(42_300_000L),
             Money.of(2_800_000L),
-                Money.of(1_420_000L),
-                Money.zero(),
-                Money.of(220_000L),
-                7
+            Money.of(1_420_000L),
+            Money.zero(),
+            Money.of(220_000L),
+            7,
+            Money.of(3_200_000L),
+            Money.of(1_100_000L)
     );
     given(dashboardService.getDashboard(1L)).willReturn(response);
 
@@ -60,6 +62,8 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$.message").value("OK"))
                 .andExpect(jsonPath("$.data.totalAssets").value(42300000))
                 .andExpect(jsonPath("$.data.monthlyIncome").value(2800000))
+                .andExpect(jsonPath("$.data.mainAccountBalance").value(3200000))
+                .andExpect(jsonPath("$.data.seedmoneyBalance").value(1100000))
                 .andExpect(jsonPath("$.data.nextPaydayDays").value(7));
     }
 

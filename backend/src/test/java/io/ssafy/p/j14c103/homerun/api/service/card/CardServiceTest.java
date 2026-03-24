@@ -5,10 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardListResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardRecommendationResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.CardTransactionListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.card.response.OwnedCardListResponse;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransaction;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProduct;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProductRepository;
-import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistory;
-import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistoryRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.OwnedCard;
+import io.ssafy.p.j14c103.homerun.domain.card.OwnedCardRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
@@ -16,6 +20,7 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,7 +75,10 @@ class CardServiceTest {
     private UserRepository userRepository;
 
     @Autowired
-    private MemberPaymentHistoryRepository memberPaymentHistoryRepository;
+    private OwnedCardRepository ownedCardRepository;
+
+    @Autowired
+    private CardTransactionRepository cardTransactionRepository;
 
     @DisplayName("전체 카드 조회는 활성 카드만 이름순으로 반환한다")
     @Test
@@ -104,13 +112,18 @@ class CardServiceTest {
                 "tester",
                 "hashed-password"
         ));
+        final CardProduct spendCardProduct = cardProductRepository.save(CardProduct.create(
+                "Spend Card", "Issuer", "설명", 0, 25000, BENEFITS_JSON, "spend.png", false));
+        final OwnedCard spendCard = ownedCardRepository.save(OwnedCard.create(
+                user.getId(), spendCardProduct, "주카드", "1234-****", LocalDateTime.of(2026, 1, 1, 0, 0)
+        ));
 
-        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
-                user.getId(), LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 200000, LocalDate.of(2026, 2, 5)));
-        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
-                user.getId(), TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, "카카오T", 100000, LocalDate.of(2026, 2, 7)));
-        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
-                user.getId(), TELECOM_CATEGORY_ID, TELECOM_CATEGORY_NAME, "SKT", 50000, LocalDate.of(2026, 2, 10)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), spendCard, LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 200000, LocalDate.of(2026, 2, 5)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), spendCard, TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, "카카오T", 100000, LocalDate.of(2026, 2, 7)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), spendCard, TELECOM_CATEGORY_ID, TELECOM_CATEGORY_NAME, "SKT", 50000, LocalDate.of(2026, 2, 10)));
 
         cardProductRepository.save(CardProduct.create(
                 "Echo Card", "Issuer", "설명", 0, 25000,
@@ -170,11 +183,16 @@ class CardServiceTest {
                 "tester",
                 "hashed-password"
         ));
+        final CardProduct spendCardProduct = cardProductRepository.save(CardProduct.create(
+                "Spend Card", "Issuer", "설명", 0, 25000, BENEFITS_JSON, "spend.png", false));
+        final OwnedCard spendCard = ownedCardRepository.save(OwnedCard.create(
+                user.getId(), spendCardProduct, "주카드", "1234-****", LocalDateTime.of(2026, 1, 1, 0, 0)
+        ));
 
-        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
-                user.getId(), LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 500000, LocalDate.of(2026, 1, 31)));
-        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
-                user.getId(), TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, "카카오T", 100000, LocalDate.of(2026, 2, 3)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), spendCard, LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 500000, LocalDate.of(2026, 1, 31)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), spendCard, TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, "카카오T", 100000, LocalDate.of(2026, 2, 3)));
 
         cardProductRepository.save(CardProduct.create(
                 "Bravo Card", "Issuer", "설명", 0, 50000,
@@ -201,9 +219,14 @@ class CardServiceTest {
                 "tester",
                 "hashed-password"
         ));
+        final CardProduct spendCardProduct = cardProductRepository.save(CardProduct.create(
+                "Spend Card", "Issuer", "설명", 0, 25000, BENEFITS_JSON, "spend.png", false));
+        final OwnedCard spendCard = ownedCardRepository.save(OwnedCard.create(
+                user.getId(), spendCardProduct, "주카드", "1234-****", LocalDateTime.of(2026, 1, 1, 0, 0)
+        ));
 
-        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
-                user.getId(), LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 100000, LocalDate.of(2026, 2, 12)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), spendCard, LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 100000, LocalDate.of(2026, 2, 12)));
 
         cardProductRepository.save(CardProduct.create(
                 "Baseline Card", "Issuer", "설명", 500000, 50000,
@@ -230,9 +253,14 @@ class CardServiceTest {
                 "tester",
                 "hashed-password"
         ));
+        final CardProduct spendCardProduct = cardProductRepository.save(CardProduct.create(
+                "Spend Card", "Issuer", "설명", 0, 25000, BENEFITS_JSON, "spend.png", false));
+        final OwnedCard spendCard = ownedCardRepository.save(OwnedCard.create(
+                user.getId(), spendCardProduct, "주카드", "1234-****", LocalDateTime.of(2026, 1, 1, 0, 0)
+        ));
 
-        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
-                user.getId(), LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 500000, LocalDate.of(2026, 2, 14)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), spendCard, LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 500000, LocalDate.of(2026, 2, 14)));
 
         cardProductRepository.save(CardProduct.create(
                 "High Raw Card", "Issuer", "설명", 0, 30000,
@@ -271,6 +299,67 @@ class CardServiceTest {
                 .isInstanceOf(HomerunException.class)
                 .extracting(exception -> ((HomerunException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.USER_ID_REQUIRED);
+    }
+
+    @DisplayName("내 카드 조회는 개설일 내림차순으로 활성 카드만 반환한다")
+    @Test
+    void getMyCards() {
+        // given
+        final User user = userRepository.save(User.register(
+                Email.of("my-card-user@ssafy.com"),
+                "tester",
+                "hashed-password"
+        ));
+        final CardProduct alpha = cardProductRepository.save(CardProduct.create(
+                "Alpha Card", "Issuer", "설명", 0, 20000, BENEFITS_JSON, "alpha.png", true));
+        final CardProduct bravo = cardProductRepository.save(CardProduct.create(
+                "Bravo Card", "Issuer", "설명", 0, 20000, BENEFITS_JSON, "bravo.png", true));
+
+        ownedCardRepository.save(OwnedCard.create(
+                user.getId(), alpha, "서브카드", "1111-****", LocalDateTime.of(2026, 1, 1, 0, 0)
+        ));
+        ownedCardRepository.save(OwnedCard.create(
+                user.getId(), bravo, "주카드", "2222-****", LocalDateTime.of(2026, 2, 1, 0, 0)
+        ));
+
+        // when
+        final OwnedCardListResponse response = cardService.getMyCards(user.getId());
+
+        // then
+        assertThat(response.getCards()).hasSize(2);
+        assertThat(response.getCards().get(0).getCardName()).isEqualTo("Bravo Card");
+        assertThat(response.getCards().get(0).getCardAlias()).isEqualTo("주카드");
+        assertThat(response.getCards().get(1).getCardName()).isEqualTo("Alpha Card");
+    }
+
+    @DisplayName("내 카드 거래내역 조회는 최신 결제일 순으로 반환한다")
+    @Test
+    void getMyTransactions() {
+        // given
+        final User user = userRepository.save(User.register(
+                Email.of("my-card-transaction-user@ssafy.com"),
+                "tester",
+                "hashed-password"
+        ));
+        final CardProduct alpha = cardProductRepository.save(CardProduct.create(
+                "Alpha Card", "Issuer", "설명", 0, 20000, BENEFITS_JSON, "alpha.png", true));
+        final OwnedCard ownedCard = ownedCardRepository.save(OwnedCard.create(
+                user.getId(), alpha, "주카드", "1111-****", LocalDateTime.of(2026, 1, 1, 0, 0)
+        ));
+
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), ownedCard, TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, "카카오T", 12000, LocalDate.of(2026, 2, 5)));
+        cardTransactionRepository.save(CardTransaction.create(
+                user.getId(), ownedCard, LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 5600, LocalDate.of(2026, 2, 7)));
+
+        // when
+        final CardTransactionListResponse response = cardService.getMyTransactions(user.getId());
+
+        // then
+        assertThat(response.getTransactions()).hasSize(2);
+        assertThat(response.getTransactions().get(0).getMerchantName()).isEqualTo("스타벅스");
+        assertThat(response.getTransactions().get(0).getCardName()).isEqualTo("Alpha Card");
+        assertThat(response.getTransactions().get(1).getMerchantName()).isEqualTo("카카오T");
     }
 
     private String singleBenefitJson(final String categoryId, final String categoryName, final double discountRate) {
