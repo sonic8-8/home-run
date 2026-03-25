@@ -166,6 +166,7 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
             BigDecimal.valueOf(37.485551),
             BigDecimal.valueOf(127.011500),
             1_300_000_000L,
+            "등기사항전부증명서",
             List.of(
                 RealEstateDocumentResponse.RegistryRowResponse.of(
                     "1",

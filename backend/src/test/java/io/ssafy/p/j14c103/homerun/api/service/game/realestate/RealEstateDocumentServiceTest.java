@@ -15,6 +15,7 @@ import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateMoneyRenderingRule;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
@@ -61,8 +62,8 @@ class RealEstateDocumentServiceTest {
         final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
         final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
-            createGapguDocument("위험"),
-            createEulguDocument("정상")
+            createGapguDocument(property.getPropertyId(), "위험"),
+            createEulguDocument(property.getPropertyId(), "정상")
         ));
         given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
@@ -94,8 +95,8 @@ class RealEstateDocumentServiceTest {
         final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
         final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
-            createGapguDocument("정상"),
-            createEmptyEulguDocument("정상")
+            createGapguDocument(property.getPropertyId(), "정상"),
+            createEmptyEulguDocument(property.getPropertyId(), "정상")
         ));
         given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
@@ -119,7 +120,7 @@ class RealEstateDocumentServiceTest {
         // given
         final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
         final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
-        realEstateDocumentRepository.saveAndFlush(createGapguDocument("정상"));
+        realEstateDocumentRepository.saveAndFlush(createGapguDocument(property.getPropertyId(), "정상"));
 
         // when & then
         assertThatThrownBy(() -> realEstateDocumentService.getDocument(
@@ -197,8 +198,10 @@ class RealEstateDocumentServiceTest {
         return gameSession;
     }
 
-    private RealEstateDocument createGapguDocument(final String verdict) {
+    private RealEstateDocument createGapguDocument(final Long propertyId, final String verdict) {
         return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.GAPGU,
             RealEstateRegistryQuizSample.create(
                 verdict,
@@ -223,8 +226,10 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createEulguDocument(final String verdict) {
+    private RealEstateDocument createEulguDocument(final Long propertyId, final String verdict) {
         return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
             RealEstateRegistryQuizSample.create(
                 verdict,
@@ -249,8 +254,10 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createEmptyEulguDocument(final String verdict) {
+    private RealEstateDocument createEmptyEulguDocument(final Long propertyId, final String verdict) {
         return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
             RealEstateRegistryQuizSample.create(
                 verdict,

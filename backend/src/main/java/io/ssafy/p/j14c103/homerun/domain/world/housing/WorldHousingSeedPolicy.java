@@ -160,6 +160,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-HN-001",
             "GAPGU",
+            "/images/docs/registry-gapgu.png",
+            List.of(
+                checklistItemDefinition("TRAP-HN-001", "소유권 변동 이력 확인", false),
+                checklistItemDefinition("CHECK-HN-001", "가등기 말소 여부 확인", true)
+            ),
             quizSampleDefinition(
                 "위험",
                 List.of(
@@ -181,6 +186,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-HN-001",
             "EULGU",
+            "/images/docs/registry-eulgu.png",
+            List.of(
+                checklistItemDefinition("TRAP-HN-001", "근저당 설정 확인", true),
+                checklistItemDefinition("CHECK-HN-002", "압류 기록 확인", false)
+            ),
             quizSampleDefinition(
                 "위험",
                 List.of(
@@ -205,6 +215,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-HN-002",
             "GAPGU",
+            "/images/docs/registry-gapgu.png",
+            List.of(
+                checklistItemDefinition("CHECK-HN-003", "현재 소유자 확인", false),
+                checklistItemDefinition("CHECK-HN-004", "갑구 특이사항 확인", false)
+            ),
             quizSampleDefinition(
                 "정상",
                 List.of(
@@ -226,6 +241,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-HN-002",
             "EULGU",
+            "/images/docs/registry-eulgu.png",
+            List.of(
+                checklistItemDefinition("TRAP-HN-003", "선순위 근저당 규모 확인", true),
+                checklistItemDefinition("CHECK-HN-005", "추가 담보권 존재 여부 확인", false)
+            ),
             quizSampleDefinition(
                 "위험",
                 List.of(
@@ -250,6 +270,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-SP-001",
             "GAPGU",
+            "/images/docs/registry-gapgu.png",
+            List.of(
+                checklistItemDefinition("CHECK-SP-001", "소유권 변동 이력 확인", false),
+                checklistItemDefinition("CHECK-SP-002", "가등기 여부 확인", false)
+            ),
             quizSampleDefinition(
                 "정상",
                 List.of(
@@ -271,6 +296,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-SP-001",
             "EULGU",
+            "/images/docs/registry-eulgu.png",
+            List.of(
+                checklistItemDefinition("CHECK-SP-003", "근저당 설정 확인", false),
+                checklistItemDefinition("CHECK-SP-004", "압류 기록 확인", false)
+            ),
             quizSampleDefinition(
                 "정상",
                 List.of(
@@ -292,6 +322,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-MP-001",
             "GAPGU",
+            "/images/docs/registry-gapgu.png",
+            List.of(
+                checklistItemDefinition("TRAP-MP-001", "위반건축물 표기 확인", true),
+                checklistItemDefinition("CHECK-MP-001", "소유권 변동 이력 확인", false)
+            ),
             quizSampleDefinition(
                 "위험",
                 List.of(
@@ -313,6 +348,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-MP-001",
             "EULGU",
+            "/images/docs/registry-eulgu.png",
+            List.of(
+                checklistItemDefinition("CHECK-MP-002", "근저당 설정 확인", false),
+                checklistItemDefinition("CHECK-MP-003", "압류 기록 확인", false)
+            ),
             quizSampleDefinition(
                 "정상",
                 List.of(
@@ -334,6 +374,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-GJN-001",
             "GAPGU",
+            "/images/docs/registry-gapgu.png",
+            List.of(
+                checklistItemDefinition("TRAP-GJN-001", "압류 및 체납 이력 확인", true),
+                checklistItemDefinition("CHECK-GJN-001", "가등기 여부 확인", false)
+            ),
             quizSampleDefinition(
                 "위험",
                 List.of(
@@ -355,6 +400,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-GJN-001",
             "EULGU",
+            "/images/docs/registry-eulgu.png",
+            List.of(
+                checklistItemDefinition("CHECK-GJN-002", "근저당 설정 확인", false),
+                checklistItemDefinition("CHECK-GJN-003", "전세권 설정 확인", false)
+            ),
             quizSampleDefinition(
                 "정상",
                 List.of(
@@ -376,6 +426,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-GWJ-001",
             "GAPGU",
+            "/images/docs/registry-gapgu.png",
+            List.of(
+                checklistItemDefinition("CHECK-GWJ-001", "소유권 변동 이력 확인", false),
+                checklistItemDefinition("CHECK-GWJ-002", "가등기 여부 확인", false)
+            ),
             quizSampleDefinition(
                 "정상",
                 List.of(
@@ -397,6 +452,11 @@ public class WorldHousingSeedPolicy {
         documentDefinition(
             "PROP-GWJ-001",
             "EULGU",
+            "/images/docs/registry-eulgu.png",
+            List.of(
+                checklistItemDefinition("CHECK-GWJ-003", "근저당 설정 확인", false),
+                checklistItemDefinition("CHECK-GWJ-004", "압류 기록 확인", false)
+            ),
             quizSampleDefinition(
                 "정상",
                 List.of(
@@ -554,6 +614,8 @@ public class WorldHousingSeedPolicy {
             return new DocumentSeed(
                 propertyProviderId,
                 RealEstateRegistrySection.valueOf(requiredText(definition, "registrySection")),
+                requiredText(definition, "imageUrl"),
+                toChecklistItems(requiredList(definition, "checklist")),
                 toQuizSample(requiredMap(definition, "quizSamplePayload"))
             );
         } catch (IllegalArgumentException exception) {
@@ -605,6 +667,26 @@ public class WorldHousingSeedPolicy {
         return definitions.stream()
             .map(this::toRegistryRow)
             .toList();
+    }
+
+    private List<RealEstateDocumentChecklistItem> toChecklistItems(final List<?> definitions) {
+        return definitions.stream()
+            .map(this::toChecklistItem)
+            .toList();
+    }
+
+    private RealEstateDocumentChecklistItem toChecklistItem(final Object definition) {
+        if (!(definition instanceof Map<?, ?> rawDefinition)) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> checklistDefinition = (Map<String, Object>) rawDefinition;
+        return RealEstateDocumentChecklistItem.create(
+            requiredText(checklistDefinition, "trapId"),
+            requiredText(checklistDefinition, "label"),
+            requiredBoolean(checklistDefinition, "isTrapped")
+        );
     }
 
     private RealEstateRegistryRow toRegistryRow(final Object definition) {
@@ -870,12 +952,28 @@ public class WorldHousingSeedPolicy {
     private static Map<String, Object> documentDefinition(
         final String propertyProviderId,
         final String registrySection,
+        final String imageUrl,
+        final List<Map<String, Object>> checklist,
         final Map<String, Object> quizSamplePayload
     ) {
         return Map.of(
             "propertyProviderId", propertyProviderId,
             "registrySection", registrySection,
+            "imageUrl", imageUrl,
+            "checklist", checklist,
             "quizSamplePayload", quizSamplePayload
+        );
+    }
+
+    private static Map<String, Object> checklistItemDefinition(
+        final String trapId,
+        final String label,
+        final boolean isTrapped
+    ) {
+        return Map.of(
+            "trapId", trapId,
+            "label", label,
+            "isTrapped", isTrapped
         );
     }
 
@@ -965,6 +1063,8 @@ public class WorldHousingSeedPolicy {
     public record DocumentSeed(
         String propertyProviderId,
         RealEstateRegistrySection registrySection,
+        String imageUrl,
+        List<RealEstateDocumentChecklistItem> checklist,
         RealEstateRegistryQuizSample quizSamplePayload
     ) {
     }
