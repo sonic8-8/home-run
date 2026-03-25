@@ -46,7 +46,8 @@ public class LoginService {
         return LoginResponse.of(
                 accessToken,
                 refreshTokenValue,
-                jwtProperties.getAccessTokenTtlSeconds()
+                jwtProperties.getAccessTokenTtlSeconds(),
+                user.getName()
         );
     }
 

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import styles from './SelectStartMethod.module.css';
 
-type CharacterType = 'girl' | 'boy';
+type CharacterType = 'FEMALE' | 'MALE';
 type StartMethod = 'mydata' | 'job';
 
 interface LocationState {
@@ -13,8 +13,8 @@ interface LocationState {
 }
 
 const CHAR_IMAGE: Record<CharacterType, string> = {
-  girl: '/assets/images/gcharac.png',
-  boy: '/assets/images/bcharac.png',
+  FEMALE: '/assets/images/gcharac.png',
+  MALE: '/assets/images/bcharac.png',
 };
 
 export default function SelectStartMethod() {
@@ -22,7 +22,7 @@ export default function SelectStartMethod() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
-  const characterType = state.characterType ?? 'boy';
+  const characterType = state.characterType ?? 'MALE';
 
   const handleNext = () => {
     if (!method) return;
@@ -36,7 +36,7 @@ export default function SelectStartMethod() {
       <div className={styles.charSection}>
         <img
           src={CHAR_IMAGE[characterType]}
-          alt={characterType === 'girl' ? '여자 캐릭터' : '남자 캐릭터'}
+          alt={characterType === 'FEMALE' ? '여자 캐릭터' : '남자 캐릭터'}
           className={styles.charImg}
         />
       </div>
