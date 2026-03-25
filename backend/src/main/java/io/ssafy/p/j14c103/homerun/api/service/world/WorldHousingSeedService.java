@@ -173,6 +173,8 @@ public class WorldHousingSeedService {
                 property.getPropertyId(),
                 REGISTRY_DOCUMENT_TYPE,
                 documentSeed.registrySection(),
+                documentSeed.imageUrl(),
+                documentSeed.checklist(),
                 documentSeed.quizSamplePayload()
             )
         );

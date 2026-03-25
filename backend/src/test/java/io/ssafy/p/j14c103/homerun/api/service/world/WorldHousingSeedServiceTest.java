@@ -91,6 +91,12 @@ class WorldHousingSeedServiceTest {
             .extracting(RealEstateDocument::getPropertyId)
             .allMatch(propertyId -> properties.stream()
                 .anyMatch(property -> property.getPropertyId().equals(propertyId)));
+        assertThat(documents)
+            .extracting(RealEstateDocument::getImageUrl)
+            .allMatch(imageUrl -> imageUrl != null && !imageUrl.isBlank());
+        assertThat(documents)
+            .extracting(RealEstateDocument::getChecklist)
+            .allSatisfy(checklist -> assertThat((List<?>) checklist).isNotEmpty());
     }
 
     @DisplayName("같은 seed를 다시 실행해도 매물과 문서 수가 증가하지 않는다")
@@ -151,5 +157,11 @@ class WorldHousingSeedServiceTest {
                 assertThat(quizSample.getFeedbackCorrect()).isNotBlank();
                 assertThat(quizSample.getFeedbackWrong()).isNotBlank();
             });
+        assertThat(documents)
+            .extracting(RealEstateDocument::getImageUrl)
+            .containsOnly("/images/docs/registry-gapgu.png", "/images/docs/registry-eulgu.png");
+        assertThat(documents)
+            .extracting(RealEstateDocument::getChecklist)
+            .allSatisfy(checklist -> assertThat((List<?>) checklist).isNotEmpty());
     }
 }

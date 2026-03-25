@@ -1,6 +1,7 @@
 package io.ssafy.p.j14c103.homerun.domain.world.housing;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import java.math.BigDecimal;
@@ -89,6 +90,44 @@ class RealEstateDocumentRepositoryTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getRegistrySection()).isEqualTo(RealEstateRegistrySection.GAPGU);
         assertThat(result.get(0).getQuizSamplePayload().getQuizVerdict()).isEqualTo("정상");
+    }
+
+    @DisplayName("문서의 imageUrl과 checklist JSON을 저장 후 다시 조회할 수 있다")
+    @Test
+    void saveRealEstateDocumentWithChecklist() {
+        // given
+        RealEstateProperty property = createProperty("PROP-SEOUL-103", "SONGPA");
+        RealEstateProperty savedProperty = realEstatePropertyRepository.saveAndFlush(property);
+
+        RealEstateDocument document = RealEstateDocument.create(
+            savedProperty.getPropertyId(),
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.GAPGU,
+            "/images/docs/registry-gapgu.png",
+            List.of(
+                RealEstateDocumentChecklistItem.create("TRAP-001", "근저당 설정 확인", true),
+                RealEstateDocumentChecklistItem.create("CHECK-001", "소유자 일치 확인", false)
+            ),
+            createGapguSample("위험")
+        );
+
+        // when
+        RealEstateDocument saved = realEstateDocumentRepository.saveAndFlush(document);
+        RealEstateDocument found = realEstateDocumentRepository.findById(saved.getRealEstateDocumentId())
+            .orElseThrow();
+
+        // then
+        assertThat(found.getImageUrl()).isEqualTo("/images/docs/registry-gapgu.png");
+        assertThat(found.getChecklist())
+            .extracting(
+                RealEstateDocumentChecklistItem::getTrapId,
+                RealEstateDocumentChecklistItem::getLabel,
+                RealEstateDocumentChecklistItem::getIsTrapped
+            )
+            .containsExactly(
+                tuple("TRAP-001", "근저당 설정 확인", true),
+                tuple("CHECK-001", "소유자 일치 확인", false)
+            );
     }
 
     private RealEstateProperty createProperty(

@@ -42,6 +42,12 @@ class WorldHousingSeedPolicyTest {
                 assertThat(quizSample.getRows()).isNotEmpty();
                 assertThat(quizSample.getKeyPoints()).isNotEmpty();
             });
+        assertThat(seedPlan.documentSeeds())
+            .extracting(WorldHousingSeedPolicy.DocumentSeed::imageUrl)
+            .allMatch(imageUrl -> imageUrl != null && !imageUrl.isBlank());
+        assertThat(seedPlan.documentSeeds())
+            .extracting(WorldHousingSeedPolicy.DocumentSeed::checklist)
+            .allSatisfy(checklist -> assertThat((List<?>) checklist).isNotEmpty());
     }
 
     @DisplayName("매물 seed 정의에 housingType이 없으면 예외가 발생한다")
