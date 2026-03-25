@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useDashboardSse } from './useDashboardSse';
 import type { SeedMoneyAccount } from '../../domain/entities/SeedMoneyAccount';
 import type { Pass } from '../../domain/entities/Pass';
 import type { PassSubscription } from '../../domain/entities/PassSubscription';
@@ -108,6 +109,8 @@ export const useHomePage = () => {
   const [creditScore, setCreditScore] = useState<CreditScore | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useDashboardSse(isAssetLinked, setDashboard);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
