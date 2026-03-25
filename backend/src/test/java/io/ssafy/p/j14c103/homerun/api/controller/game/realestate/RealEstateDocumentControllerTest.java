@@ -1,12 +1,17 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.realestate;
 
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.ssafy.p.j14c103.homerun.api.service.game.realestate.RealEstateDocumentService;
 import io.ssafy.p.j14c103.homerun.api.service.game.realestate.response.RealEstateDocumentResponse;
+import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
@@ -14,14 +19,18 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(RealEstateDocumentController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class RealEstateDocumentControllerTest {
+@AutoConfigureRestDocs(uriScheme = "https", uriHost = "api.homerun.local", uriPort = 443)
+class RealEstateDocumentControllerTest extends RestDocsTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,7 +45,12 @@ class RealEstateDocumentControllerTest {
         given(realEstateDocumentService.getDocument(1001L, 7L)).willReturn(sampleResponse());
 
         // when & then
-        mockMvc.perform(get("/api/games/sessions/1001/real-estate/properties/7/documents"))
+        mockMvc.perform(get(
+                        "/api/games/sessions/{sessionId}/real-estate/properties/{propertyId}/documents",
+                        1001L,
+                        7L
+                )
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200))
             .andExpect(jsonPath("$.data.propertyId").value(7L))
@@ -45,7 +59,49 @@ class RealEstateDocumentControllerTest {
             .andExpect(jsonPath("$.data.eulguRows[0].details").value("채권최고액 금195,000,000원 채무자 김도윤 근저당권자 주식회사 한울저축은행"))
             .andExpect(jsonPath("$.data.solution.verdict").value("위험"))
             .andExpect(jsonPath("$.data.solution.gapgu.verdict").value("위험"))
-            .andExpect(jsonPath("$.data.solution.eulgu.verdict").value("정상"));
+            .andExpect(jsonPath("$.data.solution.eulgu.verdict").value("정상"))
+            .andDo(document("real-estate/documents/success",
+                    requestHeaders(authorizationHeader()),
+                    pathParameters(
+                            parameterWithName("sessionId").description("게임 세션 ID"),
+                            parameterWithName("propertyId").description("부동산 매물 ID")
+                    ),
+                    relaxedApiResponseFields(
+                            "등기부등본 정보",
+                            fieldWithPath("propertyId").type(JsonFieldType.NUMBER).description("부동산 매물 ID"),
+                            fieldWithPath("propertyName").type(JsonFieldType.STRING).description("부동산 이름"),
+                            fieldWithPath("address").type(JsonFieldType.STRING).description("주소"),
+                            fieldWithPath("latitude").type(JsonFieldType.NUMBER).description("위도"),
+                            fieldWithPath("longitude").type(JsonFieldType.NUMBER).description("경도"),
+                            fieldWithPath("salePrice").type(JsonFieldType.NUMBER).description("매매가"),
+                            fieldWithPath("gapguRows").type(JsonFieldType.ARRAY).description("갑구 등기 행 목록"),
+                            fieldWithPath("gapguRows[].rankNo").type(JsonFieldType.STRING).description("갑구 순위 번호"),
+                            fieldWithPath("gapguRows[].purpose").type(JsonFieldType.STRING).description("갑구 권리 목적"),
+                            fieldWithPath("gapguRows[].receipt").type(JsonFieldType.STRING).description("갑구 접수일"),
+                            fieldWithPath("gapguRows[].reason").type(JsonFieldType.STRING).description("갑구 원인"),
+                            fieldWithPath("gapguRows[].details").type(JsonFieldType.STRING).description("갑구 상세 내용"),
+                            fieldWithPath("eulguRows").type(JsonFieldType.ARRAY).description("을구 등기 행 목록"),
+                            fieldWithPath("eulguRows[].rankNo").type(JsonFieldType.STRING).description("을구 순위 번호"),
+                            fieldWithPath("eulguRows[].purpose").type(JsonFieldType.STRING).description("을구 권리 목적"),
+                            fieldWithPath("eulguRows[].receipt").type(JsonFieldType.STRING).description("을구 접수일"),
+                            fieldWithPath("eulguRows[].reason").type(JsonFieldType.STRING).description("을구 원인"),
+                            fieldWithPath("eulguRows[].details").type(JsonFieldType.STRING).description("을구 상세 내용"),
+                            fieldWithPath("solution").type(JsonFieldType.OBJECT).description("위험도 해설 정보"),
+                            fieldWithPath("solution.verdict").type(JsonFieldType.STRING).description("종합 판정"),
+                            fieldWithPath("solution.gapgu").type(JsonFieldType.OBJECT).description("갑구 해설"),
+                            fieldWithPath("solution.gapgu.verdict").type(JsonFieldType.STRING).description("갑구 판정"),
+                            fieldWithPath("solution.gapgu.issueSummary").type(JsonFieldType.STRING).description("갑구 요약"),
+                            fieldWithPath("solution.gapgu.keyPoints").type(JsonFieldType.ARRAY).description("갑구 핵심 포인트"),
+                            fieldWithPath("solution.gapgu.feedbackCorrect").type(JsonFieldType.STRING).description("갑구 정답 피드백"),
+                            fieldWithPath("solution.gapgu.feedbackWrong").type(JsonFieldType.STRING).description("갑구 오답 피드백"),
+                            fieldWithPath("solution.eulgu").type(JsonFieldType.OBJECT).description("을구 해설"),
+                            fieldWithPath("solution.eulgu.verdict").type(JsonFieldType.STRING).description("을구 판정"),
+                            fieldWithPath("solution.eulgu.issueSummary").type(JsonFieldType.STRING).description("을구 요약"),
+                            fieldWithPath("solution.eulgu.keyPoints").type(JsonFieldType.ARRAY).description("을구 핵심 포인트"),
+                            fieldWithPath("solution.eulgu.feedbackCorrect").type(JsonFieldType.STRING).description("을구 정답 피드백"),
+                            fieldWithPath("solution.eulgu.feedbackWrong").type(JsonFieldType.STRING).description("을구 오답 피드백")
+                    )
+            ));
     }
 
     @DisplayName("존재하지 않는 부동산 매물이면 에러 응답을 반환한다")
@@ -56,10 +112,23 @@ class RealEstateDocumentControllerTest {
             .willThrow(new HomerunException(ErrorCode.HOUSING_PROPERTY_NOT_FOUND));
 
         // when & then
-        mockMvc.perform(get("/api/games/sessions/1001/real-estate/properties/999/documents"))
+        mockMvc.perform(get(
+                        "/api/games/sessions/{sessionId}/real-estate/properties/{propertyId}/documents",
+                        1001L,
+                        999L
+                )
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code").value("HOUSING_001"))
-            .andExpect(jsonPath("$.message").value("존재하지 않는 부동산 매물입니다."));
+            .andExpect(jsonPath("$.message").value("존재하지 않는 부동산 매물입니다."))
+            .andDo(document("real-estate/documents/property-not-found",
+                    requestHeaders(authorizationHeader()),
+                    pathParameters(
+                            parameterWithName("sessionId").description("게임 세션 ID"),
+                            parameterWithName("propertyId").description("부동산 매물 ID")
+                    ),
+                    basicErrorResponseFields()
+            ));
     }
 
     @DisplayName("존재하지 않는 게임 세션이면 에러 응답을 반환한다")
@@ -70,10 +139,23 @@ class RealEstateDocumentControllerTest {
             .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then
-        mockMvc.perform(get("/api/games/sessions/9999/real-estate/properties/7/documents"))
+        mockMvc.perform(get(
+                        "/api/games/sessions/{sessionId}/real-estate/properties/{propertyId}/documents",
+                        9999L,
+                        7L
+                )
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value("WORLD_001"))
-            .andExpect(jsonPath("$.message").value("존재하지 않는 게임 세션입니다."));
+            .andExpect(jsonPath("$.message").value("존재하지 않는 게임 세션입니다."))
+            .andDo(document("real-estate/documents/session-not-found",
+                    requestHeaders(authorizationHeader()),
+                    pathParameters(
+                            parameterWithName("sessionId").description("게임 세션 ID"),
+                            parameterWithName("propertyId").description("부동산 매물 ID")
+                    ),
+                    basicErrorResponseFields()
+            ));
     }
 
     private RealEstateDocumentResponse sampleResponse() {
