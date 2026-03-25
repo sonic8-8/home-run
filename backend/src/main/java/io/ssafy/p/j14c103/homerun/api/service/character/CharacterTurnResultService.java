@@ -64,7 +64,7 @@ public class CharacterTurnResultService {
         final boolean forcedResigned = applyForcedResignationIfNeeded(
             gameCareer,
             gameStat,
-            request.getCurrentTurn()
+            request
         );
         final UnemploymentBenefitOutcome unemploymentBenefitOutcome =
             consumeUnemploymentBenefit(gameCareer);
@@ -158,7 +158,7 @@ public class CharacterTurnResultService {
     private boolean applyForcedResignationIfNeeded(
         final GameCareer gameCareer,
         final GameStat gameStat,
-        final int currentTurn
+        final CharacterTurnResultServiceRequest request
     ) {
         if (!gameStat.isForcedResignationRisk()) {
             return false;
@@ -167,10 +167,16 @@ public class CharacterTurnResultService {
             return false;
         }
 
+        final int currentTurn = request.getCurrentTurn();
         final GameplayHistoryWriter.CareerSnapshot beforeResignation =
             GameplayHistoryWriter.CareerSnapshot.from(gameCareer);
         final ForcedResignationPolicy.ForcedResignationResult forcedResignationResult =
-            forcedResignationPolicy.apply(gameCareer, gameStat, currentTurn);
+            forcedResignationPolicy.apply(
+                gameCareer,
+                gameStat,
+                currentTurn,
+                request.toCareerCycleEffect()
+            );
 
         gameCareer.forceResign(forcedResignationResult);
         gameplayHistoryWriter.writeForcedResignation(beforeResignation, gameCareer, currentTurn);

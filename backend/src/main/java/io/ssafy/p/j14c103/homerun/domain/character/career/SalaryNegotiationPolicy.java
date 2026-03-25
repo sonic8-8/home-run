@@ -31,7 +31,17 @@ public class SalaryNegotiationPolicy {
         final GameStat gameStat,
         final int currentTurn
     ) {
+        return negotiate(gameCareer, gameStat, currentTurn, CareerCycleEffect.identity());
+    }
+
+    public NegotiationResult negotiate(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int currentTurn,
+        final CareerCycleEffect careerCycleEffect
+    ) {
         validateRequest(gameCareer, gameStat, currentTurn);
+        validateCareerCycleEffect(careerCycleEffect);
 
         final JobType jobType = requireJobType(gameCareer.getJobType());
         final int previousSalary = requireSalary(gameCareer.getSalary());
@@ -43,7 +53,7 @@ public class SalaryNegotiationPolicy {
 
         validateNegotiationWindow(lastNegotiatedTurn, currentTurn);
 
-        final int raiseRate = resolveRaiseRate(jobType, knowledge, health);
+        final int raiseRate = resolveRaiseRate(jobType, knowledge, health, careerCycleEffect);
         final int newSalary = calculateNewSalary(previousSalary, raiseRate);
 
         return NegotiationResult.of(
@@ -124,13 +134,21 @@ public class SalaryNegotiationPolicy {
     private int resolveRaiseRate(
         final JobType jobType,
         final int knowledge,
-        final int health
+        final int health,
+        final CareerCycleEffect careerCycleEffect
     ) {
         final int baseRaiseRate = resolveBaseRaiseRate(jobType).resolveActualRate();
         final int knowledgeBonusRate = resolveKnowledgeBonusRate(knowledge).resolveActualRate();
         final int healthPenaltyRate = resolveHealthPenaltyRate(health).resolveActualRate();
+        final int cycleAdjustedRaiseRate = careerCycleEffect.applySalaryMultiplier(baseRaiseRate);
 
-        return baseRaiseRate + knowledgeBonusRate - healthPenaltyRate;
+        return cycleAdjustedRaiseRate + knowledgeBonusRate - healthPenaltyRate;
+    }
+
+    private void validateCareerCycleEffect(final CareerCycleEffect careerCycleEffect) {
+        if (careerCycleEffect == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
     }
 
     private RaiseRateRange resolveBaseRaiseRate(final JobType jobType) {
