@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
+import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
+import { useSelectCharacter } from '../../hooks/useSelectCharacter';
 import styles from './SelectCharacter.module.css';
-
-type CharacterType = 'girl' | 'boy';
 
 interface LocationState {
   slotNumber?: number;
@@ -15,6 +15,7 @@ export default function SelectCharacter() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
+  const { characters, loading } = useSelectCharacter();
 
   const handleNext = () => {
     if (!selected) return;
@@ -23,9 +24,10 @@ export default function SelectCharacter() {
     });
   };
 
+  if (loading) return null;
+
   return (
     <div className={styles.page}>
-    
       <div className={styles.titleArea}>
         <h1 className={styles.title}>
           SELECT
@@ -35,14 +37,17 @@ export default function SelectCharacter() {
       </div>
 
       <div className={styles.selectArea}>
-        <button
-          className={`${styles.charBtn} ${selected === 'girl' ? styles.selected : ''}`}
-          onClick={() => setSelected('girl')}
-          aria-label="여자 캐릭터 선택"
-        >
-          <img src="/assets/images/gcharac.png" alt="여자 캐릭터" className={styles.charImg} />
-          {selected === 'girl' && <span className={styles.selectedIndicator} />}
-        </button>
+        {characters.map((char) => (
+          <button
+            key={char.characterType}
+            className={`${styles.charBtn} ${selected === char.characterType ? styles.selected : ''}`}
+            onClick={() => setSelected(char.characterType)}
+            aria-label={`${char.characterType} 캐릭터 선택`}
+          >
+            <img src={char.thumbnailUrl} alt={char.characterType} className={styles.charImg} />
+            {selected === char.characterType && <span className={styles.selectedIndicator} />}
+          </button>
+        ))}
 
         <button
           className={styles.nextBtn}
@@ -50,15 +55,6 @@ export default function SelectCharacter() {
           disabled={!selected}
         >
           NEXT
-        </button>
-
-        <button
-          className={`${styles.charBtn} ${selected === 'boy' ? styles.selected : ''}`}
-          onClick={() => setSelected('boy')}
-          aria-label="남자 캐릭터 선택"
-        >
-          <img src="/assets/images/bcharac.png" alt="남자 캐릭터" className={styles.charImg} />
-          {selected === 'boy' && <span className={styles.selectedIndicator} />}
         </button>
       </div>
     </div>
