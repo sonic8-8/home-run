@@ -1,5 +1,9 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.loan.request;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanConfirmServiceRequest;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,8 +16,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoanConfirmRequest {
 
+    @NotNull(message = "{validation.loan.confirm.applicationId.notNull}")
     private Integer applicationId;
+
+    @Positive(message = "{validation.loan.confirm.requestedAmount.positive}")
     private int requestedAmount;
+
+    @AssertTrue(message = "{validation.loan.confirm.agreed.assertTrue}")
     private boolean agreed;
 
     @Builder(access = AccessLevel.PRIVATE)
@@ -49,5 +58,9 @@ public class LoanConfirmRequest {
 
     public boolean agreed() {
         return agreed;
+    }
+
+    public LoanConfirmServiceRequest toServiceRequest() {
+        return LoanConfirmServiceRequest.of(applicationId, requestedAmount, agreed);
     }
 }

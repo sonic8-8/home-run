@@ -2,6 +2,10 @@ package io.ssafy.p.j14c103.homerun.api.service.game.loan;
 
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanApprovalService.ApprovalResult;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanCalculator.CalculationResult;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanApplyServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanCalculateServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanConfirmServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanRepayServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanApplyResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanCalculateResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanConfirmResponse;
@@ -51,6 +55,15 @@ public class LoanService {
     private final RealEstatePropertyRepository realEstatePropertyRepository;
     private final CreditScoreProvider creditScoreProvider;
 
+    public LoanCalculateResponse calculate(final LoanCalculateServiceRequest request) {
+        return calculate(
+            request.getPrincipal(),
+            request.getAnnualRate(),
+            request.getTermMonths(),
+            request.getRepaymentMethod()
+        );
+    }
+
     /**
      * 이자 계산기.
      */
@@ -63,6 +76,11 @@ public class LoanService {
         final RepaymentType type = RepaymentType.valueOf(repaymentMethod);
         final CalculationResult result = LoanCalculator.calculate(principal, annualRate, termMonths, type);
         return LoanCalculateResponse.from(result);
+    }
+
+    @Transactional
+    public LoanApplyResponse apply(final Long sessionId, final LoanApplyServiceRequest request) {
+        return apply(sessionId, request.getProductId(), request.getPropertyId());
     }
 
     @Transactional
@@ -101,6 +119,16 @@ public class LoanService {
      *
      * @return 확정된 대출 정보 + 세션에 입금할 금액
      */
+    @Transactional
+    public LoanConfirmResponse confirm(final Long sessionId, final LoanConfirmServiceRequest request) {
+        return confirm(
+            sessionId,
+            request.getApplicationId(),
+            request.getRequestedAmount(),
+            request.isAgreed()
+        );
+    }
+
     @Transactional
     public LoanConfirmResponse confirm(
             final Long sessionId,
@@ -172,6 +200,11 @@ public class LoanService {
     /**
      * 중도 상환.
      */
+    @Transactional
+    public LoanRepayResponse repay(final Long sessionId, final LoanRepayServiceRequest request) {
+        return repay(sessionId, request.getLoanId(), request.getAmount());
+    }
+
     @Transactional
     public LoanRepayResponse repay(final Long sessionId, final Integer loanId, final int amount) {
         final GameLoan loan = gameLoanRepository.findById(loanId)

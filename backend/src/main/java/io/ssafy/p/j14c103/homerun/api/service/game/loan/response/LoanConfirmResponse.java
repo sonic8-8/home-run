@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan.response;
 
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoan;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 
 /**
@@ -15,6 +17,7 @@ public class LoanConfirmResponse {
     private final int monthlyPayment;
     private final String status;
 
+    @Builder(access = AccessLevel.PRIVATE)
     private LoanConfirmResponse(
         final Integer loanId,
         final int amount,
@@ -30,13 +33,13 @@ public class LoanConfirmResponse {
     }
 
     public static LoanConfirmResponse from(final GameLoan loan) {
-        return new LoanConfirmResponse(
-                loan.getGameLoanId(),
-                loan.getPrincipalAmount(),
-                loan.getInterestRate().doubleValue(),
-                loan.getMonthlyPaymentAmount(),
-                loan.getLoanStatus().name()
-        );
+        return LoanConfirmResponse.builder()
+            .loanId(loan.getGameLoanId())
+            .amount(loan.getPrincipalAmount())
+            .annualRate(loan.getInterestRate().doubleValue())
+            .monthlyPayment(loan.getMonthlyPaymentAmount())
+            .status(loan.getLoanStatus().name())
+            .build();
     }
 
     public Integer loanId() {

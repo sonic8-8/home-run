@@ -1,5 +1,9 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.loan.request;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanCalculateServiceRequest;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,9 +16,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoanCalculateRequest {
 
+    @NotBlank(message = "{validation.loan.calculate.repaymentMethod.notBlank}")
     private String repaymentMethod;
+
+    @Positive(message = "{validation.loan.calculate.termMonths.positive}")
     private int termMonths;
+
+    @Positive(message = "{validation.loan.calculate.principal.positive}")
     private int principal;
+
+    @PositiveOrZero(message = "{validation.loan.calculate.annualRate.positiveOrZero}")
     private double annualRate;
 
     @Builder(access = AccessLevel.PRIVATE)
@@ -58,5 +69,14 @@ public class LoanCalculateRequest {
 
     public double annualRate() {
         return annualRate;
+    }
+
+    public LoanCalculateServiceRequest toServiceRequest() {
+        return LoanCalculateServiceRequest.of(
+            repaymentMethod,
+            termMonths,
+            principal,
+            annualRate
+        );
     }
 }

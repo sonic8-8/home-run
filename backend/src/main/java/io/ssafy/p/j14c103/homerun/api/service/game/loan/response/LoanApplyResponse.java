@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan.response;
 
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanApplication;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 
 /**
@@ -14,6 +16,7 @@ public class LoanApplyResponse {
     private final RequestInfo requestInfo;
     private final Result result;
 
+    @Builder(access = AccessLevel.PRIVATE)
     private LoanApplyResponse(
         final Integer applicationId,
         final String status,
@@ -47,8 +50,15 @@ public class LoanApplyResponse {
 
         private final String applicationDate;
 
+        @Builder(access = AccessLevel.PRIVATE)
         private RequestInfo(final String applicationDate) {
             this.applicationDate = applicationDate;
+        }
+
+        public static RequestInfo of(final String applicationDate) {
+            return RequestInfo.builder()
+                .applicationDate(applicationDate)
+                .build();
         }
 
         public String applicationDate() {
@@ -62,9 +72,17 @@ public class LoanApplyResponse {
         private final Integer maxLoanAmount;
         private final String rejectionReason;
 
+        @Builder(access = AccessLevel.PRIVATE)
         private Result(final Integer maxLoanAmount, final String rejectionReason) {
             this.maxLoanAmount = maxLoanAmount;
             this.rejectionReason = rejectionReason;
+        }
+
+        public static Result of(final Integer maxLoanAmount, final String rejectionReason) {
+            return Result.builder()
+                .maxLoanAmount(maxLoanAmount)
+                .rejectionReason(rejectionReason)
+                .build();
         }
 
         public Integer maxLoanAmount() {
@@ -77,18 +95,18 @@ public class LoanApplyResponse {
     }
 
     public static LoanApplyResponse from(final LoanApplication application) {
-        return new LoanApplyResponse(
-                application.getLoanApplicationId(),
-                application.getApplicationStatus().name(),
-                new RequestInfo(
-                        application.getAppliedAt() != null
-                                ? application.getAppliedAt().toLocalDate().toString()
-                                : null
-                ),
-                new Result(
-                        application.getApprovedLimitAmount(),
-                        application.getRejectionReason()
-                )
-        );
+        return LoanApplyResponse.builder()
+            .applicationId(application.getLoanApplicationId())
+            .status(application.getApplicationStatus().name())
+            .requestInfo(RequestInfo.of(
+                application.getAppliedAt() != null
+                    ? application.getAppliedAt().toLocalDate().toString()
+                    : null
+            ))
+            .result(Result.of(
+                application.getApprovedLimitAmount(),
+                application.getRejectionReason()
+            ))
+            .build();
     }
 }

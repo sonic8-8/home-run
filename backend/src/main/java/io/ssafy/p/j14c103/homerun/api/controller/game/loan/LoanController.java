@@ -15,6 +15,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanRepayRespon
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -73,11 +74,9 @@ public class LoanController {
     @PostMapping("/calculate")
     public ApiResponse<LoanCalculateResponse> calculate(
             @PathVariable final Long sessionId,
-            @RequestBody final LoanCalculateRequest request
+            @Valid @RequestBody final LoanCalculateRequest request
     ) {
-        final LoanCalculateResponse response = loanService.calculate(
-                request.principal(), request.annualRate(),
-                request.termMonths(), request.repaymentMethod());
+        final LoanCalculateResponse response = loanService.calculate(request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 
@@ -88,10 +87,9 @@ public class LoanController {
     @PostMapping("/apply")
     public ApiResponse<LoanApplyResponse> apply(
             @PathVariable final Long sessionId,
-            @RequestBody final LoanApplyRequest request
+            @Valid @RequestBody final LoanApplyRequest request
     ) {
-        final LoanApplyResponse response = loanService.apply(
-                sessionId, request.productId(), request.propertyId());
+        final LoanApplyResponse response = loanService.apply(sessionId, request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 
@@ -102,11 +100,9 @@ public class LoanController {
     @PostMapping("/confirm")
     public ApiResponse<LoanConfirmResponse> confirm(
             @PathVariable final Long sessionId,
-            @RequestBody final LoanConfirmRequest request
+            @Valid @RequestBody final LoanConfirmRequest request
     ) {
-        final LoanConfirmResponse response = loanService.confirm(
-                sessionId, request.applicationId(),
-                request.requestedAmount(), request.agreed());
+        final LoanConfirmResponse response = loanService.confirm(sessionId, request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 
@@ -117,10 +113,9 @@ public class LoanController {
     @PostMapping("/repay")
     public ApiResponse<LoanRepayResponse> repay(
             @PathVariable final Long sessionId,
-            @RequestBody final LoanRepayRequest request
+            @Valid @RequestBody final LoanRepayRequest request
     ) {
-        final LoanRepayResponse response = loanService.repay(
-                sessionId, request.loanId(), request.amount());
+        final LoanRepayResponse response = loanService.repay(sessionId, request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 }

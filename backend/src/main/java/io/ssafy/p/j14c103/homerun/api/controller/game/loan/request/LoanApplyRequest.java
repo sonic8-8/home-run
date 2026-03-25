@@ -1,5 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.loan.request;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanApplyServiceRequest;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +15,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoanApplyRequest {
 
+    @NotBlank(message = "{validation.loan.apply.productId.notBlank}")
     private String productId;
+
+    @Positive(message = "{validation.loan.apply.propertyId.positive}")
     private Long propertyId;
 
     @Builder(access = AccessLevel.PRIVATE)
@@ -34,5 +40,9 @@ public class LoanApplyRequest {
 
     public Long propertyId() {
         return propertyId;
+    }
+
+    public LoanApplyServiceRequest toServiceRequest() {
+        return LoanApplyServiceRequest.of(productId, propertyId);
     }
 }
