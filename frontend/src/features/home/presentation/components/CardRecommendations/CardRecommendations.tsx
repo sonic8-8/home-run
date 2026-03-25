@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import type { CardRecommendation } from '../../../domain/entities/CardRecommendation';
-import type { MyCard } from '../../../domain/entities/MyCard';
 import { CardModal } from '../CardModal/CardModal';
 import styles from './CardRecommendations.module.css';
 
 interface CardRecommendationsProps {
   cards: CardRecommendation[];
-  myCards: MyCard[];
+  allCards: CardRecommendation[];
 }
 
-export function CardRecommendations({ cards, myCards }: CardRecommendationsProps) {
+export function CardRecommendations({ cards, allCards }: CardRecommendationsProps) {
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
@@ -49,14 +48,9 @@ export function CardRecommendations({ cards, myCards }: CardRecommendationsProps
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         recommendations={cards}
-        myCards={myCards}
+        allCards={allCards}
         onApply={(card) => {
           console.log('카드 신청하기', card.cardProductId);
-          // TODO: API 연동
-        }}
-        onCancel={(cardId) => {
-          console.log('카드 해지하기', cardId);
-          // TODO: API 연동
         }}
       />
     </>

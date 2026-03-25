@@ -43,6 +43,7 @@ import type { PassHistoryPage } from '../../domain/entities/PassHistory';
 import { CardRemoteDataSource } from '../../data/datasources/CardRemoteDataSource';
 import { CardRepositoryImpl } from '../../data/repositories/CardRepositoryImpl';
 import { GetCardRecommendationsUseCase } from '../../domain/usecases/GetCardRecommendationsUseCase';
+import { GetCardListUseCase } from '../../domain/usecases/GetCardListUseCase';
 
 import { LoanRecommendationRemoteDataSource } from '../../data/datasources/LoanRecommendationRemoteDataSource';
 import { LoanRecommendationRepositoryImpl } from '../../data/repositories/LoanRecommendationRepositoryImpl';
@@ -82,6 +83,7 @@ const getPassHistory = new GetPassHistoryUseCase(passRepo);
 
 // ── Card
 const cardRepo = new CardRepositoryImpl(new CardRemoteDataSource());
+const getCardList = new GetCardListUseCase(cardRepo);
 const getCardRecommendations = new GetCardRecommendationsUseCase(cardRepo);
 
 // ── Loan
@@ -100,6 +102,7 @@ export const useHomePage = () => {
   const [allPasses, setAllPasses] = useState<Pass[]>([]);
   const [passSubscriptions, setPassSubscriptions] = useState<PassSubscription[]>([]);
   const [passHistory, setPassHistory] = useState<PassHistoryPage | null>(null);
+  const [cardList, setCardList] = useState<CardRecommendation[]>([]);
   const [cardRecommendations, setCardRecommendations] = useState<CardRecommendation[]>([]);
   const [loanRecommendations, setLoanRecommendations] = useState<LoanRecommendationData | null>(null);
   const [creditScore, setCreditScore] = useState<CreditScore | null>(null);
@@ -118,7 +121,7 @@ export const useHomePage = () => {
       const [
         dashboardResult, spendingResult, accountResult,
         passesResult, subscriptionsResult, passHistoryResult,
-        cardsResult, loansResult, creditResult,
+        cardListResult, cardsResult, loansResult, creditResult,
       ] = await Promise.allSettled([
         getDashboard.execute(),
         getSpending.execute(),
@@ -126,6 +129,7 @@ export const useHomePage = () => {
         getPassProducts.execute(),
         getPassSubscriptions.execute(),
         getPassHistory.execute(0, 10),
+        getCardList.execute(),
         getCardRecommendations.execute(),
         getLoanRecommendations.execute(),
         getCreditScore.execute(),
@@ -137,6 +141,7 @@ export const useHomePage = () => {
       if (passesResult.status === 'fulfilled') setAllPasses(passesResult.value);
       if (subscriptionsResult.status === 'fulfilled') setPassSubscriptions(subscriptionsResult.value);
       if (passHistoryResult.status === 'fulfilled') setPassHistory(passHistoryResult.value);
+      if (cardListResult.status === 'fulfilled') setCardList(cardListResult.value);
       if (cardsResult.status === 'fulfilled') setCardRecommendations(cardsResult.value);
       if (loansResult.status === 'fulfilled') setLoanRecommendations(loansResult.value);
       if (creditResult.status === 'fulfilled') setCreditScore(creditResult.value);
@@ -194,6 +199,7 @@ export const useHomePage = () => {
     seedMoney,
     creditScore,
     loanRecommendations,
+    cardList,
     cardRecommendations,
     passSubscriptions,
     passHistory,
