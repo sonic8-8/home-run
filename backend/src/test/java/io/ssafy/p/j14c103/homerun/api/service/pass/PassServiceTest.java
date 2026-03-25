@@ -1,8 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSubscribeServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
@@ -134,7 +132,6 @@ class PassServiceTest {
         ));
         final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
                 .passId(product.getId())
-                .sourceAccountId("0012345678")
                 .build();
 
         // when
@@ -175,35 +172,7 @@ class PassServiceTest {
         assertThat(result.get(0).getWeeklyHistory()).contains(true);
     }
 
-    @DisplayName("주계좌가 아닌 출금 계좌로 PASS를 구독하면 예외가 발생한다")
-    @Test
-    void subscribe_invalidSourceAccount_exception() {
-        // given
-        final PassProduct product = passProductRepository.save(PassProduct.create(
-                "커피 PASS",
-                5000,
-                "커피 한 잔 절약"
-        ));
-        userAccountRepository.save(UserAccount.create(
-                1L,
-                AccountType.MAIN,
-                "001",
-                "한국은행",
-                "0012345678",
-                100000
-        ));
-        final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
-                .passId(product.getId())
-                .sourceAccountId("9999999999")
-                .build();
-
-        // when // then
-        assertThatThrownBy(() -> passService.subscribe(1L, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("출금 계좌는 주계좌만 사용할 수 있습니다.");
-    }
-
-    @DisplayName("PASS 구독을 해지하면 내 PASS 목록에서 제외된다")
+@DisplayName("PASS 구독을 해지하면 내 PASS 목록에서 제외된다")
     @Test
     void cancelSubscription() {
         // given

@@ -53,16 +53,24 @@ export function CardModal({ isOpen, onClose, recommendations, myCards, onApply, 
                     <img src={selectedCard.cardImageUrl} alt={selectedCard.cardName} />
                   ) : (
                     <div className={styles.cardPlaceholder}>
-                      <span className={styles.cardPlaceholderText}>Samsung Card</span>
+                      <span className={styles.cardPlaceholderText}>{selectedCard.cardIssuerName}</span>
                     </div>
                   )}
                 </div>
                 <div className={styles.detailInfo}>
                   <span className={styles.detailName}>{selectedCard.cardName}</span>
-                  <span className={styles.detailMeta}>{selectedCard.summary}</span>
-                  <span className={styles.detailMeta}>
-                    연회비 {selectedCard.annualFee === 0 ? '없음' : `${selectedCard.annualFee.toLocaleString()}원`}
-                  </span>
+                  <span className={styles.detailMeta}>{selectedCard.cardIssuerName}</span>
+                  <span className={styles.detailMeta}>{selectedCard.cardDescription}</span>
+                  {selectedCard.activeBenefits.length > 0 && (
+                    <div className={styles.benefits}>
+                      {selectedCard.activeBenefits.map((b) => (
+                        <div key={b.categoryId} className={styles.benefitRow}>
+                          <span className={styles.benefitName}>{b.categoryName}</span>
+                          <span className={styles.benefitRate}>{(b.discountRate * 100).toFixed(0)}% 할인</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button className={styles.applyButton} onClick={() => onApply(selectedCard)}>
                   카드 신청하기
@@ -73,7 +81,7 @@ export function CardModal({ isOpen, onClose, recommendations, myCards, onApply, 
               <div className={styles.grid}>
                 {recommendations.map((card) => (
                   <div
-                    key={card.cardId}
+                    key={card.cardProductId}
                     className={styles.gridCard}
                     onClick={() => setSelectedCard(card)}
                   >
@@ -82,12 +90,12 @@ export function CardModal({ isOpen, onClose, recommendations, myCards, onApply, 
                         <img src={card.cardImageUrl} alt={card.cardName} />
                       ) : (
                         <div className={styles.cardPlaceholder}>
-                          <span className={styles.cardPlaceholderText}>Samsung Card</span>
+                          <span className={styles.cardPlaceholderText}>{card.cardIssuerName}</span>
                         </div>
                       )}
                     </div>
                     <span className={styles.gridCardName}>{card.cardName}</span>
-                    <span className={styles.gridCardSummary}>{card.summary}</span>
+                    <span className={styles.gridCardSummary}>{card.cardDescription}</span>
                   </div>
                 ))}
               </div>
@@ -109,7 +117,7 @@ export function CardModal({ isOpen, onClose, recommendations, myCards, onApply, 
                         <img src={card.cardImageUrl} alt={card.cardName} />
                       ) : (
                         <div className={styles.cardPlaceholder}>
-                          <span className={styles.cardPlaceholderText}>Samsung Card</span>
+                          <span className={styles.cardPlaceholderText}>{card.cardName}</span>
                         </div>
                       )}
                     </div>

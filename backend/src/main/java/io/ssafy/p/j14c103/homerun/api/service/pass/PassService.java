@@ -71,10 +71,9 @@ public class PassService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 PASS 상품입니다."));
         final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
                 .orElseThrow(() -> new IllegalArgumentException("주계좌가 없습니다."));
-        final String sourceAccountNo = resolveSourceAccountNo(mainAccount, request.getSourceAccountId());
 
         final PassSubscription subscription = PassSubscription.create(
-                userId, product, product.getAmountPerSave(), sourceAccountNo);
+                userId, product, product.getAmountPerSave(), mainAccount.getAccountNumber());
 
         return PassSubscriptionResponse.fromSubscribe(passSubscriptionRepository.save(subscription));
     }
@@ -133,13 +132,4 @@ public class PassService {
         return subscription.getPassProduct().getId().equals(transaction.getPassId());
     }
 
-    private String resolveSourceAccountNo(final UserAccount mainAccount, final String sourceAccountId) {
-        if (sourceAccountId == null || sourceAccountId.isBlank()) {
-            throw new IllegalArgumentException("출금 계좌번호는 필수입니다.");
-        }
-        if (!mainAccount.getAccountNumber().equals(sourceAccountId)) {
-            throw new IllegalArgumentException("출금 계좌는 주계좌만 사용할 수 있습니다.");
-        }
-        return sourceAccountId;
-    }
 }

@@ -25,10 +25,13 @@ export default function SelectJob() {
   const { currentJob, handlePrev, handleNext } = useSelectJob();
 
   const handleStart = () => {
+    if (!currentJob) return;
     navigate(ROUTES.PROPERTY, {
       state: { ...state, jobType: currentJob.jobType, mode: 'new-game' },
     });
   };
+
+  if (!currentJob) return null;
 
   return (
     <div className={styles.page}>

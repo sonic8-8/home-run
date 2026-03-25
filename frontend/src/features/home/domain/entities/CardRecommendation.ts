@@ -1,7 +1,18 @@
+export interface CardBenefit {
+  categoryId: string;
+  categoryName: string;
+  categoryDescription: string;
+  discountRate: number;
+  exampleMerchants: string[];
+}
+
 export interface CardRecommendation {
-  cardId: string;
+  cardProductId: string;
   cardName: string;
+  cardIssuerName: string;
+  cardDescription: string;
+  baselinePerformanceAmount: number;
+  maxBenefitLimitAmount: number;
   cardImageUrl: string;
-  annualFee: number;
-  summary: string;
+  activeBenefits: CardBenefit[];
 }

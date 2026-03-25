@@ -7,9 +7,12 @@ import styles from './PassWidget.module.css';
 interface PassWidgetProps {
   subscriptions: PassSubscription[];
   allPasses: Pass[];
+  onSave: (subscriptionId: number) => void;
+  onUnsubscribe: (subscriptionId: number) => void;
+  onSubscribe: (passId: number) => void;
 }
 
-export function PassWidget({ subscriptions, allPasses }: PassWidgetProps) {
+export function PassWidget({ subscriptions, allPasses, onSave, onUnsubscribe, onSubscribe }: PassWidgetProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const isEmpty = subscriptions.length === 0;
   const totalSaved = subscriptions.reduce((sum, s) => sum + s.totalSaved, 0);
@@ -49,18 +52,9 @@ export function PassWidget({ subscriptions, allPasses }: PassWidgetProps) {
         onClose={() => setModalOpen(false)}
         subscriptions={subscriptions}
         allPasses={allPasses}
-        onSave={(subscriptionId) => {
-          console.log('저축하기', subscriptionId);
-          // TODO: API 연동
-        }}
-        onUnsubscribe={(subscriptionId) => {
-          console.log('해지하기', subscriptionId);
-          // TODO: API 연동
-        }}
-        onSubscribe={(passId) => {
-          console.log('구독하기', passId);
-          // TODO: API 연동
-        }}
+        onSave={onSave}
+        onUnsubscribe={onUnsubscribe}
+        onSubscribe={onSubscribe}
       />
     </>
   );

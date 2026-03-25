@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSaveServiceRequest;
@@ -82,7 +81,6 @@ class PassSavingServiceTest {
         saveAccounts();
         final PassSaveServiceRequest request = PassSaveServiceRequest.builder()
                 .subscriptionId(subscription.getId())
-                .sourceAccountId("출금계좌")
                 .build();
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
         given(demandDepositClient.transferAccount(any(), any(), any(), anyLong()))
@@ -119,28 +117,7 @@ class PassSavingServiceTest {
         verify(userFinancialSummaryService).getSummary(1L);
     }
 
-    @DisplayName("구독 시 등록한 출금 계좌와 다른 계좌로 저축하면 예외가 발생한다")
-    @Test
-    void save_invalidSourceAccount_exception() {
-        // given
-        final PassSubscription subscription = saveActiveSubscription();
-        saveAccounts();
-        final PassSaveServiceRequest request = PassSaveServiceRequest.builder()
-                .subscriptionId(subscription.getId())
-                .sourceAccountId("다른계좌")
-                .build();
-
-        // when // then
-        assertThatThrownBy(() -> passSavingService.save(1L, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("구독 시 등록한 출금 계좌와 일치하지 않습니다.");
-        verifyNoInteractions(demandDepositClient);
-        assertThat(userAccountTransactionRepository.findAll()).isEmpty();
-        assertThat(seedmoneyTransactionRepository.findAll()).isEmpty();
-        assertThat(userPassTransactionRepository.findAll()).isEmpty();
-    }
-
-    @DisplayName("PASS 히스토리 조회 시 SAVE 거래만 반환한다")
+@DisplayName("PASS 히스토리 조회 시 SAVE 거래만 반환한다")
     @Test
     void getHistory_returnsOnlySaveTransactions() {
         // given
