@@ -23,9 +23,18 @@ public class NewsMaster {
 
     private String title;
 
-    private String category;
-
     private String sentiment;
+
+    @Column(name = "source_name")
+    private String sourceName;
+
+    @Column(name = "article_text", columnDefinition = "text")
+    private String articleText;
+
+    @Column(name = "economic_cycle_type")
+    private String economicCycleType;
+
+    private String reason;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "sector_impact")
@@ -44,8 +53,11 @@ public class NewsMaster {
     private NewsMaster(
         String newsId,
         String title,
-        String category,
         String sentiment,
+        String sourceName,
+        String articleText,
+        String economicCycleType,
+        String reason,
         Map<String, Object> sectorImpact,
         Integer exchangeRateImpact,
         Integer realEstateImpact,
@@ -53,8 +65,11 @@ public class NewsMaster {
     ) {
         this.newsId = newsId;
         this.title = title;
-        this.category = category;
         this.sentiment = sentiment;
+        this.sourceName = sourceName;
+        this.articleText = articleText;
+        this.economicCycleType = economicCycleType;
+        this.reason = reason;
         this.sectorImpact = sectorImpact;
         this.exchangeRateImpact = exchangeRateImpact;
         this.realEstateImpact = realEstateImpact;
@@ -74,8 +89,39 @@ public class NewsMaster {
         return new NewsMaster(
             newsId,
             title,
-            category,
             sentiment,
+            null,
+            null,
+            null,
+            null,
+            sectorImpact,
+            exchangeRateImpact,
+            realEstateImpact,
+            jobImpact
+        );
+    }
+
+    public static NewsMaster createAiNews(
+        String newsId,
+        String title,
+        String sentiment,
+        String sourceName,
+        String articleText,
+        String economicCycleType,
+        String reason,
+        Map<String, Object> sectorImpact,
+        Integer exchangeRateImpact,
+        Integer realEstateImpact,
+        Map<String, Object> jobImpact
+    ) {
+        return new NewsMaster(
+            newsId,
+            title,
+            sentiment,
+            sourceName,
+            articleText,
+            economicCycleType,
+            reason,
             sectorImpact,
             exchangeRateImpact,
             realEstateImpact,
