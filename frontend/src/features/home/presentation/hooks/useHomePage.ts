@@ -9,11 +9,20 @@ import type { Dashboard } from '../../domain/entities/Dashboard';
 import type { CreditScore } from '../../domain/entities/CreditScore';
 import type { LoanRecommendationData } from '../../domain/entities/LoanRecommendation';
 import type { MyCard } from '../../domain/entities/MyCard';
+import type { Spending } from '../../domain/entities/Spending';
 
 import { UserRemoteDataSource } from '../../data/datasources/UserRemoteDataSource';
 import { UserRepositoryImpl } from '../../data/repositories/UserRepositoryImpl';
 import { GetUserMeUseCase } from '../../domain/usecases/GetUserMeUseCase';
 import { LinkAssetsUseCase } from '../../domain/usecases/LinkAssetsUseCase';
+
+import { DashboardRemoteDataSource } from '../../data/datasources/DashboardRemoteDataSource';
+import { DashboardRepositoryImpl } from '../../data/repositories/DashboardRepositoryImpl';
+import { GetDashboardUseCase } from '../../domain/usecases/GetDashboardUseCase';
+
+import { SpendingRemoteDataSource } from '../../data/datasources/SpendingRemoteDataSource';
+import { SpendingRepositoryImpl } from '../../data/repositories/SpendingRepositoryImpl';
+import { GetSpendingUseCase } from '../../domain/usecases/GetSpendingUseCase';
 
 import { SeedmoneyRemoteDataSource } from '../../data/datasources/SeedmoneyRemoteDataSource';
 import { SeedmoneyRepositoryImpl } from '../../data/repositories/SeedmoneyRepositoryImpl';
@@ -28,6 +37,8 @@ import { GetPassSubscriptionsUseCase } from '../../domain/usecases/GetPassSubscr
 import { SubscribePassUseCase } from '../../domain/usecases/SubscribePassUseCase';
 import { UnsubscribePassUseCase } from '../../domain/usecases/UnsubscribePassUseCase';
 import { SavePassUseCase } from '../../domain/usecases/SavePassUseCase';
+import { GetPassHistoryUseCase } from '../../domain/usecases/GetPassHistoryUseCase';
+import type { PassHistoryPage } from '../../domain/entities/PassHistory';
 
 import { CardRemoteDataSource } from '../../data/datasources/CardRemoteDataSource';
 import { CardRepositoryImpl } from '../../data/repositories/CardRepositoryImpl';
@@ -46,6 +57,14 @@ const userRepo = new UserRepositoryImpl(new UserRemoteDataSource());
 const getUserMe = new GetUserMeUseCase(userRepo);
 const linkAssets = new LinkAssetsUseCase(userRepo);
 
+// ── Dashboard
+const dashboardRepo = new DashboardRepositoryImpl(new DashboardRemoteDataSource());
+const getDashboard = new GetDashboardUseCase(dashboardRepo);
+
+// ── Spending
+const spendingRepo = new SpendingRepositoryImpl(new SpendingRemoteDataSource());
+const getSpending = new GetSpendingUseCase(spendingRepo);
+
 // ── Seedmoney
 const seedmoneyRepo = new SeedmoneyRepositoryImpl(new SeedmoneyRemoteDataSource());
 const getSeedmoneyAccount = new GetSeedmoneyAccountUseCase(seedmoneyRepo);
@@ -59,6 +78,7 @@ const getPassSubscriptions = new GetPassSubscriptionsUseCase(passRepo);
 const subscribePass = new SubscribePassUseCase(passRepo);
 const unsubscribePass = new UnsubscribePassUseCase(passRepo);
 const savePass = new SavePassUseCase(passRepo);
+const getPassHistory = new GetPassHistoryUseCase(passRepo);
 
 // ── Card
 const cardRepo = new CardRepositoryImpl(new CardRemoteDataSource());
@@ -72,21 +92,14 @@ const getLoanRecommendations = new GetLoanRecommendationsUseCase(loanRepo);
 const creditScoreRepo = new CreditScoreRepositoryImpl(new CreditScoreRemoteDataSource());
 const getCreditScore = new GetCreditScoreUseCase(creditScoreRepo);
 
-// TODO: Dashboard API 연동 시 교체
-const MOCK_DASHBOARD: Dashboard = {
-  totalAssets: 42300000,
-  monthlyIncome: 2800000,
-  monthlyExpense: 1420000,
-  incomeChangeFromLastMonth: 0,
-  expenseChangeFromLastMonth: 220000,
-  nextPaydayDays: 7,
-};
-
 export const useHomePage = () => {
   const [isAssetLinked, setIsAssetLinked] = useState<boolean | null>(null);
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [spending, setSpending] = useState<Spending | null>(null);
   const [seedMoney, setSeedMoney] = useState<SeedMoneyAccount | null>(null);
   const [allPasses, setAllPasses] = useState<Pass[]>([]);
   const [passSubscriptions, setPassSubscriptions] = useState<PassSubscription[]>([]);
+  const [passHistory, setPassHistory] = useState<PassHistoryPage | null>(null);
   const [cardRecommendations, setCardRecommendations] = useState<CardRecommendation[]>([]);
   const [loanRecommendations, setLoanRecommendations] = useState<LoanRecommendationData | null>(null);
   const [creditScore, setCreditScore] = useState<CreditScore | null>(null);
@@ -102,17 +115,28 @@ export const useHomePage = () => {
 
       if (!userMe.isAssetLinked) return;
 
-      const [accountResult, passesResult, subscriptionsResult, cardsResult, loansResult, creditResult] = await Promise.allSettled([
+      const [
+        dashboardResult, spendingResult, accountResult,
+        passesResult, subscriptionsResult, passHistoryResult,
+        cardsResult, loansResult, creditResult,
+      ] = await Promise.allSettled([
+        getDashboard.execute(),
+        getSpending.execute(),
         getSeedmoneyAccount.execute(),
         getPassProducts.execute(),
         getPassSubscriptions.execute(),
+        getPassHistory.execute(0, 10),
         getCardRecommendations.execute(),
         getLoanRecommendations.execute(),
         getCreditScore.execute(),
       ]);
+
+      if (dashboardResult.status === 'fulfilled') setDashboard(dashboardResult.value);
+      if (spendingResult.status === 'fulfilled') setSpending(spendingResult.value);
       if (accountResult.status === 'fulfilled') setSeedMoney(accountResult.value);
       if (passesResult.status === 'fulfilled') setAllPasses(passesResult.value);
       if (subscriptionsResult.status === 'fulfilled') setPassSubscriptions(subscriptionsResult.value);
+      if (passHistoryResult.status === 'fulfilled') setPassHistory(passHistoryResult.value);
       if (cardsResult.status === 'fulfilled') setCardRecommendations(cardsResult.value);
       if (loansResult.status === 'fulfilled') setLoanRecommendations(loansResult.value);
       if (creditResult.status === 'fulfilled') setCreditScore(creditResult.value);
@@ -165,12 +189,14 @@ export const useHomePage = () => {
 
   return {
     isAssetLinked,
-    dashboard: MOCK_DASHBOARD,
+    dashboard,
+    spending,
     seedMoney,
     creditScore,
     loanRecommendations,
     cardRecommendations,
     passSubscriptions,
+    passHistory,
     allPasses,
     myCards: [] as MyCard[],
     loading,

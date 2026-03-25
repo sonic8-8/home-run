@@ -3,12 +3,13 @@ import type { Dashboard } from '../../../domain/entities/Dashboard';
 import styles from './SummaryCards.module.css';
 
 interface SummaryCardsProps {
-  dashboard: Dashboard;
+  dashboard: Dashboard | null;
 }
 
 const toMan = (value: number) => Math.round(Math.abs(value) / 10000).toLocaleString();
 
 export const SummaryCards: React.FC<SummaryCardsProps> = ({ dashboard }) => {
+  if (!dashboard) return null;
   const { totalAssets, monthlyIncome, monthlyExpense, expenseChangeFromLastMonth, nextPaydayDays } = dashboard;
 
   return (
@@ -53,7 +54,7 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ dashboard }) => {
           <span className={styles.value}>{toMan(monthlyExpense)}</span>
           <span className={styles.unit}>만원</span>
         </div>
-        {expenseChangeFromLastMonth !== 0 && (
+        {expenseChangeFromLastMonth != null && expenseChangeFromLastMonth !== 0 && (
           <div className={styles.sub}>
             <span className={styles.subNegative}>↘ 예산 대비 +{toMan(expenseChangeFromLastMonth)}만원</span>
           </div>

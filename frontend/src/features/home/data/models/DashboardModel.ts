@@ -1,4 +1,4 @@
-export interface Dashboard {
+export interface DashboardResponseModel {
   totalAssets: number;
   monthlyIncome: number;
   monthlyExpense: number;
