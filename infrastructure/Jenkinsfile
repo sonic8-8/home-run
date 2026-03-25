@@ -189,16 +189,39 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
 
                       if docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/liveness >/dev/null" && \
                          docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/readiness >/dev/null"; then
-                        if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null" && \
-                           docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/ >/dev/null"; then
-                          exit 0
-                        fi
+                        exit 0
                       fi
 
                       sleep 2
                     done
 
                     docker logs --tail=200 homerun-backend || true
+                    docker logs --tail=200 homerun-frontend || true
+                    exit 1
+                '''
+            }
+        }
+
+        stage('Verify Frontend HTTP') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'Verify Frontend HTTP'
+                }
+                sh '''
+                    for i in $(seq 1 30); do
+                      if ! docker ps --format '{{.Names}}' | grep -qx homerun-frontend; then
+                        docker logs --tail=200 homerun-frontend || true
+                        exit 1
+                      fi
+
+                      if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null" && \
+                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/ >/dev/null"; then
+                        exit 0
+                      fi
+
+                      sleep 2
+                    done
+
                     docker logs --tail=200 homerun-frontend || true
                     exit 1
                 '''
