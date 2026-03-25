@@ -20,24 +20,14 @@ function isAbsoluteUrl(url: string) {
  */
 export function AuthImage({ src, alt, fallback, className }: AuthImageProps) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const accessToken = useAuthStore((s) => s.accessToken);
 
   useEffect(() => {
-    if (!src) {
-      setError(true);
-      return;
-    }
+    if (!src || isAbsoluteUrl(src)) return;
 
-    if (isAbsoluteUrl(src)) {
-      setBlobUrl(src);
-      return;
-    }
-
-    // 파일명 → /api/v1/images 로 fetch
+    let cancelled = false;
     let objectUrl: string | null = null;
-    setError(false);
-    setBlobUrl(null);
 
     fetch(`${BASE_URL}/api/v1/images?objectName=${encodeURIComponent(src)}`, {
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
@@ -47,17 +37,24 @@ export function AuthImage({ src, alt, fallback, className }: AuthImageProps) {
         return res.blob();
       })
       .then((blob) => {
+        if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setBlobUrl(objectUrl);
+        setFetchError(false);
       })
-      .catch(() => setError(true));
+      .catch(() => {
+        if (!cancelled) setFetchError(true);
+      });
 
     return () => {
+      cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [src, accessToken]);
 
-  if (error || !src) return <>{fallback ?? null}</>;
+  if (!src) return <>{fallback ?? null}</>;
+  if (isAbsoluteUrl(src)) return <img src={src} alt={alt} className={className} />;
+  if (fetchError) return <>{fallback ?? null}</>;
   if (!blobUrl) return null;
 
   return <img src={blobUrl} alt={alt} className={className} />;
