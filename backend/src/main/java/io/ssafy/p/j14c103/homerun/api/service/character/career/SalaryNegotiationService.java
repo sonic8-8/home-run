@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.character.career;
 
-import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationRequest;
+import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.response.SalaryNegotiationResultResponse;
 import io.ssafy.p.j14c103.homerun.domain.character.career.SalaryNegotiationPolicy;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -24,7 +24,7 @@ public class SalaryNegotiationService {
         this.salaryNegotiationPolicy = salaryNegotiationPolicy;
     }
 
-    public SalaryNegotiationResultResponse negotiate(final SalaryNegotiationRequest request) {
+    public SalaryNegotiationResultResponse negotiate(final SalaryNegotiationServiceRequest request) {
         if (request == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
@@ -33,7 +33,8 @@ public class SalaryNegotiationService {
             salaryNegotiationPolicy.negotiate(
                 request.gameCareer(),
                 request.gameStat(),
-                request.currentTurn()
+                request.currentTurn(),
+                request.toCareerCycleEffect()
             )
         );
     }

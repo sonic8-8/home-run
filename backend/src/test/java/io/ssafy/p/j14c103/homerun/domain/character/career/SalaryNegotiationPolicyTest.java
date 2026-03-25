@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
@@ -82,6 +83,36 @@ class SalaryNegotiationPolicyTest {
         assertThat(result.raiseRate()).isEqualTo(10);
         assertThat(result.lastNegotiatedTurn()).isEqualTo(13);
         assertThat(result.message()).isEqualTo("연봉 협상에 성공했습니다!");
+    }
+
+    @DisplayName("같은 캐릭터라도 3상태 사이클에 따라 연봉 협상 결과가 달라진다.")
+    @Test
+    void negotiateWithCycleEffect() {
+        // given
+        final GameCareer gameCareer = createGameCareer(JobType.SMALL_BIZ, 30_000_000, 0);
+        final GameStat gameStat = createGameStat(70, 75);
+
+        // when
+        final SalaryNegotiationPolicy.NegotiationResult boomResult = salaryNegotiationPolicy
+            .negotiate(
+                gameCareer,
+                gameStat,
+                13,
+                CareerCycleEffect.from(CyclePhase.BOOM, gameCareer.getJobType())
+            );
+        final SalaryNegotiationPolicy.NegotiationResult crisisResult = salaryNegotiationPolicy
+            .negotiate(
+                gameCareer,
+                gameStat,
+                13,
+                CareerCycleEffect.from(CyclePhase.CRISIS, gameCareer.getJobType())
+            );
+
+        // then
+        assertThat(boomResult.raiseRate()).isEqualTo(11);
+        assertThat(boomResult.newSalary()).isEqualTo(33_300_000);
+        assertThat(crisisResult.raiseRate()).isEqualTo(7);
+        assertThat(crisisResult.newSalary()).isEqualTo(32_100_000);
     }
 
     private GameCareer createGameCareer(
