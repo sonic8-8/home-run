@@ -13,7 +13,6 @@ public class RealEstateDocumentResponse {
     private final BigDecimal latitude;
     private final BigDecimal longitude;
     private final Long salePrice;
-    private final String documentType;
     private final List<RegistryRowResponse> gapguRows;
     private final List<RegistryRowResponse> eulguRows;
     private final SolutionResponse solution;
@@ -25,7 +24,6 @@ public class RealEstateDocumentResponse {
         final BigDecimal latitude,
         final BigDecimal longitude,
         final Long salePrice,
-        final String documentType,
         final List<RegistryRowResponse> gapguRows,
         final List<RegistryRowResponse> eulguRows,
         final SolutionResponse solution
@@ -36,7 +34,6 @@ public class RealEstateDocumentResponse {
         this.latitude = latitude;
         this.longitude = longitude;
         this.salePrice = salePrice;
-        this.documentType = documentType;
         this.gapguRows = List.copyOf(gapguRows);
         this.eulguRows = List.copyOf(eulguRows);
         this.solution = solution;
@@ -49,7 +46,6 @@ public class RealEstateDocumentResponse {
         final BigDecimal latitude,
         final BigDecimal longitude,
         final Long salePrice,
-        final String documentType,
         final List<RegistryRowResponse> gapguRows,
         final List<RegistryRowResponse> eulguRows,
         final SolutionResponse solution
@@ -61,7 +57,6 @@ public class RealEstateDocumentResponse {
             latitude,
             longitude,
             salePrice,
-            documentType,
             gapguRows,
             eulguRows,
             solution
@@ -90,10 +85,6 @@ public class RealEstateDocumentResponse {
 
     public Long salePrice() {
         return salePrice;
-    }
-
-    public String documentType() {
-        return documentType;
     }
 
     public List<RegistryRowResponse> gapguRows() {

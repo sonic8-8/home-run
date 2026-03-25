@@ -180,6 +180,14 @@ operation::world/turn/success[snippets='http-request,request-headers,path-parame
 
 operation::world/turn/session-not-found[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
 
+=== 최신 턴 뉴스 조회
+
+operation::world/news/latest/success[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+
+=== 최신 턴 뉴스 조회 세션 없음
+
+operation::world/news/latest/session-not-found[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+
 == 부동산 API
 
 === 등기부등본 조회
