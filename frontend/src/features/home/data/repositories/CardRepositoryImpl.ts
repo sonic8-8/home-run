@@ -9,11 +9,20 @@ export class CardRepositoryImpl implements ICardRepository {
   async getRecommendations(): Promise<CardRecommendation[]> {
     const m = await this.dataSource.getRecommendations();
     return m.recommendations.map((c) => ({
-      cardId: c.cardId,
+      cardProductId: String(c.cardProductId),
       cardName: c.cardName,
+      cardIssuerName: c.cardIssuerName,
+      cardDescription: c.cardDescription,
+      baselinePerformanceAmount: c.baselinePerformanceAmount,
+      maxBenefitLimitAmount: c.maxBenefitLimitAmount,
       cardImageUrl: c.cardImageUrl,
-      annualFee: c.annualFee,
-      summary: c.summary,
+      activeBenefits: c.activeBenefits.map((b) => ({
+        categoryId: b.categoryId,
+        categoryName: b.categoryName,
+        categoryDescription: b.categoryDescription,
+        discountRate: b.discountRate,
+        exampleMerchants: b.exampleMerchants,
+      })),
     }));
   }
 }

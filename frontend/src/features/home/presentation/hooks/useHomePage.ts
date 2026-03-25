@@ -32,6 +32,10 @@ import { LoanRecommendationRemoteDataSource } from '../../data/datasources/LoanR
 import { LoanRecommendationRepositoryImpl } from '../../data/repositories/LoanRecommendationRepositoryImpl';
 import { GetLoanRecommendationsUseCase } from '../../domain/usecases/GetLoanRecommendationsUseCase';
 
+import { CreditScoreRemoteDataSource } from '../../data/datasources/CreditScoreRemoteDataSource';
+import { CreditScoreRepositoryImpl } from '../../data/repositories/CreditScoreRepositoryImpl';
+import { GetCreditScoreUseCase } from '../../domain/usecases/GetCreditScoreUseCase';
+
 // ── Seedmoney
 const seedmoneyRepo = new SeedmoneyRepositoryImpl(new SeedmoneyRemoteDataSource());
 const getSeedmoneyAccount = new GetSeedmoneyAccountUseCase(seedmoneyRepo);
@@ -54,7 +58,11 @@ const getCardRecommendations = new GetCardRecommendationsUseCase(cardRepo);
 const loanRepo = new LoanRecommendationRepositoryImpl(new LoanRecommendationRemoteDataSource());
 const getLoanRecommendations = new GetLoanRecommendationsUseCase(loanRepo);
 
-// TODO: Dashboard, CreditScore API 연동 시 교체
+// ── CreditScore
+const creditScoreRepo = new CreditScoreRepositoryImpl(new CreditScoreRemoteDataSource());
+const getCreditScore = new GetCreditScoreUseCase(creditScoreRepo);
+
+// TODO: Dashboard API 연동 시 교체
 const MOCK_DASHBOARD: Dashboard = {
   totalAssets: 42300000,
   monthlyIncome: 2800000,
@@ -64,19 +72,13 @@ const MOCK_DASHBOARD: Dashboard = {
   nextPaydayDays: 7,
 };
 
-const MOCK_CREDIT_SCORE: CreditScore = {
-  kcbScore: 936,
-  niceScore: 948,
-  baseScore: 936,
-  estimatedMinRate: 4.89,
-};
-
 export const useHomePage = () => {
   const [seedMoney, setSeedMoney] = useState<SeedMoneyAccount | null>(null);
   const [allPasses, setAllPasses] = useState<Pass[]>([]);
   const [passSubscriptions, setPassSubscriptions] = useState<PassSubscription[]>([]);
   const [cardRecommendations, setCardRecommendations] = useState<CardRecommendation[]>([]);
   const [loanRecommendations, setLoanRecommendations] = useState<LoanRecommendationData | null>(null);
+  const [creditScore, setCreditScore] = useState<CreditScore | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,18 +86,20 @@ export const useHomePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [accountResult, passesResult, subscriptionsResult, cardsResult, loansResult] = await Promise.allSettled([
+      const [accountResult, passesResult, subscriptionsResult, cardsResult, loansResult, creditResult] = await Promise.allSettled([
         getSeedmoneyAccount.execute(),
         getPassProducts.execute(),
         getPassSubscriptions.execute(),
         getCardRecommendations.execute(),
         getLoanRecommendations.execute(),
+        getCreditScore.execute(),
       ]);
       if (accountResult.status === 'fulfilled') setSeedMoney(accountResult.value);
       if (passesResult.status === 'fulfilled') setAllPasses(passesResult.value);
       if (subscriptionsResult.status === 'fulfilled') setPassSubscriptions(subscriptionsResult.value);
       if (cardsResult.status === 'fulfilled') setCardRecommendations(cardsResult.value);
       if (loansResult.status === 'fulfilled') setLoanRecommendations(loansResult.value);
+      if (creditResult.status === 'fulfilled') setCreditScore(creditResult.value);
     } catch (e) {
       setError(e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.');
     } finally {
@@ -140,7 +144,7 @@ export const useHomePage = () => {
   return {
     dashboard: MOCK_DASHBOARD,
     seedMoney,
-    creditScore: MOCK_CREDIT_SCORE,
+    creditScore,
     loanRecommendations,
     cardRecommendations,
     passSubscriptions,
