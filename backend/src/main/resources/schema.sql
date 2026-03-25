@@ -420,8 +420,7 @@ create table if not exists game_loans (
 );
 
 -- Static card product catalog shared across recommendation and registration flows.
--- card_image_url stores the OCI Object Storage object name, not a full public URL.
--- Example: card-kb-my-wesh-front.png -> GET /api/v1/images?objectName={card_image_url}
+-- card_image_url stores the OCI Object Storage object name used for internal image lookup.
 create table if not exists card_products (
   card_product_id integer generated always as identity primary key,
   card_name varchar(100) not null,
