@@ -2,24 +2,15 @@ package io.ssafy.p.j14c103.homerun.domain.world.housing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@Transactional
+@DataJpaTest
 class RealEstateDocumentRepositoryTest {
-
-    @Autowired
-    private RealEstatePropertyRepository realEstatePropertyRepository;
 
     @Autowired
     private RealEstateDocumentRepository realEstateDocumentRepository;
@@ -28,24 +19,18 @@ class RealEstateDocumentRepositoryTest {
     @Test
     void saveRealEstateDocument() {
         // given
-        RealEstateProperty property = createProperty("PROP-SEOUL-101", "GANGNAM");
-        RealEstateProperty savedProperty = realEstatePropertyRepository.saveAndFlush(property);
-
-        RealEstateDocument document = RealEstateDocument.create(
-            savedProperty.getPropertyId(),
-            RealEstateDocumentType.REGISTRY,
+        final RealEstateDocument document = RealEstateDocument.create(
             RealEstateRegistrySection.GAPGU,
             createGapguSample("위험")
         );
 
         // when
-        RealEstateDocument saved = realEstateDocumentRepository.saveAndFlush(document);
-        RealEstateDocument found = realEstateDocumentRepository.findById(saved.getRealEstateDocumentId())
-            .orElseThrow();
+        final RealEstateDocument saved = realEstateDocumentRepository.saveAndFlush(document);
+        final RealEstateDocument found = realEstateDocumentRepository.findById(
+            saved.getRealEstateDocumentId()
+        ).orElseThrow();
 
         // then
-        assertThat(found.getPropertyId()).isEqualTo(savedProperty.getPropertyId());
-        assertThat(found.getDocumentType()).isEqualTo(RealEstateDocumentType.REGISTRY);
         assertThat(found.getRegistrySection()).isEqualTo(RealEstateRegistrySection.GAPGU);
         assertThat(found.getQuizSamplePayload().getQuizVerdict()).isEqualTo("위험");
         assertThat(found.getQuizSamplePayload().getRows()).hasSize(1);
@@ -55,22 +40,15 @@ class RealEstateDocumentRepositoryTest {
             .containsKey("claim_amount");
     }
 
-    @DisplayName("propertyId와 section으로 해당 매물의 등기부 샘플을 정렬 조회할 수 있다")
+    @DisplayName("registry section으로 공용 등기부 샘플을 정렬 조회할 수 있다")
     @Test
-    void findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc() {
+    void findAllByRegistrySectionOrderByRealEstateDocumentIdAsc() {
         // given
-        RealEstateProperty property = createProperty("PROP-SEOUL-102", "MAPO");
-        RealEstateProperty savedProperty = realEstatePropertyRepository.saveAndFlush(property);
-
-        RealEstateDocument gapgu = RealEstateDocument.create(
-            savedProperty.getPropertyId(),
-            RealEstateDocumentType.REGISTRY,
+        final RealEstateDocument gapgu = RealEstateDocument.create(
             RealEstateRegistrySection.GAPGU,
             createGapguSample("정상")
         );
-        RealEstateDocument eulgu = RealEstateDocument.create(
-            savedProperty.getPropertyId(),
-            RealEstateDocumentType.REGISTRY,
+        final RealEstateDocument eulgu = RealEstateDocument.create(
             RealEstateRegistrySection.EULGU,
             createEulguSample("위험")
         );
@@ -78,35 +56,13 @@ class RealEstateDocumentRepositoryTest {
         realEstateDocumentRepository.saveAllAndFlush(List.of(gapgu, eulgu));
 
         // when
-        List<RealEstateDocument> result = realEstateDocumentRepository
-            .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
-                savedProperty.getPropertyId(),
-                RealEstateDocumentType.REGISTRY,
-                RealEstateRegistrySection.GAPGU
-            );
+        final List<RealEstateDocument> result = realEstateDocumentRepository
+            .findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(RealEstateRegistrySection.GAPGU);
 
         // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getRegistrySection()).isEqualTo(RealEstateRegistrySection.GAPGU);
         assertThat(result.get(0).getQuizSamplePayload().getQuizVerdict()).isEqualTo("정상");
-    }
-
-    private RealEstateProperty createProperty(
-        final String providerId,
-        final String districtCode
-    ) {
-        return RealEstateProperty.create(
-            providerId,
-            "문서 테스트용 매물",
-            "서울시 어딘가",
-            "SEOUL",
-            districtCode,
-            Money.of(320_000_000L),
-            BigDecimal.valueOf(37.5665),
-            BigDecimal.valueOf(126.9780),
-            HousingType.JEONSE_APT,
-            List.of()
-        );
     }
 
     private RealEstateRegistryQuizSample createGapguSample(final String verdict) {
