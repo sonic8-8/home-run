@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import styles from './SetNickname.module.css';
 
-type CharacterType = 'girl' | 'boy';
+type CharacterType = 'FEMALE' | 'MALE';
 
 interface LocationState {
   slotNumber?: number;
@@ -11,8 +11,8 @@ interface LocationState {
 }
 
 const CHAR_IMAGE: Record<CharacterType, string> = {
-  girl: '/assets/images/gcharac.png',
-  boy: '/assets/images/bcharac.png',
+  FEMALE: '/assets/images/gcharac.png',
+  MALE: '/assets/images/bcharac.png',
 };
 
 export default function SetNickname() {
@@ -20,7 +20,7 @@ export default function SetNickname() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
-  const characterType = state.characterType ?? 'boy';
+  const characterType = state.characterType ?? 'MALE';
 
   const isValid = nickname.trim().length > 0;
 
@@ -40,7 +40,7 @@ export default function SetNickname() {
       <div className={styles.charSection}>
         <img
           src={CHAR_IMAGE[characterType]}
-          alt={characterType === 'girl' ? '여자 캐릭터' : '남자 캐릭터'}
+          alt={characterType === 'FEMALE' ? '여자 캐릭터' : '남자 캐릭터'}
           className={styles.charImg}
         />
       </div>

@@ -9,11 +9,9 @@ import lombok.NoArgsConstructor;
 public class PassSubscribeServiceRequest {
 
     private Long passId;
-    private String sourceAccountId;
 
     @Builder
-    private PassSubscribeServiceRequest(final Long passId, final String sourceAccountId) {
+    private PassSubscribeServiceRequest(final Long passId) {
         this.passId = passId;
-        this.sourceAccountId = sourceAccountId;
     }
 }

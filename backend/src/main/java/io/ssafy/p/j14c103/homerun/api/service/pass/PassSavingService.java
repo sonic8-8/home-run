@@ -64,7 +64,7 @@ public class PassSavingService {
         final UserAccount seedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
                 .orElseThrow(() -> new IllegalArgumentException("저축 계좌가 없습니다. 먼저 계좌를 개설해주세요."));
         final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
-        final String sourceAccountNo = resolveSourceAccountNo(subscription, mainAccount, request.getSourceAccountId());
+        final String sourceAccountNo = subscription.getSourceAccountNo();
 
         final int amount = subscription.getSavingAmount();
 
@@ -167,23 +167,4 @@ public class PassSavingService {
                 .orElse(0);
     }
 
-    private String resolveSourceAccountNo(
-            final PassSubscription subscription,
-            final UserAccount mainAccount,
-            final String sourceAccountId
-    ) {
-        final String requestSourceAccountId = sourceAccountId == null ? "" : sourceAccountId.trim();
-        final String subscribedSourceAccountNo = subscription.getSourceAccountNo();
-
-        if (requestSourceAccountId.isBlank()) {
-            throw new IllegalArgumentException("출금 계좌번호는 필수입니다.");
-        }
-        if (!requestSourceAccountId.equals(subscribedSourceAccountNo)) {
-            throw new IllegalArgumentException("구독 시 등록한 출금 계좌와 일치하지 않습니다.");
-        }
-        if (!requestSourceAccountId.equals(mainAccount.getAccountNumber())) {
-            throw new IllegalArgumentException("출금 계좌는 주계좌만 사용할 수 있습니다.");
-        }
-        return requestSourceAccountId;
-    }
 }

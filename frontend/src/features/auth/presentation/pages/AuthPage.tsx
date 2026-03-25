@@ -13,8 +13,6 @@ export const AuthPage: React.FC = () => {
       <div className={styles.card}>
         {view === 'onboarding' && (
           <OnboardingView
-            onKakaoLogin={() => {/* TODO */}}
-            onSsafyLogin={() => {/* TODO */}}
             onEmailLogin={() => setView('emailLogin')}
           />
         )}
@@ -31,6 +29,7 @@ export const AuthPage: React.FC = () => {
             isLoading={isLoading}
             error={error}
             onSubmit={signUp}
+            onBack={() => setView('emailLogin')}
           />
         )}
       </div>

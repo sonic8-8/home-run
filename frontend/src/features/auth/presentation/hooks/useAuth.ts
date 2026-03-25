@@ -12,9 +12,10 @@ interface LoginResponseData {
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresIn: number;
+  name: string;
 }
 export const useAuth = () => {
-  const [view, setView] = useState<AuthView>('onboarding');
+  const [view, setView] = useState<AuthView>('emailLogin');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export const useAuth = () => {
       setError(null);
       try {
         const data = await apiClient.post<LoginResponseData>('/api/auth/login', credentials);
-        setAuth(data.accessToken, data.refreshToken);
+        setAuth(data.accessToken, data.refreshToken, data.name);
         navigate(ROUTES.HOME, { replace: true });
       } catch (e) {
         setError(e instanceof Error ? e.message : '로그인에 실패했습니다.');
