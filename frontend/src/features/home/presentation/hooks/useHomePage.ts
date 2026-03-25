@@ -7,7 +7,7 @@ import type { PassSubscribeResult } from '../../domain/entities/PassSubscribeRes
 import type { CardRecommendation } from '../../domain/entities/CardRecommendation';
 import type { Dashboard } from '../../domain/entities/Dashboard';
 import type { CreditScore } from '../../domain/entities/CreditScore';
-import type { LoanRecommendation } from '../../domain/entities/LoanRecommendation';
+import type { LoanRecommendationData } from '../../domain/entities/LoanRecommendation';
 import type { MyCard } from '../../domain/entities/MyCard';
 
 import { SeedmoneyRemoteDataSource } from '../../data/datasources/SeedmoneyRemoteDataSource';
@@ -28,6 +28,10 @@ import { CardRemoteDataSource } from '../../data/datasources/CardRemoteDataSourc
 import { CardRepositoryImpl } from '../../data/repositories/CardRepositoryImpl';
 import { GetCardRecommendationsUseCase } from '../../domain/usecases/GetCardRecommendationsUseCase';
 
+import { LoanRecommendationRemoteDataSource } from '../../data/datasources/LoanRecommendationRemoteDataSource';
+import { LoanRecommendationRepositoryImpl } from '../../data/repositories/LoanRecommendationRepositoryImpl';
+import { GetLoanRecommendationsUseCase } from '../../domain/usecases/GetLoanRecommendationsUseCase';
+
 // ── Seedmoney
 const seedmoneyRepo = new SeedmoneyRepositoryImpl(new SeedmoneyRemoteDataSource());
 const getSeedmoneyAccount = new GetSeedmoneyAccountUseCase(seedmoneyRepo);
@@ -46,7 +50,11 @@ const savePass = new SavePassUseCase(passRepo);
 const cardRepo = new CardRepositoryImpl(new CardRemoteDataSource());
 const getCardRecommendations = new GetCardRecommendationsUseCase(cardRepo);
 
-// TODO: Dashboard, CreditScore, LoanRecommendations API 연동 시 교체
+// ── Loan
+const loanRepo = new LoanRecommendationRepositoryImpl(new LoanRecommendationRemoteDataSource());
+const getLoanRecommendations = new GetLoanRecommendationsUseCase(loanRepo);
+
+// TODO: Dashboard, CreditScore API 연동 시 교체
 const MOCK_DASHBOARD: Dashboard = {
   totalAssets: 42300000,
   monthlyIncome: 2800000,
@@ -63,16 +71,12 @@ const MOCK_CREDIT_SCORE: CreditScore = {
   estimatedMinRate: 4.89,
 };
 
-const MOCK_LOAN_RECOMMENDATIONS: LoanRecommendation[] = [
-  { productId: 'LOAN-NH-001', bankName: 'NH', bankLogoUrl: '', productName: 'NH 주택담보 대출', productType: '주택담보대출', minRate: 3.49, maxRate: 5.89 },
-  { productId: 'LOAN-KB-001', bankName: 'KB', bankLogoUrl: '', productName: 'KB 주택담보 대출', productType: '주택담보대출', minRate: 3.49, maxRate: 5.89 },
-];
-
 export const useHomePage = () => {
   const [seedMoney, setSeedMoney] = useState<SeedMoneyAccount | null>(null);
   const [allPasses, setAllPasses] = useState<Pass[]>([]);
   const [passSubscriptions, setPassSubscriptions] = useState<PassSubscription[]>([]);
   const [cardRecommendations, setCardRecommendations] = useState<CardRecommendation[]>([]);
+  const [loanRecommendations, setLoanRecommendations] = useState<LoanRecommendationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,16 +84,18 @@ export const useHomePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [account, passes, subscriptions, cards] = await Promise.all([
+      const [accountResult, passesResult, subscriptionsResult, cardsResult, loansResult] = await Promise.allSettled([
         getSeedmoneyAccount.execute(),
         getPassProducts.execute(),
         getPassSubscriptions.execute(),
         getCardRecommendations.execute(),
+        getLoanRecommendations.execute(),
       ]);
-      setSeedMoney(account);
-      setAllPasses(passes);
-      setPassSubscriptions(subscriptions);
-      setCardRecommendations(cards);
+      if (accountResult.status === 'fulfilled') setSeedMoney(accountResult.value);
+      if (passesResult.status === 'fulfilled') setAllPasses(passesResult.value);
+      if (subscriptionsResult.status === 'fulfilled') setPassSubscriptions(subscriptionsResult.value);
+      if (cardsResult.status === 'fulfilled') setCardRecommendations(cardsResult.value);
+      if (loansResult.status === 'fulfilled') setLoanRecommendations(loansResult.value);
     } catch (e) {
       setError(e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.');
     } finally {
@@ -113,8 +119,8 @@ export const useHomePage = () => {
     return result;
   }, []);
 
-  const subscribeToPas = useCallback(async (passId: number, sourceAccountId: string): Promise<PassSubscribeResult> => {
-    const result = await subscribePass.execute(passId, sourceAccountId);
+  const subscribeToPas = useCallback(async (passId: number): Promise<PassSubscribeResult> => {
+    const result = await subscribePass.execute(passId);
     const updated = await getPassSubscriptions.execute();
     setPassSubscriptions(updated);
     return result;
@@ -125,8 +131,8 @@ export const useHomePage = () => {
     setPassSubscriptions((prev) => prev.filter((s) => s.subscriptionId !== subscriptionId));
   }, []);
 
-  const saveToPass = useCallback(async (subscriptionId: number, sourceAccountId: string): Promise<PassSaveResult> => {
-    const result = await savePass.execute(subscriptionId, sourceAccountId);
+  const saveToPass = useCallback(async (subscriptionId: number): Promise<PassSaveResult> => {
+    const result = await savePass.execute(subscriptionId);
     setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
     return result;
   }, []);
@@ -135,7 +141,7 @@ export const useHomePage = () => {
     dashboard: MOCK_DASHBOARD,
     seedMoney,
     creditScore: MOCK_CREDIT_SCORE,
-    loanRecommendations: MOCK_LOAN_RECOMMENDATIONS,
+    loanRecommendations,
     cardRecommendations,
     passSubscriptions,
     allPasses,
