@@ -2,6 +2,7 @@ import type { IGameInitRepository } from '../../domain/repositories/IGameInitRep
 import type { CharacterOption, CharacterType } from '../../domain/entities/CharacterOption';
 import type { JobTypeInfo } from '../../domain/entities/JobTypeInfo';
 import type { JobType } from '../../domain/entities/GameSlot';
+import type { ProfileOption } from '../../domain/entities/ProfileOption';
 import type { Region, District, TargetProperty } from '../../domain/entities/Region';
 import { GameInitRemoteDataSource } from '../datasources/GameInitRemoteDataSource';
 
@@ -28,6 +29,24 @@ export class GameInitRepositoryImpl implements IGameInitRepository {
         stability: j.stats.stability,
         growthSpeed: j.stats.growthSpeed,
         difficulty: j.stats.difficulty,
+      },
+    }));
+  }
+
+  async getProfiles(): Promise<ProfileOption[]> {
+    const m = await this.dataSource.getProfiles();
+    return m.profiles.map((p) => ({
+      profileCode: p.profileCode,
+      name: p.name,
+      jobType: p.jobType as JobType,
+      annualSalary: p.annualSalary,
+      initialCash: p.initialCash,
+      stats: {
+        salary: p.stats.salary,
+        health: p.stats.health,
+        stability: p.stats.stability,
+        growthSpeed: p.stats.growthSpeed,
+        difficulty: p.stats.difficulty,
       },
     }));
   }

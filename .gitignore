@@ -1,5 +1,6 @@
 /.idea
 /.vscode/
+/.claude/
 /.gradle-cache/
 /.agent/private/
 /.env.runtime

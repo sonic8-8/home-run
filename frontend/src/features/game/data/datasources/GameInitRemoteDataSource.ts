@@ -2,6 +2,7 @@ import { apiClient } from '@core/network/apiClient';
 import type {
   CharacterOptionsResponseModel,
   JobTypeOptionsResponseModel,
+  ProfileOptionsResponseModel,
   RegionListResponseModel,
   DistrictListResponseModel,
   TargetPropertyListResponseModel,
@@ -28,5 +29,9 @@ export class GameInitRemoteDataSource {
     return apiClient.get<TargetPropertyListResponseModel>(
       `/api/games/regions/${regionCode}/districts/${districtCode}/properties`,
     );
+  }
+
+  getProfiles(): Promise<ProfileOptionsResponseModel> {
+    return apiClient.get<ProfileOptionsResponseModel>('/api/games/profiles');
   }
 }

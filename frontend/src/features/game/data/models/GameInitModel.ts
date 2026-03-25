@@ -48,6 +48,28 @@ export interface DistrictListResponseModel {
   districts: DistrictModel[];
 }
 
+// ---- Profiles ----
+export interface ProfileStatsModel {
+  salary: number;
+  health: number;
+  stability: number;
+  growthSpeed: number;
+  difficulty: number;
+}
+
+export interface ProfileOptionModel {
+  profileCode: string;
+  name: string;
+  jobType: string;
+  annualSalary: number;
+  initialCash: number;
+  stats: ProfileStatsModel;
+}
+
+export interface ProfileOptionsResponseModel {
+  profiles: ProfileOptionModel[];
+}
+
 // ---- Target Properties ----
 export interface TargetPropertyModel {
   propertyId: number;
