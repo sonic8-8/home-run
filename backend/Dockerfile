@@ -7,6 +7,9 @@ RUN chmod +x ./gradlew
 FROM base AS tester
 RUN ./gradlew --no-daemon test
 
+FROM tester AS docs
+RUN ./gradlew --no-daemon asciidoctor -x test
+
 FROM tester AS builder
 RUN ./gradlew --no-daemon bootJar -x test
 

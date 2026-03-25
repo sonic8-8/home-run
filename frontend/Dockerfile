@@ -17,5 +17,6 @@ FROM nginx:1.29-alpine
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY generated-docs /usr/share/nginx/html/docs
 
 EXPOSE 80
