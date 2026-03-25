@@ -187,10 +187,8 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                         exit 1
                       fi
 
-                      if curl -fsS --connect-timeout 2 --max-time 5 \
-                           "http://127.0.0.1:${BACKEND_HOST_PORT}/actuator/health/liveness" >/dev/null && \
-                         curl -fsS --connect-timeout 2 --max-time 5 \
-                           "http://127.0.0.1:${BACKEND_HOST_PORT}/actuator/health/readiness" >/dev/null; then
+                      if docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/liveness >/dev/null" && \
+                         docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/readiness >/dev/null"; then
                         if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null" && \
                            docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/ >/dev/null"; then
                           exit 0
