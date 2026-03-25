@@ -7,7 +7,7 @@ RUN chmod +x ./gradlew
 FROM base AS tester
 RUN ./gradlew --no-daemon test
 
-FROM base AS builder
+FROM tester AS builder
 RUN ./gradlew --no-daemon bootJar -x test
 
 FROM eclipse-temurin:17-jre
