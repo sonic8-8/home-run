@@ -64,13 +64,14 @@ public class PassSavingService {
         final UserAccount seedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
                 .orElseThrow(() -> new IllegalArgumentException("저축 계좌가 없습니다. 먼저 계좌를 개설해주세요."));
         final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
+        final String sourceAccountNo = resolveSourceAccountNo(subscription, mainAccount, request.getSourceAccountId());
 
         final int amount = subscription.getSavingAmount();
 
         demandDepositClient.transferAccount(
                 userKey,
                 seedmoneyAccount.getAccountNumber(),
-                mainAccount.getAccountNumber(),
+                sourceAccountNo,
                 amount);
 
         final UserAccountTransaction saveOutTransaction = UserAccountTransaction.create(
@@ -88,7 +89,7 @@ public class PassSavingService {
                 subscription.getId(),
                 AccountTransactionType.PASS_SAVE_IN,
                 amount,
-                mainAccount.getAccountNumber());
+                sourceAccountNo);
         userAccountTransactionRepository.save(saveInTransaction);
 
         // 시드머니 거래내역 기록
@@ -108,7 +109,7 @@ public class PassSavingService {
 
         // 잔액 조회
         final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
-        final int mainBalance = fetchRealTimeBalance(accounts, mainAccount.getAccountNumber());
+        final int mainBalance = fetchRealTimeBalance(accounts, sourceAccountNo);
         final int remainingBalance = fetchRealTimeBalance(accounts, seedmoneyAccount.getAccountNumber());
         mainAccount.updateBalance(mainBalance);
         seedmoneyAccount.updateBalance(remainingBalance);
@@ -139,7 +140,7 @@ public class PassSavingService {
         }
 
         return seedmoneyTransactionRepository
-                .findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size))
+                .findByUserIdAndTransactionTypeOrderByCreatedAtDesc(userId, "SAVE", PageRequest.of(page, size))
                 .map(PassHistoryResponse::from);
     }
 
@@ -153,7 +154,9 @@ public class PassSavingService {
     }
 
     private int calculateTotalSaved(final Long userId) {
-        return sumSavings(userId, LocalDateTime.MIN);
+        return seedmoneyTransactionRepository.findByUserIdAndTransactionType(userId, "SAVE").stream()
+                .mapToInt(SeedmoneyTransaction::getAmount)
+                .sum();
     }
 
     private int fetchRealTimeBalance(final List<Map<String, Object>> accounts, final String accountNo) {
@@ -162,5 +165,25 @@ public class PassSavingService {
                 .findFirst()
                 .map(account -> Integer.parseInt(String.valueOf(account.get("accountBalance"))))
                 .orElse(0);
+    }
+
+    private String resolveSourceAccountNo(
+            final PassSubscription subscription,
+            final UserAccount mainAccount,
+            final String sourceAccountId
+    ) {
+        final String requestSourceAccountId = sourceAccountId == null ? "" : sourceAccountId.trim();
+        final String subscribedSourceAccountNo = subscription.getSourceAccountNo();
+
+        if (requestSourceAccountId.isBlank()) {
+            throw new IllegalArgumentException("출금 계좌번호는 필수입니다.");
+        }
+        if (!requestSourceAccountId.equals(subscribedSourceAccountNo)) {
+            throw new IllegalArgumentException("구독 시 등록한 출금 계좌와 일치하지 않습니다.");
+        }
+        if (!requestSourceAccountId.equals(mainAccount.getAccountNumber())) {
+            throw new IllegalArgumentException("출금 계좌는 주계좌만 사용할 수 있습니다.");
+        }
+        return requestSourceAccountId;
     }
 }
