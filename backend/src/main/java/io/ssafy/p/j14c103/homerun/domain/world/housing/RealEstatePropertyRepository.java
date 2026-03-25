@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.domain.world.housing;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +24,13 @@ public interface RealEstatePropertyRepository extends JpaRepository<RealEstatePr
     List<RealEstateProperty> findAllByRegionCodeAndDistrictCodeOrderByPropertyIdAsc(
         String regionCode,
         String districtCode
+    );
+
+    List<RealEstateProperty> findAllByLatitudeBetweenAndLongitudeBetweenOrderByPropertyIdAsc(
+        BigDecimal minLatitude,
+        BigDecimal maxLatitude,
+        BigDecimal minLongitude,
+        BigDecimal maxLongitude
     );
 
     boolean existsByProviderId(String providerId);
