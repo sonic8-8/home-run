@@ -76,6 +76,10 @@ async function request<T>(
     );
   }
 
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
+
   const json: ApiResponse<T> = await res.json();
   return json.data;
 }
