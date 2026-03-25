@@ -11,6 +11,7 @@ import io.ssafy.p.j14c103.homerun.api.service.home.DashboardService;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDoc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -32,6 +34,11 @@ class DashboardControllerTest extends RestDocsTestSupport {
 
     @MockitoBean
     private DashboardService dashboardService;
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     @DisplayName("대시보드 조회는 ApiResponse로 감싼 데이터를 반환한다")
     @Test

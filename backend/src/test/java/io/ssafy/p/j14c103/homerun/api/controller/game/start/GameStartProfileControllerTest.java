@@ -1,25 +1,32 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.start;
 
 import static org.mockito.BDDMockito.given;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.ssafy.p.j14c103.homerun.api.service.game.start.GameStartProfileService;
 import io.ssafy.p.j14c103.homerun.api.service.game.start.response.ProfileOptionsResponse;
+import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(GameStartProfileController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class GameStartProfileControllerTest {
+@AutoConfigureRestDocs(uriScheme = "https", uriHost = "api.homerun.local", uriPort = 443)
+class GameStartProfileControllerTest extends RestDocsTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -72,7 +79,8 @@ class GameStartProfileControllerTest {
         given(gameStartProfileService.getProfileOptions()).willReturn(response);
 
         // when & then
-        mockMvc.perform(get("/api/games/profiles"))
+        mockMvc.perform(get("/api/games/profiles")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200))
             .andExpect(jsonPath("$.message").value("OK"))
@@ -94,6 +102,24 @@ class GameStartProfileControllerTest {
             .andExpect(jsonPath("$.data.profiles[2].profileCode").value("IT_STARTUP"))
             .andExpect(jsonPath("$.data.profiles[2].name").value("IT 스타트업"))
             .andExpect(jsonPath("$.data.profiles[2].jobType").value("STARTUP"))
-            .andExpect(jsonPath("$.data.profiles[2].annualSalary").value(31000000));
+            .andExpect(jsonPath("$.data.profiles[2].annualSalary").value(31000000))
+            .andDo(document("game-start/profiles/success",
+                    requestHeaders(authorizationHeader()),
+                    apiResponseFields(
+                            "프로필 선택지 목록",
+                            fieldWithPath("profiles").type(JsonFieldType.ARRAY).description("프로필 선택지 목록"),
+                            fieldWithPath("profiles[].profileCode").type(JsonFieldType.STRING).description("프로필 코드"),
+                            fieldWithPath("profiles[].name").type(JsonFieldType.STRING).description("프로필 이름"),
+                            fieldWithPath("profiles[].jobType").type(JsonFieldType.STRING).description("직업 타입"),
+                            fieldWithPath("profiles[].annualSalary").type(JsonFieldType.NUMBER).description("연봉"),
+                            fieldWithPath("profiles[].initialCash").type(JsonFieldType.NUMBER).description("초기 현금"),
+                            fieldWithPath("profiles[].stats").type(JsonFieldType.OBJECT).description("프로필 능력치 정보"),
+                            fieldWithPath("profiles[].stats.salary").type(JsonFieldType.NUMBER).description("급여 능력치"),
+                            fieldWithPath("profiles[].stats.health").type(JsonFieldType.NUMBER).description("체력 능력치"),
+                            fieldWithPath("profiles[].stats.stability").type(JsonFieldType.NUMBER).description("안정성 능력치"),
+                            fieldWithPath("profiles[].stats.growthSpeed").type(JsonFieldType.NUMBER).description("성장 속도 능력치"),
+                            fieldWithPath("profiles[].stats.difficulty").type(JsonFieldType.NUMBER).description("난이도 능력치")
+                    )
+            ));
     }
 }

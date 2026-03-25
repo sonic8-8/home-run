@@ -277,7 +277,7 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .andExpect(jsonPath("$.data.accessToken").value("new-access-token"))
                 .andExpect(jsonPath("$.data.accessTokenExpiresIn").value(1800L))
                 .andDo(document("auth/refresh/success",
-                        requestHeaders(authorizationHeader()),
+                        requestHeaders(refreshAuthorizationHeader()),
                         apiResponseFields(
                                 "토큰 재발급 결과",
                                 fieldWithPath("accessToken").type(JsonFieldType.STRING).description("재발급된 액세스 토큰"),
@@ -301,7 +301,7 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_REFRESH_INVALID.getCode()))
                 .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_REFRESH_INVALID.getMessage()))
                 .andDo(document("auth/refresh/unauthorized",
-                        requestHeaders(authorizationHeader()),
+                        requestHeaders(refreshAuthorizationHeader()),
                         basicErrorResponseFields()
                 ));
     }

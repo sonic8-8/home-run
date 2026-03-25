@@ -17,6 +17,7 @@ import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccoun
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyTransactionResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -38,6 +40,11 @@ class SeedmoneyControllerTest extends RestDocsTestSupport {
 
     @MockitoBean
     private SeedmoneyService seedmoneyService;
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     @DisplayName("시드머니 계좌 생성은 201 ApiResponse를 반환한다")
     @Test

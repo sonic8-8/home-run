@@ -2,12 +2,17 @@ package io.ssafy.p.j14c103.homerun.api.controller.world;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldService;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnResponse;
+import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -16,14 +21,18 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(GameWorldController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class GameWorldControllerTest {
+@AutoConfigureRestDocs(uriScheme = "https", uriHost = "api.homerun.local", uriPort = 443)
+class GameWorldControllerTest extends RestDocsTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,7 +56,8 @@ class GameWorldControllerTest {
         given(gameWorldService.getTurn(anyLong())).willReturn(response);
 
         // when & then
-        mockMvc.perform(get("/api/games/sessions/1001/turn"))
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", 1001L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200))
             .andExpect(jsonPath("$.message").value("OK"))
@@ -57,7 +67,23 @@ class GameWorldControllerTest {
             .andExpect(jsonPath("$.data.economicCycle.phase").value("BOOM"))
             .andExpect(jsonPath("$.data.economicCycle.description").value("경기 호황기"))
             .andExpect(jsonPath("$.data.news").isArray())
-            .andExpect(jsonPath("$.data.news.length()").value(0));
+            .andExpect(jsonPath("$.data.news.length()").value(0))
+            .andDo(document("world/turn/success",
+                    requestHeaders(authorizationHeader()),
+                    pathParameters(
+                            parameterWithName("sessionId").description("게임 세션 ID")
+                    ),
+                    apiResponseFields(
+                            "현재 턴 정보",
+                            fieldWithPath("turnNumber").type(JsonFieldType.NUMBER).description("현재 턴 번호"),
+                            fieldWithPath("currentDate").type(JsonFieldType.STRING).description("현재 날짜"),
+                            fieldWithPath("month").type(JsonFieldType.NUMBER).description("현재 월"),
+                            fieldWithPath("economicCycle").type(JsonFieldType.OBJECT).description("경제 사이클 정보"),
+                            fieldWithPath("economicCycle.phase").type(JsonFieldType.STRING).description("경제 사이클 단계"),
+                            fieldWithPath("economicCycle.description").type(JsonFieldType.STRING).description("경제 사이클 설명"),
+                            fieldWithPath("news").type(JsonFieldType.ARRAY).description("턴 뉴스 목록")
+                    )
+            ));
     }
 
     @DisplayName("존재하지 않는 세션 ID면 400과 에러 응답을 반환한다")
@@ -68,9 +94,17 @@ class GameWorldControllerTest {
             .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then
-        mockMvc.perform(get("/api/games/sessions/9999/turn"))
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", 9999L)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getCode()))
-            .andExpect(jsonPath("$.message").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getMessage()));
+            .andExpect(jsonPath("$.message").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getMessage()))
+            .andDo(document("world/turn/session-not-found",
+                    requestHeaders(authorizationHeader()),
+                    pathParameters(
+                            parameterWithName("sessionId").description("게임 세션 ID")
+                    ),
+                    basicErrorResponseFields()
+            ));
     }
 }
