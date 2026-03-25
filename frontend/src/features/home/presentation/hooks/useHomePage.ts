@@ -10,6 +10,11 @@ import type { CreditScore } from '../../domain/entities/CreditScore';
 import type { LoanRecommendationData } from '../../domain/entities/LoanRecommendation';
 import type { MyCard } from '../../domain/entities/MyCard';
 
+import { UserRemoteDataSource } from '../../data/datasources/UserRemoteDataSource';
+import { UserRepositoryImpl } from '../../data/repositories/UserRepositoryImpl';
+import { GetUserMeUseCase } from '../../domain/usecases/GetUserMeUseCase';
+import { LinkAssetsUseCase } from '../../domain/usecases/LinkAssetsUseCase';
+
 import { SeedmoneyRemoteDataSource } from '../../data/datasources/SeedmoneyRemoteDataSource';
 import { SeedmoneyRepositoryImpl } from '../../data/repositories/SeedmoneyRepositoryImpl';
 import { GetSeedmoneyAccountUseCase } from '../../domain/usecases/GetSeedmoneyAccountUseCase';
@@ -35,6 +40,11 @@ import { GetLoanRecommendationsUseCase } from '../../domain/usecases/GetLoanReco
 import { CreditScoreRemoteDataSource } from '../../data/datasources/CreditScoreRemoteDataSource';
 import { CreditScoreRepositoryImpl } from '../../data/repositories/CreditScoreRepositoryImpl';
 import { GetCreditScoreUseCase } from '../../domain/usecases/GetCreditScoreUseCase';
+
+// ── User
+const userRepo = new UserRepositoryImpl(new UserRemoteDataSource());
+const getUserMe = new GetUserMeUseCase(userRepo);
+const linkAssets = new LinkAssetsUseCase(userRepo);
 
 // ── Seedmoney
 const seedmoneyRepo = new SeedmoneyRepositoryImpl(new SeedmoneyRemoteDataSource());
@@ -73,6 +83,7 @@ const MOCK_DASHBOARD: Dashboard = {
 };
 
 export const useHomePage = () => {
+  const [isAssetLinked, setIsAssetLinked] = useState<boolean | null>(null);
   const [seedMoney, setSeedMoney] = useState<SeedMoneyAccount | null>(null);
   const [allPasses, setAllPasses] = useState<Pass[]>([]);
   const [passSubscriptions, setPassSubscriptions] = useState<PassSubscription[]>([]);
@@ -86,6 +97,11 @@ export const useHomePage = () => {
     setLoading(true);
     setError(null);
     try {
+      const userMe = await getUserMe.execute();
+      setIsAssetLinked(userMe.isAssetLinked);
+
+      if (!userMe.isAssetLinked) return;
+
       const [accountResult, passesResult, subscriptionsResult, cardsResult, loansResult, creditResult] = await Promise.allSettled([
         getSeedmoneyAccount.execute(),
         getPassProducts.execute(),
@@ -109,6 +125,12 @@ export const useHomePage = () => {
 
   useEffect(() => {
     fetchAll();
+  }, [fetchAll]);
+
+  const handleLinkAssets = useCallback(async () => {
+    await linkAssets.execute();
+    setIsAssetLinked(true);
+    await fetchAll();
   }, [fetchAll]);
 
   const transfer = useCallback(async (toAccountNumber: string, amount: number) => {
@@ -142,6 +164,7 @@ export const useHomePage = () => {
   }, []);
 
   return {
+    isAssetLinked,
     dashboard: MOCK_DASHBOARD,
     seedMoney,
     creditScore,
@@ -152,6 +175,7 @@ export const useHomePage = () => {
     myCards: [] as MyCard[],
     loading,
     error,
+    handleLinkAssets,
     transfer,
     deposit,
     subscribeToPas,

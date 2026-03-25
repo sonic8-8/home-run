@@ -7,11 +7,18 @@ import { CardRecommendations } from '../../components/CardRecommendations/CardRe
 import { SeedMoneyWidget } from '../../components/SeedMoneyWidget/SeedMoneyWidget';
 import { GameBanner } from '../../components/GameBanner/GameBanner';
 import { CreditScoreWidget } from '../../components/CreditScoreWidget/CreditScoreWidget';
+import { AssetLinkPage } from '../../components/AssetLinkPage/AssetLinkPage';
 import { useHomePage } from '../../hooks/useHomePage';
 import styles from './HomePage.module.css';
 
 export const HomePage: React.FC = () => {
-  const { dashboard, seedMoney, creditScore, loanRecommendations, cardRecommendations, passSubscriptions, allPasses, myCards, saveToPass, unsubscribeFromPass, subscribeToPas } = useHomePage();
+  const { isAssetLinked, dashboard, seedMoney, creditScore, loanRecommendations, cardRecommendations, passSubscriptions, allPasses, myCards, saveToPass, unsubscribeFromPass, subscribeToPas, handleLinkAssets, loading } = useHomePage();
+
+  if (loading && isAssetLinked === null) return null;
+
+  if (isAssetLinked === false) {
+    return <AssetLinkPage onLink={handleLinkAssets} />;
+  }
 
   return (
     <div className={styles.page}>
