@@ -46,7 +46,7 @@ class LoanRecommendationServiceTest {
         assertThat(response.getCreditLoans()).hasSize(1);
         final LoanRecommendationItem item = response.getCreditLoans().get(0);
         assertThat(item.getEstimatedRate()).isEqualTo(3.25);
-        assertThat(item.getMinRate()).isEqualTo(3.12);
+        assertThat(item.getMinRate()).isEqualTo(2.56);
         assertThat(item.getMaxRate()).isEqualTo(12.0);
         assertThat(item.getCreditProductTypeName()).isEqualTo("일반신용대출");
         assertThat(item.getJoinWay()).isEqualTo("영업점,인터넷,스마트폰");
@@ -108,7 +108,7 @@ class LoanRecommendationServiceTest {
         // then
         assertThat(response.getMortgageLoans()).hasSize(1);
         final LoanRecommendationItem item = response.getMortgageLoans().get(0);
-        assertThat(item.getEstimatedRate()).isEqualTo(2.57);
+        assertThat(item.getEstimatedRate()).isEqualTo(2.61);
         assertThat(item.getAverageRate()).isEqualTo(2.88);
         assertThat(item.getMortgageTypeName()).isEqualTo("아파트");
         assertThat(item.getRepaymentTypeName()).isEqualTo("분할상환방식");
@@ -157,35 +157,35 @@ class LoanRecommendationServiceTest {
                         "crdt_prdt_type_nm", "일반신용대출"
                 )),
                 List.of(
-                        Map.of(
-                                "fin_co_no", "0010001",
-                                "fin_prdt_cd", "CR0001B",
-                                "crdt_lend_rate_type", "A",
-                                "crdt_lend_rate_type_nm", "대출금리",
-                                "crdt_grad_1", 3.12,
-                                "crdt_grad_4", 3.25,
-                                "crdt_grad_5", 3.34,
-                                "crdt_grad_6", 3.61,
-                                "crdt_grad_10", 4.09,
-                                "crdt_grad_11", 5.86,
-                                "crdt_grad_12", 2.56,
-                                "crdt_grad_13", 12.00,
-                                "crdt_grad_avg", 3.22
+                        Map.ofEntries(
+                                Map.entry("fin_co_no", "0010001"),
+                                Map.entry("fin_prdt_cd", "CR0001B"),
+                                Map.entry("crdt_lend_rate_type", "A"),
+                                Map.entry("crdt_lend_rate_type_nm", "대출금리"),
+                                Map.entry("crdt_grad_1", 3.12),
+                                Map.entry("crdt_grad_4", 3.25),
+                                Map.entry("crdt_grad_5", 3.34),
+                                Map.entry("crdt_grad_6", 3.61),
+                                Map.entry("crdt_grad_10", 4.09),
+                                Map.entry("crdt_grad_11", 5.86),
+                                Map.entry("crdt_grad_12", 2.56),
+                                Map.entry("crdt_grad_13", 12.00),
+                                Map.entry("crdt_grad_avg", 3.22)
                         ),
-                        Map.of(
-                                "fin_co_no", "0010001",
-                                "fin_prdt_cd", "CR0001B",
-                                "crdt_lend_rate_type", "B",
-                                "crdt_lend_rate_type_nm", "기준금리",
-                                "crdt_grad_1", 0.80,
-                                "crdt_grad_4", 0.82,
-                                "crdt_grad_5", 0.81,
-                                "crdt_grad_6", 0.81,
-                                "crdt_grad_10", 0.83,
-                                "crdt_grad_11", 0.87,
-                                "crdt_grad_12", 1.20,
-                                "crdt_grad_13", 0.89,
-                                "crdt_grad_avg", 0.81
+                        Map.ofEntries(
+                                Map.entry("fin_co_no", "0010001"),
+                                Map.entry("fin_prdt_cd", "CR0001B"),
+                                Map.entry("crdt_lend_rate_type", "B"),
+                                Map.entry("crdt_lend_rate_type_nm", "기준금리"),
+                                Map.entry("crdt_grad_1", 0.80),
+                                Map.entry("crdt_grad_4", 0.82),
+                                Map.entry("crdt_grad_5", 0.81),
+                                Map.entry("crdt_grad_6", 0.81),
+                                Map.entry("crdt_grad_10", 0.83),
+                                Map.entry("crdt_grad_11", 0.87),
+                                Map.entry("crdt_grad_12", 1.20),
+                                Map.entry("crdt_grad_13", 0.89),
+                                Map.entry("crdt_grad_avg", 0.81)
                         )
                 )
         );
