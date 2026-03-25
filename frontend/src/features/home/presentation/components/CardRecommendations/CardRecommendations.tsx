@@ -25,7 +25,7 @@ export function CardRecommendations({ cards, myCards }: CardRecommendationsProps
         <div className={styles.list}>
           {cards.map((c) => (
             <div
-              key={c.cardId}
+              key={c.cardProductId}
               className={styles.item}
               onClick={() => setModalOpen(true)}
               style={{ cursor: 'pointer' }}
@@ -51,7 +51,7 @@ export function CardRecommendations({ cards, myCards }: CardRecommendationsProps
         recommendations={cards}
         myCards={myCards}
         onApply={(card) => {
-          console.log('카드 신청하기', card.cardId);
+          console.log('카드 신청하기', card.cardProductId);
           // TODO: API 연동
         }}
         onCancel={(cardId) => {
