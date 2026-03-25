@@ -9,7 +9,7 @@ import io.ssafy.p.j14c103.homerun.api.service.character.career.JobTransferServic
 import io.ssafy.p.j14c103.homerun.api.service.character.career.SalaryNegotiationService;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.request.JobOfferQueryRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.request.JobTransferServiceRequest;
-import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationRequest;
+import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.response.JobOfferQueryResponse;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.response.JobTransferServiceResponse;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.response.SalaryNegotiationResultResponse;
@@ -231,7 +231,7 @@ class CharacterLongPlayRegressionTest {
         // when
         final SalaryNegotiationResultResponse negotiationResponse =
             salaryNegotiationService.negotiate(
-                SalaryNegotiationRequest.of(gameCareer, gameStat, 13)
+                SalaryNegotiationServiceRequest.of(gameCareer, gameStat, 13)
             );
         applyNegotiationResult(gameCareer, negotiationResponse);
         gameCareerRepository.saveAndFlush(gameCareer);
@@ -296,7 +296,7 @@ class CharacterLongPlayRegressionTest {
         assertThat(negotiationResponse.lastNegotiatedTurn()).isEqualTo(13);
 
         assertThatThrownBy(() -> salaryNegotiationService.negotiate(
-            SalaryNegotiationRequest.of(gameCareer, gameStat, 24)
+            SalaryNegotiationServiceRequest.of(gameCareer, gameStat, 24)
         ))
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())

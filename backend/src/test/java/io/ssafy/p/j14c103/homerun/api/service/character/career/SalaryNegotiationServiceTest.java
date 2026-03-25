@@ -3,7 +3,7 @@ package io.ssafy.p.j14c103.homerun.api.service.character.career;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationRequest;
+import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.response.SalaryNegotiationResultResponse;
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
@@ -28,7 +28,7 @@ class SalaryNegotiationServiceTest {
     @Test
     void negotiate() {
         // given
-        final SalaryNegotiationRequest request = SalaryNegotiationRequest.of(
+        final SalaryNegotiationServiceRequest request = SalaryNegotiationServiceRequest.of(
             createGameCareer(30_000_000, 0),
             createGameStat(70, 75),
             13
@@ -52,7 +52,7 @@ class SalaryNegotiationServiceTest {
     @Test
     void negotiateWithinTwelveTurns() {
         // given
-        final SalaryNegotiationRequest request = SalaryNegotiationRequest.of(
+        final SalaryNegotiationServiceRequest request = SalaryNegotiationServiceRequest.of(
             createGameCareer(30_000_000, 10),
             createGameStat(70, 75),
             21
