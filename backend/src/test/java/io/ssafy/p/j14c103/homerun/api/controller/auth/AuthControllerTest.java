@@ -188,6 +188,7 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .accessToken("access-token")
                 .refreshToken("refresh-token")
                 .accessTokenExpiresIn(1800L)
+                .name("홍길동")
                 .build();
         given(loginService.login(any(LoginServiceRequest.class)))
                 .willReturn(response);
@@ -202,6 +203,7 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .andExpect(jsonPath("$.data.accessToken").value("access-token"))
                 .andExpect(jsonPath("$.data.refreshToken").value("refresh-token"))
                 .andExpect(jsonPath("$.data.accessTokenExpiresIn").value(1800L))
+                .andExpect(jsonPath("$.data.name").value("홍길동"))
                 .andDo(document("auth/login/success",
                         requestFields(
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
@@ -211,7 +213,8 @@ class AuthControllerTest extends RestDocsTestSupport {
                                 "로그인 결과",
                                 fieldWithPath("accessToken").type(JsonFieldType.STRING).description("액세스 토큰"),
                                 fieldWithPath("refreshToken").type(JsonFieldType.STRING).description("리프레시 토큰"),
-                                fieldWithPath("accessTokenExpiresIn").type(JsonFieldType.NUMBER).description("액세스 토큰 만료까지 남은 초")
+                                fieldWithPath("accessTokenExpiresIn").type(JsonFieldType.NUMBER).description("액세스 토큰 만료까지 남은 초"),
+                                fieldWithPath("name").type(JsonFieldType.STRING).description("로그인한 회원 이름")
                         )
                 ));
     }
