@@ -12,35 +12,38 @@
   margin-bottom: var(--spacing-md);
 }
 
-.scoreList {
+.empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-lg) 0;
+}
+
+.scoreArea {
   display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--spacing-md);
 }
 
-.scoreRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.scoreMain {
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
-.scoreName {
+.scoreMax {
   font-size: var(--font-size-sm);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.gradeBadge {
+  font-size: var(--font-size-xs);
   font-weight: 600;
-}
-
-.scoreValue {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-}
-
-.kcb {
-  color: #7c3aed;
-}
-
-.nice {
-  color: #10b981;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 
 .divider {
@@ -49,47 +52,49 @@
   margin: var(--spacing-md) 0;
 }
 
-.rateSection {
-  margin-bottom: var(--spacing-md);
+.ficoList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
-.rateLabel {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-sm);
+.ficoRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.rateRow {
+.ficoMeta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
 }
 
-.rateDesc {
+.ficoLabel {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
 
-.rateValue {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: #7c3aed;
+.ficoValue {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
-.detailBtn {
-  width: 100%;
-  padding: 10px 0;
-  background: #eff6ff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: #155dfc;
-  cursor: pointer;
-  transition: background var(--transition-normal);
+.ficoMax {
+  font-weight: 400;
+  color: var(--color-text-secondary);
 }
 
-.detailBtn:hover {
-  background: #ede9fe;
+.ficoBarBg {
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ficoBar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
 }

@@ -3,6 +3,6 @@ import type { CardRecommendationsResponseModel } from '../models/CardModel';
 
 export class CardRemoteDataSource {
   getRecommendations(): Promise<CardRecommendationsResponseModel> {
-    return apiClient.get<CardRecommendationsResponseModel>('/api/home/card-recommendations');
+    return apiClient.get<CardRecommendationsResponseModel>('/api/cards/recommendations');
   }
 }

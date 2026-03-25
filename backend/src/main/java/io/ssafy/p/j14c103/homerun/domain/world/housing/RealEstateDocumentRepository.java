@@ -5,19 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RealEstateDocumentRepository extends JpaRepository<RealEstateDocument, Long> {
 
-    List<RealEstateDocument> findAllByPropertyIdOrderByRealEstateDocumentIdAsc(Long propertyId);
-
-    List<RealEstateDocument> findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
-        Long propertyId,
-        RealEstateDocumentType documentType,
-        RealEstateRegistrySection registrySection
-    );
-
-    boolean existsByPropertyIdAndDocumentType(Long propertyId, RealEstateDocumentType documentType);
-
-    boolean existsByPropertyIdAndDocumentTypeAndRegistrySection(
-        Long propertyId,
-        RealEstateDocumentType documentType,
+    List<RealEstateDocument> findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(
         RealEstateRegistrySection registrySection
     );
 }

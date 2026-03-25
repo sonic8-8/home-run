@@ -304,15 +304,11 @@ create table if not exists game_property_market_states (
     foreign key (property_id) references real_estate_properties (property_id)
 );
 
--- Contract and registry documents attached to a real-estate listing.
+-- Shared registry-document quiz samples for real-estate listings.
 create table if not exists real_estate_documents (
-  real_estate_document_id integer generated always as identity primary key,
-  property_id bigint not null,
-  document_type varchar(20),
-  registry_section varchar(20),
-  quiz_sample_payload jsonb,
-  constraint fk_real_estate_documents__property
-    foreign key (property_id) references real_estate_properties (property_id)
+  real_estate_document_id bigint generated always as identity primary key,
+  registry_section varchar(20) not null,
+  quiz_sample_payload jsonb not null
 );
 
 -- Player review results for property contract inspection.
@@ -454,6 +450,10 @@ create table if not exists news_master (
   title varchar(255),
   category varchar(100),
   sentiment varchar(50),
+  source_name varchar(255),
+  article_text text,
+  economic_cycle_type varchar(50),
+  reason text, -- economic_cycle_type 라벨링 이유
   sector_impact jsonb,
   exchange_rate_impact integer,
   real_estate_impact integer,

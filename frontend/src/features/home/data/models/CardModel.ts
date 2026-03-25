@@ -1,11 +1,22 @@
-export interface CardRecommendationModel {
-  cardId: string;
+export interface CardBenefitModel {
+  categoryId: string;
+  categoryName: string;
+  categoryDescription: string;
+  discountRate: number;
+  exampleMerchants: string[];
+}
+
+export interface CardResponseModel {
+  cardProductId: number;
   cardName: string;
+  cardIssuerName: string;
+  cardDescription: string;
+  baselinePerformanceAmount: number;
+  maxBenefitLimitAmount: number;
   cardImageUrl: string;
-  annualFee: number;
-  summary: string;
+  activeBenefits: CardBenefitModel[];
 }
 
 export interface CardRecommendationsResponseModel {
-  recommendations: CardRecommendationModel[];
+  recommendations: CardResponseModel[];
 }

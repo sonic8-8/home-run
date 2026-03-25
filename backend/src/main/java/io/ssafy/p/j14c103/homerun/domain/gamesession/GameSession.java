@@ -5,6 +5,8 @@ import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -189,6 +191,20 @@ public class GameSession {
         this.cyclePhase = cyclePhase;
     }
 
+    public void assertOwner(final Long userId) {
+        if (this.userId.equals(userId)) {
+            return;
+        }
+        throw new HomerunException(ErrorCode.GAME_SESSION_FORBIDDEN);
+    }
+
+    public void assertInProgress() {
+        if (sessionStatus == SessionStatus.IN_PROGRESS) {
+            return;
+        }
+        throw new HomerunException(ErrorCode.GAME_SESSION_CLOSED);
+    }
+
     public void advanceTurn(
         final Integer nextTurn,
         final LocalDate nextDate,
@@ -201,5 +217,9 @@ public class GameSession {
         this.cashBalance = nextCash;
         this.netWorth = nextNetWorth;
         this.cyclePhase = nextPhase;
+    }
+
+    public void markEnding(final SessionStatus sessionStatus) {
+        this.sessionStatus = sessionStatus;
     }
 }
