@@ -48,12 +48,18 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "management.endpoints.web.exposure.include=health,prometheus",
+        "management.endpoint.health.probes.enabled=true",
+        "management.health.redis.enabled=false"
+})
+@AutoConfigureObservability
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 class SecurityConfigTest {
@@ -187,6 +193,30 @@ class SecurityConfigTest {
                 .andExpect(jsonPath("$.data.accessToken").value("new-access-token"));
     }
 
+    @DisplayName("Actuator endpoint는 인증 없이 접근할 수 있다.")
+    @ParameterizedTest(name = "[{index}] {0}")
+    @MethodSource("publicActuatorPaths")
+    void actuatorEndpointsArePublic(String path) throws Exception {
+        mockMvc.perform(get(path))
+                .andExpect(status().isOk());
+
+        verifyNoInteractions(
+                characterQueryService,
+                cardService,
+                gameStartProfileService,
+                gameStartLocationService,
+                dashboardService,
+                spendingService,
+                loanRecommendationService,
+                passService,
+                passSavingService,
+                seedmoneyService,
+                creditScoreService,
+                userMeService,
+                userAssetLinkService
+        );
+    }
+
     @DisplayName("비즈니스 API는 인증 없이 접근하면 401을 반환한다.")
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("protectedPaths")
@@ -309,6 +339,15 @@ class SecurityConfigTest {
                 Arguments.of("/api/credit/score"),
                 Arguments.of("/api/users/me"),
                 Arguments.of("/api/future/protected-endpoint")
+        );
+    }
+
+    private static Stream<Arguments> publicActuatorPaths() {
+        return Stream.of(
+                Arguments.of("/actuator/health"),
+                Arguments.of("/actuator/health/liveness"),
+                Arguments.of("/actuator/health/readiness"),
+                Arguments.of("/actuator/prometheus")
         );
     }
 
