@@ -24,7 +24,6 @@ export interface PassSubscriptionsResponseModel {
 
 export interface PassSubscribeRequestModel {
   passId: number;
-  sourceAccountId: string;
 }
 
 export interface PassSubscribeResponseModel {
@@ -36,7 +35,6 @@ export interface PassSubscribeResponseModel {
 
 export interface PassSaveRequestModel {
   subscriptionId: number;
-  sourceAccountId: string;
 }
 
 export interface PassSaveResponseModel {

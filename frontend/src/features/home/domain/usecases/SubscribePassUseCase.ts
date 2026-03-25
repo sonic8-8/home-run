@@ -5,7 +5,7 @@ export class SubscribePassUseCase {
   private readonly repository: IPassRepository;
   constructor(repository: IPassRepository) { this.repository = repository; }
 
-  execute(passId: number, sourceAccountId: string): Promise<PassSubscribeResult> {
-    return this.repository.subscribe(passId, sourceAccountId);
+  execute(passId: number): Promise<PassSubscribeResult> {
+    return this.repository.subscribe(passId);
   }
 }

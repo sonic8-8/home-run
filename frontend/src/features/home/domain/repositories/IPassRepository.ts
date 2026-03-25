@@ -8,9 +8,9 @@ import type { PassHistoryPage } from '../entities/PassHistory';
 export interface IPassRepository {
   getProducts(): Promise<Pass[]>;
   getSubscriptions(): Promise<PassSubscription[]>;
-  subscribe(passId: number, sourceAccountId: string): Promise<PassSubscribeResult>;
+  subscribe(passId: number): Promise<PassSubscribeResult>;
   unsubscribe(subscriptionId: number): Promise<void>;
-  save(subscriptionId: number, sourceAccountId: string): Promise<PassSaveResult>;
+  save(subscriptionId: number): Promise<PassSaveResult>;
   getWidget(): Promise<PassWidgetData>;
   getHistory(page: number, size: number): Promise<PassHistoryPage>;
 }

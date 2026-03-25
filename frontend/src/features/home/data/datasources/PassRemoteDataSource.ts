@@ -2,9 +2,7 @@ import { apiClient } from '@core/network/apiClient';
 import type {
   PassProductsResponseModel,
   PassSubscriptionsResponseModel,
-  PassSubscribeRequestModel,
   PassSubscribeResponseModel,
-  PassSaveRequestModel,
   PassSaveResponseModel,
   PassWidgetModel,
   PassHistoryPageModel,
@@ -19,16 +17,16 @@ export class PassRemoteDataSource {
     return apiClient.get<PassSubscriptionsResponseModel>('/api/pass/subscriptions');
   }
 
-  subscribe(body: PassSubscribeRequestModel): Promise<PassSubscribeResponseModel> {
-    return apiClient.post<PassSubscribeResponseModel>('/api/pass/subscribe', body);
+  subscribe(passId: number): Promise<PassSubscribeResponseModel> {
+    return apiClient.post<PassSubscribeResponseModel>('/api/pass/subscribe', { passId });
   }
 
   unsubscribe(subscriptionId: number): Promise<void> {
     return apiClient.delete<void>(`/api/pass/subscriptions/${subscriptionId}`);
   }
 
-  save(body: PassSaveRequestModel): Promise<PassSaveResponseModel> {
-    return apiClient.post<PassSaveResponseModel>('/api/pass/save', body);
+  save(subscriptionId: number): Promise<PassSaveResponseModel> {
+    return apiClient.post<PassSaveResponseModel>('/api/pass/save', { subscriptionId });
   }
 
   getWidget(): Promise<PassWidgetModel> {

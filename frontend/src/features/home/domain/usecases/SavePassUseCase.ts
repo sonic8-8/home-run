@@ -5,7 +5,7 @@ export class SavePassUseCase {
   private readonly repository: IPassRepository;
   constructor(repository: IPassRepository) { this.repository = repository; }
 
-  execute(subscriptionId: number, sourceAccountId: string): Promise<PassSaveResult> {
-    return this.repository.save(subscriptionId, sourceAccountId);
+  execute(subscriptionId: number): Promise<PassSaveResult> {
+    return this.repository.save(subscriptionId);
   }
 }

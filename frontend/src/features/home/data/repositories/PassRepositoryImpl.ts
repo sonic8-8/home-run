@@ -33,8 +33,8 @@ export class PassRepositoryImpl implements IPassRepository {
     }));
   }
 
-  async subscribe(passId: number, sourceAccountId: string): Promise<PassSubscribeResult> {
-    const m = await this.dataSource.subscribe({ passId, sourceAccountId });
+  async subscribe(passId: number): Promise<PassSubscribeResult> {
+    const m = await this.dataSource.subscribe(passId);
     return {
       subscriptionId: m.subscriptionId,
       passId: m.passId,
@@ -47,8 +47,8 @@ export class PassRepositoryImpl implements IPassRepository {
     return this.dataSource.unsubscribe(subscriptionId);
   }
 
-  async save(subscriptionId: number, sourceAccountId: string): Promise<PassSaveResult> {
-    const m = await this.dataSource.save({ subscriptionId, sourceAccountId });
+  async save(subscriptionId: number): Promise<PassSaveResult> {
+    const m = await this.dataSource.save(subscriptionId);
     return { savedAmount: m.savedAmount, totalSaved: m.totalSaved, remainingBalance: m.remainingBalance };
   }
 
