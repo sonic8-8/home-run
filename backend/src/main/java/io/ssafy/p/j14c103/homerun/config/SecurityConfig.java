@@ -17,6 +17,9 @@ public class SecurityConfig {
     @Value("${spring.h2.console.enabled:false}")
     private boolean h2ConsoleEnabled;
 
+    @Value("${app.docs.enabled:false}")
+    private boolean docsEnabled;
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -39,6 +42,9 @@ public class SecurityConfig {
                     "/actuator/health/**",
                     "/actuator/prometheus"
             ).permitAll();
+            if (docsEnabled) {
+                authorize.requestMatchers("/docs", "/docs/**").permitAll();
+            }
             if (h2ConsoleEnabled) {
                 authorize.requestMatchers("/h2-console/**").permitAll();
             }
