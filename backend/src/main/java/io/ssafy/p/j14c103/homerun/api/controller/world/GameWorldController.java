@@ -18,9 +18,9 @@ public class GameWorldController {
 
     @GetMapping("/{gameSessionId}/turn")
     public ApiResponse<GameTurnResponse> getTurn(
-        @PathVariable int gameSessionId
+        @PathVariable final Long gameSessionId
     ) {
-        GameTurnResponse response = gameWorldService.getTurn(gameSessionId);
+        final GameTurnResponse response = gameWorldService.getTurn(gameSessionId);
 
         return ApiResponse.ok(response);
     }

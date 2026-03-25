@@ -38,7 +38,7 @@ public class StockTradingService {
      * 게임 시작 시 stock_markets의 base_price를 복사하여 세션 초기 상태를 생성한다.
      */
     @Transactional
-    public void initializeStockStates(final Integer gameSessionId) {
+    public void initializeStockStates(final Long gameSessionId) {
         final List<StockMarket> markets = stockMarketRepository.findAll();
         final List<GameStockMarketState> states = markets.stream()
                 .map(market -> GameStockMarketState.initializeFrom(
@@ -51,14 +51,14 @@ public class StockTradingService {
     /**
      * 세션의 현재 시장 가격 조회.
      */
-    public List<GameStockMarketState> getMarketPrices(final Integer gameSessionId) {
+    public List<GameStockMarketState> getMarketPrices(final Long gameSessionId) {
         return gameStockMarketStateRepository.findAllByGameSessionId(gameSessionId);
     }
 
     /**
      * 세션의 보유 주식 조회.
      */
-    public List<StockHolding> getHoldings(final Integer gameSessionId) {
+    public List<StockHolding> getHoldings(final Long gameSessionId) {
         return stockHoldingRepository.findAllByGameSessionId(gameSessionId);
     }
 
@@ -67,7 +67,7 @@ public class StockTradingService {
      */
     @Transactional
     public StockOrder placeBuyOrder(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer quantity,
             final Integer currentTurn
@@ -86,7 +86,7 @@ public class StockTradingService {
      */
     @Transactional
     public StockOrder placeSellOrder(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer quantity,
             final Integer currentTurn
@@ -114,7 +114,7 @@ public class StockTradingService {
      * @return 정산으로 인한 현금 변동액 (매도수입 - 매수비용)
      */
     @Transactional
-    public int settleOrders(final Integer gameSessionId, final Integer currentTurn) {
+    public int settleOrders(final Long gameSessionId, final Integer currentTurn) {
         final List<StockOrder> pendingOrders = stockOrderRepository
                 .findAllByGameSessionIdAndExecuteTurnAndOrderStatus(
                         gameSessionId, currentTurn, OrderStatus.PENDING);
@@ -147,7 +147,7 @@ public class StockTradingService {
         return cashChange;
     }
 
-    private int executeBuyOrder(final StockOrder order, final Integer gameSessionId, final int price) {
+    private int executeBuyOrder(final StockOrder order, final Long gameSessionId, final int price) {
         final int totalCost = price * order.getQuantity();
         final StockHoldingId holdingId = new StockHoldingId(gameSessionId, order.getStockCode());
 
@@ -162,7 +162,7 @@ public class StockTradingService {
         return totalCost;
     }
 
-    private int executeSellOrder(final StockOrder order, final Integer gameSessionId, final int price) {
+    private int executeSellOrder(final StockOrder order, final Long gameSessionId, final int price) {
         final int totalProceeds = price * order.getQuantity();
         final StockHoldingId holdingId = new StockHoldingId(gameSessionId, order.getStockCode());
 
@@ -177,7 +177,7 @@ public class StockTradingService {
         return totalProceeds;
     }
 
-    private void validateStockExists(final Integer gameSessionId, final String stockCode) {
+    private void validateStockExists(final Long gameSessionId, final String stockCode) {
         gameStockMarketStateRepository
                 .findById(new GameStockMarketStateId(gameSessionId, stockCode))
                 .orElseThrow(() -> new HomerunException(ErrorCode.INVALID_INPUT_VALUE));

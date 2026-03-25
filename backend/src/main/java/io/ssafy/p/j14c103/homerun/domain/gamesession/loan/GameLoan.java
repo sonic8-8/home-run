@@ -33,7 +33,7 @@ public class GameLoan {
     private Integer gameLoanId;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Column(name = "loan_name", length = 100)
     private String loanName;
@@ -62,7 +62,7 @@ public class GameLoan {
     private LoanStatus loanStatus;
 
     private GameLoan(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String loanName,
             final Integer principalAmount,
             final BigDecimal interestRate,
@@ -83,7 +83,7 @@ public class GameLoan {
     }
 
     public static GameLoan create(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String loanName,
             final Integer principalAmount,
             final BigDecimal interestRate,
@@ -99,7 +99,7 @@ public class GameLoan {
     /**
      * 싸피론 대출 생성. 고정금리 2.5%, 원리금균등.
      */
-    public static GameLoan createSsafyLoan(final Integer gameSessionId, final Integer principal) {
+    public static GameLoan createSsafyLoan(final Long gameSessionId, final Integer principal) {
         if (principal > SSAFY_LOAN_MAX_AMOUNT) {
             throw new IllegalArgumentException("싸피론 최대 한도는 " + SSAFY_LOAN_MAX_AMOUNT + "원입니다.");
         }

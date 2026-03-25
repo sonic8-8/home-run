@@ -5,9 +5,6 @@ import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
-import java.util.Objects;
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -17,14 +14,20 @@ public class JobOfferQueryResponse {
     private final int offerChanceBonusRate;
     private final boolean meetFriendBonusApplied;
 
-    @Builder(access = AccessLevel.PRIVATE)
     private JobOfferQueryResponse(
         final List<JobOfferResponse> offers,
         final int offerChanceBonusRate,
         final boolean meetFriendBonusApplied
     ) {
-        validateRequest(offers, offerChanceBonusRate);
-
+        if (offers == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+        }
+        if (offers.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+        }
+        if (offerChanceBonusRate < 0) {
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+        }
         this.offers = List.copyOf(offers);
         this.offerChanceBonusRate = offerChanceBonusRate;
         this.meetFriendBonusApplied = meetFriendBonusApplied;
@@ -37,25 +40,25 @@ public class JobOfferQueryResponse {
             throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
 
-        return JobOfferQueryResponse.builder()
-            .offers(jobOfferPool.offers().stream()
+        return new JobOfferQueryResponse(
+            jobOfferPool.offers().stream()
                 .map(JobOfferResponse::from)
-                .toList())
-            .offerChanceBonusRate(jobOfferPool.offerChanceBonusRate())
-            .meetFriendBonusApplied(jobOfferPool.meetFriendBonusApplied())
-            .build();
+                .toList(),
+            jobOfferPool.offerChanceBonusRate(),
+            jobOfferPool.meetFriendBonusApplied()
+        );
     }
 
-    private void validateRequest(
-        final List<JobOfferResponse> offers,
-        final int offerChanceBonusRate
-    ) {
-        if (offers == null || offers.stream().anyMatch(Objects::isNull)) {
-            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-        }
-        if (offerChanceBonusRate < 0) {
-            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-        }
+    public List<JobOfferResponse> offers() {
+        return offers;
+    }
+
+    public int offerChanceBonusRate() {
+        return offerChanceBonusRate;
+    }
+
+    public boolean meetFriendBonusApplied() {
+        return meetFriendBonusApplied;
     }
 
     @Getter
@@ -68,44 +71,7 @@ public class JobOfferQueryResponse {
         private final int offeredSalary;
         private final Integer probationTurns;
 
-        @Builder(access = AccessLevel.PRIVATE)
         private JobOfferResponse(
-            final String offerId,
-            final JobType jobType,
-            final String displayCompanyName,
-            final int currentSalary,
-            final int offeredSalary,
-            final Integer probationTurns
-        ) {
-            validateRequest(
-                offerId,
-                jobType,
-                displayCompanyName,
-                currentSalary,
-                offeredSalary,
-                probationTurns
-            );
-
-            this.offerId = offerId;
-            this.jobType = jobType;
-            this.displayCompanyName = displayCompanyName;
-            this.currentSalary = currentSalary;
-            this.offeredSalary = offeredSalary;
-            this.probationTurns = probationTurns;
-        }
-
-        private static JobOfferResponse from(final JobTransferPolicy.JobOffer jobOffer) {
-            return JobOfferResponse.builder()
-                .offerId(jobOffer.offerId())
-                .jobType(jobOffer.jobType())
-                .displayCompanyName(jobOffer.displayCompanyName())
-                .currentSalary(jobOffer.currentSalary())
-                .offeredSalary(jobOffer.offeredSalary())
-                .probationTurns(jobOffer.probationTurns())
-                .build();
-        }
-
-        private void validateRequest(
             final String offerId,
             final JobType jobType,
             final String displayCompanyName,
@@ -122,12 +88,57 @@ public class JobOfferQueryResponse {
             if (displayCompanyName == null || displayCompanyName.isBlank()) {
                 throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
-            if (currentSalary <= 0 || offeredSalary <= 0) {
+            if (currentSalary <= 0) {
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+            }
+            if (offeredSalary <= 0) {
                 throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
             if (probationTurns != null && probationTurns <= 0) {
                 throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
             }
+
+            this.offerId = offerId;
+            this.jobType = jobType;
+            this.displayCompanyName = displayCompanyName;
+            this.currentSalary = currentSalary;
+            this.offeredSalary = offeredSalary;
+            this.probationTurns = probationTurns;
+        }
+
+        private static JobOfferResponse from(final JobTransferPolicy.JobOffer jobOffer) {
+            return new JobOfferResponse(
+                jobOffer.offerId(),
+                jobOffer.jobType(),
+                jobOffer.displayCompanyName(),
+                jobOffer.currentSalary(),
+                jobOffer.offeredSalary(),
+                jobOffer.probationTurns()
+            );
+        }
+
+        public String offerId() {
+            return offerId;
+        }
+
+        public JobType jobType() {
+            return jobType;
+        }
+
+        public String displayCompanyName() {
+            return displayCompanyName;
+        }
+
+        public int currentSalary() {
+            return currentSalary;
+        }
+
+        public int offeredSalary() {
+            return offeredSalary;
+        }
+
+        public Integer probationTurns() {
+            return probationTurns;
         }
     }
 }

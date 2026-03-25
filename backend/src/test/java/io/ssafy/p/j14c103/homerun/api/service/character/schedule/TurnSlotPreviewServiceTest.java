@@ -42,26 +42,26 @@ class TurnSlotPreviewServiceTest {
         final TurnSlotPreviewResponse response = turnSlotPreviewService.preview(request);
 
         // then
-        assertThat(response.getSlots())
+        assertThat(response.slots())
             .extracting(
-                TurnSlotPreviewResponse.TurnSlotResponse::getSlotIndex,
-                TurnSlotPreviewResponse.TurnSlotResponse::getActionType,
-                TurnSlotPreviewResponse.TurnSlotResponse::getActionCategory,
-                TurnSlotPreviewResponse.TurnSlotResponse::isForcedAction
+                TurnSlotPreviewResponse.TurnSlotResponse::slotIndex,
+                TurnSlotPreviewResponse.TurnSlotResponse::actionType,
+                TurnSlotPreviewResponse.TurnSlotResponse::actionCategory,
+                TurnSlotPreviewResponse.TurnSlotResponse::forcedAction
             )
             .containsExactly(
                 tuple(0, ActionType.REST, ActionCategory.ACTIVITY, true),
                 tuple(1, ActionType.SIDE_JOB, ActionCategory.ACTIVITY, false),
                 tuple(2, ActionType.REST, ActionCategory.ACTIVITY, true)
             );
-        assertThat(response.getStatPreview().getHealthDelta()).isEqualTo(3);
-        assertThat(response.getStatPreview().getFatigueDelta()).isEqualTo(-14);
-        assertThat(response.getStatPreview().getStressDelta()).isEqualTo(-8);
-        assertThat(response.getStatPreview().getHappinessDelta()).isEqualTo(4);
-        assertThat(response.getStatPreview().getKnowledgeDelta()).isZero();
-        assertThat(response.getCashPreview().getMinimumCashDelta()).isEqualTo(430_000);
-        assertThat(response.getCashPreview().getMaximumCashDelta()).isEqualTo(430_000);
-        assertThat(response.getCashPreview().isRangePreview()).isFalse();
+        assertThat(response.statPreview().healthDelta()).isEqualTo(3);
+        assertThat(response.statPreview().fatigueDelta()).isEqualTo(-14);
+        assertThat(response.statPreview().stressDelta()).isEqualTo(-8);
+        assertThat(response.statPreview().happinessDelta()).isEqualTo(4);
+        assertThat(response.statPreview().knowledgeDelta()).isZero();
+        assertThat(response.cashPreview().minimumCashDelta()).isEqualTo(430_000);
+        assertThat(response.cashPreview().maximumCashDelta()).isEqualTo(430_000);
+        assertThat(response.cashPreview().rangePreview()).isFalse();
     }
 
     @DisplayName("번아웃 제약을 어긴 슬롯 요청이면 예외가 발생한다.")

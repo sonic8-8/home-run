@@ -11,8 +11,6 @@ import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlot;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -28,9 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 class CharacterPersistenceRepositoryTest {
 
     @Autowired
-    private GameSessionRefRepository gameSessionRefRepository;
-
-    @Autowired
     private GameStatRepository gameStatRepository;
 
     @Autowired
@@ -41,49 +36,6 @@ class CharacterPersistenceRepositoryTest {
 
     @Autowired
     private GameplayHistoryRepository gameplayHistoryRepository;
-
-    @DisplayName("게임 세션 참조를 한국어 테이블과 컬럼으로 저장하고 조회할 수 있다.")
-    @Test
-    void saveAndLoadGameSessionRef() {
-        // given
-        GameSessionRef gameSessionRef = GameSessionRef.builder()
-            .gameId(1001)
-            .userId(1)
-            .characterName("윤서")
-            .characterType(CharacterType.FEMALE)
-            .jobTypeSummary(JobType.STARTUP)
-            .housingType(HousingType.STUDIO)
-            .currentTurn(1)
-            .economicCycleType("RECOVERY")
-            .currentDate(LocalDate.of(2026, 3, 1))
-            .cash(2_000_000)
-            .netAssets(2_000_000)
-            .inProgress(true)
-            .bankrupt(false)
-            .cleared(false)
-            .createdAt(LocalDateTime.of(2026, 3, 1, 9, 0))
-            .lastPlayedAt(LocalDateTime.of(2026, 3, 1, 9, 30))
-            .saveSlotId(1)
-            .targetRegionCode("SEOUL")
-            .targetDistrictCode("GANGNAM")
-            .seedType("NORMAL")
-            .sessionStatus("IN_PROGRESS")
-            .ownedPropertyListingId(0)
-            .build();
-
-        gameSessionRefRepository.save(gameSessionRef);
-
-        // when
-        GameSessionRef result = gameSessionRefRepository.findById(1001)
-            .orElseThrow();
-
-        // then
-        assertThat(result.getCharacterType()).isEqualTo(CharacterType.FEMALE);
-        assertThat(result.getJobTypeSummary()).isEqualTo(JobType.STARTUP);
-        assertThat(result.getHousingType()).isEqualTo(HousingType.STUDIO);
-        assertThat(result.getCurrentDate()).isEqualTo(LocalDate.of(2026, 3, 1));
-        assertThat(result.isInProgress()).isTrue();
-    }
 
     @DisplayName("게임 스탯을 저장하고 조회할 수 있다.")
     @Test

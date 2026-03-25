@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.realestate.response.RealEstat
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateMoneyRenderingRule;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
@@ -27,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RealEstateDocumentService {
 
+    private static final RealEstateDocumentType REGISTRY_DOCUMENT_TYPE = RealEstateDocumentType.REGISTRY;
+    private static final String REGISTRY_DOCUMENT_LABEL = "등기사항전부증명서";
     private static final String SALE_PRICE_RATIO_SOURCE = "sale_price_ratio";
     private static final String TEN_THOUSAND_WON_UNIT = "만원";
     private static final String RISK_VERDICT = "위험";
@@ -46,8 +49,8 @@ public class RealEstateDocumentService {
             .orElseThrow(() -> new HomerunException(ErrorCode.HOUSING_PROPERTY_NOT_FOUND));
         final long salePrice = extractSalePrice(property);
 
-        final RealEstateRegistryQuizSample gapguSample = extractQuizSample(selectGapguDocument());
-        final RealEstateRegistryQuizSample eulguSample = extractQuizSample(selectEulguDocument());
+        final RealEstateRegistryQuizSample gapguSample = extractQuizSample(selectGapguDocument(propertyId));
+        final RealEstateRegistryQuizSample eulguSample = extractQuizSample(selectEulguDocument(propertyId));
 
         final RealEstateDocumentResponse.SectionSolutionResponse gapguSolution = toSectionSolution(gapguSample);
         final RealEstateDocumentResponse.SectionSolutionResponse eulguSolution = toSectionSolution(eulguSample);
@@ -59,10 +62,11 @@ public class RealEstateDocumentService {
             property.getLatitude(),
             property.getLongitude(),
             salePrice,
+            REGISTRY_DOCUMENT_LABEL,
             renderRows(gapguSample.getRows(), salePrice),
             renderRows(eulguSample.getRows(), salePrice),
             RealEstateDocumentResponse.SolutionResponse.of(
-                toOverallVerdict(gapguSolution.getVerdict(), eulguSolution.getVerdict()),
+                toOverallVerdict(gapguSolution.verdict(), eulguSolution.verdict()),
                 gapguSolution,
                 eulguSolution
             )
@@ -85,17 +89,25 @@ public class RealEstateDocumentService {
         throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
     }
 
-    private RealEstateDocument selectGapguDocument() {
+    private RealEstateDocument selectGapguDocument(final Long propertyId) {
         final List<RealEstateDocument> gapguDocuments = realEstateDocumentRepository
-            .findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(RealEstateRegistrySection.GAPGU);
+            .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
+                propertyId,
+                REGISTRY_DOCUMENT_TYPE,
+                RealEstateRegistrySection.GAPGU
+            );
 
         validateSamplePool(gapguDocuments);
         return gapguDocuments.get(realEstateRegistryRandomService.nextGapguIndex(gapguDocuments.size()));
     }
 
-    private RealEstateDocument selectEulguDocument() {
+    private RealEstateDocument selectEulguDocument(final Long propertyId) {
         final List<RealEstateDocument> eulguDocuments = realEstateDocumentRepository
-            .findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(RealEstateRegistrySection.EULGU);
+            .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
+                propertyId,
+                REGISTRY_DOCUMENT_TYPE,
+                RealEstateRegistrySection.EULGU
+            );
 
         validateSamplePool(eulguDocuments);
         return eulguDocuments.get(realEstateRegistryRandomService.nextEulguIndex(eulguDocuments.size()));

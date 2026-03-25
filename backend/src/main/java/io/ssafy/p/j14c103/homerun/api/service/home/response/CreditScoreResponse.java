@@ -24,11 +24,11 @@ public class CreditScoreResponse {
     private final long netAsset;
 
     private CreditScoreResponse(
-            final CreditScore css,
-            final String ratingName,
-            final long totalAsset,
-            final long totalDebt,
-            final long netAsset
+        CreditScore css,
+        String ratingName,
+        long totalAsset,
+        long totalDebt,
+        long netAsset
     ) {
         this.score = css.getScore();
         this.grade = css.getGrade();
@@ -44,12 +44,16 @@ public class CreditScoreResponse {
         this.netAsset = netAsset;
     }
 
+    public static CreditScoreResponse of(CreditScore css, String ratingName, long totalAsset) {
+        return new CreditScoreResponse(css, ratingName, totalAsset, 0L, 0L);
+    }
+
     public static CreditScoreResponse of(
-            final CreditScore css,
-            final String ratingName,
-            final long totalAsset,
-            final long totalDebt,
-            final long netAsset
+        CreditScore css,
+        String ratingName,
+        long totalAsset,
+        long totalDebt,
+        long netAsset
     ) {
         return new CreditScoreResponse(css, ratingName, totalAsset, totalDebt, netAsset);
     }

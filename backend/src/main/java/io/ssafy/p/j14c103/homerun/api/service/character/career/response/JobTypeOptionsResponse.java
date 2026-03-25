@@ -4,8 +4,6 @@ import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -13,23 +11,19 @@ public class JobTypeOptionsResponse {
 
     private final List<JobTypeOptionResponse> jobTypes;
 
-    @Builder(access = AccessLevel.PRIVATE)
     private JobTypeOptionsResponse(final List<JobTypeOptionResponse> jobTypes) {
-        validateRequest(jobTypes);
-
+        if (jobTypes == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+        }
         this.jobTypes = List.copyOf(jobTypes);
     }
 
     public static JobTypeOptionsResponse from(final List<JobTypeOptionResponse> jobTypes) {
-        return JobTypeOptionsResponse.builder()
-            .jobTypes(jobTypes)
-            .build();
+        return new JobTypeOptionsResponse(jobTypes);
     }
 
-    private void validateRequest(final List<JobTypeOptionResponse> jobTypes) {
-        if (jobTypes == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-        }
+    public List<JobTypeOptionResponse> jobTypes() {
+        return jobTypes;
     }
 
     @Getter
@@ -39,13 +33,20 @@ public class JobTypeOptionsResponse {
         private final String label;
         private final JobTypeStatsResponse stats;
 
-        @Builder(access = AccessLevel.PRIVATE)
         private JobTypeOptionResponse(
             final JobType jobType,
             final String label,
             final JobTypeStatsResponse stats
         ) {
-            validateRequest(jobType, label, stats);
+            if (jobType == null) {
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+            }
+            if (label == null || label.isBlank()) {
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+            }
+            if (stats == null) {
+                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+            }
 
             this.jobType = jobType;
             this.label = label;
@@ -61,48 +62,23 @@ public class JobTypeOptionsResponse {
             final int growthSpeed,
             final int difficulty
         ) {
-            return JobTypeOptionResponse.builder()
-                .jobType(jobType)
-                .label(label)
-                .stats(JobTypeStatsResponse.of(
-                    salary,
-                    health,
-                    stability,
-                    growthSpeed,
-                    difficulty
-                ))
-                .build();
+            return new JobTypeOptionResponse(
+                jobType,
+                label,
+                JobTypeStatsResponse.of(salary, health, stability, growthSpeed, difficulty)
+            );
         }
 
-        public static JobTypeOptionResponse from(
-            final io.ssafy.p.j14c103.homerun.domain.character.CharacterSeedPolicy.JobTypeSeedProfile
-                profile
-        ) {
-            if (profile == null) {
-                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-            }
-
-            return JobTypeOptionResponse.builder()
-                .jobType(profile.jobType())
-                .label(profile.label())
-                .stats(JobTypeStatsResponse.from(profile.gauge()))
-                .build();
+        public JobType jobType() {
+            return jobType;
         }
 
-        private void validateRequest(
-            final JobType jobType,
-            final String label,
-            final JobTypeStatsResponse stats
-        ) {
-            if (jobType == null) {
-                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-            }
-            if (label == null || label.isBlank()) {
-                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-            }
-            if (stats == null) {
-                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-            }
+        public String label() {
+            return label;
+        }
+
+        public JobTypeStatsResponse stats() {
+            return stats;
         }
     }
 
@@ -115,7 +91,6 @@ public class JobTypeOptionsResponse {
         private final int growthSpeed;
         private final int difficulty;
 
-        @Builder(access = AccessLevel.PRIVATE)
         private JobTypeStatsResponse(
             final int salary,
             final int health,
@@ -143,29 +118,27 @@ public class JobTypeOptionsResponse {
             final int growthSpeed,
             final int difficulty
         ) {
-            return JobTypeStatsResponse.builder()
-                .salary(salary)
-                .health(health)
-                .stability(stability)
-                .growthSpeed(growthSpeed)
-                .difficulty(difficulty)
-                .build();
+            return new JobTypeStatsResponse(salary, health, stability, growthSpeed, difficulty);
         }
 
-        private static JobTypeStatsResponse from(
-            final io.ssafy.p.j14c103.homerun.domain.character.CharacterSeedPolicy.JobTypeGauge gauge
-        ) {
-            if (gauge == null) {
-                throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-            }
+        public int salary() {
+            return salary;
+        }
 
-            return JobTypeStatsResponse.builder()
-                .salary(gauge.salary())
-                .health(gauge.health())
-                .stability(gauge.stability())
-                .growthSpeed(gauge.growthSpeed())
-                .difficulty(gauge.difficulty())
-                .build();
+        public int health() {
+            return health;
+        }
+
+        public int stability() {
+            return stability;
+        }
+
+        public int growthSpeed() {
+            return growthSpeed;
+        }
+
+        public int difficulty() {
+            return difficulty;
         }
     }
 

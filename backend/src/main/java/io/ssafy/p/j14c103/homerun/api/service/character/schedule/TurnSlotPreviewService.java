@@ -10,7 +10,19 @@ import org.springframework.stereotype.Service;
 @Service
 public class TurnSlotPreviewService {
 
-    private final TurnSlotPreviewPolicy turnSlotPreviewPolicy = new TurnSlotPreviewPolicy();
+    private final TurnSlotPreviewPolicy turnSlotPreviewPolicy;
+
+    public TurnSlotPreviewService() {
+        this(new TurnSlotPreviewPolicy());
+    }
+
+    TurnSlotPreviewService(final TurnSlotPreviewPolicy turnSlotPreviewPolicy) {
+        if (turnSlotPreviewPolicy == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+
+        this.turnSlotPreviewPolicy = turnSlotPreviewPolicy;
+    }
 
     public TurnSlotPreviewResponse preview(final TurnSlotPreviewRequest request) {
         if (request == null) {
@@ -18,7 +30,7 @@ public class TurnSlotPreviewService {
         }
 
         return TurnSlotPreviewResponse.from(turnSlotPreviewPolicy.preview(
-            request.getGameStat(),
+            request.gameStat(),
             request.toRequestedSlots()
         ));
     }

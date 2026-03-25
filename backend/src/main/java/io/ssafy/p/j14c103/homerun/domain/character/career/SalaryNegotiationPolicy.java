@@ -26,9 +26,6 @@ public class SalaryNegotiationPolicy {
     private static final RaiseRateRange HIGH_KNOWLEDGE_BONUS_RATE = RaiseRateRange.of(3, 5);
     private static final RaiseRateRange LOW_HEALTH_PENALTY_RATE = RaiseRateRange.of(1, 2);
 
-    private final NegotiationPreparationPolicy negotiationPreparationPolicy =
-        new NegotiationPreparationPolicy();
-
     public NegotiationResult negotiate(
         final GameCareer gameCareer,
         final GameStat gameStat,
@@ -41,20 +38,12 @@ public class SalaryNegotiationPolicy {
         final int lastNegotiatedTurn = requireLastNegotiatedTurn(
             gameCareer.getLastNegotiatedTurn()
         );
-        final int negotiationPreparationScore = requireNegotiationPreparationScore(
-            gameCareer.getNegotiationPreparationScore()
-        );
         final int knowledge = requireStat(gameStat.getKnowledge());
         final int health = requireStat(gameStat.getHealth());
 
         validateNegotiationWindow(lastNegotiatedTurn, currentTurn);
 
-        final int raiseRate = resolveRaiseRate(
-            jobType,
-            negotiationPreparationScore,
-            knowledge,
-            health
-        );
+        final int raiseRate = resolveRaiseRate(jobType, knowledge, health);
         final int newSalary = calculateNewSalary(previousSalary, raiseRate);
 
         return NegotiationResult.of(
@@ -93,10 +82,6 @@ public class SalaryNegotiationPolicy {
 
     private int requireLastNegotiatedTurn(final Integer lastNegotiatedTurn) {
         return requireNonNegativeState(lastNegotiatedTurn);
-    }
-
-    private int requireNegotiationPreparationScore(final Integer negotiationPreparationScore) {
-        return requireNonNegativeState(negotiationPreparationScore);
     }
 
     private int requireNonNegativeState(final Integer value) {
@@ -138,18 +123,14 @@ public class SalaryNegotiationPolicy {
 
     private int resolveRaiseRate(
         final JobType jobType,
-        final int negotiationPreparationScore,
         final int knowledge,
         final int health
     ) {
         final int baseRaiseRate = resolveBaseRaiseRate(jobType).resolveActualRate();
         final int knowledgeBonusRate = resolveKnowledgeBonusRate(knowledge).resolveActualRate();
-        final int preparationBonusRate = negotiationPreparationPolicy.resolveRaiseBonusRate(
-            negotiationPreparationScore
-        );
         final int healthPenaltyRate = resolveHealthPenaltyRate(health).resolveActualRate();
 
-        return baseRaiseRate + knowledgeBonusRate + preparationBonusRate - healthPenaltyRate;
+        return baseRaiseRate + knowledgeBonusRate - healthPenaltyRate;
     }
 
     private RaiseRateRange resolveBaseRaiseRate(final JobType jobType) {

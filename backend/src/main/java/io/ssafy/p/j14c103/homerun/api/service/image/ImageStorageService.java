@@ -25,11 +25,11 @@ public class ImageStorageService {
 
         final ImageObjectData objectData = imageObjectClient.download(objectName);
 
-        return new ImageDownloadResponse(
-                objectData.fileName(),
-                objectData.contentType(),
-                objectData.contentLength(),
-                objectData.content()
+        return ImageDownloadResponse.of(
+            objectData.fileName(),
+            objectData.contentType(),
+            objectData.contentLength(),
+            objectData.content()
         );
     }
 }

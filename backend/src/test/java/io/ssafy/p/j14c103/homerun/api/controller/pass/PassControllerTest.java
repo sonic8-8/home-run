@@ -95,10 +95,11 @@ class PassControllerTest {
     // when & then
     mockMvc.perform(post("/api/pass/subscribe")
                     .with(currentUser())
-                .contentType(APPLICATION_JSON)
+                    .contentType(APPLICATION_JSON)
                         .content("""
                                 {
-                                  "passId": 3
+                                  "passId": 3,
+                                  "sourceAccountId": "110-123-000000"
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -114,9 +115,10 @@ class PassControllerTest {
     // when & then
     mockMvc.perform(post("/api/pass/subscribe")
                     .with(currentUser())
-                .contentType(APPLICATION_JSON)
+                    .contentType(APPLICATION_JSON)
                         .content("""
                                 {
+                                  "sourceAccountId": "110-123-000000"
                                 }
                                 """))
                 .andExpect(status().isBadRequest())

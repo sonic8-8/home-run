@@ -2,15 +2,19 @@ package io.ssafy.p.j14c103.homerun.domain.world.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-@DataJpaTest
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class GameEventRepositoryTest {
 
     @Autowired
@@ -20,7 +24,7 @@ class GameEventRepositoryTest {
     private EventChoiceRepository eventChoiceRepository;
 
     @Autowired
-    private TestEntityManager entityManager;
+    private EntityManager entityManager;
 
     @DisplayName("GameEvent를 저장하면 이벤트 메타데이터를 다시 조회할 수 있다")
     @Test

@@ -16,51 +16,57 @@ public class JobOfferQueryRequest {
     private GameCareer gameCareer;
     private GameStat gameStat;
     private int recentMeetFriendCount;
-    private int currentTurn;
 
     @Builder(access = AccessLevel.PRIVATE)
     private JobOfferQueryRequest(
         final GameCareer gameCareer,
         final GameStat gameStat,
-        final int recentMeetFriendCount,
-        final int currentTurn
+        final int recentMeetFriendCount
     ) {
-        validateRequest(gameCareer, gameStat, recentMeetFriendCount, currentTurn);
+        validateRequest(gameCareer, gameStat, recentMeetFriendCount);
 
         this.gameCareer = gameCareer;
         this.gameStat = gameStat;
         this.recentMeetFriendCount = recentMeetFriendCount;
-        this.currentTurn = currentTurn;
     }
 
     public static JobOfferQueryRequest of(
         final GameCareer gameCareer,
         final GameStat gameStat,
-        final int recentMeetFriendCount,
-        final int currentTurn
+        final int recentMeetFriendCount
     ) {
         return JobOfferQueryRequest.builder()
             .gameCareer(gameCareer)
             .gameStat(gameStat)
             .recentMeetFriendCount(recentMeetFriendCount)
-            .currentTurn(currentTurn)
             .build();
+    }
+
+    public GameCareer gameCareer() {
+        return gameCareer;
+    }
+
+    public GameStat gameStat() {
+        return gameStat;
+    }
+
+    public int recentMeetFriendCount() {
+        return recentMeetFriendCount;
     }
 
     private void validateRequest(
         final GameCareer gameCareer,
         final GameStat gameStat,
-        final int recentMeetFriendCount,
-        final int currentTurn
+        final int recentMeetFriendCount
     ) {
-        if (gameCareer == null || gameStat == null) {
+        if (gameCareer == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+        if (gameStat == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
         if (recentMeetFriendCount < 0) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-        }
-        if (currentTurn < 1) {
-            throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
         }
     }
 }

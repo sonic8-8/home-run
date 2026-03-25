@@ -73,14 +73,14 @@ public class StockMarket {
             final BigDecimal volatilityRate
     ) {
         return new StockMarket(
-                stockCode,
-                stockName,
-                kisStockCode,
-                sector,
-                basePriceAmount,
-                null,
-                null,
-                volatilityRate
+            stockCode,
+            stockName,
+            kisStockCode,
+            sector,
+            basePriceAmount,
+            null,
+            null,
+            volatilityRate
         );
     }
 
@@ -95,14 +95,14 @@ public class StockMarket {
             final BigDecimal volatilityRate
     ) {
         return new StockMarket(
-                stockCode,
-                stockName,
-                kisStockCode,
-                sector,
-                basePriceAmount,
-                yearLowPriceAmount,
-                yearHighPriceAmount,
-                volatilityRate
+            stockCode,
+            stockName,
+            kisStockCode,
+            sector,
+            basePriceAmount,
+            yearLowPriceAmount,
+            yearHighPriceAmount,
+            volatilityRate
         );
     }
 

@@ -5,12 +5,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 
 import io.ssafy.p.j14c103.homerun.api.service.game.realestate.response.RealEstateDocumentResponse;
+import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateMoneyRenderingRule;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
@@ -54,11 +59,11 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithRenderedMoneyText() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
+        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
         RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
-            createGapguDocument("위험"),
-            createEulguDocument("정상")
+            createGapguDocument(property.getPropertyId(), "위험"),
+            createEulguDocument(property.getPropertyId(), "정상")
         ));
         given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
@@ -87,11 +92,11 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithNormalVerdict() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
+        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
         RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
-            createGapguDocument("정상"),
-            createEmptyEulguDocument("정상")
+            createGapguDocument(property.getPropertyId(), "정상"),
+            createEmptyEulguDocument(property.getPropertyId(), "정상")
         ));
         given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
@@ -113,9 +118,9 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithEmptySamplePool() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
+        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
         RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
-        realEstateDocumentRepository.saveAndFlush(createGapguDocument("정상"));
+        realEstateDocumentRepository.saveAndFlush(createGapguDocument(property.getPropertyId(), "정상"));
 
         // when & then
         assertThatThrownBy(() -> realEstateDocumentService.getDocument(
@@ -144,7 +149,7 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithUnknownProperty() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create());
+        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
 
         // when & then
         assertThatThrownBy(() -> realEstateDocumentService.getDocument(gameSession.getGameSessionId(), 9999L))
@@ -168,8 +173,32 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createGapguDocument(final String verdict) {
+    private GameSession createGameSession() {
+        GameSession gameSession = GameSession.create(
+            1L,
+            1,
+            "윤서",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "SEOUL",
+            "SEOCHO",
+            101L,
+            DataSourceType.PROFILE
+        );
+        gameSession.initializeCapital(
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            java.time.LocalDate.of(2026, 1, 1),
+            CyclePhase.BOOM
+        );
+        return gameSession;
+    }
+
+    private RealEstateDocument createGapguDocument(final Long propertyId, final String verdict) {
         return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.GAPGU,
             RealEstateRegistryQuizSample.create(
                 verdict,
@@ -194,8 +223,10 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createEulguDocument(final String verdict) {
+    private RealEstateDocument createEulguDocument(final Long propertyId, final String verdict) {
         return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
             RealEstateRegistryQuizSample.create(
                 verdict,
@@ -220,8 +251,10 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private RealEstateDocument createEmptyEulguDocument(final String verdict) {
+    private RealEstateDocument createEmptyEulguDocument(final Long propertyId, final String verdict) {
         return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
             RealEstateRegistryQuizSample.create(
                 verdict,

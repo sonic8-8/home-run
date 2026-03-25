@@ -42,6 +42,18 @@ public class SalaryNegotiationRequest {
             .build();
     }
 
+    public GameCareer gameCareer() {
+        return gameCareer;
+    }
+
+    public GameStat gameStat() {
+        return gameStat;
+    }
+
+    public int currentTurn() {
+        return currentTurn;
+    }
+
     private void validateRequest(
         final GameCareer gameCareer,
         final GameStat gameStat,

@@ -23,7 +23,7 @@ public class GameNewsLog {
     private Integer gameNewsLogId;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Column(name = "turn_number", nullable = false)
     private Integer turnNumber;
@@ -38,7 +38,7 @@ public class GameNewsLog {
     private LocalDate publishedDate;
 
     private GameNewsLog(
-        Integer gameSessionId,
+        Long gameSessionId,
         Integer turnNumber,
         String newsId,
         String headlineSnapshot,
@@ -52,7 +52,7 @@ public class GameNewsLog {
     }
 
     public static GameNewsLog create(
-        Integer gameSessionId,
+        Long gameSessionId,
         Integer turnNumber,
         String newsId,
         String headlineSnapshot,

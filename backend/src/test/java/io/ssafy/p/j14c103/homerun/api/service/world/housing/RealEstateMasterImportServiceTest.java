@@ -25,13 +25,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@DataJpaTest(properties = "app.real-estate-import.enabled=true")
+@SpringBootTest(properties = "app.real-estate-import.enabled=true")
 @ActiveProfiles("test")
 @Import({
     RealEstateMasterImportService.class,
@@ -63,6 +63,9 @@ class RealEstateMasterImportServiceTest {
 
     @MockitoBean
     private NaverGeocodingClient naverGeocodingClient;
+
+    @MockitoBean
+    private RealEstateMasterSyncService realEstateMasterSyncService;
 
     @AfterEach
     void tearDown() {

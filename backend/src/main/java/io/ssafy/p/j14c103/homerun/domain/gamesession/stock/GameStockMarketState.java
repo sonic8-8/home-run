@@ -23,7 +23,7 @@ public class GameStockMarketState {
 
     @Id
     @Column(name = "game_session_id")
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Id
     @Column(name = "stock_code", length = 20)
@@ -36,7 +36,7 @@ public class GameStockMarketState {
     private Integer lastUpdatedTurn;
 
     private GameStockMarketState(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer currentPriceAmount,
             final Integer lastUpdatedTurn
@@ -51,7 +51,7 @@ public class GameStockMarketState {
      * 게임 시작 시 원본 가격을 복사하여 세션 초기 상태를 생성한다.
      */
     public static GameStockMarketState initializeFrom(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final String stockCode,
             final Integer basePrice,
             final Integer startTurn

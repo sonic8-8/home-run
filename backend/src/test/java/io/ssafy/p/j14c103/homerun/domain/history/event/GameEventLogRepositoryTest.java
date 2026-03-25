@@ -8,17 +8,20 @@ import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventTriggerType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-@DataJpaTest
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class GameEventLogRepositoryTest {
 
     @Autowired
@@ -31,7 +34,7 @@ class GameEventLogRepositoryTest {
     private GameEventLogRepository gameEventLogRepository;
 
     @Autowired
-    private TestEntityManager entityManager;
+    private EntityManager entityManager;
 
     @DisplayName("GameEventLog를 저장하면 선택 결과와 resultEffects를 다시 조회할 수 있다")
     @Test
@@ -58,7 +61,7 @@ class GameEventLogRepositoryTest {
         );
 
         GameEventLog eventLog = GameEventLog.create(
-            1001,
+            1001L,
             12,
             gameEvent.getGameEventId(),
             eventChoice.getEventChoiceId(),
@@ -76,7 +79,7 @@ class GameEventLogRepositoryTest {
 
         // then
         assertThat(result).isPresent();
-        assertThat(result.orElseThrow().getGameSessionId()).isEqualTo(1001);
+        assertThat(result.orElseThrow().getGameSessionId()).isEqualTo(1001L);
         assertThat(result.orElseThrow().getTurnNumber()).isEqualTo(12);
         assertThat(result.orElseThrow().getSelectedChoiceCode()).isEqualTo("HANG_UP");
         assertThat(result.orElseThrow().getResultEffects()).containsEntry("stress", -2);

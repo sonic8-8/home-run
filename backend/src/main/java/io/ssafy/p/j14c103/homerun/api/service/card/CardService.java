@@ -7,16 +7,10 @@ import io.ssafy.p.j14c103.homerun.api.service.card.response.CardBenefitResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardListResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardRecommendationResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardResponse;
-import io.ssafy.p.j14c103.homerun.api.service.card.response.CardTransactionDetailResponse;
-import io.ssafy.p.j14c103.homerun.api.service.card.response.CardTransactionListResponse;
-import io.ssafy.p.j14c103.homerun.api.service.card.response.OwnedCardListResponse;
-import io.ssafy.p.j14c103.homerun.api.service.card.response.OwnedCardResponse;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProduct;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProductRepository;
-import io.ssafy.p.j14c103.homerun.domain.card.CardTransaction;
-import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
-import io.ssafy.p.j14c103.homerun.domain.card.OwnedCard;
-import io.ssafy.p.j14c103.homerun.domain.card.OwnedCardRepository;
+import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistory;
+import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistoryRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -49,8 +43,7 @@ public class CardService {
                     .thenComparing(candidate -> candidate.cardResponse().getCardName());
 
     private final CardProductRepository cardProductRepository;
-    private final OwnedCardRepository ownedCardRepository;
-    private final CardTransactionRepository cardTransactionRepository;
+    private final MemberPaymentHistoryRepository memberPaymentHistoryRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
@@ -66,19 +59,19 @@ public class CardService {
     public CardRecommendationResponse getRecommendations(final Long userId) {
         validateUser(userId);
 
-        final List<CardTransaction> cardTransactions =
-                cardTransactionRepository.findAllByUserIdOrderByPaymentDateDescCreatedAtDesc(userId);
-        if (cardTransactions.isEmpty()) {
+        final List<MemberPaymentHistory> paymentHistories = memberPaymentHistoryRepository
+                .findAllByUserIdOrderByPaymentDateDescCreatedAtDesc(userId);
+        if (paymentHistories.isEmpty()) {
             return buildFallbackRecommendations();
         }
 
-        final List<CardTransaction> latestMonthTransactions = filterLatestMonth(cardTransactions);
-        final Map<String, BigDecimal> spendByCategoryId = latestMonthTransactions.stream()
+        final List<MemberPaymentHistory> latestMonthHistories = filterLatestMonth(paymentHistories);
+        final Map<String, BigDecimal> spendByCategoryId = latestMonthHistories.stream()
                 .collect(Collectors.groupingBy(
-                        CardTransaction::getCategoryId,
+                        MemberPaymentHistory::getCategoryId,
                         Collectors.reducing(
                                 BigDecimal.ZERO,
-                                transaction -> BigDecimal.valueOf(transaction.getPaymentAmount()),
+                                history -> BigDecimal.valueOf(history.getPaymentAmount()),
                                 BigDecimal::add
                         )
                 ));
@@ -92,30 +85,6 @@ public class CardService {
         return CardRecommendationResponse.of(recommendations);
     }
 
-    @Transactional(readOnly = true)
-    public OwnedCardListResponse getMyCards(final Long userId) {
-        validateUser(userId);
-
-        final List<OwnedCardResponse> cards = ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId)
-                .stream()
-                .map(OwnedCardResponse::from)
-                .toList();
-
-        return OwnedCardListResponse.of(cards);
-    }
-
-    @Transactional(readOnly = true)
-    public CardTransactionListResponse getMyTransactions(final Long userId) {
-        validateUser(userId);
-
-        final List<CardTransactionDetailResponse> transactions =
-                cardTransactionRepository.findAllByUserIdOrderByPaymentDateDescCreatedAtDesc(userId).stream()
-                        .map(CardTransactionDetailResponse::from)
-                        .toList();
-
-        return CardTransactionListResponse.of(transactions);
-    }
-
     private CardRecommendationResponse buildFallbackRecommendations() {
         final List<CardResponse> recommendations = cardProductRepository.findTop5ByActiveYnTrueOrderByCardNameAsc()
                 .stream()
@@ -124,14 +93,14 @@ public class CardService {
         return CardRecommendationResponse.of(recommendations);
     }
 
-    private List<CardTransaction> filterLatestMonth(final List<CardTransaction> transactions) {
-        final CardTransaction latestTransaction = transactions.get(0);
-        final int latestYear = latestTransaction.getPaymentDate().getYear();
-        final int latestMonth = latestTransaction.getPaymentDate().getMonthValue();
+    private List<MemberPaymentHistory> filterLatestMonth(final List<MemberPaymentHistory> paymentHistories) {
+        final MemberPaymentHistory latestHistory = paymentHistories.get(0);
+        final int latestYear = latestHistory.getPaymentDate().getYear();
+        final int latestMonth = latestHistory.getPaymentDate().getMonthValue();
 
-        return transactions.stream()
-                .filter(transaction -> transaction.getPaymentDate().getYear() == latestYear)
-                .filter(transaction -> transaction.getPaymentDate().getMonthValue() == latestMonth)
+        return paymentHistories.stream()
+                .filter(history -> history.getPaymentDate().getYear() == latestYear)
+                .filter(history -> history.getPaymentDate().getMonthValue() == latestMonth)
                 .toList();
     }
 

@@ -28,10 +28,10 @@ public class GameContractReview {
     private Long id;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Column(name = "property_id", nullable = false)
-    private Integer propertyId;
+    private Long propertyId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "review_status")
@@ -53,8 +53,8 @@ public class GameContractReview {
     private LocalDateTime reviewedAt;
 
     private GameContractReview(
-        Integer gameSessionId,
-        Integer propertyId,
+        Long gameSessionId,
+        Long propertyId,
         ContractReviewStatus reviewStatus,
         List<String> checkedTraps,
         List<String> detectedTraps,
@@ -71,8 +71,8 @@ public class GameContractReview {
     }
 
     public static GameContractReview create(
-        Integer gameSessionId,
-        Integer propertyId,
+        Long gameSessionId,
+        Long propertyId,
         ContractReviewStatus reviewStatus,
         List<String> checkedTraps,
         List<String> detectedTraps,

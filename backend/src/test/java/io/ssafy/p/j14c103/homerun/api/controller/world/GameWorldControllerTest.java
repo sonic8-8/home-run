@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.controller.world;
 
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -44,7 +44,7 @@ class GameWorldControllerTest {
             ),
             List.of()
         );
-        given(gameWorldService.getTurn(anyInt())).willReturn(response);
+        given(gameWorldService.getTurn(anyLong())).willReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/1001/turn"))
@@ -64,7 +64,7 @@ class GameWorldControllerTest {
     @Test
     void getTurnWithUnknownSessionId() throws Exception {
         // given
-        given(gameWorldService.getTurn(anyInt()))
+        given(gameWorldService.getTurn(anyLong()))
             .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         // when & then

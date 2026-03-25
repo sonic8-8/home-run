@@ -13,14 +13,19 @@ public class PassSubscribeRequest {
     @NotNull(message = "{validation.pass.subscribe.passId.notNull}")
     private Long passId;
 
+    @NotNull(message = "{validation.pass.subscribe.sourceAccountId.notNull}")
+    private String sourceAccountId;
+
     @Builder
-    private PassSubscribeRequest(final Long passId) {
+    private PassSubscribeRequest(final Long passId, final String sourceAccountId) {
         this.passId = passId;
+        this.sourceAccountId = sourceAccountId;
     }
 
     public PassSubscribeServiceRequest toServiceRequest() {
         return PassSubscribeServiceRequest.builder()
                 .passId(passId)
+                .sourceAccountId(sourceAccountId)
                 .build();
     }
 }

@@ -15,6 +15,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanRepayRespon
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,7 +44,7 @@ public class LoanController {
      */
     @GetMapping("/products")
     public ApiResponse<List<LoanProductResponse>> getProducts(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @RequestParam(defaultValue = "ALL") final String category,
             @RequestParam(defaultValue = "0") final int page,
             @RequestParam(defaultValue = "20") final int size
@@ -58,7 +59,7 @@ public class LoanController {
      */
     @GetMapping("/products/{productId}")
     public ApiResponse<LoanProductDetailResponse> getProductDetail(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @PathVariable final String productId
     ) {
         final LoanProductDetailResponse detail = loanProductService.getProductDetail(productId)
@@ -72,12 +73,10 @@ public class LoanController {
      */
     @PostMapping("/calculate")
     public ApiResponse<LoanCalculateResponse> calculate(
-            @PathVariable final Integer sessionId,
-            @RequestBody final LoanCalculateRequest request
+            @PathVariable final Long sessionId,
+            @Valid @RequestBody final LoanCalculateRequest request
     ) {
-        final LoanCalculateResponse response = loanService.calculate(
-                request.principal(), request.annualRate(),
-                request.termMonths(), request.repaymentMethod());
+        final LoanCalculateResponse response = loanService.calculate(request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 
@@ -87,11 +86,10 @@ public class LoanController {
      */
     @PostMapping("/apply")
     public ApiResponse<LoanApplyResponse> apply(
-            @PathVariable final Integer sessionId,
-            @RequestBody final LoanApplyRequest request
+            @PathVariable final Long sessionId,
+            @Valid @RequestBody final LoanApplyRequest request
     ) {
-        final LoanApplyResponse response = loanService.apply(
-                sessionId, request.productId(), request.propertyId());
+        final LoanApplyResponse response = loanService.apply(sessionId, request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 
@@ -101,12 +99,10 @@ public class LoanController {
      */
     @PostMapping("/confirm")
     public ApiResponse<LoanConfirmResponse> confirm(
-            @PathVariable final Integer sessionId,
-            @RequestBody final LoanConfirmRequest request
+            @PathVariable final Long sessionId,
+            @Valid @RequestBody final LoanConfirmRequest request
     ) {
-        final LoanConfirmResponse response = loanService.confirm(
-                sessionId, request.applicationId(),
-                request.requestedAmount(), request.agreed());
+        final LoanConfirmResponse response = loanService.confirm(sessionId, request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 
@@ -116,11 +112,10 @@ public class LoanController {
      */
     @PostMapping("/repay")
     public ApiResponse<LoanRepayResponse> repay(
-            @PathVariable final Integer sessionId,
-            @RequestBody final LoanRepayRequest request
+            @PathVariable final Long sessionId,
+            @Valid @RequestBody final LoanRepayRequest request
     ) {
-        final LoanRepayResponse response = loanService.repay(
-                sessionId, request.loanId(), request.amount());
+        final LoanRepayResponse response = loanService.repay(sessionId, request.toServiceRequest());
         return ApiResponse.ok(response);
     }
 }

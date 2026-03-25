@@ -3,8 +3,6 @@ package io.ssafy.p.j14c103.homerun.api.service.character.career.response;
 import io.ssafy.p.j14c103.homerun.domain.character.career.SalaryNegotiationPolicy;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
-import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -17,7 +15,6 @@ public class SalaryNegotiationResultResponse {
     private final int lastNegotiatedTurn;
     private final String message;
 
-    @Builder(access = AccessLevel.PRIVATE)
     private SalaryNegotiationResultResponse(
         final boolean success,
         final int previousSalary,
@@ -26,7 +23,13 @@ public class SalaryNegotiationResultResponse {
         final int lastNegotiatedTurn,
         final String message
     ) {
-        validateRequest(previousSalary, newSalary, raiseRate, lastNegotiatedTurn, message);
+        validateNonNegative(previousSalary);
+        validateNonNegative(newSalary);
+        validateNonNegative(raiseRate);
+        validateNonNegative(lastNegotiatedTurn);
+        if (message == null || message.isBlank()) {
+            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
+        }
 
         this.success = success;
         this.previousSalary = previousSalary;
@@ -43,35 +46,43 @@ public class SalaryNegotiationResultResponse {
             throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
 
-        return SalaryNegotiationResultResponse.builder()
-            .success(true)
-            .previousSalary(negotiationResult.previousSalary())
-            .newSalary(negotiationResult.newSalary())
-            .raiseRate(negotiationResult.raiseRate())
-            .lastNegotiatedTurn(negotiationResult.lastNegotiatedTurn())
-            .message(negotiationResult.message())
-            .build();
+        return new SalaryNegotiationResultResponse(
+            true,
+            negotiationResult.previousSalary(),
+            negotiationResult.newSalary(),
+            negotiationResult.raiseRate(),
+            negotiationResult.lastNegotiatedTurn(),
+            negotiationResult.message()
+        );
     }
 
-    private void validateRequest(
-        final int previousSalary,
-        final int newSalary,
-        final int raiseRate,
-        final int lastNegotiatedTurn,
-        final String message
-    ) {
-        validateNonNegative(previousSalary);
-        validateNonNegative(newSalary);
-        validateNonNegative(raiseRate);
-        validateNonNegative(lastNegotiatedTurn);
-        if (message == null || message.isBlank()) {
-            throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
-        }
-    }
-
-    private void validateNonNegative(final int value) {
+    private static void validateNonNegative(final int value) {
         if (value < 0) {
             throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
+    }
+
+    public boolean success() {
+        return success;
+    }
+
+    public int previousSalary() {
+        return previousSalary;
+    }
+
+    public int newSalary() {
+        return newSalary;
+    }
+
+    public int raiseRate() {
+        return raiseRate;
+    }
+
+    public int lastNegotiatedTurn() {
+        return lastNegotiatedTurn;
+    }
+
+    public String message() {
+        return message;
     }
 }

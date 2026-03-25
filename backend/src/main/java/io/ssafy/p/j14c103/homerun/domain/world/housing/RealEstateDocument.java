@@ -25,27 +25,42 @@ public class RealEstateDocument {
     @Column(name = "real_estate_document_id")
     private Long realEstateDocumentId;
 
+    @Column(name = "property_id", nullable = false)
+    private Long propertyId;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "registry_section", nullable = false)
+    @Column(name = "document_type")
+    private RealEstateDocumentType documentType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "registry_section")
     private RealEstateRegistrySection registrySection;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "quiz_sample_payload", nullable = false)
+    @Column(name = "quiz_sample_payload")
     private RealEstateRegistryQuizSample quizSamplePayload;
 
     private RealEstateDocument(
+        Long propertyId,
+        RealEstateDocumentType documentType,
         RealEstateRegistrySection registrySection,
         RealEstateRegistryQuizSample quizSamplePayload
     ) {
+        this.propertyId = propertyId;
+        this.documentType = documentType;
         this.registrySection = registrySection;
         this.quizSamplePayload = quizSamplePayload;
     }
 
     public static RealEstateDocument create(
+        Long propertyId,
+        RealEstateDocumentType documentType,
         RealEstateRegistrySection registrySection,
         RealEstateRegistryQuizSample quizSamplePayload
     ) {
         return new RealEstateDocument(
+            propertyId,
+            documentType,
             registrySection,
             quizSamplePayload
         );

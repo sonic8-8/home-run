@@ -2,32 +2,36 @@ package io.ssafy.p.j14c103.homerun.domain.world.housing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 // 세션에 대한 매물, 함정, 실제 함정, 최종 판정, 검토 이력/결과 테스트
-@DataJpaTest
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class GameContractReviewRepositoryTest {
 
     @Autowired
     private GameContractReviewRepository gameContractReviewRepository;
 
     @Autowired
-    private TestEntityManager entityManager;
+    private EntityManager entityManager;
 
     @DisplayName("GameContractReview를 저장하면 검토 상태와 함정 선택 결과를 다시 조회할 수 있다.")
     @Test
     void saveGameContractReview() {
         // given
         GameContractReview review = GameContractReview.create(
-                1,
-                101,
+                1L,
+                101L,
                 ContractReviewStatus.PASSED,
                 List.of("TRAP-01", "TRAP-02"),
                 List.of("TRAP-01", "TRAP-02"),
@@ -45,8 +49,8 @@ class GameContractReviewRepositoryTest {
                         .orElseThrow();
 
         // then
-        assertThat(found.getGameSessionId()).isEqualTo(1);
-        assertThat(found.getPropertyId()).isEqualTo(101);
+        assertThat(found.getGameSessionId()).isEqualTo(1L);
+        assertThat(found.getPropertyId()).isEqualTo(101L);
         assertThat(found.getReviewStatus()).isEqualTo(ContractReviewStatus.PASSED);
         assertThat(found.getCheckedTraps()).containsExactly("TRAP-01", "TRAP-02");
         assertThat(found.getDetectedTraps()).containsExactly("TRAP-01", "TRAP-02");
@@ -60,8 +64,8 @@ class GameContractReviewRepositoryTest {
     void findLatestReviewByGameSessionIdAndPropertyId() {
         // given
         GameContractReview older = GameContractReview.create(
-                1,
-                101,
+                1L,
+                101L,
                 ContractReviewStatus.FAILED,
                 List.of("TRAP-01"),
                 List.of("TRAP-01", "TRAP-02"),
@@ -70,8 +74,8 @@ class GameContractReviewRepositoryTest {
         );
 
         GameContractReview latest = GameContractReview.create(
-                1,
-                101,
+                1L,
+                101L,
                 ContractReviewStatus.PASSED,
                 List.of("TRAP-01", "TRAP-02"),
                 List.of("TRAP-01", "TRAP-02"),
@@ -86,8 +90,8 @@ class GameContractReviewRepositoryTest {
         // when
         Optional<GameContractReview> result =
                 gameContractReviewRepository.findTopByGameSessionIdAndPropertyIdOrderByReviewedAtDesc(
-                        1,
-                        101
+                        1L,
+                        101L
                 );
 
         // then
