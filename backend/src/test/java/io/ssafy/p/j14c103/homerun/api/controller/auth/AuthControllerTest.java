@@ -12,28 +12,35 @@ import io.ssafy.p.j14c103.homerun.api.service.auth.request.SignupServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.LoginResponse;
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.RefreshAccessTokenResponse;
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
+import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class AuthControllerTest {
+@AutoConfigureRestDocs(uriScheme = "https", uriHost = "api.homerun.local", uriPort = 443)
+class AuthControllerTest extends RestDocsTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -54,13 +61,6 @@ class AuthControllerTest {
     @Test
     void signup() throws Exception {
         // given
-        SignupRequest request = SignupRequest.builder()
-                .name("홍길동")
-                .email("user@example.com")
-                .password("Password123!")
-                .passwordConfirm("Password123!")
-                .termsAgreed(true)
-                .build();
         SignupResponse response = SignupResponse.builder()
                 .userId(1L)
                 .email("user@example.com")
@@ -72,13 +72,36 @@ class AuthControllerTest {
         // when & then
         mockMvc.perform(post("/api/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content("""
+                                {
+                                  "name": "홍길동",
+                                  "email": "user@example.com",
+                                  "password": "Password123!",
+                                  "passwordConfirm": "Password123!",
+                                  "termsAgreed": true
+                                }
+                                """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(201))
                 .andExpect(jsonPath("$.message").value("CREATED"))
                 .andExpect(jsonPath("$.data.userId").value(1L))
                 .andExpect(jsonPath("$.data.email").value("user@example.com"))
-                .andExpect(jsonPath("$.data.name").value("홍길동"));
+                .andExpect(jsonPath("$.data.name").value("홍길동"))
+                .andDo(document("auth/signup/success",
+                        requestFields(
+                                fieldWithPath("name").type(JsonFieldType.STRING).description("회원 이름"),
+                                fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
+                                fieldWithPath("password").type(JsonFieldType.STRING).description("비밀번호"),
+                                fieldWithPath("passwordConfirm").type(JsonFieldType.STRING).description("비밀번호 확인"),
+                                fieldWithPath("termsAgreed").type(JsonFieldType.BOOLEAN).description("약관 동의 여부")
+                        ),
+                        apiResponseFields(
+                                "회원가입 결과",
+                                fieldWithPath("userId").type(JsonFieldType.NUMBER).description("회원 ID"),
+                                fieldWithPath("email").type(JsonFieldType.STRING).description("회원 이메일"),
+                                fieldWithPath("name").type(JsonFieldType.STRING).description("회원 이름")
+                        )
+                ));
     }
 
     @DisplayName("이미 가입된 이메일이면 409를 반환한다.")
@@ -147,7 +170,10 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
                 .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()))
                 .andExpect(jsonPath("$.errors[0].field").value("termsAgreed"))
-                .andExpect(jsonPath("$.errors[0].message").value("약관 동의는 필수입니다."));
+                .andExpect(jsonPath("$.errors[0].message").value("약관 동의는 필수입니다."))
+                .andDo(document("auth/signup/validation-error",
+                        validationErrorResponseFields()
+                ));
     }
 
     @DisplayName("로그인 요청이 성공하면 200과 토큰 응답을 반환한다.")
@@ -162,6 +188,7 @@ class AuthControllerTest {
                 .accessToken("access-token")
                 .refreshToken("refresh-token")
                 .accessTokenExpiresIn(1800L)
+                .name("홍길동")
                 .build();
         given(loginService.login(any(LoginServiceRequest.class)))
                 .willReturn(response);
@@ -175,7 +202,21 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("OK"))
                 .andExpect(jsonPath("$.data.accessToken").value("access-token"))
                 .andExpect(jsonPath("$.data.refreshToken").value("refresh-token"))
-                .andExpect(jsonPath("$.data.accessTokenExpiresIn").value(1800L));
+                .andExpect(jsonPath("$.data.accessTokenExpiresIn").value(1800L))
+                .andExpect(jsonPath("$.data.name").value("홍길동"))
+                .andDo(document("auth/login/success",
+                        requestFields(
+                                fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
+                                fieldWithPath("password").type(JsonFieldType.STRING).description("비밀번호")
+                        ),
+                        apiResponseFields(
+                                "로그인 결과",
+                                fieldWithPath("accessToken").type(JsonFieldType.STRING).description("액세스 토큰"),
+                                fieldWithPath("refreshToken").type(JsonFieldType.STRING).description("리프레시 토큰"),
+                                fieldWithPath("accessTokenExpiresIn").type(JsonFieldType.NUMBER).description("액세스 토큰 만료까지 남은 초"),
+                                fieldWithPath("name").type(JsonFieldType.STRING).description("로그인한 회원 이름")
+                        )
+                ));
     }
 
     @DisplayName("이메일 또는 비밀번호가 올바르지 않으면 401을 반환한다.")
@@ -237,7 +278,15 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("OK"))
                 .andExpect(jsonPath("$.data.accessToken").value("new-access-token"))
-                .andExpect(jsonPath("$.data.accessTokenExpiresIn").value(1800L));
+                .andExpect(jsonPath("$.data.accessTokenExpiresIn").value(1800L))
+                .andDo(document("auth/refresh/success",
+                        requestHeaders(refreshAuthorizationHeader()),
+                        apiResponseFields(
+                                "토큰 재발급 결과",
+                                fieldWithPath("accessToken").type(JsonFieldType.STRING).description("재발급된 액세스 토큰"),
+                                fieldWithPath("accessTokenExpiresIn").type(JsonFieldType.NUMBER).description("액세스 토큰 만료까지 남은 초")
+                        )
+                ));
     }
 
     @DisplayName("유효하지 않은 Refresh Token이면 401을 반환한다.")
@@ -253,7 +302,11 @@ class AuthControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, authorizationHeader))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_REFRESH_INVALID.getCode()))
-                .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_REFRESH_INVALID.getMessage()));
+                .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_REFRESH_INVALID.getMessage()))
+                .andDo(document("auth/refresh/unauthorized",
+                        requestHeaders(refreshAuthorizationHeader()),
+                        basicErrorResponseFields()
+                ));
     }
 
     @DisplayName("Refresh Token 헤더가 없으면 401을 반환한다.")

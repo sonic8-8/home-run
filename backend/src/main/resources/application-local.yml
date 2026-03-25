@@ -11,3 +11,7 @@ spring:
 oci:
   enabled: ${OCI_ENABLED:false}
   config-path: ${OCI_CONFIG_PATH:C:/key/oci_config}
+
+app:
+  docs:
+    enabled: ${APP_DOCS_ENABLED:true}
