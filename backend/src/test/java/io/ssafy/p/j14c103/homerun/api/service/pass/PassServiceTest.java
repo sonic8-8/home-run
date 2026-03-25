@@ -1,5 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSubscribeServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassProductResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSubscriptionResponse;
@@ -10,169 +13,215 @@ import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
+import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
+import org.junit.jupiter.api.AfterEach;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 class PassServiceTest {
 
-    @Mock
-    private PassProductRepository passProductRepository;
-
-    @Mock
-    private PassSubscriptionRepository passSubscriptionRepository;
-
-    @Mock
-    private SeedmoneyTransactionRepository seedmoneyTransactionRepository;
-
-    @Mock
-    private UserAccountRepository userAccountRepository;
-
-    @InjectMocks
+    @Autowired
     private PassService passService;
 
-  @DisplayName("전체 PASS 상품 목록을 조회한다")
-  @Test
-  void getProducts() {
-    // given
-    final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
+    @Autowired
+    private PassProductRepository passProductRepository;
 
-    given(passProductRepository.findAll()).willReturn(List.of(product));
+    @Autowired
+    private PassSubscriptionRepository passSubscriptionRepository;
 
-    // when
-    final List<PassProductResponse> result = passService.getProducts();
+    @Autowired
+    private SeedmoneyTransactionRepository seedmoneyTransactionRepository;
 
-    // then
-    assertThat(result).hasSize(1);
-  }
+    @Autowired
+    private UserAccountRepository userAccountRepository;
 
-  @DisplayName("사용자의 활성 구독 목록을 조회한다")
-  @Test
-  void getSubscriptions() {
-    // given
-    final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
-    final PassSubscription subscription = PassSubscription.create(1L, product, 5000, "0012345678");
+    @Autowired
+    private PassProductSeedService passProductSeedService;
 
-    given(passSubscriptionRepository.findByUserIdAndIsActiveTrue(1L))
-            .willReturn(List.of(subscription));
-    given(seedmoneyTransactionRepository.findByUserIdAndTransactionTypeAndCreatedAtAfter(any(), any(), any()))
-            .willReturn(Collections.emptyList());
-
-    // when
-    final List<PassSubscriptionResponse> result = passService.getSubscriptions(1L);
-
-    // then
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getName()).isEqualTo("커피 PASS");
-        assertThat(result.get(0).getAmountPerSave()).isEqualTo(5000);
-        assertThat(result.get(0).getTotalSaved()).isEqualTo(0);
-        assertThat(result.get(0).getWeeklyHistory()).hasSize(7);
+    @AfterEach
+    void tearDown() {
+        seedmoneyTransactionRepository.deleteAllInBatch();
+        passSubscriptionRepository.deleteAllInBatch();
+        userAccountRepository.deleteAllInBatch();
+        passProductRepository.deleteAllInBatch();
+        passProductSeedService.ensureDefaultProducts();
     }
 
-  @DisplayName("PASS 구독을 신청한다")
-  @Test
+    @DisplayName("전체 PASS 상품 목록 조회 시 기본 상품 6종을 반환한다")
+    @Test
+    void getProducts() {
+        // given
+        passSubscriptionRepository.deleteAllInBatch();
+        passProductRepository.deleteAllInBatch();
+
+        // when
+        final List<PassProductResponse> result = passService.getProducts();
+
+        // then
+        assertThat(result)
+                .extracting(PassProductResponse::getName)
+                .containsExactly(
+                        "커피 PASS",
+                        "배달 PASS",
+                        "택시 PASS",
+                        "쇼핑 PASS",
+                        "편의점 PASS",
+                        "술 PASS"
+                );
+    }
+
+    @DisplayName("전체 PASS 상품 목록 조회 시 누락된 기본 상품만 복구한다")
+    @Test
+    void getProducts_recoversMissingDefaultProducts() {
+        // given
+        passSubscriptionRepository.deleteAllInBatch();
+        passProductRepository.deleteAllInBatch();
+        passProductRepository.save(PassProduct.create(
+                "커피 PASS",
+                5000,
+                "커피 마시고 싶은 마음을 꾹 참고 저축해볼까요?"
+        ));
+        passProductRepository.save(PassProduct.create(
+                "테스트 PASS",
+                7000,
+                "임시 테스트 상품"
+        ));
+
+        // when
+        final List<PassProductResponse> result = passService.getProducts();
+
+        // then
+        assertThat(result).hasSize(7);
+        assertThat(result)
+                .extracting(PassProductResponse::getName)
+                .contains(
+                        "커피 PASS",
+                        "배달 PASS",
+                        "택시 PASS",
+                        "쇼핑 PASS",
+                        "편의점 PASS",
+                        "술 PASS",
+                        "테스트 PASS"
+                );
+        assertThat(result.stream()
+                .filter(product -> product.getName().equals("커피 PASS"))
+                .count()).isEqualTo(1);
+    }
+
+    @DisplayName("PASS 구독을 신청하면 활성 구독으로 저장된다")
+    @Test
     void subscribe() {
         // given
-        final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
+        final PassProduct product = passProductRepository.save(PassProduct.create(
+                "커피 PASS",
+                5000,
+                "커피 한 잔 절약"
+        ));
+        userAccountRepository.save(UserAccount.create(
+                1L,
+                AccountType.MAIN,
+                "001",
+                "한국은행",
+                "0012345678",
+                100000
+        ));
         final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
-                .passId(1L)
+                .passId(product.getId())
+                .sourceAccountId("0012345678")
                 .build();
-        final UserAccount mainAccount = UserAccount.create(
-                1L, AccountType.MAIN, "001", "한국은행", "0012345678", 100000);
 
-    given(passProductRepository.findById(1L)).willReturn(Optional.of(product));
-    given(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.MAIN))
-            .willReturn(Optional.of(mainAccount));
-    given(passSubscriptionRepository.save(any(PassSubscription.class)))
-            .willAnswer(invocation -> invocation.getArgument(0));
+        // when
+        final PassSubscriptionResponse result = passService.subscribe(1L, request);
 
-    // when
-    final PassSubscriptionResponse result = passService.subscribe(1L, request);
+        // then
+        final PassSubscription savedSubscription = passSubscriptionRepository.findById(result.getSubscriptionId())
+                .orElseThrow();
+        assertThat(savedSubscription.getIsActive()).isTrue();
+        assertThat(savedSubscription.getSourceAccountNo()).isEqualTo("0012345678");
+        assertThat(savedSubscription.getSavingAmount()).isEqualTo(5000);
+        assertThat(result.getName()).isEqualTo("커피 PASS");
+    }
 
-    // then
-    assertThat(result.getName()).isEqualTo("커피 PASS");
-    assertThat(result.getAmountPerSave()).isEqualTo(5000);
-  }
-
-  @DisplayName("존재하지 않는 상품으로 구독하면 예외가 발생한다")
-  @Test
-    void subscribe_notFound_exception() {
+    @DisplayName("사용자의 활성 PASS 구독 목록 조회 시 누적 저축 금액과 주간 이력을 함께 반환한다")
+    @Test
+    void getSubscriptions() {
         // given
+        final PassProduct product = passProductRepository.save(PassProduct.create(
+                "커피 PASS",
+                5000,
+                "커피 한 잔 절약"
+        ));
+        final PassSubscription subscription = passSubscriptionRepository.save(
+                PassSubscription.create(1L, product, 5000, "0012345678")
+        );
+        seedmoneyTransactionRepository.save(SeedmoneyTransaction.createSave(1L, product.getId(), 5000));
+
+        // when
+        final List<PassSubscriptionResponse> result = passService.getSubscriptions(1L);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getName()).isEqualTo("커피 PASS");
+        assertThat(result.get(0).getAmountPerSave()).isEqualTo(5000);
+        assertThat(result.get(0).getTotalSaved()).isEqualTo(5000);
+        assertThat(result.get(0).getWeeklyHistory()).hasSize(7);
+        assertThat(result.get(0).getWeeklyHistory()).contains(true);
+    }
+
+    @DisplayName("주계좌가 아닌 출금 계좌로 PASS를 구독하면 예외가 발생한다")
+    @Test
+    void subscribe_invalidSourceAccount_exception() {
+        // given
+        final PassProduct product = passProductRepository.save(PassProduct.create(
+                "커피 PASS",
+                5000,
+                "커피 한 잔 절약"
+        ));
+        userAccountRepository.save(UserAccount.create(
+                1L,
+                AccountType.MAIN,
+                "001",
+                "한국은행",
+                "0012345678",
+                100000
+        ));
         final PassSubscribeServiceRequest request = PassSubscribeServiceRequest.builder()
-                .passId(999L)
+                .passId(product.getId())
+                .sourceAccountId("9999999999")
                 .build();
 
-    given(passProductRepository.findById(999L)).willReturn(Optional.empty());
-
-    // when & then
-    assertThatThrownBy(() -> passService.subscribe(1L, request))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("존재하지 않는 PASS 상품");
+        // when // then
+        assertThatThrownBy(() -> passService.subscribe(1L, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("출금 계좌는 주계좌만 사용할 수 있습니다.");
     }
 
-  @DisplayName("사용자 ID가 null이면 구독 목록 조회 시 예외가 발생한다")
-  @Test
-  void getSubscriptions_nullUserId_exception() {
-    // when & then
-    assertThatThrownBy(() -> passService.getSubscriptions(null))
-            .isInstanceOf(IllegalArgumentException.class);
-  }
+    @DisplayName("PASS 구독을 해지하면 내 PASS 목록에서 제외된다")
+    @Test
+    void cancelSubscription() {
+        // given
+        final PassProduct product = passProductRepository.save(PassProduct.create(
+                "커피 PASS",
+                5000,
+                "커피 한 잔 절약"
+        ));
+        final PassSubscription subscription = passSubscriptionRepository.save(
+                PassSubscription.create(1L, product, 5000, "0012345678")
+        );
 
-  @DisplayName("구독을 해지한다")
-  @Test
-  void cancelSubscription() {
-    // given
-    final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
-    final PassSubscription subscription = PassSubscription.create(1L, product, 5000, "0012345678");
+        // when
+        passService.cancelSubscription(1L, subscription.getId());
+        final List<PassSubscriptionResponse> result = passService.getSubscriptions(1L);
 
-    given(passSubscriptionRepository.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(subscription));
-
-    // when
-    passService.cancelSubscription(1L, 1L);
-
-    // then
-    assertThat(subscription.getIsActive()).isFalse();
-  }
-
-  @DisplayName("이미 해지된 구독을 다시 해지하면 예외가 발생한다")
-  @Test
-  void cancelSubscription_alreadyCanceled_exception() {
-    // given
-    final PassProduct product = PassProduct.create("커피 PASS", 5000, "커피 한 잔 절약");
-    final PassSubscription subscription = PassSubscription.create(1L, product, 5000, "0012345678");
-    subscription.cancel();
-
-    given(passSubscriptionRepository.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(subscription));
-
-    // when & then
-    assertThatThrownBy(() -> passService.cancelSubscription(1L, 1L))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("이미 해지된 구독");
-    }
-
-  @DisplayName("다른 사용자의 구독은 해지할 수 없다")
-  @Test
-  void cancelSubscription_otherUsersSubscription_exception() {
-    // given
-    given(passSubscriptionRepository.findByIdAndUserId(1L, 1L)).willReturn(Optional.empty());
-
-    // when & then
-    assertThatThrownBy(() -> passService.cancelSubscription(1L, 1L))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("존재하지 않는 구독");
+        // then
+        assertThat(passSubscriptionRepository.findById(subscription.getId()).orElseThrow().getIsActive()).isFalse();
+        assertThat(result).isEmpty();
     }
 }

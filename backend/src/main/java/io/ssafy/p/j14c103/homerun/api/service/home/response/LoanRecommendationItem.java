@@ -15,4 +15,11 @@ public class LoanRecommendationItem {
     private final double minRate;
     private final double maxRate;
     private final double estimatedRate;  // CSS 등급 기반 예상금리
+    private final String joinWay;
+    private final String creditProductTypeName;
+    private final Double averageRate;
+    private final String rateTypeName;
+    private final String repaymentTypeName;
+    private final String loanLimit;
+    private final String mortgageTypeName;
 }
