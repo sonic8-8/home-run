@@ -1,29 +1,30 @@
-package io.ssafy.p.j14c103.homerun.config;
+package io.ssafy.p.j14c103.homerun.api.service.home;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * 사용자별 SSE 연결을 관리한다.
+ * 홈 대시보드 SSE 연결과 전송을 관리한다.
  */
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
-public class SseEmitterManager {
+public class DashboardSseService {
 
     private static final long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분
 
     private final ObjectMapper objectMapper;
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
-    public SseEmitter createEmitter(final Long userId) {
-        removeEmitter(userId);
+    public SseEmitter subscribe(final Long userId) {
+        removeSubscription(userId);
 
         final SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
         emitters.put(userId, emitter);
@@ -53,31 +54,31 @@ public class SseEmitterManager {
         return emitter;
     }
 
-    public void send(final Long userId, final String eventName, final Object data) {
+    public boolean hasSubscriber(final Long userId) {
+        return emitters.containsKey(userId);
+    }
+
+    public void sendDashboardUpdate(final Long userId, final DashboardResponse dashboard) {
         final SseEmitter emitter = emitters.get(userId);
         if (emitter == null) {
             return;
         }
 
         try {
-            final String jsonData = objectMapper.writeValueAsString(data);
+            final String jsonData = objectMapper.writeValueAsString(dashboard);
             emitter.send(SseEmitter.event()
-                    .name(eventName)
+                    .name("dashboard-update")
                     .data(jsonData));
         } catch (final IOException e) {
-            log.warn("SSE 이벤트 전송 실패. userId={}, event={}", userId, eventName, e);
+            log.warn("대시보드 SSE 이벤트 전송 실패. userId={}", userId, e);
             emitters.remove(userId);
         }
     }
 
-    public void removeEmitter(final Long userId) {
+    private void removeSubscription(final Long userId) {
         final SseEmitter existing = emitters.remove(userId);
         if (existing != null) {
             existing.complete();
         }
-    }
-
-    public boolean hasEmitter(final Long userId) {
-        return emitters.containsKey(userId);
     }
 }

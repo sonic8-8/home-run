@@ -1,6 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.controller.home;
 
-import io.ssafy.p.j14c103.homerun.config.SseEmitterManager;
+import io.ssafy.p.j14c103.homerun.api.service.home.DashboardSseService;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -15,11 +15,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @RequiredArgsConstructor
 public class DashboardSseController {
 
-    private final SseEmitterManager sseEmitterManager;
+    private final DashboardSseService dashboardSseService;
 
     @GetMapping(value = "/dashboard/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe(
             @AuthenticationPrincipal final AuthenticatedUser authenticatedUser) {
-        return sseEmitterManager.createEmitter(authenticatedUser.getUserId());
+        return dashboardSseService.subscribe(authenticatedUser.getUserId());
     }
 }

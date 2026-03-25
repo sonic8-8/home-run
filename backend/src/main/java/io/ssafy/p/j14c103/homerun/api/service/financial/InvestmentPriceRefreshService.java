@@ -1,8 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.financial;
 
+import io.ssafy.p.j14c103.homerun.api.service.home.DashboardSseService;
 import io.ssafy.p.j14c103.homerun.api.service.home.DashboardService;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
-import io.ssafy.p.j14c103.homerun.config.SseEmitterManager;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserInvestmentHoldingRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +16,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class InvestmentPriceScheduler {
+public class InvestmentPriceRefreshService {
 
     private final UserInvestmentHoldingRepository holdingRepository;
     private final UserFinancialSummaryService summaryService;
     private final DashboardService dashboardService;
-    private final SseEmitterManager sseEmitterManager;
+    private final DashboardSseService dashboardSseService;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     public void refreshAndPush() {
@@ -37,9 +37,9 @@ public class InvestmentPriceScheduler {
             try {
                 summaryService.getSummary(userId);
 
-                if (sseEmitterManager.hasEmitter(userId)) {
+                if (dashboardSseService.hasSubscriber(userId)) {
                     final DashboardResponse dashboard = dashboardService.getDashboard(userId);
-                    sseEmitterManager.send(userId, "dashboard-update", dashboard);
+                    dashboardSseService.sendDashboardUpdate(userId, dashboard);
                 }
             } catch (final Exception e) {
                 log.warn("사용자 주식 가격 갱신 실패. userId={}", userId, e);
