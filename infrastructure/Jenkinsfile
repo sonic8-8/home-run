@@ -55,6 +55,7 @@ pipeline {
     environment {
         FRONTEND_IMAGE = 'homerun-frontend:develop'
         BACKEND_IMAGE = 'homerun-backend:develop'
+        BACKEND_DOCS_IMAGE = 'homerun-backend-docs:develop'
         COMPOSE_FILE = 'infrastructure/docker/docker-compose.runtime.yml'
         ENV_FILE = '.env.runtime'
         FRONTEND_HOST_PORT = '3000'
@@ -115,6 +116,21 @@ pipeline {
                 script {
                     env.PIPELINE_STAGE = 'Build Runtime Images'
                 }
+                sh '''
+                    rm -rf frontend/generated-docs
+                    mkdir -p frontend/generated-docs
+                '''
+                sh 'docker build --target docs -t ${BACKEND_DOCS_IMAGE} -f backend/Dockerfile backend'
+                sh '''
+                    DOCS_CONTAINER=$(docker create ${BACKEND_DOCS_IMAGE})
+                    trap 'docker rm -f "$DOCS_CONTAINER" >/dev/null 2>&1 || true' EXIT
+
+                    docker cp "$DOCS_CONTAINER":/workspace/build/docs/asciidoc/. frontend/generated-docs/
+                    test -f frontend/generated-docs/index.html
+
+                    docker rm -f "$DOCS_CONTAINER" >/dev/null 2>&1 || true
+                    trap - EXIT
+                '''
                 sh 'docker build -t ${FRONTEND_IMAGE} -f frontend/Dockerfile frontend'
                 sh 'docker build -t ${BACKEND_IMAGE} -f backend/Dockerfile backend'
             }
@@ -172,7 +188,8 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                       fi
 
                       if docker logs homerun-backend 2>&1 | grep -q "Started HomerunApplication"; then
-                        if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null"; then
+                        if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null" && \
+                           docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/ >/dev/null"; then
                           exit 0
                         fi
                       fi
@@ -209,6 +226,7 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                 fi
             '''
             sh 'rm -f ${ENV_FILE}'
+            sh 'rm -rf frontend/generated-docs'
             sh 'rm -f mattermost-payload.json'
         }
     }
