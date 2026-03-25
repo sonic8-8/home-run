@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CardRecommendation } from '../../../domain/entities/CardRecommendation';
 import { CardModal } from '../CardModal/CardModal';
+import { AuthImage } from '@shared/components/AuthImage/AuthImage';
 import styles from './CardRecommendations.module.css';
 
 interface CardRecommendationsProps {
@@ -30,13 +31,15 @@ export function CardRecommendations({ cards, allCards }: CardRecommendationsProp
               style={{ cursor: 'pointer' }}
             >
               <div className={styles.cardImage}>
-                {c.cardImageUrl ? (
-                  <img src={c.cardImageUrl} alt={c.cardName} />
-                ) : (
-                  <div className={styles.cardPlaceholder}>
-                    <span className={styles.cardPlaceholderText}>Samsung Card</span>
-                  </div>
-                )}
+                <AuthImage
+                  src={c.cardImageUrl}
+                  alt={c.cardName}
+                  fallback={
+                    <div className={styles.cardPlaceholder}>
+                      <span className={styles.cardPlaceholderText}>{c.cardIssuerName}</span>
+                    </div>
+                  }
+                />
               </div>
               <div className={styles.cardName}>{c.cardName}</div>
             </div>
