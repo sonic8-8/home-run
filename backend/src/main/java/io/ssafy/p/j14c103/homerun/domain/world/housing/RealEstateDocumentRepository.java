@@ -13,11 +13,13 @@ public interface RealEstateDocumentRepository extends JpaRepository<RealEstateDo
         RealEstateRegistrySection registrySection
     );
 
-    boolean existsByPropertyIdAndDocumentType(Long propertyId, RealEstateDocumentType documentType);
-
     boolean existsByPropertyIdAndDocumentTypeAndRegistrySection(
         Long propertyId,
         RealEstateDocumentType documentType,
+        RealEstateRegistrySection registrySection
+    );
+
+    List<RealEstateDocument> findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(
         RealEstateRegistrySection registrySection
     );
 }

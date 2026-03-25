@@ -96,7 +96,6 @@ public class RealEstateDocumentService {
                 REGISTRY_DOCUMENT_TYPE,
                 RealEstateRegistrySection.GAPGU
             );
-
         validateSamplePool(gapguDocuments);
         return gapguDocuments.get(realEstateRegistryRandomService.nextGapguIndex(gapguDocuments.size()));
     }
@@ -108,7 +107,6 @@ public class RealEstateDocumentService {
                 REGISTRY_DOCUMENT_TYPE,
                 RealEstateRegistrySection.EULGU
             );
-
         validateSamplePool(eulguDocuments);
         return eulguDocuments.get(realEstateRegistryRandomService.nextEulguIndex(eulguDocuments.size()));
     }

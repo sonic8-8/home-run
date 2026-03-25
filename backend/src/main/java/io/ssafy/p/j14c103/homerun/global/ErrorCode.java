@@ -44,6 +44,10 @@ public enum ErrorCode {
     WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),
     WORLD_RESULT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_003", "월드 결과 데이터가 올바르지 않습니다."),
 
+    GAME_SLOT_CONFLICT(HttpStatus.CONFLICT, "GAME_001", "이미 사용 중인 저장 슬롯입니다."),
+    GAME_SESSION_FORBIDDEN(HttpStatus.FORBIDDEN, "GAME_002", "해당 게임 세션에 접근할 수 없습니다."),
+    GAME_SESSION_CLOSED(HttpStatus.CONFLICT, "GAME_003", "종료된 게임 세션은 진행할 수 없습니다."),
+
     SCHEDULE_ACTION_TYPE_INVALID(HttpStatus.BAD_REQUEST, "SCHEDULE_003", "행동 유형이 올바르지 않습니다."),
     SCHEDULE_ACTION_CATALOG_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "SCHEDULE_004", "행동 카탈로그 상태가 올바르지 않습니다."),
     SCHEDULE_KNOWLEDGE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "SCHEDULE_005", "지식 스탯 값이 올바르지 않습니다."),

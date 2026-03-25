@@ -86,17 +86,12 @@ class WorldHousingSeedServiceTest {
             .distinct()
             .toList())
             .containsExactlyInAnyOrder("11680", "11710", "11440", "11215");
-        assertThat(documents).hasSize(properties.size() * 2);
         assertThat(documents)
-            .extracting(RealEstateDocument::getPropertyId)
-            .allMatch(propertyId -> properties.stream()
-                .anyMatch(property -> property.getPropertyId().equals(propertyId)));
-        assertThat(documents)
-            .extracting(RealEstateDocument::getImageUrl)
-            .allMatch(imageUrl -> imageUrl != null && !imageUrl.isBlank());
-        assertThat(documents)
-            .extracting(RealEstateDocument::getChecklist)
-            .allSatisfy(checklist -> assertThat((List<?>) checklist).isNotEmpty());
+            .extracting(
+                RealEstateDocument::getRegistrySection,
+                document -> document.getQuizSamplePayload().getIssueSummary()
+            )
+            .doesNotHaveDuplicates();
     }
 
     @DisplayName("같은 seed를 다시 실행해도 매물과 문서 수가 증가하지 않는다")
@@ -130,9 +125,13 @@ class WorldHousingSeedServiceTest {
             .filter(candidate -> candidate.getProviderId().equals("PROP-HN-001"))
             .findFirst()
             .orElseThrow(() -> new AssertionError("PROP-HN-001 데이터를 찾지 못했습니다."));
-        final List<RealEstateDocument> documents =
-            realEstateDocumentRepository.findAllByPropertyIdOrderByRealEstateDocumentIdAsc(
-                property.getPropertyId()
+        final List<RealEstateDocument> gapguDocuments =
+            realEstateDocumentRepository.findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(
+                RealEstateRegistrySection.GAPGU
+            );
+        final List<RealEstateDocument> eulguDocuments =
+            realEstateDocumentRepository.findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(
+                RealEstateRegistrySection.EULGU
             );
 
         // then
@@ -143,10 +142,10 @@ class WorldHousingSeedServiceTest {
         assertThat(property.getBasePrice().getAmount()).isEqualByComparingTo("375000000");
         assertThat(property.getLatitude()).isNotNull();
         assertThat(property.getLongitude()).isNotNull();
-        assertThat(documents)
-            .extracting(RealEstateDocument::getRegistrySection)
-            .containsExactlyInAnyOrder(RealEstateRegistrySection.GAPGU, RealEstateRegistrySection.EULGU);
-        assertThat(documents)
+        assertThat(gapguDocuments).isNotEmpty();
+        assertThat(eulguDocuments).isNotEmpty();
+        assertThat(List.of(gapguDocuments, eulguDocuments))
+            .flatExtracting(documents -> documents)
             .extracting(RealEstateDocument::getQuizSamplePayload)
             .allSatisfy(payload -> {
                 final RealEstateRegistryQuizSample quizSample = (RealEstateRegistryQuizSample) payload;
@@ -157,11 +156,5 @@ class WorldHousingSeedServiceTest {
                 assertThat(quizSample.getFeedbackCorrect()).isNotBlank();
                 assertThat(quizSample.getFeedbackWrong()).isNotBlank();
             });
-        assertThat(documents)
-            .extracting(RealEstateDocument::getImageUrl)
-            .containsOnly("/images/docs/registry-gapgu.png", "/images/docs/registry-eulgu.png");
-        assertThat(documents)
-            .extracting(RealEstateDocument::getChecklist)
-            .allSatisfy(checklist -> assertThat((List<?>) checklist).isNotEmpty());
     }
 }

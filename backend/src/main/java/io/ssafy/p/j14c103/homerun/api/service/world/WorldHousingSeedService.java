@@ -156,8 +156,7 @@ public class WorldHousingSeedService {
     }
 
     private void seedDocument(final DocumentSeed documentSeed) {
-        final RealEstateProperty property = realEstatePropertyRepository
-            .findByProviderId(documentSeed.propertyProviderId())
+        final RealEstateProperty property = realEstatePropertyRepository.findByProviderId(documentSeed.propertyProviderId())
             .orElseThrow(() -> new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID));
 
         if (realEstateDocumentRepository.existsByPropertyIdAndDocumentTypeAndRegistrySection(

@@ -36,6 +36,8 @@ import io.ssafy.p.j14c103.homerun.api.service.pass.PassService;
 import io.ssafy.p.j14c103.homerun.api.service.pass.PassSavingService;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.SeedmoneyService;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
+import io.ssafy.p.j14c103.homerun.api.service.user.UserAssetLinkService;
+import io.ssafy.p.j14c103.homerun.api.service.user.UserMeService;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import java.util.stream.Stream;
@@ -106,6 +108,12 @@ class SecurityConfigTest {
 
     @MockitoBean
     private CreditScoreService creditScoreService;
+
+    @MockitoBean
+    private UserMeService userMeService;
+
+    @MockitoBean
+    private UserAssetLinkService userAssetLinkService;
 
     @DisplayName("회원가입 API는 인증 없이 접근할 수 있다.")
     @Test
@@ -200,7 +208,9 @@ class SecurityConfigTest {
                 passService,
                 passSavingService,
                 seedmoneyService,
-                creditScoreService
+                creditScoreService,
+                userMeService,
+                userAssetLinkService
         );
     }
 
@@ -297,6 +307,7 @@ class SecurityConfigTest {
                 Arguments.of("/api/pass/history"),
                 Arguments.of("/api/seedmoney/account"),
                 Arguments.of("/api/credit/score"),
+                Arguments.of("/api/users/me"),
                 Arguments.of("/api/future/protected-endpoint")
         );
     }

@@ -59,8 +59,8 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithRenderedMoneyText() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
-        RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
             createGapguDocument(property.getPropertyId(), "위험"),
             createEulguDocument(property.getPropertyId(), "정상")
@@ -69,7 +69,7 @@ class RealEstateDocumentServiceTest {
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
 
         // when
-        RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
+        final RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
             gameSession.getGameSessionId(),
             property.getPropertyId()
         );
@@ -92,8 +92,8 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithNormalVerdict() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
-        RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
             createGapguDocument(property.getPropertyId(), "정상"),
             createEmptyEulguDocument(property.getPropertyId(), "정상")
@@ -102,7 +102,7 @@ class RealEstateDocumentServiceTest {
         given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
 
         // when
-        RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
+        final RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
             gameSession.getGameSessionId(),
             property.getPropertyId()
         );
@@ -118,8 +118,8 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithEmptySamplePool() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
-        RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAndFlush(createGapguDocument(property.getPropertyId(), "정상"));
 
         // when & then
@@ -136,7 +136,7 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithUnknownSession() {
         // given
-        RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
+        final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
 
         // when & then
         assertThatThrownBy(() -> realEstateDocumentService.getDocument(9999L, property.getPropertyId()))
@@ -149,10 +149,13 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithUnknownProperty() {
         // given
-        GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
 
         // when & then
-        assertThatThrownBy(() -> realEstateDocumentService.getDocument(gameSession.getGameSessionId(), 9999L))
+        assertThatThrownBy(() -> realEstateDocumentService.getDocument(
+            gameSession.getGameSessionId(),
+            9999L
+        ))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.HOUSING_PROPERTY_NOT_FOUND);
@@ -174,7 +177,7 @@ class RealEstateDocumentServiceTest {
     }
 
     private GameSession createGameSession() {
-        GameSession gameSession = GameSession.create(
+        final GameSession gameSession = GameSession.create(
             1L,
             1,
             "윤서",
