@@ -69,6 +69,32 @@ class JwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
+    @DisplayName("Authorization 헤더가 없어도 token 쿼리 파라미터가 있으면 인증 객체를 저장한다.")
+    @Test
+    void doFilterWithTokenQueryParameter() throws Exception {
+        // given
+        Filter filter = new JwtAuthenticationFilter(jwtTokenProvider);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain filterChain = new MockFilterChain();
+        String accessToken = jwtTokenProvider.createAccessToken(1L, "user@example.com");
+
+        request.setParameter("token", accessToken);
+
+        // when
+        filter.doFilter(request, response, filterChain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        AuthenticatedUser principal = (AuthenticatedUser) authentication.getPrincipal();
+
+        // then
+        assertThat(filterChain.getRequest()).isSameAs(request);
+        assertThat(authentication).isNotNull();
+        assertThat(authentication.isAuthenticated()).isTrue();
+        assertThat(principal.getUserId()).isEqualTo(1L);
+        assertThat(principal.getEmail()).isEqualTo("user@example.com");
+    }
+
     @DisplayName("Refresh Token이면 인증 객체를 저장하지 않고 다음 필터로 진행한다.")
     @Test
     void doFilterWithRefreshToken() throws Exception {

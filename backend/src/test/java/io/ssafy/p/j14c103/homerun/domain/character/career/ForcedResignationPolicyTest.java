@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +47,22 @@ class ForcedResignationPolicyTest {
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
             .isEqualTo(ErrorCode.CHARACTER_REQUEST_INVALID);
+    }
+
+    @DisplayName("위기 사이클이면 기본 재취업 대기에 추가 페널티를 반영한다.")
+    @Test
+    void applyWithCyclePenalty() {
+        // when
+        final ForcedResignationPolicy.ForcedResignationResult result = forcedResignationPolicy.apply(
+            createCareer(),
+            createStat(45),
+            10,
+            CareerCycleEffect.from(CyclePhase.CRISIS, JobType.MID_BIZ)
+        );
+
+        // then
+        assertThat(result.rehireWaitTurns()).isEqualTo(4);
+        assertThat(result.rehireAvailableTurn()).isEqualTo(14);
     }
 
     private GameCareer createCareer() {

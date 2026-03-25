@@ -9,6 +9,7 @@ import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
@@ -48,6 +49,28 @@ class ForcedResignationServiceTest {
         assertThat(response.getSalaryBeforeResignation()).isEqualTo(36_000_000);
         assertThat(response.getMessage()).isEqualTo("건강 악화로 강제 퇴사했습니다.");
         assertThat(gameCareer.getProbationEndTurn()).isNull();
+    }
+
+    @DisplayName("위기 사이클이면 재취업 가능 턴에 추가 페널티를 반영한다.")
+    @Test
+    void forceResignWithCyclePenalty() {
+        // given
+        final GameCareer gameCareer = createCareer();
+        final ForcedResignationServiceRequest request = ForcedResignationServiceRequest.of(
+            gameCareer,
+            createRiskStat(45),
+            10,
+            CyclePhase.CRISIS
+        );
+
+        // when
+        final ForcedResignationServiceResponse response = forcedResignationService.forceResign(
+            request
+        );
+
+        // then
+        assertThat(response.getRehireAvailableTurn()).isEqualTo(14);
+        assertThat(gameCareer.getRehireAvailableTurn()).isEqualTo(14);
     }
 
     @DisplayName("건강 위기 상태가 아니면 강제 퇴사를 처리하지 않는다.")
