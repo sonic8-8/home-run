@@ -11,10 +11,10 @@ class GameStockMarketStateTest {
     @Test
     void initializeFrom() {
         final GameStockMarketState state = GameStockMarketState.initializeFrom(
-                1, "SAMSUNG", 72000, 1
+                1L, "SAMSUNG", 72000, 1
         );
 
-        assertThat(state.getGameSessionId()).isEqualTo(1);
+        assertThat(state.getGameSessionId()).isEqualTo(1L);
         assertThat(state.getStockCode()).isEqualTo("SAMSUNG");
         assertThat(state.getCurrentPriceAmount()).isEqualTo(72000);
         assertThat(state.getLastUpdatedTurn()).isEqualTo(1);
@@ -24,7 +24,7 @@ class GameStockMarketStateTest {
     @Test
     void updatePrice() {
         final GameStockMarketState state = GameStockMarketState.initializeFrom(
-                1, "SAMSUNG", 72000, 1
+                1L, "SAMSUNG", 72000, 1
         );
 
         state.updatePrice(75000, 2);
@@ -37,7 +37,7 @@ class GameStockMarketStateTest {
     @Test
     void updatePrice_floor_100() {
         final GameStockMarketState state = GameStockMarketState.initializeFrom(
-                1, "SAMSUNG", 500, 1
+                1L, "SAMSUNG", 500, 1
         );
 
         state.updatePrice(-50, 2);

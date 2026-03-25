@@ -2,16 +2,20 @@ package io.ssafy.p.j14c103.homerun.domain.world.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-@DataJpaTest
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class GamePendingEventRepositoryTest {
 
     @Autowired
@@ -21,7 +25,7 @@ class GamePendingEventRepositoryTest {
     private GamePendingEventRepository gamePendingEventRepository;
 
     @Autowired
-    private TestEntityManager entityManager;
+    private EntityManager entityManager;
 
     @DisplayName("미해결 pending event는 생성 시각 순으로 조회할 수 있다")
     @Test
@@ -46,7 +50,7 @@ class GamePendingEventRepositoryTest {
 
         gamePendingEventRepository.saveAndFlush(
             GamePendingEvent.create(
-                1001,
+                1001L,
                 5,
                 gameEvent.getGameEventId(),
                 EventPresentationType.JOB_TRANSFER,
@@ -57,7 +61,7 @@ class GamePendingEventRepositoryTest {
         );
         gamePendingEventRepository.saveAndFlush(
             GamePendingEvent.create(
-                1001,
+                1001L,
                 5,
                 gameEvent.getGameEventId(),
                 EventPresentationType.JOB_TRANSFER,
@@ -68,7 +72,7 @@ class GamePendingEventRepositoryTest {
         );
         gamePendingEventRepository.saveAndFlush(
             GamePendingEvent.create(
-                1001,
+                1001L,
                 5,
                 gameEvent.getGameEventId(),
                 EventPresentationType.JOB_TRANSFER,
@@ -81,7 +85,7 @@ class GamePendingEventRepositoryTest {
 
         // when
         List<GamePendingEvent> result = gamePendingEventRepository
-            .findAllByGameSessionIdAndResolvedYnFalseOrderByCreatedAtAscGamePendingEventIdAsc(1001);
+            .findAllByGameSessionIdAndResolvedYnFalseOrderByCreatedAtAscGamePendingEventIdAsc(1001L);
 
         // then
         assertThat(result).hasSize(2);

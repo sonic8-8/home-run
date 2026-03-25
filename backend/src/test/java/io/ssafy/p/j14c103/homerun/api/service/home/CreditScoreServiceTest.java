@@ -10,6 +10,7 @@ import io.ssafy.p.j14c103.homerun.api.service.home.response.CreditScoreResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContext;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyLoanClient;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummary;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class CreditScoreServiceTest {
     @Mock
     private UserAuthContextService userAuthContextService;
 
+    @Mock
+    private io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService userFinancialSummaryService;
+
     @InjectMocks
     private CreditScoreService creditScoreService;
 
@@ -39,9 +43,11 @@ class CreditScoreServiceTest {
     // given
     final Long userId = 1L;
     final CreditScore creditScore = CreditScore.of(300, 250, 120, 90, 80);
+    final UserFinancialSummary summary = summary(userId, 10_000_000, 2_000_000, 8_000_000);
 
-        given(userAuthContextService.getContext(userId)).willReturn(new UserAuthContext(userId, "test-user-key"));
-        given(creditScoreProvider.calculate(userId)).willReturn(creditScore);
+    given(userAuthContextService.getContext(userId)).willReturn(new UserAuthContext(userId, "test-user-key"));
+    given(creditScoreProvider.calculate(userId)).willReturn(creditScore);
+    given(userFinancialSummaryService.getSummary(userId)).willReturn(summary);
     given(ssafyLoanClient.inquireMyCreditRating("test-user-key"))
             .willReturn(Map.of("ratingName", "A", "totalAssetValue", "12345678"));
 
@@ -61,9 +67,11 @@ class CreditScoreServiceTest {
     // given
     final Long userId = 1L;
     final CreditScore creditScore = CreditScore.of(280, 230, 110, 80, 70);
+    final UserFinancialSummary summary = summary(userId, 8_000_000, 1_000_000, 7_000_000);
 
     given(userAuthContextService.getContext(userId)).willReturn(new UserAuthContext(userId, null));
     given(creditScoreProvider.calculate(userId)).willReturn(creditScore);
+    given(userFinancialSummaryService.getSummary(userId)).willReturn(summary);
 
     // when
     final CreditScoreResponse response = creditScoreService.getCreditScore(userId);
@@ -71,7 +79,18 @@ class CreditScoreServiceTest {
     // then
     assertThat(response.getScore()).isEqualTo(770);
     assertThat(response.getRatingName()).isEqualTo("N/A");
-    assertThat(response.getTotalAsset()).isZero();
+    assertThat(response.getTotalAsset()).isEqualTo(8_000_000L);
         verifyNoInteractions(ssafyLoanClient);
+    }
+
+    private UserFinancialSummary summary(
+        final Long userId,
+        final int totalAssetAmount,
+        final int totalDebtAmount,
+        final int netAssetAmount
+    ) {
+        final UserFinancialSummary summary = UserFinancialSummary.create(userId);
+        summary.refresh(totalAssetAmount, totalDebtAmount, netAssetAmount, totalAssetAmount, 0, 0);
+        return summary;
     }
 }

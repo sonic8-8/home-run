@@ -42,7 +42,7 @@ public class RealEstateDocumentService {
     private final RealEstateDocumentRepository realEstateDocumentRepository;
     private final RealEstateRegistryRandomService realEstateRegistryRandomService;
 
-    public RealEstateDocumentResponse getDocument(final Integer sessionId, final Long propertyId) {
+    public RealEstateDocumentResponse getDocument(final Long sessionId, final Long propertyId) {
         validateSession(sessionId);
 
         final RealEstateProperty property = realEstatePropertyRepository.findById(propertyId)
@@ -73,7 +73,7 @@ public class RealEstateDocumentService {
         );
     }
 
-    private void validateSession(final Integer sessionId) {
+    private void validateSession(final Long sessionId) {
         if (gameSessionRepository.existsById(sessionId)) {
             return;
         }

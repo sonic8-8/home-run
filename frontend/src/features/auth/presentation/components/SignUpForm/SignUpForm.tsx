@@ -135,7 +135,13 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
       return;
     }
     setValidationError(null);
-    onSubmit({ name, email, password, passwordConfirm, termsAgreed: agreed });
+    onSubmit({
+      name,
+      email,
+      password,
+      passwordConfirm,
+      termsAgreed: agreed,
+    });
   };
 
   const displayError = validationError ?? error;
@@ -164,7 +170,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
-    
+
 
         <div className={styles.fieldGroup}>
           <label className={styles.label}>비밀번호</label>

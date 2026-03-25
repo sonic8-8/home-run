@@ -4,16 +4,81 @@ import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public record JobTransferServiceRequest(
-    GameCareer gameCareer,
-    GameStat gameStat,
-    int recentMeetFriendCount,
-    String offerId,
-    int currentTurn
-) {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class JobTransferServiceRequest {
 
-    public JobTransferServiceRequest {
+    private GameCareer gameCareer;
+    private GameStat gameStat;
+    private int recentMeetFriendCount;
+    private String offerId;
+    private int currentTurn;
+
+    @Builder(access = AccessLevel.PRIVATE)
+    private JobTransferServiceRequest(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int recentMeetFriendCount,
+        final String offerId,
+        final int currentTurn
+    ) {
+        validateRequest(gameCareer, gameStat, recentMeetFriendCount, offerId, currentTurn);
+
+        this.gameCareer = gameCareer;
+        this.gameStat = gameStat;
+        this.recentMeetFriendCount = recentMeetFriendCount;
+        this.offerId = offerId;
+        this.currentTurn = currentTurn;
+    }
+
+    public static JobTransferServiceRequest of(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int recentMeetFriendCount,
+        final String offerId,
+        final int currentTurn
+    ) {
+        return JobTransferServiceRequest.builder()
+            .gameCareer(gameCareer)
+            .gameStat(gameStat)
+            .recentMeetFriendCount(recentMeetFriendCount)
+            .offerId(offerId)
+            .currentTurn(currentTurn)
+            .build();
+    }
+
+    public GameCareer gameCareer() {
+        return gameCareer;
+    }
+
+    public GameStat gameStat() {
+        return gameStat;
+    }
+
+    public int recentMeetFriendCount() {
+        return recentMeetFriendCount;
+    }
+
+    public String offerId() {
+        return offerId;
+    }
+
+    public int currentTurn() {
+        return currentTurn;
+    }
+
+    private void validateRequest(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int recentMeetFriendCount,
+        final String offerId,
+        final int currentTurn
+    ) {
         if (gameCareer == null) {
             throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
         }
@@ -29,21 +94,5 @@ public record JobTransferServiceRequest(
         if (currentTurn < 1) {
             throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
         }
-    }
-
-    public static JobTransferServiceRequest of(
-        final GameCareer gameCareer,
-        final GameStat gameStat,
-        final int recentMeetFriendCount,
-        final String offerId,
-        final int currentTurn
-    ) {
-        return new JobTransferServiceRequest(
-            gameCareer,
-            gameStat,
-            recentMeetFriendCount,
-            offerId,
-            currentTurn
-        );
     }
 }

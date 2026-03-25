@@ -5,10 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameLoanRepository extends JpaRepository<GameLoan, Integer> {
 
-    List<GameLoan> findAllByGameSessionId(Integer gameSessionId);
+    List<GameLoan> findAllByGameSessionId(Long gameSessionId);
 
-    List<GameLoan> findAllByGameSessionIdAndLoanStatus(Integer gameSessionId, LoanStatus loanStatus);
+    List<GameLoan> findAllByGameSessionIdAndLoanStatus(Long gameSessionId, LoanStatus loanStatus);
 
     int countByGameSessionIdAndProductIdAndLoanStatus(
-            Integer gameSessionId, String productId, LoanStatus loanStatus);
+            Long gameSessionId, String productId, LoanStatus loanStatus);
 }

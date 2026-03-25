@@ -6,13 +6,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRef;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoice;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventCondition;
@@ -28,7 +31,6 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -49,7 +51,7 @@ class WorldEventTriggerServiceTest {
     private WorldContentSeedService worldContentSeedService;
 
     @Autowired
-    private GameSessionRefRepository gameSessionRefRepository;
+    private GameSessionRepository gameSessionRepository;
 
     @Autowired
     private GameStatRepository gameStatRepository;
@@ -76,7 +78,7 @@ class WorldEventTriggerServiceTest {
     void tearDown() {
         gameCareerRepository.deleteAllInBatch();
         gameStatRepository.deleteAllInBatch();
-        gameSessionRefRepository.deleteAllInBatch();
+        gameSessionRepository.deleteAllInBatch();
         eventEffectRepository.deleteAllInBatch();
         eventConditionRepository.deleteAllInBatch();
         eventChoiceRepository.deleteAllInBatch();
@@ -89,14 +91,14 @@ class WorldEventTriggerServiceTest {
     void calculateEventCandidatesWhenAllRulesAreSatisfied() {
         // given
         worldContentSeedService.seed();
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "BOOM"));
-        gameStatRepository.saveAndFlush(GameStat.create(1001, 70, 10, 10, 50, 60, 12));
-        gameCareerRepository.saveAndFlush(createGameCareer(1001, 12));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(CyclePhase.BOOM));
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 70, 10, 10, 50, 60, 12));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 12));
 
         // when
         final List<GameWorldResult.EventCandidate> candidates = worldEventTriggerService
             .calculateEventCandidates(
-                1001,
+                gameSession.getGameSessionId(),
                 Map.of(
                     "EVT-VOICE-001", new BigDecimal("0.0100"),
                     "EVT-FAMILY-001", new BigDecimal("0.0200"),
@@ -128,14 +130,14 @@ class WorldEventTriggerServiceTest {
     void calculateEventCandidatesWhenNoRuleIsSatisfied() {
         // given
         worldContentSeedService.seed();
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1002, "CRISIS"));
-        gameStatRepository.saveAndFlush(GameStat.create(1002, 70, 10, 10, 50, 59, 12));
-        gameCareerRepository.saveAndFlush(createGameCareer(1002, 11));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(CyclePhase.CRISIS));
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 70, 10, 10, 50, 59, 12));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 11));
 
         // when
         final List<GameWorldResult.EventCandidate> candidates = worldEventTriggerService
             .calculateEventCandidates(
-                1002,
+                gameSession.getGameSessionId(),
                 Map.of(
                     "EVT-VOICE-001", new BigDecimal("0.9000"),
                     "EVT-FAMILY-001", new BigDecimal("0.9000"),
@@ -152,9 +154,9 @@ class WorldEventTriggerServiceTest {
     void calculateEventCandidatesWithUnsupportedOperator() {
         // given
         worldContentSeedService.seed();
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1003, "BOOM"));
-        gameStatRepository.saveAndFlush(GameStat.create(1003, 70, 10, 10, 50, 80, 12));
-        gameCareerRepository.saveAndFlush(createGameCareer(1003, 20));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(CyclePhase.BOOM));
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 70, 10, 10, 50, 80, 12));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 20));
 
         final GameEvent invalidEvent = gameEventRepository.saveAndFlush(
             GameEvent.create(
@@ -198,37 +200,39 @@ class WorldEventTriggerServiceTest {
         );
 
         // when & then
-        assertThatThrownBy(() -> worldEventTriggerService.calculateEventCandidates(1003, Map.of()))
+        assertThatThrownBy(() -> worldEventTriggerService.calculateEventCandidates(gameSession.getGameSessionId(), Map.of()))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
     }
 
-    private GameSessionRef createGameSessionRef(final int gameSessionId, final String economicCycleType) {
-        return GameSessionRef.builder()
-            .gameId(gameSessionId)
-            .userId(1)
-            .characterName("윤서")
-            .characterType(CharacterType.FEMALE)
-            .jobTypeSummary(JobType.STARTUP)
-            .housingType(HousingType.STUDIO)
-            .currentTurn(12)
-            .economicCycleType(economicCycleType)
-            .currentDate(LocalDate.of(2026, 1, 1))
-            .cash(2_000_000)
-            .netAssets(2_000_000)
-            .inProgress(true)
-            .bankrupt(false)
-            .cleared(false)
-            .createdAt(LocalDateTime.of(2026, 3, 1, 9, 0))
-            .lastPlayedAt(LocalDateTime.of(2026, 3, 1, 9, 30))
-            .saveSlotId(1)
-            .targetRegionCode("SEOUL")
-            .targetDistrictCode("GANGNAM")
-            .seedType("NORMAL")
-            .sessionStatus("IN_PROGRESS")
-            .ownedPropertyListingId(0)
-            .build();
+    private GameSession createGameSession(final CyclePhase cyclePhase) {
+        final GameSession gameSession = GameSession.create(
+            1L,
+            1,
+            "윤서",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "SEOUL",
+            "GANGNAM",
+            101L,
+            DataSourceType.PROFILE
+        );
+        gameSession.initializeCapital(
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            LocalDate.of(2026, 1, 1),
+            cyclePhase
+        );
+        gameSession.advanceTurn(
+            12,
+            LocalDate.of(2026, 1, 1),
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            cyclePhase
+        );
+        return gameSession;
     }
 
     private GameCareer createGameCareer(final int gameSessionId, final int tenureTurns) {

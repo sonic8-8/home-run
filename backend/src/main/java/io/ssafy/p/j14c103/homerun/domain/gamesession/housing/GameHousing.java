@@ -1,6 +1,7 @@
-package io.ssafy.p.j14c103.homerun.domain.world.housing;
+package io.ssafy.p.j14c103.homerun.domain.gamesession.housing;
 
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -20,18 +21,11 @@ public class GameHousing {
 
     @Id
     @Column(name = "game_session_id")
-    private Integer gameSessionId;
-
-    @Column(name = "target_region_code")
-    private String targetRegionCode;
-
-    @Convert(converter = Money.MoneyConverter.class)
-    @Column(name = "target_house_price_amount")
-    private Money targetHousePrice;
+    private Long gameSessionId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "housing_type")
-    private HousingType housingType;
+    @Column(name = "current_housing_type")
+    private HousingType currentHousingType;
 
     @Convert(converter = Money.MoneyConverter.class)
     @Column(name = "current_deposit_amount")
@@ -48,56 +42,37 @@ public class GameHousing {
     @Column(name = "current_property_id")
     private Long currentPropertyId;
 
-    @Column(name = "target_property_id")
-    private Long targetPropertyId;
-
     private GameHousing(
-        Integer gameSessionId,
-        String targetRegionCode,
-        Money targetHousePrice,
-        HousingType currentHousingType,
-        Money currentDeposit,
-        Money monthlyRent,
-        Money maintenanceFee,
-        Long currentPropertyId,
-        Long targetPropertyId
+        final Long gameSessionId,
+        final HousingType currentHousingType,
+        final Money currentDeposit,
+        final Money monthlyRent,
+        final Money maintenanceFee,
+        final Long currentPropertyId
     ) {
         this.gameSessionId = gameSessionId;
-        this.targetRegionCode = targetRegionCode;
-        this.targetHousePrice = targetHousePrice;
-        this.housingType = currentHousingType;
+        this.currentHousingType = currentHousingType;
         this.currentDeposit = currentDeposit;
         this.monthlyRent = monthlyRent;
         this.maintenanceFee = maintenanceFee;
         this.currentPropertyId = currentPropertyId;
-        this.targetPropertyId = targetPropertyId;
     }
 
     public static GameHousing create(
-        Integer gameSessionId,
-        String targetRegionCode,
-        Money targetHousePrice,
-        HousingType currentHousingType,
-        Money currentDeposit,
-        Money monthlyRent,
-        Money maintenanceFee,
-        Long currentPropertyId,
-        Long targetPropertyId
+        final Long gameSessionId,
+        final HousingType currentHousingType,
+        final Money currentDeposit,
+        final Money monthlyRent,
+        final Money maintenanceFee,
+        final Long currentPropertyId
     ) {
         return new GameHousing(
             gameSessionId,
-            targetRegionCode,
-            targetHousePrice,
             currentHousingType,
             currentDeposit,
             monthlyRent,
             maintenanceFee,
-            currentPropertyId,
-            targetPropertyId
+            currentPropertyId
         );
-    }
-
-    public HousingType getCurrentHousingType() {
-        return housingType;
     }
 }

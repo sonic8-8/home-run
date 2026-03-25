@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface GamePendingEventRepository extends JpaRepository<GamePendingEvent, Integer> {
 
     List<GamePendingEvent> findAllByGameSessionIdAndResolvedYnFalseOrderByCreatedAtAscGamePendingEventIdAsc(
-        Integer gameSessionId
+        Long gameSessionId
     );
 }

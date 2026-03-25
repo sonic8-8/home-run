@@ -10,9 +10,9 @@ class StockHoldingTest {
     @DisplayName("주식 보유를 생성할 수 있다")
     @Test
     void create() {
-        final StockHolding holding = StockHolding.create(1, "SAMSUNG", 72000, 10);
+        final StockHolding holding = StockHolding.create(1L, "SAMSUNG", 72000, 10);
 
-        assertThat(holding.getGameSessionId()).isEqualTo(1);
+        assertThat(holding.getGameSessionId()).isEqualTo(1L);
         assertThat(holding.getStockCode()).isEqualTo("SAMSUNG");
         assertThat(holding.getAveragePurchasePriceAmount()).isEqualTo(72000);
         assertThat(holding.getQuantity()).isEqualTo(10);
@@ -22,7 +22,7 @@ class StockHoldingTest {
     @Test
     void addShares() {
         // 72000원에 10주 보유
-        final StockHolding holding = StockHolding.create(1, "SAMSUNG", 72000, 10);
+        final StockHolding holding = StockHolding.create(1L, "SAMSUNG", 72000, 10);
 
         // 80000원에 5주 추가 매수
         holding.addShares(80000, 5);
@@ -35,7 +35,7 @@ class StockHoldingTest {
     @DisplayName("매도 체결 시 수량을 감소시킨다")
     @Test
     void removeShares() {
-        final StockHolding holding = StockHolding.create(1, "SAMSUNG", 72000, 10);
+        final StockHolding holding = StockHolding.create(1L, "SAMSUNG", 72000, 10);
 
         holding.removeShares(3);
 
@@ -45,7 +45,7 @@ class StockHoldingTest {
     @DisplayName("수량이 0이면 isEmpty가 true를 반환한다")
     @Test
     void isEmpty_zero() {
-        final StockHolding holding = StockHolding.create(1, "SAMSUNG", 72000, 10);
+        final StockHolding holding = StockHolding.create(1L, "SAMSUNG", 72000, 10);
 
         holding.removeShares(10);
 
@@ -55,7 +55,7 @@ class StockHoldingTest {
     @DisplayName("수량이 있으면 isEmpty가 false를 반환한다")
     @Test
     void isEmpty_has_shares() {
-        final StockHolding holding = StockHolding.create(1, "SAMSUNG", 72000, 10);
+        final StockHolding holding = StockHolding.create(1L, "SAMSUNG", 72000, 10);
 
         assertThat(holding.isEmpty()).isFalse();
     }

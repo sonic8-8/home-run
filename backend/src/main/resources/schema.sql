@@ -153,7 +153,7 @@ create table if not exists real_estate_geocode_caches (
 );
 
 create table if not exists real_estate_properties (
-  property_id integer generated always as identity primary key,
+  property_id bigint generated always as identity primary key,
   provider_id varchar(255),
   property_name varchar(200),
   address varchar(255),
@@ -172,28 +172,31 @@ create table if not exists real_estate_properties (
 
 -- Top-level game session aggregate for one save slot.
 create table if not exists game_sessions (
-  game_session_id integer generated always as identity primary key,
+  game_session_id bigint generated always as identity primary key,
   user_id integer not null,
   slot_number integer not null,
-  character_name varchar(100),
-  character_type varchar(20),
-  job_type varchar(50),
-  housing_type varchar(50),
-  target_region_code varchar(30),
-  target_district_code varchar(30),
-  data_source_type varchar(20),
+  character_name varchar(100) not null,
+  character_type varchar(20) not null,
+  job_type varchar(50) not null,
+  housing_type varchar(50) not null,
+  region_code varchar(30) not null,
+  district_code varchar(30) not null,
+  target_property_id bigint not null,
+  data_source_type varchar(20) not null,
   current_turn integer not null,
   "current_date" date,
-  economic_cycle_type varchar(50),
-  cash integer not null,
-  net_assets integer,
-  session_status varchar(20),
+  cycle_phase varchar(50),
+  cash_balance_amount numeric(19,0) not null,
+  net_worth_amount numeric(19,0) not null,
+  session_status varchar(20) not null,
   created_at timestamp not null default current_timestamp,
   last_played_at timestamp,
   selected_card_monthly_saving_amount integer not null default 0,
-  owned_property_id integer,
+  owned_property_id bigint,
   constraint fk_game_sessions__user
     foreign key (user_id) references users (user_id),
+  constraint fk_game_sessions__target_property
+    foreign key (target_property_id) references real_estate_properties (property_id),
   constraint fk_game_sessions__owned_property
     foreign key (owned_property_id) references real_estate_properties (property_id),
   constraint uq_game_sessions__user_id__slot_number
@@ -202,7 +205,7 @@ create table if not exists game_sessions (
 
 -- Current core character stats for a game session.
 create table if not exists game_stats (
-  game_session_id integer primary key,
+  game_session_id bigint primary key,
   health integer not null,
   fatigue integer not null,
   stress integer not null,
@@ -217,7 +220,7 @@ create table if not exists game_stats (
 
 -- Career and employment progression state for a game session.
 create table if not exists game_careers (
-  game_session_id integer primary key,
+  game_session_id bigint primary key,
   job_type varchar(50),
   job_title varchar(100),
   salary_amount integer,
@@ -247,7 +250,7 @@ create table if not exists action_masters (
 -- Actual action selections for each session, turn, and slot.
 create table if not exists game_turn_slots (
   game_turn_slot_id integer generated always as identity primary key,
-  game_session_id integer not null,
+  game_session_id bigint not null,
   turn_number integer not null,
   slot_index integer not null,
   action_type varchar(30) not null,
@@ -264,7 +267,7 @@ create table if not exists game_turn_slots (
 -- Turn settlement logs describing what changed and why.
 create table if not exists settlement_logs (
   settlement_log_id integer generated always as identity primary key,
-  game_session_id integer not null,
+  game_session_id bigint not null,
   turn_number integer not null,
   settlement_phase_type varchar(50),
   description text,
@@ -274,29 +277,24 @@ create table if not exists settlement_logs (
     foreign key (game_session_id) references game_sessions (game_session_id)
 );
 
--- Current housing state, target house, and current occupied property.
+-- Current housing state for a game session.
 create table if not exists game_housings (
-  game_session_id integer primary key,
-  target_region_code varchar(30),
-  target_house_price_amount integer,
-  housing_type varchar(50),
-  current_deposit_amount integer,
-  monthly_rent_amount integer,
-  maintenance_fee_amount integer,
-  current_property_id integer,
-  target_property_id integer,
+  game_session_id bigint primary key,
+  current_housing_type varchar(50),
+  current_deposit_amount numeric(19,0),
+  monthly_rent_amount numeric(19,0),
+  maintenance_fee_amount numeric(19,0),
+  current_property_id bigint,
   constraint fk_game_housings__game_session
     foreign key (game_session_id) references game_sessions (game_session_id),
   constraint fk_game_housings__current_property
-    foreign key (current_property_id) references real_estate_properties (property_id),
-  constraint fk_game_housings__target_property
-    foreign key (target_property_id) references real_estate_properties (property_id)
+    foreign key (current_property_id) references real_estate_properties (property_id)
 );
 
 -- Session-scoped real-estate market prices derived from cycle/news updates.
 create table if not exists game_property_market_states (
-  game_session_id integer not null,
-  property_id integer not null,
+  game_session_id bigint not null,
+  property_id bigint not null,
   current_price_amount integer not null,
   last_updated_turn integer not null,
   primary key (game_session_id, property_id),
@@ -309,7 +307,7 @@ create table if not exists game_property_market_states (
 -- Contract and registry documents attached to a real-estate listing.
 create table if not exists real_estate_documents (
   real_estate_document_id integer generated always as identity primary key,
-  property_id integer not null,
+  property_id bigint not null,
   document_type varchar(20),
   registry_section varchar(20),
   quiz_sample_payload jsonb,
@@ -320,8 +318,8 @@ create table if not exists real_estate_documents (
 -- Player review results for property contract inspection.
 create table if not exists game_contract_reviews (
   game_contract_review_id integer generated always as identity primary key,
-  game_session_id integer not null,
-  property_id integer not null,
+  game_session_id bigint not null,
+  property_id bigint not null,
   review_status varchar(20),
   checked_traps jsonb,
   detected_traps jsonb,

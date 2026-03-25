@@ -6,9 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.PendingEventsProviderResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRef;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventConditionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventEffectRepository;
@@ -21,7 +24,6 @@ import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMasterRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,7 +46,7 @@ class WorldPendingEventProviderServiceTest {
     private WorldContentSeedService worldContentSeedService;
 
     @Autowired
-    private GameSessionRefRepository gameSessionRefRepository;
+    private GameSessionRepository gameSessionRepository;
 
     @Autowired
     private GamePendingEventRepository gamePendingEventRepository;
@@ -67,7 +69,7 @@ class WorldPendingEventProviderServiceTest {
     @AfterEach
     void tearDown() {
         gamePendingEventRepository.deleteAllInBatch();
-        gameSessionRefRepository.deleteAllInBatch();
+        gameSessionRepository.deleteAllInBatch();
         eventEffectRepository.deleteAllInBatch();
         eventConditionRepository.deleteAllInBatch();
         eventChoiceRepository.deleteAllInBatch();
@@ -79,10 +81,12 @@ class WorldPendingEventProviderServiceTest {
     @Test
     void getPendingEventsWithoutEvents() {
         // given
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, 8));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(8));
 
         // when
-        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(1001);
+        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(
+            gameSession.getGameSessionId()
+        );
 
         // then
         assertThat(response.getEvents()).isEmpty();
@@ -93,14 +97,14 @@ class WorldPendingEventProviderServiceTest {
     void getPendingEvents() {
         // given
         worldContentSeedService.seed();
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1002, 12));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(12));
 
         final GameEvent familyEvent = findEventByCode("EVT-FAMILY-001");
         final GameEvent voiceEvent = findEventByCode("EVT-VOICE-001");
         final GameEvent jobEvent = findEventByCode("EVT-JOB-001");
 
         worldPendingEventQueueService.enqueuePendingEvents(
-            1002,
+            gameSession.getGameSessionId(),
             List.of(
                 toEventCandidate(familyEvent),
                 toEventCandidate(voiceEvent),
@@ -109,7 +113,9 @@ class WorldPendingEventProviderServiceTest {
         );
 
         // when
-        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(1002);
+        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(
+            gameSession.getGameSessionId()
+        );
 
         // then
         assertThat(response.getEvents()).hasSize(3);
@@ -129,14 +135,14 @@ class WorldPendingEventProviderServiceTest {
     void getPendingEventsWithNullableFields() {
         // given
         worldContentSeedService.seed();
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1003, 15));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(15));
 
         final GameEvent voiceEvent = findEventByCode("EVT-VOICE-001");
         final GameEvent overtimeEvent = findEventByCode("EVT-OVERTIME-001");
         final GameEvent jobEvent = findEventByCode("EVT-JOB-001");
 
         worldPendingEventQueueService.enqueuePendingEvents(
-            1003,
+            gameSession.getGameSessionId(),
             List.of(
                 toEventCandidate(voiceEvent),
                 toEventCandidate(overtimeEvent),
@@ -145,7 +151,9 @@ class WorldPendingEventProviderServiceTest {
         );
 
         // when
-        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(1003);
+        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(
+            gameSession.getGameSessionId()
+        );
 
         // then
         final PendingEventsProviderResponse.PendingEventItem phoneEvent = findEventByType(
@@ -182,16 +190,18 @@ class WorldPendingEventProviderServiceTest {
     void getPendingEventsWithChoicesOrdered() {
         // given
         worldContentSeedService.seed();
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1004, 7));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(7));
 
         final GameEvent voiceEvent = findEventByCode("EVT-VOICE-001");
         worldPendingEventQueueService.enqueuePendingEvents(
-            1004,
+            gameSession.getGameSessionId(),
             List.of(toEventCandidate(voiceEvent))
         );
 
         // when
-        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(1004);
+        final PendingEventsProviderResponse response = worldPendingEventProviderService.getPendingEvents(
+            gameSession.getGameSessionId()
+        );
 
         // then
         assertThat(response.getEvents()).hasSize(1);
@@ -206,8 +216,12 @@ class WorldPendingEventProviderServiceTest {
     @DisplayName("존재하지 않는 세션이면 world 세션 조회 에러를 던진다")
     @Test
     void getPendingEventsWithUnknownSession() {
-        // when & then
-        assertThatThrownBy(() -> worldPendingEventProviderService.getPendingEvents(9999))
+        // given
+        final Long unknownSessionId = 9999L;
+
+        // when
+        // then
+        assertThatThrownBy(() -> worldPendingEventProviderService.getPendingEvents(unknownSessionId))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_SESSION_NOT_FOUND);
@@ -237,30 +251,32 @@ class WorldPendingEventProviderServiceTest {
             .orElseThrow();
     }
 
-    private GameSessionRef createGameSessionRef(final int gameSessionId, final int currentTurn) {
-        return GameSessionRef.builder()
-            .gameId(gameSessionId)
-            .userId(1)
-            .characterName("윤서")
-            .characterType(CharacterType.FEMALE)
-            .jobTypeSummary(JobType.STARTUP)
-            .housingType(HousingType.STUDIO)
-            .currentTurn(currentTurn)
-            .economicCycleType("BOOM")
-            .currentDate(LocalDate.of(2026, 1, 1))
-            .cash(2_000_000)
-            .netAssets(2_000_000)
-            .inProgress(true)
-            .bankrupt(false)
-            .cleared(false)
-            .createdAt(LocalDateTime.of(2026, 3, 1, 9, 0))
-            .lastPlayedAt(LocalDateTime.of(2026, 3, 1, 9, 30))
-            .saveSlotId(1)
-            .targetRegionCode("SEOUL")
-            .targetDistrictCode("GANGNAM")
-            .seedType("NORMAL")
-            .sessionStatus("IN_PROGRESS")
-            .ownedPropertyListingId(0)
-            .build();
+    private GameSession createGameSession(final int currentTurn) {
+        final GameSession gameSession = GameSession.create(
+            1L,
+            1,
+            "윤서",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "SEOUL",
+            "GANGNAM",
+            101L,
+            DataSourceType.PROFILE
+        );
+        gameSession.initializeCapital(
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            LocalDate.of(2026, 1, 1),
+            CyclePhase.BOOM
+        );
+        gameSession.advanceTurn(
+            currentTurn,
+            LocalDate.of(2026, 1, 1),
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            CyclePhase.BOOM
+        );
+        return gameSession;
     }
 }

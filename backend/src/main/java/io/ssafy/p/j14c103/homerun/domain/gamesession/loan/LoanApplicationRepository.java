@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LoanApplicationRepository extends JpaRepository<LoanApplication, Integer> {
 
-    List<LoanApplication> findAllByGameSessionId(Integer gameSessionId);
+    List<LoanApplication> findAllByGameSessionId(Long gameSessionId);
 }

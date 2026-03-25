@@ -39,7 +39,7 @@ public class StockController {
      */
     @GetMapping("/market")
     public ResponseEntity<StockMarketResponse> getMarket(
-            @PathVariable final Integer sessionId
+            @PathVariable final Long sessionId
     ) {
         final List<GameStockMarketState> states = stockTradingService.getMarketPrices(sessionId);
         final Map<String, StockMarket> marketMap = stockMarketRepository.findAll().stream()
@@ -62,7 +62,7 @@ public class StockController {
      */
     @GetMapping("/holdings")
     public ResponseEntity<StockHoldingsResponse> getHoldings(
-            @PathVariable final Integer sessionId
+            @PathVariable final Long sessionId
     ) {
         final List<StockHolding> holdings = stockTradingService.getHoldings(sessionId);
         final Map<String, StockMarket> marketMap = stockMarketRepository.findAll().stream()
@@ -92,7 +92,7 @@ public class StockController {
      */
     @PostMapping("/orders")
     public ResponseEntity<StockOrderResponse> placeOrder(
-            @PathVariable final Integer sessionId,
+            @PathVariable final Long sessionId,
             @RequestBody final StockOrderRequest request
     ) {
         // TODO: currentTurn은 GameSession에서 가져와야 함 — 임시로 1

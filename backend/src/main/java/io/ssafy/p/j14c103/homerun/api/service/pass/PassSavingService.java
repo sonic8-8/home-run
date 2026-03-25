@@ -5,13 +5,18 @@ import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
+import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransaction;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransaction;
 import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransactionRepository;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccount;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,26 +39,30 @@ public class PassSavingService {
     private static final int DEFAULT_WEEKLY_GOAL = 50000;
 
     private final PassSubscriptionRepository passSubscriptionRepository;
-    private final SeedmoneyAccountRepository seedmoneyAccountRepository;
+    private final UserAccountRepository userAccountRepository;
+    private final UserAccountTransactionRepository userAccountTransactionRepository;
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
     private final UserPassTransactionRepository userPassTransactionRepository;
     private final SsafyDemandDepositClient demandDepositClient;
     private final UserAuthContextService userAuthContextService;
+    private final UserFinancialSummaryService userFinancialSummaryService;
 
     @Transactional
     public PassSaveResponse save(final Long userId, final PassSaveServiceRequest request) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
-        final PassSubscription subscription = passSubscriptionRepository.findById(request.getSubscriptionId())
+        final PassSubscription subscription = passSubscriptionRepository.findByIdAndUserId(request.getSubscriptionId(), userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 구독입니다."));
 
         if (!subscription.getIsActive()) {
             throw new IllegalStateException("해지된 구독에서는 저축할 수 없습니다.");
         }
 
-        final SeedmoneyAccount seedmoneyAccount = seedmoneyAccountRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("시드머니 계좌가 없습니다. 먼저 계좌를 개설해주세요."));
+        final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
+                .orElseThrow(() -> new IllegalArgumentException("주계좌가 없습니다."));
+        final UserAccount seedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
+                .orElseThrow(() -> new IllegalArgumentException("저축 계좌가 없습니다. 먼저 계좌를 개설해주세요."));
         final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
 
         final int amount = subscription.getSavingAmount();
@@ -61,13 +70,31 @@ public class PassSavingService {
         demandDepositClient.transferAccount(
                 userKey,
                 seedmoneyAccount.getAccountNumber(),
-                request.getSourceAccountId(),
+                mainAccount.getAccountNumber(),
                 amount);
+
+        final UserAccountTransaction saveOutTransaction = UserAccountTransaction.create(
+                userId,
+                AccountType.MAIN,
+                subscription.getId(),
+                AccountTransactionType.PASS_SAVE_OUT,
+                amount,
+                seedmoneyAccount.getAccountNumber());
+        userAccountTransactionRepository.save(saveOutTransaction);
+
+        final UserAccountTransaction saveInTransaction = UserAccountTransaction.create(
+                userId,
+                AccountType.SEEDMONEY,
+                subscription.getId(),
+                AccountTransactionType.PASS_SAVE_IN,
+                amount,
+                mainAccount.getAccountNumber());
+        userAccountTransactionRepository.save(saveInTransaction);
 
         // 시드머니 거래내역 기록
         final SeedmoneyTransaction transaction = SeedmoneyTransaction.createSave(
                 userId,
-                subscription.getPassProduct().getId(),
+                subscription.getId(),
                 amount);
         seedmoneyTransactionRepository.save(transaction);
 
@@ -80,8 +107,12 @@ public class PassSavingService {
         final int totalSaved = calculateTotalSaved(userId);
 
         // 잔액 조회
-        final int remainingBalance = fetchRealTimeBalance(userKey, seedmoneyAccount.getAccountNumber());
+        final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
+        final int mainBalance = fetchRealTimeBalance(accounts, mainAccount.getAccountNumber());
+        final int remainingBalance = fetchRealTimeBalance(accounts, seedmoneyAccount.getAccountNumber());
+        mainAccount.updateBalance(mainBalance);
         seedmoneyAccount.updateBalance(remainingBalance);
+        userFinancialSummaryService.getSummary(userId);
 
         return PassSaveResponse.of(amount, totalSaved, remainingBalance);
     }
@@ -125,9 +156,7 @@ public class PassSavingService {
         return sumSavings(userId, LocalDateTime.MIN);
     }
 
-    @SuppressWarnings("unchecked")
-    private int fetchRealTimeBalance(final String userKey, final String accountNo) {
-        final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
+    private int fetchRealTimeBalance(final List<Map<String, Object>> accounts, final String accountNo) {
         return accounts.stream()
                 .filter(account -> accountNo.equals(account.get("accountNo")))
                 .findFirst()

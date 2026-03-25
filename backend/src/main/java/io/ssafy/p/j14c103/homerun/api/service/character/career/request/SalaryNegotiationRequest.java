@@ -4,20 +4,30 @@ import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public record SalaryNegotiationRequest(
-    GameCareer gameCareer,
-    GameStat gameStat,
-    int currentTurn
-) {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class SalaryNegotiationRequest {
 
-    public SalaryNegotiationRequest {
-        if (gameCareer == null || gameStat == null) {
-            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
-        }
-        if (currentTurn < 1) {
-            throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
-        }
+    private GameCareer gameCareer;
+    private GameStat gameStat;
+    private int currentTurn;
+
+    @Builder(access = AccessLevel.PRIVATE)
+    private SalaryNegotiationRequest(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int currentTurn
+    ) {
+        validateRequest(gameCareer, gameStat, currentTurn);
+
+        this.gameCareer = gameCareer;
+        this.gameStat = gameStat;
+        this.currentTurn = currentTurn;
     }
 
     public static SalaryNegotiationRequest of(
@@ -25,6 +35,35 @@ public record SalaryNegotiationRequest(
         final GameStat gameStat,
         final int currentTurn
     ) {
-        return new SalaryNegotiationRequest(gameCareer, gameStat, currentTurn);
+        return SalaryNegotiationRequest.builder()
+            .gameCareer(gameCareer)
+            .gameStat(gameStat)
+            .currentTurn(currentTurn)
+            .build();
+    }
+
+    public GameCareer gameCareer() {
+        return gameCareer;
+    }
+
+    public GameStat gameStat() {
+        return gameStat;
+    }
+
+    public int currentTurn() {
+        return currentTurn;
+    }
+
+    private void validateRequest(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int currentTurn
+    ) {
+        if (gameCareer == null || gameStat == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_REQUEST_INVALID);
+        }
+        if (currentTurn < 1) {
+            throw new HomerunException(ErrorCode.CHARACTER_TURN_INVALID);
+        }
     }
 }

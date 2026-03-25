@@ -7,7 +7,7 @@ import lombok.Getter;
 public class EventResolveResult {
 
     private final Integer pendingEventId;
-    private final Integer gameSessionId;
+    private final Long gameSessionId;
     private final Integer turnNumber;
     private final Integer gameEventId;
     private final Integer eventChoiceId;
@@ -16,7 +16,7 @@ public class EventResolveResult {
 
     private EventResolveResult(
         final Integer pendingEventId,
-        final Integer gameSessionId,
+        final Long gameSessionId,
         final Integer turnNumber,
         final Integer gameEventId,
         final Integer eventChoiceId,
@@ -34,7 +34,7 @@ public class EventResolveResult {
 
     public static EventResolveResult of(
         final Integer pendingEventId,
-        final Integer gameSessionId,
+        final Long gameSessionId,
         final Integer turnNumber,
         final Integer gameEventId,
         final Integer eventChoiceId,

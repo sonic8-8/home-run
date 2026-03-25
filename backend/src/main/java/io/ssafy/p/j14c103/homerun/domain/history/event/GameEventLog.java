@@ -26,7 +26,7 @@ public class GameEventLog {
     private Integer gameEventLogId;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Column(name = "turn_number", nullable = false)
     private Integer turnNumber;
@@ -51,7 +51,7 @@ public class GameEventLog {
     private LocalDateTime resolvedAt;
 
     private GameEventLog(
-        Integer gameSessionId,
+        Long gameSessionId,
         Integer turnNumber,
         Integer gameEventId,
         Integer eventChoiceId,
@@ -71,7 +71,7 @@ public class GameEventLog {
     }
 
     public static GameEventLog create(
-        Integer gameSessionId,
+        Long gameSessionId,
         Integer turnNumber,
         Integer gameEventId,
         Integer eventChoiceId,

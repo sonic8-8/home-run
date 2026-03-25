@@ -1,12 +1,20 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.loan;
 
-import io.ssafy.p.j14c103.homerun.api.service.game.loan.GameSessionLoanDataProvider.LoanSessionData;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanApprovalService.ApprovalResult;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanCalculator.CalculationResult;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanApplyServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanCalculateServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanConfirmServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.loan.request.LoanRepayServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanApplyResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanCalculateResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanConfirmResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanRepayResponse;
+import io.ssafy.p.j14c103.homerun.api.service.home.credit.CreditScoreProvider;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoan;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanApplication;
@@ -14,9 +22,12 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanApplicationReposit
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.RepaymentType;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,11 +44,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class LoanService {
 
+    private static final int MAX_INT_VALUE = Integer.MAX_VALUE;
+
     private final LoanApplicationRepository loanApplicationRepository;
     private final GameLoanRepository gameLoanRepository;
     private final LoanApprovalService loanApprovalService;
-    private final GameSessionLoanDataProvider sessionDataProvider;
     private final LoanProductService loanProductService;
+    private final GameSessionRepository gameSessionRepository;
+    private final GameCareerRepository gameCareerRepository;
+    private final RealEstatePropertyRepository realEstatePropertyRepository;
+    private final CreditScoreProvider creditScoreProvider;
+
+    public LoanCalculateResponse calculate(final LoanCalculateServiceRequest request) {
+        return calculate(
+            request.getPrincipal(),
+            request.getAnnualRate(),
+            request.getTermMonths(),
+            request.getRepaymentMethod()
+        );
+    }
 
     /**
      * 이자 계산기.
@@ -53,17 +78,18 @@ public class LoanService {
         return LoanCalculateResponse.from(result);
     }
 
-    /**
-     * 대출 심사 신청.
-     * GameSessionLoanDataProvider를 통해 세션 데이터를 조회한다.
-     */
+    @Transactional
+    public LoanApplyResponse apply(final Long sessionId, final LoanApplyServiceRequest request) {
+        return apply(sessionId, request.getProductId(), request.getPropertyId());
+    }
+
     @Transactional
     public LoanApplyResponse apply(
-            final Integer sessionId,
+            final Long sessionId,
             final String productId,
-            final Integer propertyId
+            final Long propertyId
     ) {
-        final LoanSessionData sessionData = sessionDataProvider.getLoanSessionData(sessionId);
+        final LoanSessionData sessionData = loadLoanSessionData(sessionId, propertyId);
         final LoanType loanType = determineLoanType(productId, propertyId);
 
         final ApprovalResult approvalResult = loanApprovalService.evaluate(
@@ -94,8 +120,18 @@ public class LoanService {
      * @return 확정된 대출 정보 + 세션에 입금할 금액
      */
     @Transactional
+    public LoanConfirmResponse confirm(final Long sessionId, final LoanConfirmServiceRequest request) {
+        return confirm(
+            sessionId,
+            request.getApplicationId(),
+            request.getRequestedAmount(),
+            request.isAgreed()
+        );
+    }
+
+    @Transactional
     public LoanConfirmResponse confirm(
-            final Integer sessionId,
+            final Long sessionId,
             final Integer applicationId,
             final int requestedAmount,
             final boolean agreed
@@ -147,7 +183,7 @@ public class LoanService {
      * @return 생성된 GameLoan + 세션에 입금할 금액
      */
     @Transactional
-    public GameLoan applySsafyLoan(final Integer sessionId, final int principal) {
+    public GameLoan applySsafyLoan(final Long sessionId, final int principal) {
         final int existing = gameLoanRepository.countByGameSessionIdAndProductIdAndLoanStatus(
                 sessionId, "SSAFY_LOAN", LoanStatus.ACTIVE);
         if (existing > 0) {
@@ -165,7 +201,12 @@ public class LoanService {
      * 중도 상환.
      */
     @Transactional
-    public LoanRepayResponse repay(final Integer sessionId, final Integer loanId, final int amount) {
+    public LoanRepayResponse repay(final Long sessionId, final LoanRepayServiceRequest request) {
+        return repay(sessionId, request.getLoanId(), request.getAmount());
+    }
+
+    @Transactional
+    public LoanRepayResponse repay(final Long sessionId, final Integer loanId, final int amount) {
         final GameLoan loan = gameLoanRepository.findById(loanId)
                 .orElseThrow(() -> new HomerunException(ErrorCode.INVALID_INPUT_VALUE));
 
@@ -183,7 +224,7 @@ public class LoanService {
     /**
      * 세션의 활성 대출 목록.
      */
-    public List<GameLoan> getActiveLoans(final Integer sessionId) {
+    public List<GameLoan> getActiveLoans(final Long sessionId) {
         return gameLoanRepository.findAllByGameSessionIdAndLoanStatus(sessionId, LoanStatus.ACTIVE);
     }
 
@@ -193,7 +234,7 @@ public class LoanService {
      * @return 총 이자 차감액
      */
     @Transactional
-    public int settleMonthlyInterest(final Integer sessionId) {
+    public int settleMonthlyInterest(final Long sessionId) {
         final List<GameLoan> activeLoans = getActiveLoans(sessionId);
         return activeLoans.stream()
                 .mapToInt(GameLoan::chargeMonthlyInterest)
@@ -204,7 +245,7 @@ public class LoanService {
      * 대출 유형 결정.
      * 금감원 상품 유형 조회 또는 propertyId 기반.
      */
-    private LoanType determineLoanType(final String productId, final Integer propertyId) {
+    private LoanType determineLoanType(final String productId, final Long propertyId) {
         if (propertyId == null) {
             return LoanType.CREDIT;
         }
@@ -220,5 +261,65 @@ public class LoanService {
         }
 
         return LoanType.MORTGAGE;
+    }
+
+    private LoanSessionData loadLoanSessionData(final Long sessionId, final Long propertyId) {
+        final GameSession gameSession = gameSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
+        final GameCareer gameCareer = gameCareerRepository.findById(convertSessionId(sessionId))
+            .orElseThrow(() -> new HomerunException(ErrorCode.CHARACTER_GAME_ID_INVALID));
+
+        final int annualSalary = requirePositiveSalary(gameCareer);
+        final int cssGrade = creditScoreProvider.calculate(gameSession.getUserId()).getGrade();
+        final Integer propertyPrice = resolvePropertyPrice(gameSession, propertyId);
+
+        return new LoanSessionData(
+            annualSalary,
+            gameSession.getJobType().name(),
+            cssGrade,
+            gameSession.getRegionCode(),
+            propertyPrice
+        );
+    }
+
+    private Integer resolvePropertyPrice(final GameSession gameSession, final Long propertyId) {
+        final Long targetPropertyId = propertyId != null ? propertyId : gameSession.getTargetPropertyId();
+        if (targetPropertyId == null) {
+            return null;
+        }
+
+        final RealEstateProperty property = realEstatePropertyRepository.findById(targetPropertyId)
+            .orElseThrow(() -> new HomerunException(ErrorCode.HOUSING_PROPERTY_NOT_FOUND));
+
+        return property.getBasePrice()
+            .getAmount()
+            .setScale(0, RoundingMode.HALF_UP)
+            .intValueExact();
+    }
+
+    private int requirePositiveSalary(final GameCareer gameCareer) {
+        final Integer salary = gameCareer.getSalary();
+        if (salary == null || salary <= 0) {
+            throw new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED);
+        }
+
+        return salary;
+    }
+
+    private Integer convertSessionId(final Long sessionId) {
+        if (sessionId == null || sessionId <= 0 || sessionId > MAX_INT_VALUE) {
+            throw new HomerunException(ErrorCode.CHARACTER_GAME_ID_INVALID);
+        }
+
+        return Math.toIntExact(sessionId);
+    }
+
+    private record LoanSessionData(
+        int annualSalary,
+        String jobType,
+        int cssGrade,
+        String regionCode,
+        Integer propertyPrice
+    ) {
     }
 }

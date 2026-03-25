@@ -29,7 +29,7 @@ public class LoanApplication {
     private Integer loanApplicationId;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "loan_type", length = 20)
@@ -39,7 +39,7 @@ public class LoanApplication {
     private String productId;
 
     @Column(name = "property_id")
-    private Integer propertyId;
+    private Long propertyId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "application_status", length = 20)
@@ -58,10 +58,10 @@ public class LoanApplication {
     private LocalDateTime confirmedAt;
 
     private LoanApplication(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final LoanType loanType,
             final String productId,
-            final Integer propertyId
+            final Long propertyId
     ) {
         this.gameSessionId = gameSessionId;
         this.loanType = loanType;
@@ -72,10 +72,10 @@ public class LoanApplication {
     }
 
     public static LoanApplication create(
-            final Integer gameSessionId,
+            final Long gameSessionId,
             final LoanType loanType,
             final String productId,
-            final Integer propertyId
+            final Long propertyId
     ) {
         return new LoanApplication(gameSessionId, loanType, productId, propertyId);
     }

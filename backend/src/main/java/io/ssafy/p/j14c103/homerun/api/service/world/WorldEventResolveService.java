@@ -1,7 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.result.EventResolveResult;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoice;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventEffect;
@@ -23,14 +23,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class WorldEventResolveService {
 
-    private final GameSessionRefRepository gameSessionRefRepository;
+    private final GameSessionRepository gameSessionRepository;
     private final GamePendingEventRepository gamePendingEventRepository;
     private final GameEventRepository gameEventRepository;
     private final EventChoiceRepository eventChoiceRepository;
     private final EventEffectRepository eventEffectRepository;
 
     public EventResolveResult resolveEvent(
-        final int gameSessionId,
+        final Long gameSessionId,
         final int eventId,
         final Integer choiceId
     ) {
@@ -59,8 +59,8 @@ public class WorldEventResolveService {
         );
     }
 
-    private void validateSession(final int gameSessionId) {
-        gameSessionRefRepository.findById(gameSessionId)
+    private void validateSession(final Long gameSessionId) {
+        gameSessionRepository.findById(gameSessionId)
             .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
     }
 
@@ -70,7 +70,7 @@ public class WorldEventResolveService {
     }
 
     private void validatePendingEvent(
-        final int gameSessionId,
+        final Long gameSessionId,
         final GamePendingEvent pendingEvent
     ) {
         if (!pendingEvent.getGameSessionId().equals(gameSessionId)) {

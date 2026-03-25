@@ -57,7 +57,7 @@ class StockTradingServiceTest {
         given(stockMarketRepository.findAll()).willReturn(List.of(bio, semi));
 
         // when
-        stockTradingService.initializeStockStates(1);
+        stockTradingService.initializeStockStates(1L);
 
         // then
         @SuppressWarnings("unchecked")
@@ -76,12 +76,12 @@ class StockTradingServiceTest {
     void placeBuyOrder() {
         // given
         given(gameStockMarketStateRepository.findById(any(GameStockMarketStateId.class)))
-                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1, "BIO", 100000, 1)));
+                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1L, "BIO", 100000, 1)));
         given(stockOrderRepository.save(any(StockOrder.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        final StockOrder order = stockTradingService.placeBuyOrder(1, "BIO", 5, 1);
+        final StockOrder order = stockTradingService.placeBuyOrder(1L, "BIO", 5, 1);
 
         // then
         assertThat(order.getOrderType()).isEqualTo(OrderType.BUY);
@@ -94,9 +94,9 @@ class StockTradingServiceTest {
     @Test
     void placeBuyOrder_invalid_quantity() {
         given(gameStockMarketStateRepository.findById(any(GameStockMarketStateId.class)))
-                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1, "BIO", 100000, 1)));
+                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1L, "BIO", 100000, 1)));
 
-        assertThatThrownBy(() -> stockTradingService.placeBuyOrder(1, "BIO", 0, 1))
+        assertThatThrownBy(() -> stockTradingService.placeBuyOrder(1L, "BIO", 0, 1))
                 .isInstanceOf(HomerunException.class);
     }
 
@@ -104,11 +104,11 @@ class StockTradingServiceTest {
     @Test
     void placeSellOrder_insufficient_quantity() {
         given(gameStockMarketStateRepository.findById(any(GameStockMarketStateId.class)))
-                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1, "BIO", 100000, 1)));
+                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1L, "BIO", 100000, 1)));
         given(stockHoldingRepository.findById(any(StockHoldingId.class)))
-                .willReturn(Optional.of(StockHolding.create(1, "BIO", 100000, 3)));
+                .willReturn(Optional.of(StockHolding.create(1L, "BIO", 100000, 3)));
 
-        assertThatThrownBy(() -> stockTradingService.placeSellOrder(1, "BIO", 5, 1))
+        assertThatThrownBy(() -> stockTradingService.placeSellOrder(1L, "BIO", 5, 1))
                 .isInstanceOf(HomerunException.class);
     }
 
@@ -116,13 +116,13 @@ class StockTradingServiceTest {
     @Test
     void placeSellOrder_success() {
         given(gameStockMarketStateRepository.findById(any(GameStockMarketStateId.class)))
-                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1, "BIO", 100000, 1)));
+                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1L, "BIO", 100000, 1)));
         given(stockHoldingRepository.findById(any(StockHoldingId.class)))
-                .willReturn(Optional.of(StockHolding.create(1, "BIO", 100000, 10)));
+                .willReturn(Optional.of(StockHolding.create(1L, "BIO", 100000, 10)));
         given(stockOrderRepository.save(any(StockOrder.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
-        final StockOrder order = stockTradingService.placeSellOrder(1, "BIO", 5, 1);
+        final StockOrder order = stockTradingService.placeSellOrder(1L, "BIO", 5, 1);
 
         assertThat(order.getOrderType()).isEqualTo(OrderType.SELL);
         assertThat(order.getQuantity()).isEqualTo(5);
@@ -135,7 +135,7 @@ class StockTradingServiceTest {
         given(gameStockMarketStateRepository.findById(any(GameStockMarketStateId.class)))
                 .willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> stockTradingService.placeBuyOrder(1, "UNKNOWN", 5, 1))
+        assertThatThrownBy(() -> stockTradingService.placeBuyOrder(1L, "UNKNOWN", 5, 1))
                 .isInstanceOf(HomerunException.class);
     }
 
@@ -143,16 +143,16 @@ class StockTradingServiceTest {
     @Test
     void settleOrders_buy() {
         // given
-        final StockOrder buyOrder = StockOrder.createBuyOrder(1, "BIO", 5, 1);
-        given(stockOrderRepository.findAllByGameSessionIdAndExecuteTurnAndOrderStatus(1, 2, OrderStatus.PENDING))
+        final StockOrder buyOrder = StockOrder.createBuyOrder(1L, "BIO", 5, 1);
+        given(stockOrderRepository.findAllByGameSessionIdAndExecuteTurnAndOrderStatus(1L, 2, OrderStatus.PENDING))
                 .willReturn(List.of(buyOrder));
-        given(gameStockMarketStateRepository.findById(new GameStockMarketStateId(1, "BIO")))
-                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1, "BIO", 110000, 2)));
+        given(gameStockMarketStateRepository.findById(new GameStockMarketStateId(1L, "BIO")))
+                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1L, "BIO", 110000, 2)));
         given(stockHoldingRepository.findById(any(StockHoldingId.class)))
                 .willReturn(Optional.empty());
 
         // when
-        final int cashChange = stockTradingService.settleOrders(1, 2);
+        final int cashChange = stockTradingService.settleOrders(1L, 2);
 
         // then
         assertThat(cashChange).isEqualTo(-550000); // 110000 * 5
@@ -163,16 +163,16 @@ class StockTradingServiceTest {
     @Test
     void settleOrders_sell() {
         // given
-        final StockOrder sellOrder = StockOrder.createSellOrder(1, "BIO", 3, 1);
-        given(stockOrderRepository.findAllByGameSessionIdAndExecuteTurnAndOrderStatus(1, 2, OrderStatus.PENDING))
+        final StockOrder sellOrder = StockOrder.createSellOrder(1L, "BIO", 3, 1);
+        given(stockOrderRepository.findAllByGameSessionIdAndExecuteTurnAndOrderStatus(1L, 2, OrderStatus.PENDING))
                 .willReturn(List.of(sellOrder));
-        given(gameStockMarketStateRepository.findById(new GameStockMarketStateId(1, "BIO")))
-                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1, "BIO", 120000, 2)));
+        given(gameStockMarketStateRepository.findById(new GameStockMarketStateId(1L, "BIO")))
+                .willReturn(Optional.of(GameStockMarketState.initializeFrom(1L, "BIO", 120000, 2)));
         given(stockHoldingRepository.findById(any(StockHoldingId.class)))
-                .willReturn(Optional.of(StockHolding.create(1, "BIO", 100000, 10)));
+                .willReturn(Optional.of(StockHolding.create(1L, "BIO", 100000, 10)));
 
         // when
-        final int cashChange = stockTradingService.settleOrders(1, 2);
+        final int cashChange = stockTradingService.settleOrders(1L, 2);
 
         // then
         assertThat(cashChange).isEqualTo(360000); // 120000 * 3

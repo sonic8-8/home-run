@@ -20,8 +20,16 @@ public class CreditScoreResponse {
     // SSAFY 원본 데이터 (참고용)
     private final String ratingName;
     private final long totalAsset;
+    private final long totalDebt;
+    private final long netAsset;
 
-    private CreditScoreResponse(CreditScore css, String ratingName, long totalAsset) {
+    private CreditScoreResponse(
+        CreditScore css,
+        String ratingName,
+        long totalAsset,
+        long totalDebt,
+        long netAsset
+    ) {
         this.score = css.getScore();
         this.grade = css.getGrade();
         this.gradeLabel = css.getGradeLabel();
@@ -32,9 +40,21 @@ public class CreditScoreResponse {
         this.newCredit = css.getNewCredit();
         this.ratingName = ratingName;
         this.totalAsset = totalAsset;
+        this.totalDebt = totalDebt;
+        this.netAsset = netAsset;
     }
 
     public static CreditScoreResponse of(CreditScore css, String ratingName, long totalAsset) {
-        return new CreditScoreResponse(css, ratingName, totalAsset);
+        return new CreditScoreResponse(css, ratingName, totalAsset, 0L, 0L);
+    }
+
+    public static CreditScoreResponse of(
+        CreditScore css,
+        String ratingName,
+        long totalAsset,
+        long totalDebt,
+        long netAsset
+    ) {
+        return new CreditScoreResponse(css, ratingName, totalAsset, totalDebt, netAsset);
     }
 }

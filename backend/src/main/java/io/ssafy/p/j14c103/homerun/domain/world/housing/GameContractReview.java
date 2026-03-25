@@ -28,7 +28,7 @@ public class GameContractReview {
     private Long id;
 
     @Column(name = "game_session_id", nullable = false)
-    private Integer gameSessionId;
+    private Long gameSessionId;
 
     @Column(name = "property_id", nullable = false)
     private Long propertyId;
@@ -53,7 +53,7 @@ public class GameContractReview {
     private LocalDateTime reviewedAt;
 
     private GameContractReview(
-        Integer gameSessionId,
+        Long gameSessionId,
         Long propertyId,
         ContractReviewStatus reviewStatus,
         List<String> checkedTraps,
@@ -71,7 +71,7 @@ public class GameContractReview {
     }
 
     public static GameContractReview create(
-        Integer gameSessionId,
+        Long gameSessionId,
         Long propertyId,
         ContractReviewStatus reviewStatus,
         List<String> checkedTraps,

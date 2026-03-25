@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface GameContractReviewRepository extends JpaRepository<GameContractReview, Long> {
 
     Optional<GameContractReview> findTopByGameSessionIdAndPropertyIdOrderByReviewedAtDesc(
-        Integer gameSessionId,
+        Long gameSessionId,
         Long propertyId
     );
 }

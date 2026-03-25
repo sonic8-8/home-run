@@ -35,6 +35,12 @@ public class StockMarket {
     @Column(name = "base_price_amount")
     private Integer basePriceAmount;
 
+    @Column(name = "year_low_price_amount")
+    private Integer yearLowPriceAmount;
+
+    @Column(name = "year_high_price_amount")
+    private Integer yearHighPriceAmount;
+
     @Column(name = "volatility_rate", precision = 8, scale = 4)
     private BigDecimal volatilityRate;
 
@@ -44,6 +50,8 @@ public class StockMarket {
             final String kisStockCode,
             final String sector,
             final Integer basePriceAmount,
+            final Integer yearLowPriceAmount,
+            final Integer yearHighPriceAmount,
             final BigDecimal volatilityRate
     ) {
         this.stockCode = stockCode;
@@ -51,6 +59,8 @@ public class StockMarket {
         this.kisStockCode = kisStockCode;
         this.sector = sector;
         this.basePriceAmount = basePriceAmount;
+        this.yearLowPriceAmount = yearLowPriceAmount;
+        this.yearHighPriceAmount = yearHighPriceAmount;
         this.volatilityRate = volatilityRate;
     }
 
@@ -62,7 +72,38 @@ public class StockMarket {
             final Integer basePriceAmount,
             final BigDecimal volatilityRate
     ) {
-        return new StockMarket(stockCode, stockName, kisStockCode, sector, basePriceAmount, volatilityRate);
+        return new StockMarket(
+            stockCode,
+            stockName,
+            kisStockCode,
+            sector,
+            basePriceAmount,
+            null,
+            null,
+            volatilityRate
+        );
+    }
+
+    public static StockMarket create(
+            final String stockCode,
+            final String stockName,
+            final String kisStockCode,
+            final String sector,
+            final Integer basePriceAmount,
+            final Integer yearLowPriceAmount,
+            final Integer yearHighPriceAmount,
+            final BigDecimal volatilityRate
+    ) {
+        return new StockMarket(
+            stockCode,
+            stockName,
+            kisStockCode,
+            sector,
+            basePriceAmount,
+            yearLowPriceAmount,
+            yearHighPriceAmount,
+            volatilityRate
+        );
     }
 
     /**

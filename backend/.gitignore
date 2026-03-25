@@ -38,3 +38,5 @@ out/
 ../.agent/private/character-domain-config.md
 
 .env
+.codex/
+.agents/

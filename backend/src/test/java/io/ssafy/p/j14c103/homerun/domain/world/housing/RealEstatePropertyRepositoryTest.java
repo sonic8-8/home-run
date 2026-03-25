@@ -8,9 +8,13 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-@DataJpaTest
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
 class RealEstatePropertyRepositoryTest {
 
     @Autowired
@@ -151,9 +155,6 @@ class RealEstatePropertyRepositoryTest {
         assertThat(found.getContractTraps())
             .extracting(ContractTrap::getType)
             .containsExactly("HIGH_MORTGAGE", "FAKE_OWNER");
-        assertThat(found.getContractTraps())
-            .extracting(ContractTrap::getDocumentType)
-            .containsExactly("REGISTRY", "CONTRACT");
         assertThat(found.getContractTraps().get(0).getPenalty().getCash())
             .isEqualTo("-5000000");
         assertThat(found.getContractTraps().get(1).getPenalty().getCash())

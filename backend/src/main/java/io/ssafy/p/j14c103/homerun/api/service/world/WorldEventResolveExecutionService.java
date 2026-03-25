@@ -34,7 +34,7 @@ public class WorldEventResolveExecutionService {
     private final EventChoiceRepository eventChoiceRepository;
 
     public EventResolveExecutionResult resolveEvent(
-        final int gameSessionId,
+        final Long gameSessionId,
         final int eventId,
         final Integer choiceId
     ) {

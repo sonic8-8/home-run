@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface StockOrderRepository extends JpaRepository<StockOrder, Integer> {
 
     List<StockOrder> findAllByGameSessionIdAndExecuteTurnAndOrderStatus(
-            Integer gameSessionId, Integer executeTurn, OrderStatus orderStatus);
+            Long gameSessionId, Integer executeTurn, OrderStatus orderStatus);
 
     List<StockOrder> findAllByGameSessionIdAndOrderStatus(
-            Integer gameSessionId, OrderStatus orderStatus);
+            Long gameSessionId, OrderStatus orderStatus);
 }

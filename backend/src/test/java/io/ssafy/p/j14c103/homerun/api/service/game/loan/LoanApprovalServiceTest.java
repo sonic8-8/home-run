@@ -63,7 +63,7 @@ class LoanApprovalServiceTest {
         // given
         final int annualSalary = 50_000_000;
         final Integer propertyPrice = 300_000_000;
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -82,7 +82,7 @@ class LoanApprovalServiceTest {
         // given
         final int annualSalary = 50_000_000;
         final Integer propertyPrice = 200_000_000;
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -101,7 +101,7 @@ class LoanApprovalServiceTest {
         // given
         final int annualSalary = 60_000_000;
         final Integer propertyPrice = 500_000_000;
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(
@@ -120,7 +120,7 @@ class LoanApprovalServiceTest {
         // given
         final int annualSalary = 40_000_000;
         final Integer propertyPrice = 300_000_000;
-        final Integer sessionId = 1;
+        final Long sessionId = 1L;
 
         // when
         final ApprovalResult result = loanApprovalService.evaluate(

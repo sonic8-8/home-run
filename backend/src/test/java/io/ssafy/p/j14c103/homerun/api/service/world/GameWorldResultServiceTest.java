@@ -5,18 +5,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRef;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.GameHousing;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ class GameWorldResultServiceTest {
     private GameWorldResultService gameWorldResultService;
 
     @Autowired
-    private GameSessionRefRepository gameSessionRefRepository;
+    private GameSessionRepository gameSessionRepository;
 
     @Autowired
     private GameHousingRepository gameHousingRepository;
@@ -40,29 +40,26 @@ class GameWorldResultServiceTest {
     @AfterEach
     void tearDown() {
         gameHousingRepository.deleteAllInBatch();
-        gameSessionRefRepository.deleteAllInBatch();
+        gameSessionRepository.deleteAllInBatch();
     }
 
     @DisplayName("턴 커밋용 world result를 누락 필드 없이 조립한다")
     @Test
     void buildWorldResult() {
         // given
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "BOOM"));
-        GameHousing gameHousing = GameHousing.create(
-            1001,
-            "SEOUL",
-            Money.of(450_000_000L),
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(12, CyclePhase.BOOM, 101L));
+        final GameHousing gameHousing = GameHousing.create(
+            gameSession.getGameSessionId(),
             HousingType.STUDIO,
             Money.of(10_000_000L),
             Money.of(500_000L),
             Money.of(80_000L),
-            201L,
-            101L
+            201L
         );
         gameHousingRepository.saveAndFlush(gameHousing);
 
         // when
-        GameWorldResult result = gameWorldResultService.buildWorldResult(1001, 81);
+        GameWorldResult result = gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 81);
 
         // then
         assertThat(result.getCycleResult()).isNotNull();
@@ -81,10 +78,10 @@ class GameWorldResultServiceTest {
     @Test
     void buildWorldResultWithoutHousing() {
         // given
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "RECOVERY"));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(12, CyclePhase.RECOVERY, 101L));
 
         // when
-        GameWorldResult result = gameWorldResultService.buildWorldResult(1001, 30);
+        GameWorldResult result = gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 30);
 
         // then
         assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.BOOM);
@@ -93,15 +90,19 @@ class GameWorldResultServiceTest {
         assertThat(result.getHousingSnapshot()).isNotNull();
         assertThat(result.getHousingSnapshot().getCurrentHousingType()).isNull();
         assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isNull();
-        assertThat(result.getHousingSnapshot().getTargetPropertyId()).isNull();
+        assertThat(result.getHousingSnapshot().getTargetPropertyId()).isEqualTo(101L);
         assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isFalse();
     }
 
     @DisplayName("존재하지 않는 세션이면 world 세션 조회 에러를 던진다")
     @Test
     void buildWorldResultWithUnknownSession() {
-        // when & then
-        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(9999, 50))
+        // given
+        final Long unknownSessionId = 9999L;
+
+        // when
+        // then
+        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(unknownSessionId, 50))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_SESSION_NOT_FOUND);
@@ -111,39 +112,46 @@ class GameWorldResultServiceTest {
     @Test
     void buildWorldResultWithInvalidCycleState() {
         // given
-        gameSessionRefRepository.saveAndFlush(createGameSessionRef(1001, "INVALID"));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(12, null, 101L));
 
-        // when & then
-        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(1001, 50))
+        // when
+        // then
+        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_CYCLE_STATE_INVALID);
     }
 
-    private GameSessionRef createGameSessionRef(int gameSessionId, String economicCycleType) {
-        return GameSessionRef.builder()
-            .gameId(gameSessionId)
-            .userId(1)
-            .characterName("윤서")
-            .characterType(CharacterType.FEMALE)
-            .jobTypeSummary(JobType.STARTUP)
-            .housingType(HousingType.STUDIO)
-            .currentTurn(12)
-            .economicCycleType(economicCycleType)
-            .currentDate(LocalDate.of(2026, 1, 1))
-            .cash(2_000_000)
-            .netAssets(2_000_000)
-            .inProgress(true)
-            .bankrupt(false)
-            .cleared(false)
-            .createdAt(LocalDateTime.of(2026, 3, 1, 9, 0))
-            .lastPlayedAt(LocalDateTime.of(2026, 3, 1, 9, 30))
-            .saveSlotId(1)
-            .targetRegionCode("SEOUL")
-            .targetDistrictCode("GANGNAM")
-            .seedType("NORMAL")
-            .sessionStatus("IN_PROGRESS")
-            .ownedPropertyListingId(0)
-            .build();
+    private GameSession createGameSession(
+        final int currentTurn,
+        final CyclePhase cyclePhase,
+        final Long targetPropertyId
+    ) {
+        final GameSession gameSession = GameSession.create(
+            1L,
+            1,
+            "윤서",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "SEOUL",
+            "GANGNAM",
+            targetPropertyId,
+            DataSourceType.PROFILE
+        );
+        gameSession.initializeCapital(
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            LocalDate.of(2026, 1, 1),
+            cyclePhase
+        );
+        gameSession.advanceTurn(
+            currentTurn,
+            LocalDate.of(2026, 1, 1),
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            cyclePhase
+        );
+        return gameSession;
     }
 }

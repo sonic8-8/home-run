@@ -1,8 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnResponse;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRef;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleTransitionPolicy;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -16,32 +16,27 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GameWorldService {
 
-    private final GameSessionRefRepository gameSessionRefRepository;
+    private final GameSessionRepository gameSessionRepository;
     private final CycleTransitionPolicy cycleTransitionPolicy;
 
-    public GameTurnResponse getTurn(int gameSessionId) {
-        GameSessionRef gameSessionRef = gameSessionRefRepository.findById(gameSessionId)
+    public GameTurnResponse getTurn(final Long gameSessionId) {
+        final GameSession gameSession = gameSessionRepository.findById(gameSessionId)
             .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
-        CyclePhase cyclePhase = parseCyclePhase(gameSessionRef.getEconomicCycleType());
-        String description = cycleTransitionPolicy.descriptionOf(cyclePhase);
+        final CyclePhase cyclePhase = requireCyclePhase(gameSession);
+        final String description = cycleTransitionPolicy.descriptionOf(cyclePhase);
 
         return GameTurnResponse.of(
-            gameSessionRef.getCurrentTurn(),
-            gameSessionRef.getCurrentDate(),
+            gameSession.getCurrentTurn(),
+            gameSession.getCurrentDate(),
             GameTurnResponse.EconomicCycleResponse.of(cyclePhase, description),
             GameTurnResponse.NewsResponse.emptyList()
         );
     }
 
-    private CyclePhase parseCyclePhase(String economicCycleType) {
-        if (economicCycleType == null || economicCycleType.isBlank()) {
+    private CyclePhase requireCyclePhase(final GameSession gameSession) {
+        if (gameSession.getCyclePhase() == null) {
             throw new HomerunException(ErrorCode.WORLD_CYCLE_STATE_INVALID);
         }
-
-        try {
-            return CyclePhase.valueOf(economicCycleType);
-        } catch (IllegalArgumentException exception) {
-            throw new HomerunException(ErrorCode.WORLD_CYCLE_STATE_INVALID, exception);
-        }
+        return gameSession.getCyclePhase();
     }
 }

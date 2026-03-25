@@ -3,17 +3,26 @@ package io.ssafy.p.j14c103.homerun.api.service.character.career.response;
 import io.ssafy.p.j14c103.homerun.domain.character.career.SalaryNegotiationPolicy;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import lombok.Getter;
 
-public record SalaryNegotiationResultResponse(
-    boolean success,
-    int previousSalary,
-    int newSalary,
-    int raiseRate,
-    int lastNegotiatedTurn,
-    String message
-) {
+@Getter
+public class SalaryNegotiationResultResponse {
 
-    public SalaryNegotiationResultResponse {
+    private final boolean success;
+    private final int previousSalary;
+    private final int newSalary;
+    private final int raiseRate;
+    private final int lastNegotiatedTurn;
+    private final String message;
+
+    private SalaryNegotiationResultResponse(
+        final boolean success,
+        final int previousSalary,
+        final int newSalary,
+        final int raiseRate,
+        final int lastNegotiatedTurn,
+        final String message
+    ) {
         validateNonNegative(previousSalary);
         validateNonNegative(newSalary);
         validateNonNegative(raiseRate);
@@ -21,6 +30,13 @@ public record SalaryNegotiationResultResponse(
         if (message == null || message.isBlank()) {
             throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
+
+        this.success = success;
+        this.previousSalary = previousSalary;
+        this.newSalary = newSalary;
+        this.raiseRate = raiseRate;
+        this.lastNegotiatedTurn = lastNegotiatedTurn;
+        this.message = message;
     }
 
     public static SalaryNegotiationResultResponse from(
@@ -44,5 +60,29 @@ public record SalaryNegotiationResultResponse(
         if (value < 0) {
             throw new HomerunException(ErrorCode.CHARACTER_RESPONSE_INVALID);
         }
+    }
+
+    public boolean success() {
+        return success;
+    }
+
+    public int previousSalary() {
+        return previousSalary;
+    }
+
+    public int newSalary() {
+        return newSalary;
+    }
+
+    public int raiseRate() {
+        return raiseRate;
+    }
+
+    public int lastNegotiatedTurn() {
+        return lastNegotiatedTurn;
+    }
+
+    public String message() {
+        return message;
     }
 }

@@ -1,8 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRef;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
@@ -28,15 +28,15 @@ public class WorldPendingEventQueueService {
     private static final String RECEIVER = "receiver";
     private static final String DESCRIPTION = "description";
 
-    private final GameSessionRefRepository gameSessionRefRepository;
+    private final GameSessionRepository gameSessionRepository;
     private final GameEventRepository gameEventRepository;
     private final GamePendingEventRepository gamePendingEventRepository;
 
     public void enqueuePendingEvents(
-        final int gameSessionId,
+        final Long gameSessionId,
         final List<GameWorldResult.EventCandidate> eventCandidates
     ) {
-        final GameSessionRef gameSessionRef = gameSessionRefRepository.findById(gameSessionId)
+        final GameSession gameSession = gameSessionRepository.findById(gameSessionId)
             .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         validateEventCandidates(eventCandidates);
@@ -45,7 +45,7 @@ public class WorldPendingEventQueueService {
             return;
         }
 
-        final Integer turnNumber = requireTurnNumber(gameSessionRef);
+        final Integer turnNumber = requireTurnNumber(gameSession);
         final LocalDateTime baseCreatedAt = LocalDateTime.now();
         final List<GamePendingEvent> pendingEvents = new ArrayList<>();
 
@@ -74,12 +74,12 @@ public class WorldPendingEventQueueService {
         }
     }
 
-    private Integer requireTurnNumber(final GameSessionRef gameSessionRef) {
-        if (gameSessionRef.getCurrentTurn() == null) {
+    private Integer requireTurnNumber(final GameSession gameSession) {
+        if (gameSession.getCurrentTurn() == null) {
             throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
         }
 
-        return gameSessionRef.getCurrentTurn();
+        return gameSession.getCurrentTurn();
     }
 
     private GameEvent findGameEvent(final GameWorldResult.EventCandidate eventCandidate) {

@@ -1,7 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.response.PendingEventsProviderResponse;
-import io.ssafy.p.j14c103.homerun.domain.character.GameSessionRefRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoice;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
@@ -32,13 +32,13 @@ public class WorldPendingEventProviderService {
     private static final String OFFERED_SALARY = "offeredSalary";
     private static final String CURRENT_SALARY = "currentSalary";
 
-    private final GameSessionRefRepository gameSessionRefRepository;
+    private final GameSessionRepository gameSessionRepository;
     private final GamePendingEventRepository gamePendingEventRepository;
     private final GameEventRepository gameEventRepository;
     private final EventChoiceRepository eventChoiceRepository;
 
-    public PendingEventsProviderResponse getPendingEvents(final int gameSessionId) {
-        gameSessionRefRepository.findById(gameSessionId)
+    public PendingEventsProviderResponse getPendingEvents(final Long gameSessionId) {
+        gameSessionRepository.findById(gameSessionId)
             .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
 
         final List<GamePendingEvent> pendingEvents = gamePendingEventRepository
