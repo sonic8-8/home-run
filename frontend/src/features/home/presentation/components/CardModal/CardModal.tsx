@@ -115,13 +115,15 @@ export function CardModal({ isOpen, onClose, recommendations, allCards, onApply 
                   ← 목록으로
                 </button>
                 <div className={styles.detailImageWrap}>
-                  {selectedCard.cardImageUrl ? (
-                    <img src={selectedCard.cardImageUrl} alt={selectedCard.cardName} />
-                  ) : (
-                    <div className={styles.cardPlaceholder}>
-                      <span className={styles.cardPlaceholderText}>{selectedCard.cardIssuerName}</span>
-                    </div>
-                  )}
+                  <AuthImage
+                    src={selectedCard.cardImageUrl}
+                    alt={selectedCard.cardName}
+                    fallback={
+                      <div className={styles.cardPlaceholder}>
+                        <span className={styles.cardPlaceholderText}>{selectedCard.cardIssuerName}</span>
+                      </div>
+                    }
+                  />
                 </div>
                 <div className={styles.detailInfo}>
                   <span className={styles.detailName}>{selectedCard.cardName}</span>
@@ -151,13 +153,15 @@ export function CardModal({ isOpen, onClose, recommendations, allCards, onApply 
                     onClick={() => setSelectedCard(card)}
                   >
                     <div className={styles.cardImage}>
-                      {card.cardImageUrl ? (
-                        <img src={card.cardImageUrl} alt={card.cardName} />
-                      ) : (
-                        <div className={styles.cardPlaceholder}>
-                          <span className={styles.cardPlaceholderText}>{card.cardIssuerName}</span>
-                        </div>
-                      )}
+                      <AuthImage
+                        src={card.cardImageUrl}
+                        alt={card.cardName}
+                        fallback={
+                          <div className={styles.cardPlaceholder}>
+                            <span className={styles.cardPlaceholderText}>{card.cardIssuerName}</span>
+                          </div>
+                        }
+                      />
                     </div>
                     <span className={styles.gridCardName}>{card.cardName}</span>
                     <span className={styles.gridCardSummary}>{card.cardDescription}</span>
