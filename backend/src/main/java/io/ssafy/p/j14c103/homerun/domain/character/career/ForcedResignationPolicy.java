@@ -19,13 +19,25 @@ public class  ForcedResignationPolicy {
         final GameStat gameStat,
         final int currentTurn
     ) {
+        return apply(gameCareer, gameStat, currentTurn, CareerCycleEffect.identity());
+    }
+
+    public ForcedResignationResult apply(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final int currentTurn,
+        final CareerCycleEffect careerCycleEffect
+    ) {
         validateRequest(gameCareer, gameStat, currentTurn);
         validateForcedResignationRisk(gameStat);
         validateEmploymentStatus(gameCareer.getEmploymentStatus());
+        validateCareerCycleEffect(careerCycleEffect);
 
         final int knowledge = requireKnowledge(gameStat.getKnowledge());
         final int previousSalary = requirePositiveSalary(gameCareer.getSalary());
-        final int rehireWaitTurns = calculateRehireWaitTurns(knowledge);
+        final int rehireWaitTurns = careerCycleEffect.applyRehirePenalty(
+            calculateRehireWaitTurns(knowledge)
+        );
 
         return ForcedResignationResult.of(
             previousSalary,
@@ -89,6 +101,12 @@ public class  ForcedResignationPolicy {
             MIN_REHIRE_WAIT_TURNS,
             MAX_REHIRE_WAIT_TURNS - (knowledge / KNOWLEDGE_SEGMENT)
         );
+    }
+
+    private void validateCareerCycleEffect(final CareerCycleEffect careerCycleEffect) {
+        if (careerCycleEffect == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
     }
 
     public record ForcedResignationResult(

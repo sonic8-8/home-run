@@ -10,8 +10,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -19,6 +24,9 @@ import java.util.stream.Collectors;
 public class LoanRecommendationService {
 
     private static final int MAX_PER_CATEGORY = 5;
+
+    private static final double JEONSE_LOAN_CSS_WEIGHT = 0.4;
+    private static final double MORTGAGE_LOAN_CSS_WEIGHT = 0.3;
 
     private static final Map<String, String> BANK_LOGO_MAP = Map.ofEntries(
             Map.entry("우리은행", "/images/banks/woori.png"),
@@ -40,39 +48,31 @@ public class LoanRecommendationService {
             Map.entry("주식회사 카카오뱅크", "/images/banks/kakao.png")
     );
 
+    private static final List<String> CREDIT_RATE_KEYS = List.of(
+            "crdt_grad_1",
+            "crdt_grad_4",
+            "crdt_grad_5",
+            "crdt_grad_6",
+            "crdt_grad_10",
+            "crdt_grad_11",
+            "crdt_grad_12",
+            "crdt_grad_13"
+    );
+
     private final FssLoanClient fssLoanClient;
     private final CreditScoreProvider creditScoreProvider;
 
-    /**
-     * CSS 기반 카테고리별 대출 추천.
-     * 신용점수 영향도 (실제 한국 금융시장 기반):
-     * - 개인신용대출: 100% (무담보 → 신용점수가 금리 결정의 핵심)
-     * - 전세자금대출:  40% (보증서 담보 → 신용 영향 제한적)
-     * - 주택담보대출:  30% (부동산 담보 → 신용 영향 최소)
-     */
-    private static final double CREDIT_LOAN_CSS_WEIGHT = 1.0;
-    private static final double JEONSE_LOAN_CSS_WEIGHT = 0.4;
-    private static final double MORTGAGE_LOAN_CSS_WEIGHT = 0.3;
-
     public LoanRecommendationResponse getRecommendations(final Long userId) {
-        // 1. CSS 점수 산출
-        CreditScore css = creditScoreProvider.calculate(userId);
+        final CreditScore css = creditScoreProvider.calculate(userId);
 
-        // 2. FSS 상품 조회 + CSS 가중치 적용
-        List<LoanRecommendationItem> creditItems = fetchItems(
-                fssLoanClient.getCreditLoanProducts(), "개인신용대출", css, CREDIT_LOAN_CSS_WEIGHT);
-        List<LoanRecommendationItem> jeonseItems = fetchItems(
-                fssLoanClient.getRentHouseLoanProducts(), "전세자금대출", css, JEONSE_LOAN_CSS_WEIGHT);
-        List<LoanRecommendationItem> mortgageItems = fetchItems(
-                fssLoanClient.getMortgageLoanProducts(), "주택담보대출", css, MORTGAGE_LOAN_CSS_WEIGHT);
+        final List<LoanRecommendationItem> creditItems = limitSorted(
+                buildCreditLoanItems(fssLoanClient.getCreditLoanProducts(), css));
+        final List<LoanRecommendationItem> jeonseItems = limitSorted(
+                buildJeonseLoanItems(fssLoanClient.getRentHouseLoanProducts(), css));
+        final List<LoanRecommendationItem> mortgageItems = limitSorted(
+                buildMortgageLoanItems(fssLoanClient.getMortgageLoanProducts(), css));
 
-        // 3. 카테고리별 정렬 + 상위 N개
-        creditItems = limitSorted(creditItems);
-        jeonseItems = limitSorted(jeonseItems);
-        mortgageItems = limitSorted(mortgageItems);
-
-        // 4. 예상 최저금리 (개인신용대출 기준)
-        double estimatedMinRate = creditItems.isEmpty()
+        final double estimatedMinRate = creditItems.isEmpty()
                 ? 0.0
                 : creditItems.get(0).getEstimatedRate();
 
@@ -87,101 +87,324 @@ public class LoanRecommendationService {
                 .build();
     }
 
-    private List<LoanRecommendationItem> fetchItems(
+    private List<LoanRecommendationItem> buildCreditLoanItems(
             final FssLoanResponse fssResponse,
-            final String productType,
-            final CreditScore css,
-            final double cssWeight) {
-
+            final CreditScore css
+    ) {
         if (fssResponse.isEmpty()) {
-            return Collections.emptyList();
+            return List.of();
         }
 
-        final Map<String, RateRange> rateMap = buildRateMap(fssResponse.getOptionList());
+        final Map<String, List<Map<String, Object>>> optionMap = groupCreditLoanOptions(fssResponse.getOptionList());
+        final List<LoanRecommendationItem> items = new ArrayList<>();
 
-        return fssResponse.getBaseList().stream()
-                .map(base -> toRecommendationItem(base, rateMap, productType, css, cssWeight))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
-    }
-
-    private Map<String, RateRange> buildRateMap(final List<Map<String, Object>> optionList) {
-        final Map<String, RateRange> rateMap = new HashMap<>();
-
-        for (final Map<String, Object> option : optionList) {
-            final String key = option.get("fin_co_no") + "|" + option.get("fin_prdt_cd");
-            final Double min = toDouble(option.get("lend_rate_min"));
-            final Double max = toDouble(option.get("lend_rate_max"));
-
-            if (min == null || max == null) {
+        for (final Map<String, Object> base : fssResponse.getBaseList()) {
+            final List<Map<String, Object>> options = optionMap.get(keyOf(base));
+            if (options == null || options.isEmpty()) {
                 continue;
             }
 
-            rateMap.merge(key, new RateRange(min, max), RateRange::merge);
+            final CreditRateSelection selection = selectCreditRate(options, css.getScore());
+            if (selection == null) {
+                continue;
+            }
+
+            items.add(LoanRecommendationItem.builder()
+                    .productId((String) base.get("fin_prdt_cd"))
+                    .bankName((String) base.get("kor_co_nm"))
+                    .bankLogoUrl(resolveBankLogo((String) base.get("kor_co_nm")))
+                    .productName(sanitizeText((String) base.get("fin_prdt_nm")))
+                    .productType("개인신용대출")
+                    .minRate(selection.minRate)
+                    .maxRate(selection.maxRate)
+                    .estimatedRate(selection.estimatedRate)
+                    .joinWay(sanitizeNullable(base.get("join_way")))
+                    .creditProductTypeName(sanitizeNullable(base.get("crdt_prdt_type_nm")))
+                    .build());
         }
 
-        return rateMap;
+        return items;
     }
 
-    private Optional<LoanRecommendationItem> toRecommendationItem(
-            final Map<String, Object> base,
-            final Map<String, RateRange> rateMap,
-            final String productType,
-            final CreditScore css,
-            final double cssWeight) {
-
-        final String finCoNo = (String) base.get("fin_co_no");
-        final String finPrdtCd = (String) base.get("fin_prdt_cd");
-        final String key = finCoNo + "|" + finPrdtCd;
-
-        final RateRange rateRange = rateMap.get(key);
-        if (rateRange == null) {
-            return Optional.empty();
+    private List<LoanRecommendationItem> buildJeonseLoanItems(
+            final FssLoanResponse fssResponse,
+            final CreditScore css
+    ) {
+        if (fssResponse.isEmpty()) {
+            return List.of();
         }
 
-        final String bankName = (String) base.get("kor_co_nm");
-        final String productName = sanitizeProductName((String) base.get("fin_prdt_nm"));
+        final Map<String, List<Map<String, Object>>> optionMap = groupLoanOptions(fssResponse.getOptionList());
+        final List<LoanRecommendationItem> items = new ArrayList<>();
 
-        // CSS 기반 예상금리 계산 (가중치 적용)
-        // 예: 개인신용=100%, 전세=40%, 주담보=30%
-        double estimatedRate;
-        double weightedCoefficient = css.rateCoefficient() * cssWeight;
-        estimatedRate = rateRange.min + (rateRange.max - rateRange.min) * weightedCoefficient;
-        estimatedRate = Math.round(estimatedRate * 100.0) / 100.0;
+        for (final Map<String, Object> base : fssResponse.getBaseList()) {
+            final List<Map<String, Object>> options = optionMap.get(keyOf(base));
+            if (options == null || options.isEmpty()) {
+                continue;
+            }
 
-        return Optional.of(LoanRecommendationItem.builder()
-                .productId(finPrdtCd)
-                .bankName(bankName)
-                .bankLogoUrl(BANK_LOGO_MAP.getOrDefault(bankName, "/images/banks/default.png"))
-                .productName(productName)
-                .productType(productType)
-                .minRate(rateRange.min)
-                .maxRate(rateRange.max)
-                .estimatedRate(estimatedRate)
-                .build());
+            final LoanOptionSelection selection = selectLoanOption(options, css.rateCoefficient(), JEONSE_LOAN_CSS_WEIGHT, false);
+            if (selection == null) {
+                continue;
+            }
+
+            items.add(LoanRecommendationItem.builder()
+                    .productId((String) base.get("fin_prdt_cd"))
+                    .bankName((String) base.get("kor_co_nm"))
+                    .bankLogoUrl(resolveBankLogo((String) base.get("kor_co_nm")))
+                    .productName(sanitizeText((String) base.get("fin_prdt_nm")))
+                    .productType("전세자금대출")
+                    .minRate(selection.minRate)
+                    .maxRate(selection.maxRate)
+                    .estimatedRate(selection.estimatedRate)
+                    .joinWay(sanitizeNullable(base.get("join_way")))
+                    .averageRate(selection.averageRate)
+                    .rateTypeName(selection.rateTypeName)
+                    .repaymentTypeName(selection.repaymentTypeName)
+                    .loanLimit(sanitizeNullable(base.get("loan_lmt")))
+                    .build());
+        }
+
+        return items;
     }
 
-    private List<LoanRecommendationItem> limitSorted(List<LoanRecommendationItem> items) {
+    private List<LoanRecommendationItem> buildMortgageLoanItems(
+            final FssLoanResponse fssResponse,
+            final CreditScore css
+    ) {
+        if (fssResponse.isEmpty()) {
+            return List.of();
+        }
+
+        final Map<String, List<Map<String, Object>>> optionMap = groupLoanOptions(fssResponse.getOptionList());
+        final List<LoanRecommendationItem> items = new ArrayList<>();
+
+        for (final Map<String, Object> base : fssResponse.getBaseList()) {
+            final List<Map<String, Object>> options = optionMap.get(keyOf(base));
+            if (options == null || options.isEmpty()) {
+                continue;
+            }
+
+            final LoanOptionSelection selection = selectLoanOption(options, css.rateCoefficient(), MORTGAGE_LOAN_CSS_WEIGHT, true);
+            if (selection == null) {
+                continue;
+            }
+
+            items.add(LoanRecommendationItem.builder()
+                    .productId((String) base.get("fin_prdt_cd"))
+                    .bankName((String) base.get("kor_co_nm"))
+                    .bankLogoUrl(resolveBankLogo((String) base.get("kor_co_nm")))
+                    .productName(sanitizeText((String) base.get("fin_prdt_nm")))
+                    .productType("주택담보대출")
+                    .minRate(selection.minRate)
+                    .maxRate(selection.maxRate)
+                    .estimatedRate(selection.estimatedRate)
+                    .joinWay(sanitizeNullable(base.get("join_way")))
+                    .averageRate(selection.averageRate)
+                    .rateTypeName(selection.rateTypeName)
+                    .repaymentTypeName(selection.repaymentTypeName)
+                    .loanLimit(sanitizeNullable(base.get("loan_lmt")))
+                    .mortgageTypeName(selection.mortgageTypeName)
+                    .build());
+        }
+
+        return items;
+    }
+
+    private Map<String, List<Map<String, Object>>> groupCreditLoanOptions(final List<Map<String, Object>> optionList) {
+        final Map<String, List<Map<String, Object>>> optionMap = new HashMap<>();
+
+        for (final Map<String, Object> option : optionList) {
+            if (!isCreditLoanRateOption(option)) {
+                continue;
+            }
+            optionMap.computeIfAbsent(keyOf(option), key -> new ArrayList<>()).add(option);
+        }
+
+        return optionMap;
+    }
+
+    private Map<String, List<Map<String, Object>>> groupLoanOptions(final List<Map<String, Object>> optionList) {
+        final Map<String, List<Map<String, Object>>> optionMap = new HashMap<>();
+
+        for (final Map<String, Object> option : optionList) {
+            final Double minRate = toDouble(option.get("lend_rate_min"));
+            final Double maxRate = toDouble(option.get("lend_rate_max"));
+            if (minRate == null || maxRate == null) {
+                continue;
+            }
+
+            optionMap.computeIfAbsent(keyOf(option), key -> new ArrayList<>()).add(option);
+        }
+
+        return optionMap;
+    }
+
+    private CreditRateSelection selectCreditRate(final List<Map<String, Object>> options, final int cssScore) {
+        final List<Double> allRates = new ArrayList<>();
+        Double selectedRate = null;
+
+        for (final Map<String, Object> option : options) {
+            collectCreditRates(option, allRates);
+
+            final Double optionRate = resolveCreditRate(option, cssScore);
+            if (optionRate == null) {
+                continue;
+            }
+
+            if (selectedRate == null || optionRate < selectedRate) {
+                selectedRate = optionRate;
+            }
+        }
+
+        if (selectedRate == null) {
+            return null;
+        }
+
+        if (allRates.isEmpty()) {
+            allRates.add(selectedRate);
+        }
+
+        double minRate = allRates.get(0);
+        double maxRate = allRates.get(0);
+        for (final Double rate : allRates) {
+            minRate = Math.min(minRate, rate);
+            maxRate = Math.max(maxRate, rate);
+        }
+
+        return new CreditRateSelection(
+                round(minRate),
+                round(maxRate),
+                round(selectedRate)
+        );
+    }
+
+    private LoanOptionSelection selectLoanOption(
+            final List<Map<String, Object>> options,
+            final double rateCoefficient,
+            final double cssWeight,
+            final boolean includeMortgageType
+    ) {
+        LoanOptionSelection bestSelection = null;
+
+        for (final Map<String, Object> option : options) {
+            final Double minRate = toDouble(option.get("lend_rate_min"));
+            final Double maxRate = toDouble(option.get("lend_rate_max"));
+            if (minRate == null || maxRate == null) {
+                continue;
+            }
+
+            final double estimatedRate = estimateRate(minRate, maxRate, rateCoefficient, cssWeight);
+            final Double averageRate = toDouble(option.get("lend_rate_avg"));
+
+            final LoanOptionSelection selection = new LoanOptionSelection(
+                    round(minRate),
+                    round(maxRate),
+                    round(estimatedRate),
+                    round(averageRate != null ? averageRate : estimatedRate),
+                    sanitizeNullable(option.get("lend_rate_type_nm")),
+                    sanitizeNullable(option.get("rpay_type_nm")),
+                    includeMortgageType ? sanitizeNullable(option.get("mrtg_type_nm")) : null
+            );
+
+            if (bestSelection == null || selection.isBetterThan(bestSelection)) {
+                bestSelection = selection;
+            }
+        }
+
+        return bestSelection;
+    }
+
+    private boolean isCreditLoanRateOption(final Map<String, Object> option) {
+        final String rateType = String.valueOf(option.get("crdt_lend_rate_type"));
+        final String rateTypeName = sanitizeNullable(option.get("crdt_lend_rate_type_nm"));
+        return "A".equals(rateType) || "대출금리".equals(rateTypeName);
+    }
+
+    private Double resolveCreditRate(final Map<String, Object> option, final int cssScore) {
+        final String scoreKey = resolveCreditScoreKey(cssScore);
+        final Double bandRate = toDouble(option.get(scoreKey));
+        if (bandRate != null) {
+            return bandRate;
+        }
+        return toDouble(option.get("crdt_grad_avg"));
+    }
+
+    private String resolveCreditScoreKey(final int cssScore) {
+        if (cssScore > 900) {
+            return "crdt_grad_1";
+        }
+        if (cssScore >= 801) {
+            return "crdt_grad_4";
+        }
+        if (cssScore >= 701) {
+            return "crdt_grad_5";
+        }
+        if (cssScore >= 601) {
+            return "crdt_grad_6";
+        }
+        if (cssScore >= 501) {
+            return "crdt_grad_10";
+        }
+        if (cssScore >= 401) {
+            return "crdt_grad_11";
+        }
+        if (cssScore >= 301) {
+            return "crdt_grad_12";
+        }
+        return "crdt_grad_13";
+    }
+
+    private void collectCreditRates(final Map<String, Object> option, final List<Double> rates) {
+        for (final String key : CREDIT_RATE_KEYS) {
+            final Double rate = toDouble(option.get(key));
+            if (rate != null) {
+                rates.add(rate);
+            }
+        }
+    }
+
+    private List<LoanRecommendationItem> limitSorted(final List<LoanRecommendationItem> items) {
         return items.stream()
                 .sorted(Comparator.comparingDouble(LoanRecommendationItem::getEstimatedRate))
                 .limit(MAX_PER_CATEGORY)
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    private String sanitizeProductName(final String name) {
-        if (name == null) {
+    private String keyOf(final Map<String, Object> data) {
+        return data.get("fin_co_no") + "|" + data.get("fin_prdt_cd");
+    }
+
+    private String resolveBankLogo(final String bankName) {
+        return BANK_LOGO_MAP.getOrDefault(bankName, "/images/banks/default.png");
+    }
+
+    private String sanitizeText(final String text) {
+        if (text == null) {
             return "";
         }
-        return name.replace("\n", " ").trim();
+        return text.replace("\n", " ").trim();
+    }
+
+    private String sanitizeNullable(final Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        final String sanitized = value.toString().replace("\n", " ").trim();
+        if (sanitized.isBlank()) {
+            return null;
+        }
+
+        return sanitized;
     }
 
     private Double toDouble(final Object value) {
         if (value == null) {
             return null;
         }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
+        if (value instanceof Number number) {
+            return number.doubleValue();
         }
         try {
             return Double.parseDouble(value.toString());
@@ -190,19 +413,71 @@ public class LoanRecommendationService {
         }
     }
 
-    private static class RateRange {
-        double min;
-        double max;
+    private double estimateRate(
+            final double minRate,
+            final double maxRate,
+            final double rateCoefficient,
+            final double cssWeight
+    ) {
+        final BigDecimal min = BigDecimal.valueOf(minRate);
+        final BigDecimal max = BigDecimal.valueOf(maxRate);
+        final BigDecimal weight = BigDecimal.valueOf(rateCoefficient * cssWeight);
+        return round(min.add(max.subtract(min).multiply(weight)).doubleValue());
+    }
 
-        RateRange(final double min, final double max) {
-            this.min = min;
-            this.max = max;
+    private double round(final double value) {
+        return BigDecimal.valueOf(value)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
+    }
+
+    private static class CreditRateSelection {
+        private final double minRate;
+        private final double maxRate;
+        private final double estimatedRate;
+
+        private CreditRateSelection(final double minRate, final double maxRate, final double estimatedRate) {
+            this.minRate = minRate;
+            this.maxRate = maxRate;
+            this.estimatedRate = estimatedRate;
+        }
+    }
+
+    private static class LoanOptionSelection {
+        private final double minRate;
+        private final double maxRate;
+        private final double estimatedRate;
+        private final double averageRate;
+        private final String rateTypeName;
+        private final String repaymentTypeName;
+        private final String mortgageTypeName;
+
+        private LoanOptionSelection(
+                final double minRate,
+                final double maxRate,
+                final double estimatedRate,
+                final double averageRate,
+                final String rateTypeName,
+                final String repaymentTypeName,
+                final String mortgageTypeName
+        ) {
+            this.minRate = minRate;
+            this.maxRate = maxRate;
+            this.estimatedRate = estimatedRate;
+            this.averageRate = averageRate;
+            this.rateTypeName = rateTypeName;
+            this.repaymentTypeName = repaymentTypeName;
+            this.mortgageTypeName = mortgageTypeName;
         }
 
-        RateRange merge(final RateRange other) {
-            this.min = Math.min(this.min, other.min);
-            this.max = Math.max(this.max, other.max);
-            return this;
+        private boolean isBetterThan(final LoanOptionSelection other) {
+            if (estimatedRate != other.estimatedRate) {
+                return estimatedRate < other.estimatedRate;
+            }
+            if (averageRate != other.averageRate) {
+                return averageRate < other.averageRate;
+            }
+            return minRate < other.minRate;
         }
     }
 }

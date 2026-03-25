@@ -23,6 +23,7 @@
 - Controller Request DTO와 Service DTO는 분리한다.
 - 보호 API를 추가하거나 보안 설정을 변경할 때는, 컨트롤러와 서비스가 요청 파라미터의 `userId`/`userKey` 대신 인증 principal을 사용해야 하는지 함께 검토한다.
 - API는 엔티티를 직접 반환하지 않고 Response DTO로 변환한 뒤 공통 `ApiResponse`로 감싼다.
+- 단, `text/event-stream` 기반 SSE 엔드포인트는 `SseEmitter` 또는 스트림 전용 응답을 반환할 수 있다.
 - 예외 응답은 공통 `ErrorResponse`로 반환한다.
 - Validation 예외는 `ErrorResponse`의 `errors` 목록에 필드별 상세를 포함하는 것을 우선 검토한다.
 - 새 코드는 기존 구조와 네이밍을 우선 따르고, 과한 추상화보다 명확한 구현을 우선한다.

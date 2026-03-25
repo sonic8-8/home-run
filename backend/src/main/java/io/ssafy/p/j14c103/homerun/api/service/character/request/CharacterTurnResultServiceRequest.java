@@ -1,9 +1,11 @@
 package io.ssafy.p.j14c103.homerun.api.service.character.request;
 
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.career.CareerCycleEffect;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.ActionType;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.TurnSlotPreviewPolicy.RequestedSlot;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -27,6 +29,7 @@ public class CharacterTurnResultServiceRequest {
     private HousingType housingType;
     private int currentTurn;
     private List<TurnActionRequest> turnActions;
+    private CyclePhase cyclePhase;
 
     @Builder(access = AccessLevel.PRIVATE)
     private CharacterTurnResultServiceRequest(
@@ -34,7 +37,8 @@ public class CharacterTurnResultServiceRequest {
         final GameStat gameStat,
         final HousingType housingType,
         final int currentTurn,
-        final List<TurnActionRequest> turnActions
+        final List<TurnActionRequest> turnActions,
+        final CyclePhase cyclePhase
     ) {
         validateRequest(gameCareer, gameStat, housingType, currentTurn, turnActions);
 
@@ -43,6 +47,7 @@ public class CharacterTurnResultServiceRequest {
         this.housingType = housingType;
         this.currentTurn = currentTurn;
         this.turnActions = List.copyOf(turnActions);
+        this.cyclePhase = cyclePhase;
     }
 
     public static CharacterTurnResultServiceRequest of(
@@ -52,12 +57,24 @@ public class CharacterTurnResultServiceRequest {
         final int currentTurn,
         final List<TurnActionRequest> turnActions
     ) {
+        return of(gameCareer, gameStat, housingType, currentTurn, turnActions, null);
+    }
+
+    public static CharacterTurnResultServiceRequest of(
+        final GameCareer gameCareer,
+        final GameStat gameStat,
+        final HousingType housingType,
+        final int currentTurn,
+        final List<TurnActionRequest> turnActions,
+        final CyclePhase cyclePhase
+    ) {
         return CharacterTurnResultServiceRequest.builder()
             .gameCareer(gameCareer)
             .gameStat(gameStat)
             .housingType(housingType)
             .currentTurn(currentTurn)
             .turnActions(turnActions)
+            .cyclePhase(cyclePhase)
             .build();
     }
 
@@ -68,6 +85,10 @@ public class CharacterTurnResultServiceRequest {
                 turnAction.getActionType()
             ))
             .toList();
+    }
+
+    public CareerCycleEffect toCareerCycleEffect() {
+        return CareerCycleEffect.from(cyclePhase, gameCareer.getJobType());
     }
 
     private void validateRequest(

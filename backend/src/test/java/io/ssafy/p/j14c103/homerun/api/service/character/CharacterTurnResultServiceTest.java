@@ -18,6 +18,7 @@ import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlot;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -227,6 +228,34 @@ class CharacterTurnResultServiceTest {
         assertThat(savedCareer.getRecentStudyCount()).isEqualTo(2);
         assertThat(savedCareer.getRecentNetworkingCount()).isEqualTo(2);
         assertThat(savedCareer.getNegotiationPreparationScore()).isEqualTo(12);
+    }
+
+    @DisplayName("위기 사이클이면 턴 결과 반영 시 강제 퇴사 재취업 대기 턴이 늘어난다.")
+    @Test
+    void applyWithCyclePenalty() {
+        // given
+        final CharacterTurnResultServiceRequest request =
+            CharacterTurnResultServiceRequest.of(
+                createWorkingCareer(2005, 10, EmploymentStatus.EMPLOYED, null),
+                createRiskStat(2005),
+                HousingType.NONE,
+                15,
+                List.of(
+                    TurnActionRequest.of(0, ActionType.STUDY),
+                    TurnActionRequest.of(1, ActionType.NETWORKING),
+                    TurnActionRequest.of(2, ActionType.SIDE_JOB)
+                ),
+                CyclePhase.CRISIS
+            );
+
+        // when
+        final CharacterTurnResultServiceResponse response = characterTurnResultService.apply(
+            request
+        );
+
+        // then
+        assertThat(response.isForcedResigned()).isTrue();
+        assertThat(response.getCareer().getRehireAvailableTurn()).isEqualTo(19);
     }
 
     private GameCareer createWorkingCareer(

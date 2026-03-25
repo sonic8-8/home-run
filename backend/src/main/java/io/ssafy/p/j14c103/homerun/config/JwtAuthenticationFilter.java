@@ -68,19 +68,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String resolveToken(HttpServletRequest request) {
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (authorizationHeader == null || authorizationHeader.isBlank()) {
-            return null;
-        }
-        if (!authorizationHeader.startsWith(BEARER_PREFIX)) {
-            return null;
-        }
-
-        String token = authorizationHeader.substring(BEARER_PREFIX.length()).trim();
-
-        if (token.isBlank()) {
-            return null;
+        if (authorizationHeader != null
+                && !authorizationHeader.isBlank()
+                && authorizationHeader.startsWith(BEARER_PREFIX)) {
+            String token = authorizationHeader.substring(BEARER_PREFIX.length()).trim();
+            if (!token.isBlank()) {
+                return token;
+            }
         }
 
-        return token;
+        // SSE EventSource 지원: 쿼리 파라미터 fallback
+        String tokenParam = request.getParameter("token");
+        if (tokenParam != null && !tokenParam.isBlank()) {
+            return tokenParam;
+        }
+
+        return null;
     }
 }

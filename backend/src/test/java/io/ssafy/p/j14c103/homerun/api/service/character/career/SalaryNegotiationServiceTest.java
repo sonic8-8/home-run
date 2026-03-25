@@ -3,12 +3,13 @@ package io.ssafy.p.j14c103.homerun.api.service.character.career;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationRequest;
+import io.ssafy.p.j14c103.homerun.api.service.character.career.request.SalaryNegotiationServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.career.response.SalaryNegotiationResultResponse;
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +29,7 @@ class SalaryNegotiationServiceTest {
     @Test
     void negotiate() {
         // given
-        final SalaryNegotiationRequest request = SalaryNegotiationRequest.of(
+        final SalaryNegotiationServiceRequest request = SalaryNegotiationServiceRequest.of(
             createGameCareer(30_000_000, 0),
             createGameStat(70, 75),
             13
@@ -52,7 +53,7 @@ class SalaryNegotiationServiceTest {
     @Test
     void negotiateWithinTwelveTurns() {
         // given
-        final SalaryNegotiationRequest request = SalaryNegotiationRequest.of(
+        final SalaryNegotiationServiceRequest request = SalaryNegotiationServiceRequest.of(
             createGameCareer(30_000_000, 10),
             createGameStat(70, 75),
             21
@@ -63,6 +64,37 @@ class SalaryNegotiationServiceTest {
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
             .isEqualTo(ErrorCode.CHARACTER_REQUEST_INVALID);
+    }
+
+    @DisplayName("연봉 협상 서비스는 BOOM/CRISIS 사이클에 따라 결과가 달라진다.")
+    @Test
+    void negotiateWithCycleEffect() {
+        // given
+        final SalaryNegotiationServiceRequest boomRequest = SalaryNegotiationServiceRequest.of(
+            createGameCareer(30_000_000, 0),
+            createGameStat(70, 75),
+            13,
+            CyclePhase.BOOM
+        );
+        final SalaryNegotiationServiceRequest crisisRequest = SalaryNegotiationServiceRequest.of(
+            createGameCareer(30_000_000, 0),
+            createGameStat(70, 75),
+            13,
+            CyclePhase.CRISIS
+        );
+
+        // when
+        final SalaryNegotiationResultResponse boomResponse = salaryNegotiationService.negotiate(
+            boomRequest
+        );
+        final SalaryNegotiationResultResponse crisisResponse =
+            salaryNegotiationService.negotiate(crisisRequest);
+
+        // then
+        assertThat(boomResponse.raiseRate()).isEqualTo(11);
+        assertThat(boomResponse.newSalary()).isEqualTo(33_300_000);
+        assertThat(crisisResponse.raiseRate()).isEqualTo(7);
+        assertThat(crisisResponse.newSalary()).isEqualTo(32_100_000);
     }
 
     private GameCareer createGameCareer(final int salary, final int lastNegotiatedTurn) {

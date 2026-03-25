@@ -25,7 +25,8 @@ public class ForcedResignationService {
             forcedResignationPolicy.apply(
                 request.getGameCareer(),
                 request.getGameStat(),
-                request.getCurrentTurn()
+                request.getCurrentTurn(),
+                request.toCareerCycleEffect()
             );
 
         request.getGameCareer().forceResign(result);
