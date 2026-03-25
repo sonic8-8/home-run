@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PassService {
 
@@ -33,13 +32,17 @@ public class PassService {
     private final PassSubscriptionRepository passSubscriptionRepository;
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
     private final UserAccountRepository userAccountRepository;
+    private final PassProductSeedService passProductSeedService;
 
     public List<PassProductResponse> getProducts() {
-        return passProductRepository.findAll().stream()
+        passProductSeedService.ensureDefaultProducts();
+
+        return passProductRepository.findAllByOrderByIdAsc().stream()
                 .map(PassProductResponse::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<PassSubscriptionResponse> getSubscriptions(final Long userId) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
@@ -62,13 +65,16 @@ public class PassService {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
+        passProductSeedService.ensureDefaultProducts();
+
         final PassProduct product = passProductRepository.findById(request.getPassId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 PASS 상품입니다."));
         final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
                 .orElseThrow(() -> new IllegalArgumentException("주계좌가 없습니다."));
+        final String sourceAccountNo = resolveSourceAccountNo(mainAccount, request.getSourceAccountId());
 
         final PassSubscription subscription = PassSubscription.create(
-                userId, product, product.getAmountPerSave(), mainAccount.getAccountNumber());
+                userId, product, product.getAmountPerSave(), sourceAccountNo);
 
         return PassSubscriptionResponse.fromSubscribe(passSubscriptionRepository.save(subscription));
     }
@@ -91,8 +97,7 @@ public class PassService {
 
     private int calculateTotalSaved(final Long userId, final PassSubscription subscription) {
         final List<SeedmoneyTransaction> transactions =
-                seedmoneyTransactionRepository.findByUserIdAndTransactionTypeAndCreatedAtAfter(
-                        userId, "SAVE", LocalDateTime.MIN);
+                seedmoneyTransactionRepository.findByUserIdAndTransactionType(userId, "SAVE");
         return transactions.stream()
                 .filter(t -> isMatchingPassSave(subscription, t))
                 .mapToInt(SeedmoneyTransaction::getAmount)
@@ -126,5 +131,15 @@ public class PassService {
         }
 
         return subscription.getPassProduct().getId().equals(transaction.getPassId());
+    }
+
+    private String resolveSourceAccountNo(final UserAccount mainAccount, final String sourceAccountId) {
+        if (sourceAccountId == null || sourceAccountId.isBlank()) {
+            throw new IllegalArgumentException("출금 계좌번호는 필수입니다.");
+        }
+        if (!mainAccount.getAccountNumber().equals(sourceAccountId)) {
+            throw new IllegalArgumentException("출금 계좌는 주계좌만 사용할 수 있습니다.");
+        }
+        return sourceAccountId;
     }
 }
