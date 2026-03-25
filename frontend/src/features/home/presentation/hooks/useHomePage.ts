@@ -1,13 +1,52 @@
-import type { Dashboard } from '../../domain/entities/Dashboard';
+import { useState, useEffect, useCallback } from 'react';
 import type { SeedMoneyAccount } from '../../domain/entities/SeedMoneyAccount';
+import type { Pass } from '../../domain/entities/Pass';
+import type { PassSubscription } from '../../domain/entities/PassSubscription';
+import type { PassSaveResult } from '../../domain/entities/PassSaveResult';
+import type { PassSubscribeResult } from '../../domain/entities/PassSubscribeResult';
+import type { CardRecommendation } from '../../domain/entities/CardRecommendation';
+import type { Dashboard } from '../../domain/entities/Dashboard';
 import type { CreditScore } from '../../domain/entities/CreditScore';
 import type { LoanRecommendation } from '../../domain/entities/LoanRecommendation';
-import type { CardRecommendation } from '../../domain/entities/CardRecommendation';
-import type { PassSubscription } from '../../domain/entities/PassSubscription';
-import type { Pass } from '../../domain/entities/Pass';
 import type { MyCard } from '../../domain/entities/MyCard';
 
-// TODO: 백엔드 연동 시 각 항목을 useQuery / API 호출로 교체
+import { SeedmoneyRemoteDataSource } from '../../data/datasources/SeedmoneyRemoteDataSource';
+import { SeedmoneyRepositoryImpl } from '../../data/repositories/SeedmoneyRepositoryImpl';
+import { GetSeedmoneyAccountUseCase } from '../../domain/usecases/GetSeedmoneyAccountUseCase';
+import { TransferSeedmoneyUseCase } from '../../domain/usecases/TransferSeedmoneyUseCase';
+import { DepositSeedmoneyUseCase } from '../../domain/usecases/DepositSeedmoneyUseCase';
+
+import { PassRemoteDataSource } from '../../data/datasources/PassRemoteDataSource';
+import { PassRepositoryImpl } from '../../data/repositories/PassRepositoryImpl';
+import { GetPassProductsUseCase } from '../../domain/usecases/GetPassProductsUseCase';
+import { GetPassSubscriptionsUseCase } from '../../domain/usecases/GetPassSubscriptionsUseCase';
+import { SubscribePassUseCase } from '../../domain/usecases/SubscribePassUseCase';
+import { UnsubscribePassUseCase } from '../../domain/usecases/UnsubscribePassUseCase';
+import { SavePassUseCase } from '../../domain/usecases/SavePassUseCase';
+
+import { CardRemoteDataSource } from '../../data/datasources/CardRemoteDataSource';
+import { CardRepositoryImpl } from '../../data/repositories/CardRepositoryImpl';
+import { GetCardRecommendationsUseCase } from '../../domain/usecases/GetCardRecommendationsUseCase';
+
+// ── Seedmoney
+const seedmoneyRepo = new SeedmoneyRepositoryImpl(new SeedmoneyRemoteDataSource());
+const getSeedmoneyAccount = new GetSeedmoneyAccountUseCase(seedmoneyRepo);
+const transferSeedmoney = new TransferSeedmoneyUseCase(seedmoneyRepo);
+const depositSeedmoney = new DepositSeedmoneyUseCase(seedmoneyRepo);
+
+// ── Pass
+const passRepo = new PassRepositoryImpl(new PassRemoteDataSource());
+const getPassProducts = new GetPassProductsUseCase(passRepo);
+const getPassSubscriptions = new GetPassSubscriptionsUseCase(passRepo);
+const subscribePass = new SubscribePassUseCase(passRepo);
+const unsubscribePass = new UnsubscribePassUseCase(passRepo);
+const savePass = new SavePassUseCase(passRepo);
+
+// ── Card
+const cardRepo = new CardRepositoryImpl(new CardRemoteDataSource());
+const getCardRecommendations = new GetCardRecommendationsUseCase(cardRepo);
+
+// TODO: Dashboard, CreditScore, LoanRecommendations API 연동 시 교체
 const MOCK_DASHBOARD: Dashboard = {
   totalAssets: 42300000,
   monthlyIncome: 2800000,
@@ -15,12 +54,6 @@ const MOCK_DASHBOARD: Dashboard = {
   incomeChangeFromLastMonth: 0,
   expenseChangeFromLastMonth: 220000,
   nextPaydayDays: 7,
-};
-
-const MOCK_SEED_MONEY: SeedMoneyAccount = {
-  bankName: '싸피은행',
-  accountNumber: '110-123-000000',
-  balance: 300000,
 };
 
 const MOCK_CREDIT_SCORE: CreditScore = {
@@ -31,84 +64,88 @@ const MOCK_CREDIT_SCORE: CreditScore = {
 };
 
 const MOCK_LOAN_RECOMMENDATIONS: LoanRecommendation[] = [
-  {
-    productId: 'LOAN-NH-001',
-    bankName: 'NH',
-    bankLogoUrl: '',
-    productName: 'NH 주택담보 대출',
-    productType: '주택담보대출',
-    minRate: 3.49,
-    maxRate: 5.89,
-  },
-  {
-    productId: 'LOAN-KB-001',
-    bankName: 'KB',
-    bankLogoUrl: '',
-    productName: 'KB 주택담보 대출',
-    productType: '주택담보대출',
-    minRate: 3.49,
-    maxRate: 5.89,
-  },
-  {
-    productId: 'LOAN-KEB-001',
-    bankName: 'KEB',
-    bankLogoUrl: '',
-    productName: 'KEB 주택담보 대출',
-    productType: '주택담보대출',
-    minRate: 3.49,
-    maxRate: 5.89,
-  },
-];
-
-const MOCK_CARD_RECOMMENDATIONS: CardRecommendation[] = [
-  { cardId: 'CARD-SS-001', cardName: 'zero 카드', cardImageUrl: '', annualFee: 0, summary: '스타벅스 리워드' },
-  { cardId: 'CARD-SS-002', cardName: 'zero 카드', cardImageUrl: '', annualFee: 0, summary: '알라딘 적립' },
-  { cardId: 'CARD-SS-003', cardName: 'zero 카드', cardImageUrl: '', annualFee: 0, summary: '전기요금 할인' },
-  { cardId: 'CARD-SS-004', cardName: 'zero 카드', cardImageUrl: '', annualFee: 0, summary: 'AI 구독 플랫폼' },
-];
-
-const MOCK_ALL_PASSES: Pass[] = [
-  { passId: 1, name: '커피 PASS',  description: '커피 마시고 싶은 마음을 꾹 참고 저축해볼까요?', amountPerSave: 5000 },
-  { passId: 2, name: '배달 PASS',  description: '배달 시키고 싶은 마음을 꾹 참고 저축해볼까요?', amountPerSave: 20000 },
-  { passId: 3, name: '택시 PASS',  description: '택시 타고 싶은 마음을 꾹 참고 저축해볼까요?', amountPerSave: 10000 },
-  { passId: 4, name: '쇼핑 PASS',  description: '충동구매 하고 싶은 마음을 꾹 참고 저축해볼까요?', amountPerSave: 15000 },
-  { passId: 5, name: '편의점 PASS', description: '편의점에서 사고 싶은 마음을 꾹 참고 저축해볼까요?', amountPerSave: 3000 },
-  { passId: 6, name: '술 PASS',   description: '한 잔 하고 싶은 마음을 꾹 참고 저축해볼까요?', amountPerSave: 30000 },
-];
-
-const MOCK_MY_CARDS: MyCard[] = [
-  { cardId: 'MY-CARD-001', cardName: 'zero 카드', cardImageUrl: '', lastFourDigits: '1234', expiryDate: '26/09' },
-  { cardId: 'MY-CARD-002', cardName: 'zero 카드', cardImageUrl: '', lastFourDigits: '5678', expiryDate: '27/03' },
-];
-
-const MOCK_PASS_SUBSCRIPTIONS: PassSubscription[] = [
-  {
-    subscriptionId: 1,
-    passId: 1,
-    name: '커피 PASS',
-    amountPerSave: 5000,
-    totalSaved: 65000,
-    weeklyHistory: [true, true, true, true, true, true, true],
-  },
-  {
-    subscriptionId: 2,
-    passId: 2,
-    name: '배달 PASS',
-    amountPerSave: 5000,
-    totalSaved: 65000,
-    weeklyHistory: [true, true, true, true, true, true, true],
-  },
+  { productId: 'LOAN-NH-001', bankName: 'NH', bankLogoUrl: '', productName: 'NH 주택담보 대출', productType: '주택담보대출', minRate: 3.49, maxRate: 5.89 },
+  { productId: 'LOAN-KB-001', bankName: 'KB', bankLogoUrl: '', productName: 'KB 주택담보 대출', productType: '주택담보대출', minRate: 3.49, maxRate: 5.89 },
 ];
 
 export const useHomePage = () => {
+  const [seedMoney, setSeedMoney] = useState<SeedMoneyAccount | null>(null);
+  const [allPasses, setAllPasses] = useState<Pass[]>([]);
+  const [passSubscriptions, setPassSubscriptions] = useState<PassSubscription[]>([]);
+  const [cardRecommendations, setCardRecommendations] = useState<CardRecommendation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [account, passes, subscriptions, cards] = await Promise.all([
+        getSeedmoneyAccount.execute(),
+        getPassProducts.execute(),
+        getPassSubscriptions.execute(),
+        getCardRecommendations.execute(),
+      ]);
+      setSeedMoney(account);
+      setAllPasses(passes);
+      setPassSubscriptions(subscriptions);
+      setCardRecommendations(cards);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '데이터를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const transfer = useCallback(async (toAccountNumber: string, amount: number) => {
+    const result = await transferSeedmoney.execute(toAccountNumber, amount);
+    setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
+    return result;
+  }, []);
+
+  const deposit = useCallback(async (fromAccountNumber: string, amount: number) => {
+    const result = await depositSeedmoney.execute(fromAccountNumber, amount);
+    setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
+    return result;
+  }, []);
+
+  const subscribeToPas = useCallback(async (passId: number, sourceAccountId: string): Promise<PassSubscribeResult> => {
+    const result = await subscribePass.execute(passId, sourceAccountId);
+    const updated = await getPassSubscriptions.execute();
+    setPassSubscriptions(updated);
+    return result;
+  }, []);
+
+  const unsubscribeFromPass = useCallback(async (subscriptionId: number) => {
+    await unsubscribePass.execute(subscriptionId);
+    setPassSubscriptions((prev) => prev.filter((s) => s.subscriptionId !== subscriptionId));
+  }, []);
+
+  const saveToPass = useCallback(async (subscriptionId: number, sourceAccountId: string): Promise<PassSaveResult> => {
+    const result = await savePass.execute(subscriptionId, sourceAccountId);
+    setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
+    return result;
+  }, []);
+
   return {
     dashboard: MOCK_DASHBOARD,
-    seedMoney: MOCK_SEED_MONEY,
+    seedMoney,
     creditScore: MOCK_CREDIT_SCORE,
     loanRecommendations: MOCK_LOAN_RECOMMENDATIONS,
-    cardRecommendations: MOCK_CARD_RECOMMENDATIONS,
-    passSubscriptions: MOCK_PASS_SUBSCRIPTIONS,
-    allPasses: MOCK_ALL_PASSES,
-    myCards: MOCK_MY_CARDS,
+    cardRecommendations,
+    passSubscriptions,
+    allPasses,
+    myCards: [] as MyCard[],
+    loading,
+    error,
+    transfer,
+    deposit,
+    subscribeToPas,
+    unsubscribeFromPass,
+    saveToPass,
   };
 };

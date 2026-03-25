@@ -29,7 +29,7 @@ export const HomePage: React.FC = () => {
             </div>
             {/* Right column */}
             <div className={styles.rightCol}>
-              <SeedMoneyWidget account={seedMoney} />
+              {seedMoney && <SeedMoneyWidget account={seedMoney} />}
               <GameBanner />
               <CreditScoreWidget creditScore={creditScore} />
             </div>
