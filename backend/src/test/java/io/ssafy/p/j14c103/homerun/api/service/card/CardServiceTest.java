@@ -2,9 +2,14 @@ package io.ssafy.p.j14c103.homerun.api.service.card;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardListResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.response.CardRecommendationResponse;
+import io.ssafy.p.j14c103.homerun.api.service.image.ImageStorageService;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProduct;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistory;
@@ -21,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -71,6 +77,9 @@ class CardServiceTest {
 
     @Autowired
     private MemberPaymentHistoryRepository memberPaymentHistoryRepository;
+
+    @MockitoBean
+    private ImageStorageService imageStorageService;
 
     @DisplayName("전체 카드 조회는 활성 카드만 이름순으로 반환한다")
     @Test
@@ -271,6 +280,95 @@ class CardServiceTest {
                 .isInstanceOf(HomerunException.class)
                 .extracting(exception -> ((HomerunException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.USER_ID_REQUIRED);
+    }
+
+    @DisplayName("전체 카드 조회는 object name 이미지를 퍼블릭 URL로 변환한다")
+    @Test
+    void getCards_convertsObjectNameToPublicUrl() {
+        // given
+        cardProductRepository.save(CardProduct.create(
+                "Alpha Card",
+                "Issuer",
+                "설명",
+                300000,
+                40000,
+                BENEFITS_JSON,
+                "alpha.png",
+                true
+        ));
+        given(imageStorageService.getPublicUrl("alpha.png"))
+                .willReturn("https://objectstorage.ap-singapore-1.oraclecloud.com/n/test-namespace/b/card-images/o/alpha.png");
+
+        // when
+        final CardListResponse response = cardService.getCards();
+
+        // then
+        assertThat(response.getCards()).hasSize(1);
+        assertThat(response.getCards().get(0).getCardImageUrl())
+                .isEqualTo("https://objectstorage.ap-singapore-1.oraclecloud.com/n/test-namespace/b/card-images/o/alpha.png");
+    }
+
+    @DisplayName("전체 카드 조회는 절대 URL 이미지를 그대로 반환한다")
+    @Test
+    void getCards_keepsDirectImageUrl() {
+        // given
+        cardProductRepository.save(CardProduct.create(
+                "Alpha Card",
+                "Issuer",
+                "설명",
+                300000,
+                40000,
+                BENEFITS_JSON,
+                "https://cdn.example.com/cards/alpha.png",
+                true
+        ));
+
+        // when
+        final CardListResponse response = cardService.getCards();
+
+        // then
+        assertThat(response.getCards()).hasSize(1);
+        assertThat(response.getCards().get(0).getCardImageUrl())
+                .isEqualTo("https://cdn.example.com/cards/alpha.png");
+        then(imageStorageService).shouldHaveNoInteractions();
+    }
+
+    @DisplayName("카드 추천은 최종 5개 카드에 대해서만 퍼블릭 URL을 생성한다")
+    @Test
+    void getRecommendations_generatesImageUrlOnlyForTopFiveCards() {
+        // given
+        final User user = userRepository.save(User.register(
+                Email.of("top-five-user@ssafy.com"),
+                "tester",
+                "hashed-password"
+        ));
+        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
+                user.getId(), LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, "스타벅스", 100000, LocalDate.of(2026, 2, 15)));
+        given(imageStorageService.getPublicUrl(anyString()))
+                .willReturn("https://objectstorage.ap-singapore-1.oraclecloud.com/n/test-namespace/b/card-images/o/card.png");
+
+        cardProductRepository.save(CardProduct.create(
+                "Card 1", "Issuer", "설명", 0, 50000, singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 1.0), "1.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Card 2", "Issuer", "설명", 0, 50000, singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 2.0), "2.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Card 3", "Issuer", "설명", 0, 50000, singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 3.0), "3.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Card 4", "Issuer", "설명", 0, 50000, singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 4.0), "4.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Card 5", "Issuer", "설명", 0, 50000, singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 5.0), "5.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Card 6", "Issuer", "설명", 0, 50000, singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 6.0), "6.png", true));
+
+        // when
+        final CardRecommendationResponse response = cardService.getRecommendations(user.getId());
+
+        // then
+        assertThat(response.getRecommendations()).hasSize(5);
+        assertThat(response.getRecommendations())
+                .extracting(card -> card.getCardName())
+                .doesNotContain("Card 1");
+        then(imageStorageService).should(times(5)).getPublicUrl(anyString());
     }
 
     private String singleBenefitJson(final String categoryId, final String categoryName, final double discountRate) {

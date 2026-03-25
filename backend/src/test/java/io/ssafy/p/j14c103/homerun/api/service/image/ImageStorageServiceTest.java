@@ -1,49 +1,44 @@
 package io.ssafy.p.j14c103.homerun.api.service.image;
 
-import io.ssafy.p.j14c103.homerun.api.service.image.response.ImageDownloadResponse;
-import io.ssafy.p.j14c103.homerun.client.image.ImageObjectClient;
-import io.ssafy.p.j14c103.homerun.client.image.ImageObjectData;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import io.ssafy.p.j14c103.homerun.config.OciObjectStorageProperties;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-
-@ExtendWith(MockitoExtension.class)
 class ImageStorageServiceTest {
 
-    @Mock
-    private ImageObjectClient imageObjectClient;
+    private final ImageStorageService imageStorageService = new ImageStorageService(
+            new OciObjectStorageProperties(
+                    true,
+                    "/mnt/c/key/oci_config",
+                    "DEFAULT",
+                    "ap-singapore-1",
+                    "test-namespace",
+                    "card-images",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            )
+    );
 
-    @InjectMocks
-    private ImageStorageService imageStorageService;
-
-    @DisplayName("objectName으로 이미지를 다운로드한다")
+    @DisplayName("objectName으로 OCI 퍼블릭 URL을 생성한다")
     @Test
-    void download_success() {
-        final byte[] content = new byte[]{1, 2, 3};
+    void getPublicUrl_success() {
+        final String publicUrl = imageStorageService.getPublicUrl("cards/card 1.png");
 
-        given(imageObjectClient.download("test.jpg"))
-                .willReturn(new ImageObjectData("test.jpg", "image/jpeg", 3L, content));
-
-        final ImageDownloadResponse response = imageStorageService.download("test.jpg");
-
-        assertThat(response.fileName()).isEqualTo("test.jpg");
-        assertThat(response.contentType()).isEqualTo("image/jpeg");
-        assertThat(response.contentLength()).isEqualTo(3L);
-        assertThat(response.content()).containsExactly(1, 2, 3);
+        assertThat(publicUrl)
+                .isEqualTo("https://objectstorage.ap-singapore-1.oraclecloud.com/n/test-namespace/b/card-images/o/cards/card%201.png");
     }
 
     @DisplayName("objectName이 비어 있으면 예외가 발생한다")
     @Test
-    void download_blankObjectName_exception() {
-        assertThatThrownBy(() -> imageStorageService.download(" "))
+    void getPublicUrl_blankObjectName_exception() {
+        assertThatThrownBy(() -> imageStorageService.getPublicUrl(" "))
                 .isInstanceOf(HomerunException.class)
                 .hasMessage("objectName은 필수입니다.");
     }
