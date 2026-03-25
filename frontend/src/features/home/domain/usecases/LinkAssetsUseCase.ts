@@ -1,7 +1,8 @@
 import type { IUserRepository } from '../repositories/IUserRepository';
 
 export class LinkAssetsUseCase {
-  constructor(private readonly repo: IUserRepository) {}
+  private readonly repo: IUserRepository;
+  constructor(repo: IUserRepository) { this.repo = repo; }
   execute(): Promise<{ isAssetLinked: boolean }> {
     return this.repo.linkAssets();
   }
