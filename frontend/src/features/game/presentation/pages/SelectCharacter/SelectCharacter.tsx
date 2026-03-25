@@ -5,6 +5,11 @@ import type { CharacterType } from '@features/game/domain/entities/CharacterOpti
 import { useSelectCharacter } from '../../hooks/useSelectCharacter';
 import styles from './SelectCharacter.module.css';
 
+const CHARACTER_IMAGES: Record<CharacterType, string> = {
+  FEMALE: '/assets/images/gcharac.png',
+  MALE: '/assets/images/bcharac.png',
+};
+
 interface LocationState {
   slotNumber?: number;
   isNew?: boolean;
@@ -15,7 +20,7 @@ export default function SelectCharacter() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
-  const { characters, loading } = useSelectCharacter();
+  const { loading } = useSelectCharacter();
 
   const handleNext = () => {
     if (!selected) return;
@@ -37,25 +42,24 @@ export default function SelectCharacter() {
       </div>
 
       <div className={styles.selectArea}>
-        {characters.map((char) => (
-          <button
-            key={char.characterType}
-            className={`${styles.charBtn} ${selected === char.characterType ? styles.selected : ''}`}
-            onClick={() => setSelected(char.characterType)}
-            aria-label={`${char.characterType} 캐릭터 선택`}
-          >
-            <img src={char.thumbnailUrl} alt={char.characterType} className={styles.charImg} />
-            {selected === char.characterType && <span className={styles.selectedIndicator} />}
-          </button>
+        {(['FEMALE', 'MALE'] as CharacterType[]).map((type, i) => (
+          <>
+            <button
+              key={type}
+              className={`${styles.charBtn} ${selected === type ? styles.selected : ''}`}
+              onClick={() => setSelected(type)}
+              aria-label={type === 'FEMALE' ? '여자 캐릭터 선택' : '남자 캐릭터 선택'}
+            >
+              <img src={CHARACTER_IMAGES[type]} alt={type} className={styles.charImg} />
+              {selected === type && <span className={styles.selectedIndicator} />}
+            </button>
+            {i === 0 && (
+              <button className={styles.nextBtn} onClick={handleNext} disabled={!selected}>
+                NEXT
+              </button>
+            )}
+          </>
         ))}
-
-        <button
-          className={styles.nextBtn}
-          onClick={handleNext}
-          disabled={!selected}
-        >
-          NEXT
-        </button>
       </div>
     </div>
   );
