@@ -9,4 +9,9 @@ public interface GameContractReviewRepository extends JpaRepository<GameContract
         Long gameSessionId,
         Long propertyId
     );
+
+    Optional<GameContractReview> findTopByGameSessionIdAndPropertyIdOrderByReviewedAtDescIdDesc(
+        Long gameSessionId,
+        Long propertyId
+    );
 }

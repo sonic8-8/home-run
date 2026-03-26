@@ -58,4 +58,22 @@ public class SeedmoneyAccount {
         this.balanceSnapshot = newBalance;
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void syncSnapshot(
+            final String bankName,
+            final String accountNumber,
+            final Integer balanceSnapshot
+    ) {
+        if (accountNumber == null || accountNumber.isBlank()) {
+            throw new IllegalArgumentException("계좌번호는 필수입니다.");
+        }
+        if (balanceSnapshot == null) {
+            throw new IllegalArgumentException("잔액은 null일 수 없습니다.");
+        }
+
+        this.bankName = bankName;
+        this.accountNumber = accountNumber;
+        this.balanceSnapshot = balanceSnapshot;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

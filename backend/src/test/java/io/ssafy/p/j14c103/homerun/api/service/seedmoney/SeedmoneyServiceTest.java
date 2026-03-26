@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyDepositServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyTransferServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
@@ -55,6 +56,12 @@ class SeedmoneyServiceTest {
     @Mock
     private SsafyAccountProperties ssafyAccountProperties;
 
+    @Mock
+    private UserSsafyAccountSyncService userSsafyAccountSyncService;
+
+    @Mock
+    private SeedmoneyAccountProjectionService seedmoneyAccountProjectionService;
+
     @InjectMocks
     private SeedmoneyService seedmoneyService;
 
@@ -66,9 +73,7 @@ class SeedmoneyServiceTest {
 
         given(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.SEEDMONEY))
                 .willReturn(Optional.of(account));
-        given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
-        given(demandDepositClient.inquireAccountList("test-key"))
-                .willReturn(List.of(Map.of("accountNo", "9990012345678", "accountBalance", "150000")));
+        account.updateBalance(150000);
 
         // when
         final SeedmoneyAccountResponse result = seedmoneyService.getAccount(1L);
@@ -94,9 +99,10 @@ class SeedmoneyServiceTest {
                 .willReturn(Optional.of(account));
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
         given(demandDepositClient.transferAccount(any(), any(), any(), eq(10000L)))
-                .willReturn(Map.of("status", "success"));
-        given(demandDepositClient.inquireAccountList("test-key"))
-                .willReturn(List.of(Map.of("accountNo", "시드머니계좌", "accountBalance", "90000")));
+                .willReturn(Map.of(
+                        "REC",
+                        List.of(Map.of("accountNo", "시드머니계좌", "transactionUniqueNo", "61"))
+                ));
         given(seedmoneyTransactionRepository.save(any(SeedmoneyTransaction.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 
@@ -123,9 +129,10 @@ class SeedmoneyServiceTest {
                 .willReturn(Optional.of(account));
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
         given(demandDepositClient.transferAccount(any(), any(), any(), eq(20000L)))
-                .willReturn(Map.of("status", "success"));
-        given(demandDepositClient.inquireAccountList("test-key"))
-                .willReturn(List.of(Map.of("accountNo", "시드머니계좌", "accountBalance", "120000")));
+                .willReturn(Map.of(
+                        "REC",
+                        List.of(Map.of("accountNo", "시드머니계좌", "transactionUniqueNo", "61"))
+                ));
         given(seedmoneyTransactionRepository.save(any(SeedmoneyTransaction.class)))
                 .willAnswer(invocation -> invocation.getArgument(0));
 

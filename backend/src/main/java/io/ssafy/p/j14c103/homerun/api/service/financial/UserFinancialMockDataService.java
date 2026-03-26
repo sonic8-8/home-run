@@ -2,10 +2,6 @@ package io.ssafy.p.j14c103.homerun.api.service.financial;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
-import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
-import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransaction;
-import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProduct;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.card.CardTransaction;
@@ -64,7 +60,6 @@ public class UserFinancialMockDataService {
     private final CardProductRepository cardProductRepository;
     private final OwnedCardRepository ownedCardRepository;
     private final CardTransactionRepository cardTransactionRepository;
-    private final UserAccountTransactionRepository userAccountTransactionRepository;
     private final UserFinancialSummaryService userFinancialSummaryService;
     private final ObjectMapper objectMapper;
 
@@ -84,7 +79,6 @@ public class UserFinancialMockDataService {
             createLoanProduct(userId);
         }
         createOwnedCards(userId);
-        createAccountTransactions(userId);
         userFinancialSummaryService.getSummary(userId);
     }
 
@@ -333,43 +327,6 @@ public class UserFinancialMockDataService {
                     second.categoryName() + " 결제",
                     25_000 + random.nextInt(70_000),
                     baseDate.withDayOfMonth(Math.min(14, baseDate.lengthOfMonth()))
-            ));
-        }
-    }
-
-    private void createAccountTransactions(final Long userId) {
-        final Random random = randomOf(userId, "ACCOUNT_V1");
-        for (int month = 11; month >= 0; month--) {
-            final LocalDate baseDate = LocalDate.now().minusMonths(month);
-
-            userAccountTransactionRepository.save(UserAccountTransaction.create(
-                    userId,
-                    AccountType.MAIN,
-                    null,
-                    AccountTransactionType.DEPOSIT,
-                    2_900_000 + random.nextInt(250_000),
-                    null,
-                    baseDate.withDayOfMonth(Math.min(25, baseDate.lengthOfMonth())).atStartOfDay()
-            ));
-
-            userAccountTransactionRepository.save(UserAccountTransaction.create(
-                    userId,
-                    AccountType.MAIN,
-                    null,
-                    AccountTransactionType.WITHDRAW,
-                    680_000 + random.nextInt(240_000),
-                    "생활비 지출",
-                    baseDate.withDayOfMonth(Math.min(7, baseDate.lengthOfMonth())).atStartOfDay()
-            ));
-
-            userAccountTransactionRepository.save(UserAccountTransaction.create(
-                    userId,
-                    AccountType.MAIN,
-                    null,
-                    AccountTransactionType.WITHDRAW,
-                    320_000 + random.nextInt(180_000),
-                    "고정비 지출",
-                    baseDate.withDayOfMonth(Math.min(18, baseDate.lengthOfMonth())).atStartOfDay()
             ));
         }
     }

@@ -1,11 +1,12 @@
 package io.ssafy.p.j14c103.homerun.api.service.pass;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
+import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSaveServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassWidgetResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
-import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
@@ -46,6 +47,7 @@ public class PassSavingService {
     private final SsafyDemandDepositClient demandDepositClient;
     private final UserAuthContextService userAuthContextService;
     private final UserFinancialSummaryService userFinancialSummaryService;
+    private final UserSsafyAccountSyncService userSsafyAccountSyncService;
 
     @Transactional
     public PassSaveResponse save(final Long userId, final PassSaveServiceRequest request) {
@@ -68,11 +70,13 @@ public class PassSavingService {
 
         final int amount = subscription.getSavingAmount();
 
-        demandDepositClient.transferAccount(
+        final Map<String, Object> response = demandDepositClient.transferAccount(
                 userKey,
                 seedmoneyAccount.getAccountNumber(),
                 sourceAccountNo,
                 amount);
+        final String mainTransactionUniqueNo = extractTransactionUniqueNo(response, sourceAccountNo);
+        final String seedmoneyTransactionUniqueNo = extractTransactionUniqueNo(response, seedmoneyAccount.getAccountNumber());
 
         final UserAccountTransaction saveOutTransaction = UserAccountTransaction.create(
                 userId,
@@ -80,7 +84,10 @@ public class PassSavingService {
                 subscription.getId(),
                 AccountTransactionType.PASS_SAVE_OUT,
                 amount,
-                seedmoneyAccount.getAccountNumber());
+                seedmoneyAccount.getAccountNumber(),
+                "PASS 저축",
+                mainTransactionUniqueNo,
+                LocalDateTime.now());
         userAccountTransactionRepository.save(saveOutTransaction);
 
         final UserAccountTransaction saveInTransaction = UserAccountTransaction.create(
@@ -89,7 +96,10 @@ public class PassSavingService {
                 subscription.getId(),
                 AccountTransactionType.PASS_SAVE_IN,
                 amount,
-                sourceAccountNo);
+                sourceAccountNo,
+                "PASS 저축 적립",
+                seedmoneyTransactionUniqueNo,
+                LocalDateTime.now());
         userAccountTransactionRepository.save(saveInTransaction);
 
         // 시드머니 거래내역 기록
@@ -106,14 +116,11 @@ public class PassSavingService {
 
         // 총 저축 합계 계산
         final int totalSaved = calculateTotalSaved(userId);
-
-        // 잔액 조회
-        final List<Map<String, Object>> accounts = demandDepositClient.inquireAccountList(userKey);
-        final int mainBalance = fetchRealTimeBalance(accounts, sourceAccountNo);
-        final int remainingBalance = fetchRealTimeBalance(accounts, seedmoneyAccount.getAccountNumber());
-        mainAccount.updateBalance(mainBalance);
-        seedmoneyAccount.updateBalance(remainingBalance);
+        userSsafyAccountSyncService.advanceSyncBaseline(mainAccount, mainTransactionUniqueNo);
+        userSsafyAccountSyncService.advanceSyncBaseline(seedmoneyAccount, seedmoneyTransactionUniqueNo);
+        userSsafyAccountSyncService.syncLinkedAccounts(userId);
         userFinancialSummaryService.getSummary(userId);
+        final int remainingBalance = seedmoneyAccount.getBalanceSnapshot();
 
         return PassSaveResponse.of(amount, totalSaved, remainingBalance);
     }
@@ -159,12 +166,24 @@ public class PassSavingService {
                 .sum();
     }
 
-    private int fetchRealTimeBalance(final List<Map<String, Object>> accounts, final String accountNo) {
-        return accounts.stream()
-                .filter(account -> accountNo.equals(account.get("accountNo")))
+    private String extractTransactionUniqueNo(
+            final Map<String, Object> response,
+            final String accountNo
+    ) {
+        final Object rec = response.get("REC");
+        if (!(rec instanceof List<?> records)) {
+            return null;
+        }
+
+        return records.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .filter(record -> accountNo.equals(String.valueOf(record.get("accountNo"))))
+                .map(record -> record.get("transactionUniqueNo"))
+                .filter(java.util.Objects::nonNull)
+                .map(String::valueOf)
                 .findFirst()
-                .map(account -> Integer.parseInt(String.valueOf(account.get("accountBalance"))))
-                .orElse(0);
+                .orElse(null);
     }
 
 }

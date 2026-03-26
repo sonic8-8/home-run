@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -56,6 +57,15 @@ public class UserAccount {
     @Column(name = "active_yn", nullable = false)
     private Boolean activeYn;
 
+    @Column(name = "ssafy_sync_initialized", nullable = false)
+    private Boolean ssafySyncInitialized;
+
+    @Column(name = "last_synced_ssafy_transaction_unique_no", length = 50)
+    private String lastSyncedSsafyTransactionUniqueNo;
+
+    @Column(name = "main_initial_history_seeded", nullable = false)
+    private Boolean mainInitialHistorySeeded;
+
     private UserAccount(
             final Long userId,
             final AccountType accountType,
@@ -71,6 +81,9 @@ public class UserAccount {
         this.balanceSnapshot = balanceSnapshot;
         this.openedAt = LocalDateTime.now();
         this.activeYn = true;
+        this.ssafySyncInitialized = false;
+        this.lastSyncedSsafyTransactionUniqueNo = null;
+        this.mainInitialHistorySeeded = false;
     }
 
     public static UserAccount create(
@@ -107,5 +120,47 @@ public class UserAccount {
             throw new IllegalArgumentException("잔액은 0 이상이어야 합니다.");
         }
         this.balanceSnapshot = newBalance;
+    }
+
+    public void initializeSsafySync(final String baselineTransactionUniqueNo) {
+        this.ssafySyncInitialized = true;
+        this.lastSyncedSsafyTransactionUniqueNo = normalizeTransactionUniqueNo(baselineTransactionUniqueNo);
+    }
+
+    public void advanceSsafySync(final String latestTransactionUniqueNo) {
+        this.ssafySyncInitialized = true;
+
+        final String normalized = normalizeTransactionUniqueNo(latestTransactionUniqueNo);
+        if (normalized == null) {
+            return;
+        }
+        if (lastSyncedSsafyTransactionUniqueNo == null || isGreaterTransactionUniqueNo(normalized, lastSyncedSsafyTransactionUniqueNo)) {
+            this.lastSyncedSsafyTransactionUniqueNo = normalized;
+        }
+    }
+
+    public void markMainInitialHistorySeeded() {
+        if (accountType != AccountType.MAIN) {
+            throw new IllegalStateException("주계좌만 초기 원장 시드 상태를 가질 수 있습니다.");
+        }
+        this.mainInitialHistorySeeded = true;
+    }
+
+    private String normalizeTransactionUniqueNo(final String transactionUniqueNo) {
+        if (transactionUniqueNo == null || transactionUniqueNo.isBlank()) {
+            return null;
+        }
+        return transactionUniqueNo.trim();
+    }
+
+    private boolean isGreaterTransactionUniqueNo(
+            final String candidate,
+            final String current
+    ) {
+        try {
+            return new BigInteger(candidate).compareTo(new BigInteger(current)) > 0;
+        } catch (final NumberFormatException exception) {
+            return candidate.compareTo(current) > 0;
+        }
     }
 }

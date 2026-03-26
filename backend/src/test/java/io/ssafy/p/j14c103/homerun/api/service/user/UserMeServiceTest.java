@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.api.service.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserMeResponse;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
@@ -18,10 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
 class UserMeServiceTest {
+
+    @MockitoBean
+    private UserSsafyAccountSyncService userSsafyAccountSyncService;
 
     @Autowired
     private UserMeService userMeService;
@@ -87,6 +92,7 @@ class UserMeServiceTest {
                 "2222222222222222",
                 0
         ));
+        // stale summary row should be ignored after account sync + summary recalculation
         final UserFinancialSummary summary = UserFinancialSummary.create(user.getId());
         summary.refresh(12_500_000, 0, 12_500_000, 10_000_000, 2_500_000, 0);
         userFinancialSummaryRepository.save(summary);
@@ -96,7 +102,7 @@ class UserMeServiceTest {
 
         // then
         assertThat(response.isAssetLinked()).isTrue();
-        assertThat(response.getTotalAssetAmount()).isEqualTo(12_500_000);
+        assertThat(response.getTotalAssetAmount()).isEqualTo(10_000_000);
     }
 
     @DisplayName("SSAFY 연동이 있어도 계좌가 누락되면 미연동으로 본다.")
