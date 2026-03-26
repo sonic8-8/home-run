@@ -97,6 +97,13 @@ public class UserAssetLinkService {
             return extractUserKey(ssafyMemberClient.createMember(email));
         } catch (final RestClientException exception) {
             return extractUserKey(ssafyMemberClient.searchMember(email));
+        } catch (final HomerunException exception) {
+            if (exception.getErrorCode() != ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID) {
+                throw exception;
+            }
+            return extractUserKey(ssafyMemberClient.searchMember(email));
+        } catch (final RuntimeException exception) {
+            return extractUserKey(ssafyMemberClient.searchMember(email));
         }
     }
 
