@@ -23,6 +23,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
+            RequestIdFilter requestIdFilter,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             AuthenticationEntryPoint jwtAuthenticationEntryPoint
     ) throws Exception {
@@ -55,8 +56,12 @@ public class SecurityConfig {
             http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
         }
         http.addFilterBefore(
-                jwtAuthenticationFilter,
+                requestIdFilter,
                 UsernamePasswordAuthenticationFilter.class
+        );
+        http.addFilterAfter(
+                jwtAuthenticationFilter,
+                RequestIdFilter.class
         );
 
         return http.build();
@@ -67,6 +72,11 @@ public class SecurityConfig {
             JwtTokenProvider jwtTokenProvider
     ) {
         return new JwtAuthenticationFilter(jwtTokenProvider);
+    }
+
+    @Bean
+    public RequestIdFilter requestIdFilter() {
+        return new RequestIdFilter();
     }
 
     @Bean

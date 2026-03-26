@@ -1,7 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.service.world.result;
 
-import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -70,22 +71,57 @@ public class GameWorldResult {
     public static class CycleResult {
 
         private final CyclePhase nextPhase;
+        private final CycleType nextType;
+        private final Integer remainingTurns;
         private final String description;
 
-        private CycleResult(CyclePhase nextPhase, String description) {
+        private CycleResult(
+            final CyclePhase nextPhase,
+            final CycleType nextType,
+            final Integer remainingTurns,
+            final String description
+        ) {
             validateNextPhase(nextPhase);
+            validateNextType(nextType);
+            validateMatchingPhase(nextPhase, nextType);
+            validateRemainingTurns(remainingTurns);
             validateDescription(description);
 
             this.nextPhase = nextPhase;
+            this.nextType = nextType;
+            this.remainingTurns = remainingTurns;
             this.description = description;
         }
 
-        public static CycleResult of(CyclePhase nextPhase, String description) {
-            return new CycleResult(nextPhase, description);
+        public static CycleResult of(
+            final CyclePhase nextPhase,
+            final CycleType nextType,
+            final Integer remainingTurns,
+            final String description
+        ) {
+            return new CycleResult(nextPhase, nextType, remainingTurns, description);
         }
 
         private void validateNextPhase(CyclePhase nextPhase) {
             if (nextPhase == null) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
+        }
+
+        private void validateNextType(final CycleType nextType) {
+            if (nextType == null) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
+        }
+
+        private void validateMatchingPhase(final CyclePhase nextPhase, final CycleType nextType) {
+            if (nextType.getPhase() != nextPhase) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
+        }
+
+        private void validateRemainingTurns(final Integer remainingTurns) {
+            if (remainingTurns == null || remainingTurns < 1) {
                 throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
             }
         }

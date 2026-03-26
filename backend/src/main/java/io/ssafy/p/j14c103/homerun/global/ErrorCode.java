@@ -43,6 +43,7 @@ public enum ErrorCode {
     WORLD_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "WORLD_001", "존재하지 않는 게임 세션입니다."),
     WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),
     WORLD_RESULT_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_003", "월드 결과 데이터가 올바르지 않습니다."),
+    WORLD_CYCLE_INPUT_INVALID(HttpStatus.BAD_REQUEST, "WORLD_004", "경제 사이클 입력값이 올바르지 않습니다."),
 
     GAME_SLOT_CONFLICT(HttpStatus.CONFLICT, "GAME_001", "이미 사용 중인 저장 슬롯입니다."),
     GAME_SESSION_FORBIDDEN(HttpStatus.FORBIDDEN, "GAME_002", "해당 게임 세션에 접근할 수 없습니다."),

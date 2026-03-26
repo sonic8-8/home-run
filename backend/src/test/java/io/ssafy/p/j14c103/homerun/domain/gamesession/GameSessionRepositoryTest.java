@@ -6,7 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
@@ -66,6 +68,8 @@ class GameSessionRepositoryTest {
         assertThat(found.getCurrentTurn()).isEqualTo(0);
         assertThat(found.getCurrentDate()).isNull();
         assertThat(found.getCyclePhase()).isNull();
+        assertThat(found.getCycleType()).isNull();
+        assertThat(found.getCycleRemainingTurns()).isNull();
         assertThat(found.getCashBalance()).isEqualTo(Money.zero());
         assertThat(found.getNetWorth()).isEqualTo(Money.zero());
         assertThat(found.getSessionStatus()).isEqualTo(SessionStatus.IN_PROGRESS);
@@ -194,14 +198,14 @@ class GameSessionRepositoryTest {
             Money.of(13_000_000L),
             Money.of(13_000_000L),
             LocalDate.of(2026, 1, 1),
-            CyclePhase.RECOVERY
+            CycleState.of(CyclePhase.RECOVERY, CycleType.CYCLE_RATE_HIKE, 4)
         );
         gameSession.advanceTurn(
             1,
             LocalDate.of(2026, 2, 1),
             Money.of(14_500_000L),
             Money.of(15_000_000L),
-            CyclePhase.BOOM
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 24)
         );
 
         // when
@@ -214,6 +218,8 @@ class GameSessionRepositoryTest {
         assertThat(found.getCurrentTurn()).isEqualTo(1);
         assertThat(found.getCurrentDate()).isEqualTo(LocalDate.of(2026, 2, 1));
         assertThat(found.getCyclePhase()).isEqualTo(CyclePhase.BOOM);
+        assertThat(found.getCycleType()).isEqualTo(CycleType.CYCLE_BOOM);
+        assertThat(found.getCycleRemainingTurns()).isEqualTo(24);
         assertThat(found.getCashBalance()).isEqualTo(Money.of(14_500_000L));
         assertThat(found.getNetWorth()).isEqualTo(Money.of(15_000_000L));
         assertThat(found.getSessionStatus()).isEqualTo(SessionStatus.IN_PROGRESS);

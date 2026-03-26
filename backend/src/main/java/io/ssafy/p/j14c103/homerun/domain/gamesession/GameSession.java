@@ -4,6 +4,8 @@ import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -84,6 +86,13 @@ public class GameSession {
     @Column(name = "cycle_phase", length = 20)
     private CyclePhase cyclePhase;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cycle_type", length = 50)
+    private CycleType cycleType;
+
+    @Column(name = "cycle_remaining_turns")
+    private Integer cycleRemainingTurns;
+
     @Convert(converter = Money.MoneyConverter.class)
     @Column(name = "cash_balance_amount", nullable = false)
     private Money cashBalance;
@@ -117,6 +126,8 @@ public class GameSession {
         final Integer currentTurn,
         final LocalDate currentDate,
         final CyclePhase cyclePhase,
+        final CycleType cycleType,
+        final Integer cycleRemainingTurns,
         final Money cashBalance,
         final Money netWorth,
         final SessionStatus sessionStatus,
@@ -137,6 +148,8 @@ public class GameSession {
         this.currentTurn = currentTurn;
         this.currentDate = currentDate;
         this.cyclePhase = cyclePhase;
+        this.cycleType = cycleType;
+        this.cycleRemainingTurns = cycleRemainingTurns;
         this.cashBalance = cashBalance;
         this.netWorth = netWorth;
         this.sessionStatus = sessionStatus;
@@ -171,6 +184,8 @@ public class GameSession {
             0,
             null,
             null,
+            null,
+            null,
             Money.zero(),
             Money.zero(),
             SessionStatus.IN_PROGRESS,
@@ -188,7 +203,19 @@ public class GameSession {
         this.cashBalance = cashBalance;
         this.netWorth = netWorth;
         this.currentDate = startDate;
-        this.cyclePhase = cyclePhase;
+        updateCyclePhase(cyclePhase);
+    }
+
+    public void initializeCapital(
+        final Money cashBalance,
+        final Money netWorth,
+        final LocalDate startDate,
+        final CycleState cycleState
+    ) {
+        this.cashBalance = cashBalance;
+        this.netWorth = netWorth;
+        this.currentDate = startDate;
+        updateCycleState(cycleState);
     }
 
     public void assertOwner(final Long userId) {
@@ -216,7 +243,33 @@ public class GameSession {
         this.currentDate = nextDate;
         this.cashBalance = nextCash;
         this.netWorth = nextNetWorth;
-        this.cyclePhase = nextPhase;
+        updateCyclePhase(nextPhase);
+    }
+
+    public void advanceTurn(
+        final Integer nextTurn,
+        final LocalDate nextDate,
+        final Money nextCash,
+        final Money nextNetWorth,
+        final CycleState nextCycleState
+    ) {
+        this.currentTurn = nextTurn;
+        this.currentDate = nextDate;
+        this.cashBalance = nextCash;
+        this.netWorth = nextNetWorth;
+        updateCycleState(nextCycleState);
+    }
+
+    private void updateCyclePhase(final CyclePhase cyclePhase) {
+        this.cyclePhase = cyclePhase;
+        this.cycleType = null;
+        this.cycleRemainingTurns = null;
+    }
+
+    private void updateCycleState(final CycleState cycleState) {
+        this.cyclePhase = cycleState.getPhase();
+        this.cycleType = cycleState.getType();
+        this.cycleRemainingTurns = cycleState.getRemainingTurns();
     }
 
     public void markEnding(final SessionStatus sessionStatus) {

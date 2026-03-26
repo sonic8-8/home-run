@@ -12,7 +12,10 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleDecisionRolls;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -47,7 +50,9 @@ class GameWorldResultServiceTest {
     @Test
     void buildWorldResult() {
         // given
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(12, CyclePhase.BOOM, 101L));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(12, CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1), 101L)
+        );
         final GameHousing gameHousing = GameHousing.create(
             gameSession.getGameSessionId(),
             HousingType.STUDIO,
@@ -59,11 +64,16 @@ class GameWorldResultServiceTest {
         gameHousingRepository.saveAndFlush(gameHousing);
 
         // when
-        GameWorldResult result = gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 81);
+        GameWorldResult result = gameWorldResultService.buildWorldResult(
+            gameSession.getGameSessionId(),
+            CycleDecisionRolls.of(81, 1, 1)
+        );
 
         // then
         assertThat(result.getCycleResult()).isNotNull();
         assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.RECOVERY);
+        assertThat(result.getCycleResult().getNextType()).isEqualTo(CycleType.CYCLE_RATE_HIKE);
+        assertThat(result.getCycleResult().getRemainingTurns()).isEqualTo(18);
         assertThat(result.getCycleResult().getDescription()).isEqualTo("경기 회복기");
         assertThat(result.getNewsCandidates()).isEmpty();
         assertThat(result.getEventCandidates()).isEmpty();
@@ -78,13 +88,20 @@ class GameWorldResultServiceTest {
     @Test
     void buildWorldResultWithoutHousing() {
         // given
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(12, CyclePhase.RECOVERY, 101L));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(12, CycleState.of(CyclePhase.RECOVERY, CycleType.CYCLE_RATE_HIKE, 1), 101L)
+        );
 
         // when
-        GameWorldResult result = gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 30);
+        GameWorldResult result = gameWorldResultService.buildWorldResult(
+            gameSession.getGameSessionId(),
+            CycleDecisionRolls.of(1, 1, 1)
+        );
 
         // then
         assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.BOOM);
+        assertThat(result.getCycleResult().getNextType()).isEqualTo(CycleType.CYCLE_BOOM);
+        assertThat(result.getCycleResult().getRemainingTurns()).isEqualTo(24);
         assertThat(result.getNewsCandidates()).isEmpty();
         assertThat(result.getEventCandidates()).isEmpty();
         assertThat(result.getHousingSnapshot()).isNotNull();
@@ -102,7 +119,10 @@ class GameWorldResultServiceTest {
 
         // when
         // then
-        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(unknownSessionId, 50))
+        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(
+            unknownSessionId,
+            CycleDecisionRolls.of(50, 50, 50)
+        ))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_SESSION_NOT_FOUND);
@@ -112,14 +132,52 @@ class GameWorldResultServiceTest {
     @Test
     void buildWorldResultWithInvalidCycleState() {
         // given
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(12, null, 101L));
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(12, (CyclePhase) null, 101L)
+        );
 
         // when
         // then
-        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+        assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(
+            gameSession.getGameSessionId(),
+            CycleDecisionRolls.of(50, 50, 50)
+        ))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_CYCLE_STATE_INVALID);
+    }
+
+    private GameSession createGameSession(
+        final int currentTurn,
+        final CycleState cycleState,
+        final Long targetPropertyId
+    ) {
+        final GameSession gameSession = GameSession.create(
+            1L,
+            1,
+            "윤서",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "SEOUL",
+            "GANGNAM",
+            targetPropertyId,
+            DataSourceType.PROFILE
+        );
+        gameSession.initializeCapital(
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            LocalDate.of(2026, 1, 1),
+            cycleState
+        );
+        gameSession.advanceTurn(
+            currentTurn,
+            LocalDate.of(2026, 1, 1),
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            cycleState
+        );
+        return gameSession;
     }
 
     private GameSession createGameSession(
