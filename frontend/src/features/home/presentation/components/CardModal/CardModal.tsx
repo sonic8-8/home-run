@@ -67,7 +67,7 @@ export function CardModal({ isOpen, onClose, recommendations, allCards, onApply 
                       {selectedCard.activeBenefits.map((b) => (
                         <div key={b.categoryId} className={styles.benefitRow}>
                           <span className={styles.benefitName}>{b.categoryName}</span>
-                          <span className={styles.benefitRate}>{(b.discountRate * 100).toFixed(0)}% 할인</span>
+                          <span className={styles.benefitRate}>{b.discountRate}% 할인</span>
                         </div>
                       ))}
                     </div>
@@ -134,7 +134,7 @@ export function CardModal({ isOpen, onClose, recommendations, allCards, onApply 
                       {selectedCard.activeBenefits.map((b) => (
                         <div key={b.categoryId} className={styles.benefitRow}>
                           <span className={styles.benefitName}>{b.categoryName}</span>
-                          <span className={styles.benefitRate}>{(b.discountRate * 100).toFixed(0)}% 할인</span>
+                          <span className={styles.benefitRate}>{b.discountRate}% 할인</span>
                         </div>
                       ))}
                     </div>
