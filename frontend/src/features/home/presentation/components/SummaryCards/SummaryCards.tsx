@@ -10,7 +10,7 @@ const toMan = (value: number) => Math.round(Math.abs(value) / 10000).toLocaleStr
 
 export const SummaryCards: React.FC<SummaryCardsProps> = ({ dashboard }) => {
   if (!dashboard) return null;
-  const { totalAssets, monthlyIncome, monthlyExpense, expenseChangeFromLastMonth, nextPaydayDays } = dashboard;
+  const { totalAssets, monthlyIncome, monthlyExpense, incomeChangeFromLastMonth, expenseChangeFromLastMonth, nextPaydayDays } = dashboard;
 
   return (
     <div className={styles.grid}>
@@ -24,9 +24,13 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ dashboard }) => {
           <span className={styles.value}>{toMan(totalAssets)}</span>
           <span className={styles.unit}>만원</span>
         </div>
-        <div className={styles.sub}>
-          <span className={styles.subPositive}>↗ 전월 대비 +12만원</span>
-        </div>
+        {incomeChangeFromLastMonth != null && incomeChangeFromLastMonth !== 0 && (
+          <div className={styles.sub}>
+            <span className={incomeChangeFromLastMonth > 0 ? styles.subPositive : styles.subNegative}>
+              {incomeChangeFromLastMonth > 0 ? '↗' : '↘'} 전월 대비 {incomeChangeFromLastMonth > 0 ? '+' : '-'}{toMan(incomeChangeFromLastMonth)}만원
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 이번 달 수입 */}
@@ -56,7 +60,9 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ dashboard }) => {
         </div>
         {expenseChangeFromLastMonth != null && expenseChangeFromLastMonth !== 0 && (
           <div className={styles.sub}>
-            <span className={styles.subNegative}>↘ 예산 대비 +{toMan(expenseChangeFromLastMonth)}만원</span>
+            <span className={expenseChangeFromLastMonth > 0 ? styles.subNegative : styles.subPositive}>
+              {expenseChangeFromLastMonth > 0 ? '↗' : '↘'} 전월 대비 {expenseChangeFromLastMonth > 0 ? '+' : '-'}{toMan(expenseChangeFromLastMonth)}만원
+            </span>
           </div>
         )}
       </div>
