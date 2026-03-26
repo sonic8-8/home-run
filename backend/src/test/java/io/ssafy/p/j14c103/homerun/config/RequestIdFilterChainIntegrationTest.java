@@ -6,34 +6,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Map;
+import io.ssafy.p.j14c103.homerun.HomerunApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootTest(
-        classes = RequestIdFilterChainIntegrationTest.TestApplication.class,
-        properties = {
-                "jwt.secret=01234567890123456789012345678901",
-                "jwt.access-token-ttl-seconds=1800",
-                "jwt.refresh-token-ttl-seconds=1209600"
-        }
+        classes = HomerunApplication.class
 )
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(RequestIdFilterChainIntegrationTest.RequestIdEchoController.class)
 class RequestIdFilterChainIntegrationTest {
 
     @Autowired
@@ -57,24 +48,6 @@ class RequestIdFilterChainIntegrationTest {
 
     private String bearer(String token) {
         return "Bearer " + token;
-    }
-
-    @SpringBootConfiguration
-    @EnableAutoConfiguration(exclude = {
-            DataSourceAutoConfiguration.class,
-            DataSourceTransactionManagerAutoConfiguration.class,
-            HibernateJpaAutoConfiguration.class,
-            JpaRepositoriesAutoConfiguration.class,
-            RedisAutoConfiguration.class,
-            RedisRepositoriesAutoConfiguration.class
-    })
-    @Import({
-            SecurityConfig.class,
-            JwtProperties.class,
-            JwtTokenProvider.class,
-            RequestIdEchoController.class
-    })
-    static class TestApplication {
     }
 
     @RestController
