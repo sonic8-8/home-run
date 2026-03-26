@@ -7,7 +7,7 @@ export class RealEstateRepositoryImpl implements IRealEstateRepository {
   private readonly dataSource: RealEstateRemoteDataSource;
   constructor(dataSource: RealEstateRemoteDataSource) { this.dataSource = dataSource; }
 
-  async getProperties(sessionId: number, bounds: string): Promise<PropertySummary[]> {
+  async getProperties(sessionId: number, bounds?: string): Promise<PropertySummary[]> {
     const response = await this.dataSource.getProperties(sessionId, bounds);
     return response.properties.map((m) => ({
       propertyId: m.propertyId,
