@@ -1,17 +1,18 @@
 package io.ssafy.p.j14c103.homerun.client.ssafy;
 
 import io.ssafy.p.j14c103.homerun.config.SsafyApiProperties;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.stereotype.Component;
 
 @Component
 public class SsafyApiHeaderGenerator {
 
+    private static final ZoneId SSAFY_ZONE_ID = ZoneId.of("Asia/Seoul");
     private static final String INSTITUTION_CODE = "00100";
     private static final String FINTECH_APP_NO = "001";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -30,7 +31,7 @@ public class SsafyApiHeaderGenerator {
             throw new IllegalArgumentException("API 이름은 필수입니다.");
         }
 
-        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now(SSAFY_ZONE_ID);
         final Map<String, String> header = new LinkedHashMap<>();
 
         header.put("apiName", apiName);

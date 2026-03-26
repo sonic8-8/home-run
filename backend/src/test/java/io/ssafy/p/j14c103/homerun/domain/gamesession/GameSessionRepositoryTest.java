@@ -2,12 +2,13 @@ package io.ssafy.p.j14c103.homerun.domain.gamesession;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import jakarta.persistence.EntityManager;
@@ -176,6 +177,60 @@ class GameSessionRepositoryTest {
         assertThat(saved.getGameSessionId()).isNotNull();
         assertThat(exists).isTrue();
         assertThat(notExists).isFalse();
+    }
+
+    @DisplayName("사용자 기준 세션 목록을 슬롯 번호 오름차순으로 조회할 수 있다.")
+    @Test
+    void findAllByUserIdOrderBySlotNumberAsc() {
+        // given
+        gameSessionRepository.saveAndFlush(GameSession.create(
+            7L,
+            3,
+            "세번째",
+            CharacterType.FEMALE,
+            JobType.MID_BIZ,
+            HousingType.VILLA,
+            "11",
+            "11680",
+            303L,
+            DataSourceType.PROFILE
+        ));
+        gameSessionRepository.saveAndFlush(GameSession.create(
+            7L,
+            1,
+            "첫번째",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "11",
+            "11680",
+            101L,
+            DataSourceType.PROFILE
+        ));
+        gameSessionRepository.saveAndFlush(GameSession.create(
+            8L,
+            2,
+            "다른유저",
+            CharacterType.MALE,
+            JobType.LARGE_BIZ,
+            HousingType.OWNED_APT,
+            "11",
+            "11710",
+            202L,
+            DataSourceType.MY_DATA
+        ));
+        entityManager.clear();
+
+        // when
+        final var found = gameSessionRepository.findAllByUserIdOrderBySlotNumberAsc(7L);
+
+        // then
+        assertThat(found)
+            .extracting(GameSession::getSlotNumber, GameSession::getCharacterName)
+            .containsExactly(
+                tuple(1, "첫번째"),
+                tuple(3, "세번째")
+            );
     }
 
     @DisplayName("세션 진행 상태와 경제 사이클은 초기화 이후 값으로 갱신할 수 있다.")
