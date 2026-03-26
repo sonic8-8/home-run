@@ -39,6 +39,7 @@ public enum ErrorCode {
     HOUSING_REGISTRY_SAMPLE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "HOUSING_002", "등기부 샘플 데이터 구성이 올바르지 않습니다."),
     HOUSING_REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "HOUSING_003", "존재하지 않는 지역입니다."),
     HOUSING_DISTRICT_NOT_FOUND(HttpStatus.NOT_FOUND, "HOUSING_004", "존재하지 않는 구입니다."),
+    HOUSING_CURRENT_CONTRACT_NOT_FOUND(HttpStatus.NOT_FOUND, "HOUSING_005", "현재 해제 가능한 주거 계약이 없습니다."),
     HOUSING_CONTRACT_REVIEW_TARGET_MISMATCH(
         HttpStatus.BAD_REQUEST,
         "HOUSING_005",
