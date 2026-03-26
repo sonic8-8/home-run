@@ -82,6 +82,8 @@
 - 테스트는 JUnit 5, AssertJ를 사용하고, `@DisplayName` 한글 문장과 `given / when / then` 구조를 우선 따른다.
 - 테스트는 계층 책임에 맞춰 분리한다.
 - Controller 테스트는 `@WebMvcTest` 기반 슬라이스 테스트를 기본으로 사용한다.
+- Spring REST Docs를 사용하는 Controller 테스트는 `@WebMvcTest`, `@AutoConfigureRestDocs`, `RestDocsTestSupport` 패턴을 기본으로 검토한다.
+- 문서 대상 Controller 테스트는 `document(...)`로 request/response snippet을 남기고, 인증 헤더와 path/query/body, `ApiResponse` 또는 `ErrorResponse` 필드를 함께 문서화하는 것을 우선 검토한다.
 - Service 테스트는 `@SpringBootTest` 기반 통합 테스트를 기본으로 사용한다.
 - Repository 테스트도 `@SpringBootTest` 기반 통합 테스트를 기본으로 사용한다.
 - Repository 테스트는 `@ActiveProfiles("test")`, `@Transactional` 조합을 기본으로 검토한다.

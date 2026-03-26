@@ -54,6 +54,7 @@ public enum ErrorCode {
     GAME_SLOT_CONFLICT(HttpStatus.CONFLICT, "GAME_001", "이미 사용 중인 저장 슬롯입니다."),
     GAME_SESSION_FORBIDDEN(HttpStatus.FORBIDDEN, "GAME_002", "해당 게임 세션에 접근할 수 없습니다."),
     GAME_SESSION_CLOSED(HttpStatus.CONFLICT, "GAME_003", "종료된 게임 세션은 진행할 수 없습니다."),
+    GAME_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "GAME_004", "존재하지 않는 게임 세션입니다."),
 
     SCHEDULE_ACTION_TYPE_INVALID(HttpStatus.BAD_REQUEST, "SCHEDULE_003", "행동 유형이 올바르지 않습니다."),
     SCHEDULE_ACTION_CATALOG_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "SCHEDULE_004", "행동 카탈로그 상태가 올바르지 않습니다."),
