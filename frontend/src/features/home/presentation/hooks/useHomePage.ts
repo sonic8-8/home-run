@@ -200,6 +200,11 @@ export const useHomePage = () => {
   const saveToPass = useCallback(async (subscriptionId: number): Promise<PassSaveResult> => {
     const result = await savePass.execute(subscriptionId);
     setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
+    setPassSubscriptions((prev) =>
+      prev.map((s) =>
+        s.subscriptionId === subscriptionId ? { ...s, totalSaved: result.totalSaved } : s,
+      ),
+    );
     return result;
   }, []);
 
