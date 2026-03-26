@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { GameAssets } from '@features/game/domain/entities/GameAssets';
 import type { GameStats } from '@features/game/domain/entities/GameStats';
+import { useGameWorld } from '@features/game/presentation/hooks/useGameWorld';
 
 interface LocationState {
   sessionId: number;
@@ -18,16 +19,19 @@ export const useGameMain = () => {
 
   const [assets, setAssets] = useState<GameAssets | null>(null);
   const [stats, setStats] = useState<GameStats | null>(null);
-  const [currentDate, setCurrentDate] = useState<string | null>(null);
   const [characterType, setCharacterType] = useState<'MALE' | 'FEMALE'>('MALE');
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card'>(openLoan ? 'loan' : 'scene');
 
+  const { turn, fetchTurn } = useGameWorld(sessionId);
+  const currentDate = turn?.currentDate ?? null;
+
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
       try {
+        await fetchTurn();
         // TODO: GET /games/sessions/{sessionId}/assets
         setAssets({
           cash: 1_000_000,
@@ -55,8 +59,6 @@ export const useGameMain = () => {
             { sideJobId: 3, name: '인형 눈 붙이기', cashEffect: 100_000, healthEffect: -5 },
           ],
         });
-        // TODO: GET /games/sessions/{sessionId}/turn (for currentDate)
-        setCurrentDate('2026-01-01');
         // TODO: GET /games/sessions/{sessionId} (for stats & characterType)
         setStats({
           health: 30,
@@ -85,6 +87,7 @@ export const useGameMain = () => {
     sessionId,
     assets,
     stats,
+    turn,
     currentDate,
     characterType,
     totalAssets,
