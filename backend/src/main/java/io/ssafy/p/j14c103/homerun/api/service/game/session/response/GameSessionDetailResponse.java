@@ -75,26 +75,68 @@ public class GameSessionDetailResponse {
         this.lastPlayedAt = lastPlayedAt;
     }
 
-    public static GameSessionDetailResponse from(final GameSession gameSession) {
+    public static GameSessionDetailResponse of(
+        final Long sessionId,
+        final Integer slotNumber,
+        final String characterName,
+        final CharacterType characterType,
+        final JobType jobType,
+        final HousingType housingType,
+        final String regionCode,
+        final String districtCode,
+        final Long targetPropertyId,
+        final DataSourceType dataSourceType,
+        final Integer currentTurn,
+        final LocalDate currentDate,
+        final CyclePhase cyclePhase,
+        final Long cashBalance,
+        final Long netWorth,
+        final SessionStatus sessionStatus,
+        final LocalDateTime createdAt,
+        final LocalDateTime lastPlayedAt
+    ) {
         return GameSessionDetailResponse.builder()
-            .sessionId(gameSession.getGameSessionId())
-            .slotNumber(gameSession.getSlotNumber())
-            .characterName(gameSession.getCharacterName())
-            .characterType(gameSession.getCharacterType())
-            .jobType(gameSession.getJobType())
-            .housingType(gameSession.getHousingType())
-            .regionCode(gameSession.getRegionCode())
-            .districtCode(gameSession.getDistrictCode())
-            .targetPropertyId(gameSession.getTargetPropertyId())
-            .dataSourceType(gameSession.getDataSourceType())
-            .currentTurn(gameSession.getCurrentTurn())
-            .currentDate(gameSession.getCurrentDate())
-            .cyclePhase(gameSession.getCyclePhase())
-            .cashBalance(gameSession.getCashBalance().getAmount().longValue())
-            .netWorth(gameSession.getNetWorth().getAmount().longValue())
-            .sessionStatus(gameSession.getSessionStatus())
-            .createdAt(gameSession.getCreatedAt())
-            .lastPlayedAt(gameSession.getLastPlayedAt())
+            .sessionId(sessionId)
+            .slotNumber(slotNumber)
+            .characterName(characterName)
+            .characterType(characterType)
+            .jobType(jobType)
+            .housingType(housingType)
+            .regionCode(regionCode)
+            .districtCode(districtCode)
+            .targetPropertyId(targetPropertyId)
+            .dataSourceType(dataSourceType)
+            .currentTurn(currentTurn)
+            .currentDate(currentDate)
+            .cyclePhase(cyclePhase)
+            .cashBalance(cashBalance)
+            .netWorth(netWorth)
+            .sessionStatus(sessionStatus)
+            .createdAt(createdAt)
+            .lastPlayedAt(lastPlayedAt)
             .build();
+    }
+
+    public static GameSessionDetailResponse from(final GameSession gameSession) {
+        return GameSessionDetailResponse.of(
+            gameSession.getGameSessionId(),
+            gameSession.getSlotNumber(),
+            gameSession.getCharacterName(),
+            gameSession.getCharacterType(),
+            gameSession.getJobType(),
+            gameSession.getHousingType(),
+            gameSession.getRegionCode(),
+            gameSession.getDistrictCode(),
+            gameSession.getTargetPropertyId(),
+            gameSession.getDataSourceType(),
+            gameSession.getCurrentTurn(),
+            gameSession.getCurrentDate(),
+            gameSession.getCyclePhase(),
+            gameSession.getCashBalance().getAmount().longValue(),
+            gameSession.getNetWorth().getAmount().longValue(),
+            gameSession.getSessionStatus(),
+            gameSession.getCreatedAt(),
+            gameSession.getLastPlayedAt()
+        );
     }
 }

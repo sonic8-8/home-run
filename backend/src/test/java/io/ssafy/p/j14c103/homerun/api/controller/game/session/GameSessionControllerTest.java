@@ -12,10 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.ssafy.p.j14c103.homerun.api.service.game.session.CreateGameSessionService;
-import io.ssafy.p.j14c103.homerun.api.service.game.session.DeleteGameSessionService;
-import io.ssafy.p.j14c103.homerun.api.service.game.session.GetGameSessionDetailService;
-import io.ssafy.p.j14c103.homerun.api.service.game.session.GetGameSessionListService;
+import io.ssafy.p.j14c103.homerun.api.service.game.session.GameSessionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.request.CreateGameSessionServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.CreateGameSessionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionDetailResponse;
@@ -23,15 +20,14 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionL
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
-import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
-import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,7 +40,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
@@ -56,16 +51,7 @@ class GameSessionControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private GetGameSessionListService getGameSessionListService;
-
-    @MockitoBean
-    private CreateGameSessionService createGameSessionService;
-
-    @MockitoBean
-    private GetGameSessionDetailService getGameSessionDetailService;
-
-    @MockitoBean
-    private DeleteGameSessionService deleteGameSessionService;
+    private GameSessionService gameSessionService;
 
     @AfterEach
     void tearDown() {
@@ -76,13 +62,8 @@ class GameSessionControllerTest {
     @Test
     void getSessions() throws Exception {
         // given
-        final GameSession first = createGameSession(1L, 1, "윤서", CharacterType.FEMALE, JobType.STARTUP, 101L);
-        final GameSession third = createGameSession(1L, 3, "민지", CharacterType.FEMALE, JobType.MID_BIZ, 303L);
-        ReflectionTestUtils.setField(first, "gameSessionId", 11L);
-        ReflectionTestUtils.setField(third, "gameSessionId", 33L);
-
-        given(getGameSessionListService.getSessions(1L))
-            .willReturn(GameSessionListResponse.from(List.of(first, third)));
+        given(gameSessionService.getSessions(1L))
+            .willReturn(createGameSessionListResponse());
 
         // when & then
         mockMvc.perform(get("/api/games/sessions").with(currentUser()))
@@ -99,7 +80,7 @@ class GameSessionControllerTest {
     @Test
     void createSession() throws Exception {
         // given
-        given(createGameSessionService.create(any(Long.class), any(CreateGameSessionServiceRequest.class)))
+        given(gameSessionService.create(any(Long.class), any(CreateGameSessionServiceRequest.class)))
             .willReturn(CreateGameSessionResponse.of(10L, 1, SessionStatus.IN_PROGRESS, 0, DataSourceType.MY_DATA));
 
         // when & then
@@ -156,7 +137,7 @@ class GameSessionControllerTest {
     @Test
     void createSessionConflict() throws Exception {
         // given
-        given(createGameSessionService.create(any(Long.class), any(CreateGameSessionServiceRequest.class)))
+        given(gameSessionService.create(any(Long.class), any(CreateGameSessionServiceRequest.class)))
             .willThrow(new HomerunException(ErrorCode.GAME_SLOT_CONFLICT));
 
         // when & then
@@ -183,16 +164,27 @@ class GameSessionControllerTest {
     @Test
     void getSessionDetail() throws Exception {
         // given
-        final GameSession gameSession = createGameSession(1L, 2, "세준", CharacterType.MALE, JobType.SMALL_BIZ, 404L);
-        ReflectionTestUtils.setField(gameSession, "gameSessionId", 22L);
-        gameSession.initializeCapital(
-            Money.of(13_000_000L),
-            Money.of(14_500_000L),
-            LocalDate.of(2026, 1, 1),
-            CyclePhase.RECOVERY
-        );
-        given(getGameSessionDetailService.getSessionDetail(1L, 22L))
-            .willReturn(GameSessionDetailResponse.from(gameSession));
+        given(gameSessionService.getSessionDetail(1L, 22L))
+            .willReturn(GameSessionDetailResponse.of(
+                22L,
+                2,
+                "세준",
+                CharacterType.MALE,
+                JobType.SMALL_BIZ,
+                HousingType.STUDIO,
+                "11",
+                "11680",
+                404L,
+                DataSourceType.PROFILE,
+                0,
+                LocalDate.of(2026, 1, 1),
+                CyclePhase.RECOVERY,
+                13_000_000L,
+                14_500_000L,
+                SessionStatus.IN_PROGRESS,
+                LocalDateTime.of(2026, 1, 1, 0, 0),
+                LocalDateTime.of(2026, 1, 1, 0, 0)
+            ));
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/{sessionId}", 22L).with(currentUser()))
@@ -209,7 +201,7 @@ class GameSessionControllerTest {
     @Test
     void getSessionDetailNotFound() throws Exception {
         // given
-        given(getGameSessionDetailService.getSessionDetail(1L, 99L))
+        given(gameSessionService.getSessionDetail(1L, 99L))
             .willThrow(new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
 
         // when & then
@@ -222,7 +214,7 @@ class GameSessionControllerTest {
     @Test
     void getSessionDetailForbidden() throws Exception {
         // given
-        given(getGameSessionDetailService.getSessionDetail(1L, 88L))
+        given(gameSessionService.getSessionDetail(1L, 88L))
             .willThrow(new HomerunException(ErrorCode.GAME_SESSION_FORBIDDEN));
 
         // when & then
@@ -239,7 +231,7 @@ class GameSessionControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200));
 
-        then(deleteGameSessionService).should().delete(1L, 10L);
+        then(gameSessionService).should().delete(1L, 10L);
     }
 
     @DisplayName("존재하지 않는 세션 삭제는 404를 반환한다.")
@@ -247,7 +239,7 @@ class GameSessionControllerTest {
     void deleteSessionNotFound() throws Exception {
         // given
         willThrow(new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND))
-            .given(deleteGameSessionService)
+            .given(gameSessionService)
             .delete(1L, 77L);
 
         // when & then
@@ -261,7 +253,7 @@ class GameSessionControllerTest {
     void deleteSessionForbidden() throws Exception {
         // given
         willThrow(new HomerunException(ErrorCode.GAME_SESSION_FORBIDDEN))
-            .given(deleteGameSessionService)
+            .given(gameSessionService)
             .delete(1L, 66L);
 
         // when & then
@@ -270,26 +262,32 @@ class GameSessionControllerTest {
             .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_FORBIDDEN.getCode()));
     }
 
-    private GameSession createGameSession(
-        final Long userId,
-        final Integer slotNumber,
-        final String characterName,
-        final CharacterType characterType,
-        final JobType jobType,
-        final Long targetPropertyId
-    ) {
-        return GameSession.create(
-            userId,
-            slotNumber,
-            characterName,
-            characterType,
-            jobType,
-            HousingType.STUDIO,
-            "11",
-            "11680",
-            targetPropertyId,
-            DataSourceType.PROFILE
-        );
+    private GameSessionListResponse createGameSessionListResponse() {
+        return GameSessionListResponse.of(List.of(
+            GameSessionListResponse.SessionSummaryResponse.of(
+                11L,
+                1,
+                "IN_PROGRESS",
+                "윤서",
+                CharacterType.FEMALE,
+                JobType.STARTUP,
+                0,
+                13_000_000L,
+                LocalDateTime.of(2026, 1, 1, 0, 0)
+            ),
+            GameSessionListResponse.SessionSummaryResponse.empty(2),
+            GameSessionListResponse.SessionSummaryResponse.of(
+                33L,
+                3,
+                "IN_PROGRESS",
+                "민지",
+                CharacterType.FEMALE,
+                JobType.MID_BIZ,
+                0,
+                15_000_000L,
+                LocalDateTime.of(2026, 1, 3, 0, 0)
+            )
+        ));
     }
 
     private RequestPostProcessor currentUser() {
