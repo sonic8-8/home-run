@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingCategoryDetail;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingResponse;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
@@ -34,6 +35,9 @@ class SpendingServiceTest {
 
     @Mock
     private UserAccountTransactionRepository userAccountTransactionRepository;
+
+    @Mock
+    private UserSsafyAccountSyncService userSsafyAccountSyncService;
 
     @InjectMocks
     private SpendingService spendingService;
