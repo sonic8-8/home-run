@@ -45,7 +45,7 @@
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: var(--spacing-sm);
 }
 
@@ -63,4 +63,52 @@
 
 .actionBtn:hover {
   background: #e5e7eb;
+}
+
+.history {
+  margin-top: var(--spacing-md);
+  border-top: 1px solid #f3f4f6;
+  padding-top: var(--spacing-md);
+}
+
+.historyTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.historyRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: var(--font-size-xs);
+  border-bottom: 1px solid #f9fafb;
+}
+
+.historyCat {
+  color: var(--color-text-secondary);
+}
+
+.historyAmount {
+  font-weight: 500;
+  color: #dc2626;
+}
+
+.historyTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.historyEmpty {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--spacing-md) 0;
 }

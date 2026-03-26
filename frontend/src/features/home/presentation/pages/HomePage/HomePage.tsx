@@ -12,7 +12,7 @@ import { useHomePage } from '../../hooks/useHomePage';
 import styles from './HomePage.module.css';
 
 export const HomePage: React.FC = () => {
-  const { isAssetLinked, dashboard, seedMoney, creditScore, loanRecommendations, cardList, cardRecommendations, passSubscriptions, allPasses, saveToPass, unsubscribeFromPass, subscribeToPas, handleLinkAssets, loading } = useHomePage();
+  const { isAssetLinked, dashboard, spending, seedMoney, creditScore, loanRecommendations, cardList, cardRecommendations, passSubscriptions, allPasses, saveToPass, unsubscribeFromPass, subscribeToPas, handleLinkAssets, loading } = useHomePage();
 
   if (loading && isAssetLinked === null) return null;
 
@@ -41,7 +41,7 @@ export const HomePage: React.FC = () => {
             </div>
             {/* Right column */}
             <div className={styles.rightCol}>
-              {seedMoney && <SeedMoneyWidget account={seedMoney} />}
+              {seedMoney && <SeedMoneyWidget account={seedMoney} spending={spending} />}
               <GameBanner />
               <CreditScoreWidget creditScore={creditScore} />
             </div>
