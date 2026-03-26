@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.domain.world.cycle;
 
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,6 +18,22 @@ public class CycleTransitionPolicy {
 
     private static final int RECOVERY_TO_BOOM_MAX = 65;
     private static final int RECOVERY_TO_CRISIS_MAX = 75;
+
+    private static final int FINANCIAL_CRISIS_WEIGHT = 18;
+    private static final int CURRENCY_CRISIS_WEIGHT = 15;
+    private static final int TECH_BUBBLE_WEIGHT = 15;
+    private static final int OIL_SHOCK_WEIGHT = 14;
+    private static final int STAGFLATION_WEIGHT = 13;
+    private static final int PANDEMIC_WEIGHT = 12;
+    private static final int GREAT_DEPRESSION_WEIGHT = 3;
+    private static final int CRISIS_TOTAL_WEIGHT = FINANCIAL_CRISIS_WEIGHT
+        + CURRENCY_CRISIS_WEIGHT
+        + TECH_BUBBLE_WEIGHT
+        + OIL_SHOCK_WEIGHT
+        + STAGFLATION_WEIGHT
+        + PANDEMIC_WEIGHT
+        + GREAT_DEPRESSION_WEIGHT;
+    private static final int RECOVERY_RATE_HIKE_MAX = 50;
 
     public CyclePhase nextPhase(
         CyclePhase currentPhase,
@@ -45,15 +63,45 @@ public class CycleTransitionPolicy {
         return "경기 회복기";
     }
 
+    public CycleState nextState(
+        final CycleState currentState,
+        final CycleDecisionRolls rolls
+    ) {
+        validateCurrentState(currentState);
+        validateRolls(rolls);
+
+        if (currentState.getRemainingTurns() > 1) {
+            return currentState.decrementRemainingTurns();
+        }
+
+        final CyclePhase nextPhase = nextPhase(currentState.getPhase(), rolls.getPhaseRoll());
+        final CycleType nextType = nextType(nextPhase, rolls.getSubtypeRoll());
+        final int nextDuration = nextDuration(nextType, rolls.getDurationRoll());
+
+        return CycleState.of(nextPhase, nextType, nextDuration);
+    }
+
     private void validateRoll(int roll) {
         if (roll < MIN_ROLL || roll > MAX_ROLL) {
-            throw new IllegalArgumentException("roll은 1 이상 100 이하이어야 합니다.");
+            throw new HomerunException(ErrorCode.WORLD_CYCLE_INPUT_INVALID);
         }
     }
 
     private void validateCurrentPhase(CyclePhase currentPhase) {
         if (currentPhase == null) {
-            throw new IllegalArgumentException("currentPhase는 null일 수 없습니다.");
+            throw new HomerunException(ErrorCode.WORLD_CYCLE_INPUT_INVALID);
+        }
+    }
+
+    private void validateCurrentState(final CycleState currentState) {
+        if (currentState == null) {
+            throw new HomerunException(ErrorCode.WORLD_CYCLE_INPUT_INVALID);
+        }
+    }
+
+    private void validateRolls(final CycleDecisionRolls rolls) {
+        if (rolls == null) {
+            throw new HomerunException(ErrorCode.WORLD_CYCLE_INPUT_INVALID);
         }
     }
 
@@ -85,5 +133,77 @@ public class CycleTransitionPolicy {
             return CyclePhase.CRISIS;
         }
         return CyclePhase.RECOVERY;
+    }
+
+    private CycleType nextType(final CyclePhase nextPhase, final int subtypeRoll) {
+        validateCurrentPhase(nextPhase);
+        validateRoll(subtypeRoll);
+
+        if (nextPhase == CyclePhase.BOOM) {
+            return CycleType.CYCLE_BOOM;
+        }
+        if (nextPhase == CyclePhase.CRISIS) {
+            return nextCrisisType(subtypeRoll);
+        }
+        return nextRecoveryType(subtypeRoll);
+    }
+
+    private CycleType nextCrisisType(final int roll) {
+        final int weightedRoll = scaleRoll(roll, CRISIS_TOTAL_WEIGHT);
+
+        if (weightedRoll <= FINANCIAL_CRISIS_WEIGHT) {
+            return CycleType.CYCLE_FINANCIAL_CRISIS;
+        }
+        if (weightedRoll <= FINANCIAL_CRISIS_WEIGHT + CURRENCY_CRISIS_WEIGHT) {
+            return CycleType.CYCLE_CURRENCY_CRISIS;
+        }
+        if (weightedRoll <= FINANCIAL_CRISIS_WEIGHT + CURRENCY_CRISIS_WEIGHT + TECH_BUBBLE_WEIGHT) {
+            return CycleType.CYCLE_TECH_BUBBLE;
+        }
+        if (weightedRoll <= FINANCIAL_CRISIS_WEIGHT + CURRENCY_CRISIS_WEIGHT + TECH_BUBBLE_WEIGHT
+            + OIL_SHOCK_WEIGHT) {
+            return CycleType.CYCLE_OIL_SHOCK;
+        }
+        if (weightedRoll <= FINANCIAL_CRISIS_WEIGHT + CURRENCY_CRISIS_WEIGHT + TECH_BUBBLE_WEIGHT
+            + OIL_SHOCK_WEIGHT + STAGFLATION_WEIGHT) {
+            return CycleType.CYCLE_STAGFLATION;
+        }
+        if (weightedRoll <= FINANCIAL_CRISIS_WEIGHT + CURRENCY_CRISIS_WEIGHT + TECH_BUBBLE_WEIGHT
+            + OIL_SHOCK_WEIGHT + STAGFLATION_WEIGHT + PANDEMIC_WEIGHT) {
+            return CycleType.CYCLE_PANDEMIC;
+        }
+        return CycleType.CYCLE_GREAT_DEPRESSION;
+    }
+
+    private CycleType nextRecoveryType(final int roll) {
+        if (roll <= RECOVERY_RATE_HIKE_MAX) {
+            return CycleType.CYCLE_RATE_HIKE;
+        }
+        return CycleType.CYCLE_GEOPOLITICAL;
+    }
+
+    private int nextDuration(final CycleType nextType, final int durationRoll) {
+        validateType(nextType);
+        validateRoll(durationRoll);
+
+        final int minDuration = nextType.getMinDurationTurns();
+        final int maxDuration = nextType.getMaxDurationTurns();
+        if (minDuration == maxDuration) {
+            return minDuration;
+        }
+
+        final int durationRange = maxDuration - minDuration + 1;
+        final int scaledOffset = scaleRoll(durationRoll, durationRange) - 1;
+        return minDuration + scaledOffset;
+    }
+
+    private void validateType(final CycleType cycleType) {
+        if (cycleType == null) {
+            throw new HomerunException(ErrorCode.WORLD_CYCLE_INPUT_INVALID);
+        }
+    }
+
+    private int scaleRoll(final int roll, final int totalBuckets) {
+        return ((roll - 1) * totalBuckets) / MAX_ROLL + 1;
     }
 }

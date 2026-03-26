@@ -149,6 +149,32 @@ class WorldEventTriggerServiceTest {
         assertThat(candidates).isEmpty();
     }
 
+    @DisplayName("회복기 phase는 기존 economic_cycle_type 조건과 호환되어 야근 요청 후보를 계속 계산한다")
+    @Test
+    void calculateEventCandidatesWithRecoveryPhaseCompatibility() {
+        // given
+        worldContentSeedService.seed();
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(CyclePhase.RECOVERY));
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 70, 10, 10, 50, 60, 12));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 12));
+
+        // when
+        final List<GameWorldResult.EventCandidate> candidates = worldEventTriggerService
+            .calculateEventCandidates(
+                gameSession.getGameSessionId(),
+                Map.of(
+                    "EVT-VOICE-001", new BigDecimal("0.9000"),
+                    "EVT-FAMILY-001", new BigDecimal("0.9000"),
+                    "EVT-OVERTIME-001", new BigDecimal("0.0500")
+                )
+            );
+
+        // then
+        assertThat(candidates)
+            .extracting(GameWorldResult.EventCandidate::getEventCode)
+            .contains("EVT-OVERTIME-001");
+    }
+
     @DisplayName("지원하지 않는 비교 연산자가 있으면 서버 설정 오류로 실패한다")
     @Test
     void calculateEventCandidatesWithUnsupportedOperator() {
