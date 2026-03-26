@@ -19,10 +19,12 @@ import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -40,39 +42,97 @@ public class UserAssetLinkService {
     private final SeedmoneyAccountProjectionService seedmoneyAccountProjectionService;
 
     public UserAssetLinkResponse linkAssets(final Long userId) {
-        final User user = userRepository.findById(userId)
-                .orElseThrow(() -> new HomerunException(ErrorCode.USER_NOT_FOUND));
+        log.info("사용자 자산 연동 시작. userId={}", userId);
 
-        final boolean hasMainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN).isPresent();
-        final boolean hasSeedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
-                .isPresent();
-
-        if (user.hasSsafyLink() && hasMainAccount && hasSeedmoneyAccount) {
-            return UserAssetLinkResponse.of(true, false, false, false);
-        }
-
-        validateAccountConfig();
-
-        final String ssafyUserKey = resolveSsafyUserKey(user);
+        boolean hasSsafyLink = false;
+        boolean hasMainAccount = false;
+        boolean hasSeedmoneyAccount = false;
         boolean mainAccountCreated = false;
         boolean seedmoneyAccountCreated = false;
 
-        if (!hasMainAccount) {
-            createMainAccount(userId, ssafyUserKey);
-            mainAccountCreated = true;
-        }
-        if (!hasSeedmoneyAccount) {
-            createSeedmoneyAccount(userId, ssafyUserKey);
-            seedmoneyAccountCreated = true;
-        }
+        try {
+            final User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new HomerunException(ErrorCode.USER_NOT_FOUND));
 
-        final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
-                .orElseThrow(() -> new IllegalStateException("주계좌 생성 후 조회에 실패했습니다."));
-        mainAccountInitialHistoryService.seedInitialHistory(userId);
-        userFinancialMockDataService.createInitialData(userId);
-        userFinancialSummaryService.getSummary(userId);
+            hasSsafyLink = user.hasSsafyLink();
+            hasMainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN).isPresent();
+            hasSeedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
+                    .isPresent();
 
-        return UserAssetLinkResponse.of(true, mainAccountCreated, seedmoneyAccountCreated, true);
+            log.info(
+                    "사용자 자산 연동 현재 상태. userId={}, hasSsafyLink={}, hasMainAccount={}, hasSeedmoneyAccount={}",
+                    userId,
+                    hasSsafyLink,
+                    hasMainAccount,
+                    hasSeedmoneyAccount
+            );
+
+            if (hasSsafyLink && hasMainAccount && hasSeedmoneyAccount) {
+                log.info("사용자 자산 연동 생략. 이미 모든 연동이 완료되었습니다. userId={}", userId);
+                return UserAssetLinkResponse.of(true, false, false, false);
+            }
+
+            validateAccountConfig();
+
+            final String ssafyUserKey = resolveSsafyUserKey(user);
+
+            if (!hasMainAccount) {
+                createMainAccount(userId, ssafyUserKey);
+                mainAccountCreated = true;
+                log.info("주계좌 생성 완료. userId={}", userId);
+            }
+            if (!hasSeedmoneyAccount) {
+                createSeedmoneyAccount(userId, ssafyUserKey);
+                seedmoneyAccountCreated = true;
+                log.info("시드머니 계좌 생성 완료. userId={}", userId);
+            }
+
+            userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
+                    .orElseThrow(() -> new IllegalStateException("주계좌 생성 후 조회에 실패했습니다."));
+            mainAccountInitialHistoryService.seedInitialHistory(userId);
+            userFinancialMockDataService.createInitialData(userId);
+            userFinancialSummaryService.getSummary(userId);
+
+            final UserAssetLinkResponse response = UserAssetLinkResponse.of(
+                    true,
+                    mainAccountCreated,
+                    seedmoneyAccountCreated,
+                    true
+            );
+            log.info(
+                    "사용자 자산 연동 완료. userId={}, mainAccountCreated={}, seedmoneyAccountCreated={}, summaryInitialized={}",
+                    userId,
+                    response.isMainAccountCreated(),
+                    response.isSeedmoneyAccountCreated(),
+                    response.isSummaryInitialized()
+            );
+            return response;
+        } catch (final HomerunException exception) {
+            log.error(
+                    "사용자 자산 연동 실패. userId={}, errorCode={}, hasSsafyLink={}, hasMainAccount={}, hasSeedmoneyAccount={}, mainAccountCreated={}, seedmoneyAccountCreated={}",
+                    userId,
+                    exception.getErrorCode().getCode(),
+                    hasSsafyLink,
+                    hasMainAccount,
+                    hasSeedmoneyAccount,
+                    mainAccountCreated,
+                    seedmoneyAccountCreated,
+                    exception
+            );
+            throw exception;
+        } catch (final RuntimeException exception) {
+            log.error(
+                    "사용자 자산 연동 실패. userId={}, hasSsafyLink={}, hasMainAccount={}, hasSeedmoneyAccount={}, mainAccountCreated={}, seedmoneyAccountCreated={}",
+                    userId,
+                    hasSsafyLink,
+                    hasMainAccount,
+                    hasSeedmoneyAccount,
+                    mainAccountCreated,
+                    seedmoneyAccountCreated,
+                    exception
+            );
+            throw exception;
+        }
     }
 
     private void validateAccountConfig() {
@@ -84,25 +144,30 @@ public class UserAssetLinkService {
 
     private String resolveSsafyUserKey(final User user) {
         if (user.hasSsafyLink()) {
+            log.info("기존 SSAFY 연동 정보 재사용. userId={}", user.getId());
             return user.getSsafyUserKey();
         }
 
-        final String userKey = resolveSsafyUserKey(user.getEmail().getValue());
+        final String userKey = resolveSsafyUserKey(user.getId(), user.getEmail().getValue());
         user.linkSsafy(userKey, LocalDateTime.now());
+        log.info("SSAFY 연동 정보 저장 완료. userId={}", user.getId());
         return userKey;
     }
 
-    private String resolveSsafyUserKey(final String email) {
+    private String resolveSsafyUserKey(final Long userId, final String email) {
         try {
             return extractUserKey(ssafyMemberClient.createMember(email));
         } catch (final RestClientException exception) {
+            log.warn("SSAFY 회원 생성 실패로 회원 조회를 시도합니다. userId={}", userId, exception);
             return extractUserKey(ssafyMemberClient.searchMember(email));
         } catch (final HomerunException exception) {
             if (exception.getErrorCode() != ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID) {
                 throw exception;
             }
+            log.warn("SSAFY 회원 생성 응답이 올바르지 않아 회원 조회를 시도합니다. userId={}", userId, exception);
             return extractUserKey(ssafyMemberClient.searchMember(email));
         } catch (final RuntimeException exception) {
+            log.warn("SSAFY 회원 생성 중 예기치 않은 오류로 회원 조회를 시도합니다. userId={}", userId, exception);
             return extractUserKey(ssafyMemberClient.searchMember(email));
         }
     }
