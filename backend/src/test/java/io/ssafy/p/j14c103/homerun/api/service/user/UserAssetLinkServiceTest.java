@@ -222,6 +222,33 @@ class UserAssetLinkServiceTest {
         assertThat(mainAccount.getBalanceSnapshot()).isEqualTo(mainAccountInitialBalanceService.generateInitialBalance(user.getId()));
     }
 
+    @DisplayName("SSAFY 회원 생성 응답이 비어도 회원 조회로 userKey를 확보한다.")
+    @Test
+    void linkAssetsWithCreateMemberRuntimeExceptionFallback() {
+        // given
+        saveFinancialProductTemplates();
+        saveStockMarkets();
+        saveCardProducts();
+        stubCurrentPrices();
+        final User user = saveUser("user@example.com");
+        given(ssafyMemberClient.createMember("user@example.com"))
+                .willThrow(new RuntimeException("SSAFY 회원 생성 응답이 없습니다."));
+        given(ssafyMemberClient.searchMember("user@example.com"))
+                .willReturn(Map.of("userKey", "fallback-user-key"));
+        given(ssafyDemandDepositClient.createDemandDepositAccount("fallback-user-key", "test-account-type"))
+                .willReturn(Map.of("accountNo", "0015555555555555"))
+                .willReturn(Map.of("accountNo", "0016666666666666"));
+        given(ssafyDemandDepositClient.depositAccount(eq("fallback-user-key"), eq("0015555555555555"), anyLong()))
+                .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
+
+        // when
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+
+        // then
+        assertThat(response.isAssetLinked()).isTrue();
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getSsafyUserKey()).isEqualTo("fallback-user-key");
+    }
+
     @DisplayName("이미 연동된 사용자는 계좌를 중복 생성하지 않는다.")
     @Test
     void linkAssetsWithAlreadyLinkedUser() {
@@ -308,12 +335,41 @@ class UserAssetLinkServiceTest {
                 .isEqualTo(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
     }
 
-    @DisplayName("SSAFY 회원 응답에 userKey가 없으면 예외가 발생한다.")
+    @DisplayName("SSAFY 회원 생성 응답에 userKey가 없어도 회원 조회로 복구한다.")
     @Test
     void linkAssetsWithMissingUserKey() {
         // given
+        saveFinancialProductTemplates();
+        saveStockMarkets();
+        saveCardProducts();
+        stubCurrentPrices();
         final User user = saveUser("user@example.com");
         given(ssafyMemberClient.createMember("user@example.com"))
+                .willReturn(Map.of("status", "success"));
+        given(ssafyMemberClient.searchMember("user@example.com"))
+                .willReturn(Map.of("userKey", "fallback-user-key"));
+        given(ssafyDemandDepositClient.createDemandDepositAccount("fallback-user-key", "test-account-type"))
+                .willReturn(Map.of("accountNo", "0017777777777777"))
+                .willReturn(Map.of("accountNo", "0018888888888888"));
+        given(ssafyDemandDepositClient.depositAccount(eq("fallback-user-key"), eq("0017777777777777"), anyLong()))
+                .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
+
+        // when
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+
+        // then
+        assertThat(response.isAssetLinked()).isTrue();
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getSsafyUserKey()).isEqualTo("fallback-user-key");
+    }
+
+    @DisplayName("SSAFY 회원 생성과 조회 모두 userKey를 주지 않으면 예외가 발생한다.")
+    @Test
+    void linkAssetsWithMissingUserKeyFromCreateAndSearch() {
+        // given
+        final User user = saveUser("user@example.com");
+        given(ssafyMemberClient.createMember("user@example.com"))
+                .willReturn(Map.of("status", "success"));
+        given(ssafyMemberClient.searchMember("user@example.com"))
                 .willReturn(Map.of("status", "success"));
 
         // when & then
