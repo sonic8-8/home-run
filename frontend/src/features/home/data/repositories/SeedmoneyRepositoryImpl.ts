@@ -7,6 +7,11 @@ export class SeedmoneyRepositoryImpl implements ISeedmoneyRepository {
   private readonly dataSource: SeedmoneyRemoteDataSource;
   constructor(dataSource: SeedmoneyRemoteDataSource) { this.dataSource = dataSource; }
 
+  async create(accountTypeUniqueNo: string): Promise<SeedMoneyAccount> {
+    const m = await this.dataSource.create({ accountTypeUniqueNo });
+    return { bankName: m.bankName, accountNumber: m.accountNumber, balance: m.balance };
+  }
+
   async getAccount(): Promise<SeedMoneyAccount> {
     const m = await this.dataSource.getAccount();
     return { bankName: m.bankName, accountNumber: m.accountNumber, balance: m.balance };

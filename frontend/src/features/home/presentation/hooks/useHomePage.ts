@@ -27,6 +27,7 @@ import { GetSpendingUseCase } from '../../domain/usecases/GetSpendingUseCase';
 
 import { SeedmoneyRemoteDataSource } from '../../data/datasources/SeedmoneyRemoteDataSource';
 import { SeedmoneyRepositoryImpl } from '../../data/repositories/SeedmoneyRepositoryImpl';
+import { CreateSeedmoneyAccountUseCase } from '../../domain/usecases/CreateSeedmoneyAccountUseCase';
 import { GetSeedmoneyAccountUseCase } from '../../domain/usecases/GetSeedmoneyAccountUseCase';
 import { TransferSeedmoneyUseCase } from '../../domain/usecases/TransferSeedmoneyUseCase';
 import { DepositSeedmoneyUseCase } from '../../domain/usecases/DepositSeedmoneyUseCase';
@@ -69,6 +70,7 @@ const getSpending = new GetSpendingUseCase(spendingRepo);
 
 // ── Seedmoney
 const seedmoneyRepo = new SeedmoneyRepositoryImpl(new SeedmoneyRemoteDataSource());
+const createSeedmoneyAccount = new CreateSeedmoneyAccountUseCase(seedmoneyRepo);
 const getSeedmoneyAccount = new GetSeedmoneyAccountUseCase(seedmoneyRepo);
 const transferSeedmoney = new TransferSeedmoneyUseCase(seedmoneyRepo);
 const depositSeedmoney = new DepositSeedmoneyUseCase(seedmoneyRepo);
@@ -165,6 +167,12 @@ export const useHomePage = () => {
     await fetchAll();
   }, [fetchAll]);
 
+  const createAccount = useCallback(async (accountTypeUniqueNo: string) => {
+    const result = await createSeedmoneyAccount.execute(accountTypeUniqueNo);
+    setSeedMoney(result);
+    return result;
+  }, []);
+
   const transfer = useCallback(async (toAccountNumber: string, amount: number) => {
     const result = await transferSeedmoney.execute(toAccountNumber, amount);
     setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
@@ -192,6 +200,11 @@ export const useHomePage = () => {
   const saveToPass = useCallback(async (subscriptionId: number): Promise<PassSaveResult> => {
     const result = await savePass.execute(subscriptionId);
     setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
+    setPassSubscriptions((prev) =>
+      prev.map((s) =>
+        s.subscriptionId === subscriptionId ? { ...s, totalSaved: result.totalSaved } : s,
+      ),
+    );
     return result;
   }, []);
 
@@ -211,6 +224,7 @@ export const useHomePage = () => {
     loading,
     error,
     handleLinkAssets,
+    createAccount,
     transfer,
     deposit,
     subscribeToPas,
