@@ -39,6 +39,11 @@ public enum ErrorCode {
     HOUSING_REGISTRY_SAMPLE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "HOUSING_002", "등기부 샘플 데이터 구성이 올바르지 않습니다."),
     HOUSING_REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "HOUSING_003", "존재하지 않는 지역입니다."),
     HOUSING_DISTRICT_NOT_FOUND(HttpStatus.NOT_FOUND, "HOUSING_004", "존재하지 않는 구입니다."),
+    HOUSING_CONTRACT_REVIEW_TARGET_MISMATCH(
+        HttpStatus.BAD_REQUEST,
+        "HOUSING_005",
+        "세션의 목표 매물과 일치하지 않는 계약 검토 요청입니다."
+    ),
 
     WORLD_SESSION_NOT_FOUND(HttpStatus.BAD_REQUEST, "WORLD_001", "존재하지 않는 게임 세션입니다."),
     WORLD_CYCLE_STATE_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "WORLD_002", "세션의 경제 사이클 상태가 올바르지 않습니다."),
