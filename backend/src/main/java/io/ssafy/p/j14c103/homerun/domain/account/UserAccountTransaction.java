@@ -44,6 +44,12 @@ public class UserAccountTransaction {
     @Column(name = "counterparty_account_number", length = 50)
     private String counterpartyAccountNumber;
 
+    @Column(name = "transaction_summary", length = 255)
+    private String transactionSummary;
+
+    @Column(name = "ssafy_transaction_unique_no", length = 50)
+    private String ssafyTransactionUniqueNo;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -54,6 +60,8 @@ public class UserAccountTransaction {
             final AccountTransactionType transactionType,
             final Integer amount,
             final String counterpartyAccountNumber,
+            final String transactionSummary,
+            final String ssafyTransactionUniqueNo,
             final LocalDateTime createdAt) {
         this.userId = userId;
         this.accountType = accountType;
@@ -61,6 +69,8 @@ public class UserAccountTransaction {
         this.transactionType = transactionType;
         this.amount = amount;
         this.counterpartyAccountNumber = counterpartyAccountNumber;
+        this.transactionSummary = transactionSummary;
+        this.ssafyTransactionUniqueNo = ssafyTransactionUniqueNo;
         this.createdAt = createdAt;
     }
 
@@ -78,6 +88,8 @@ public class UserAccountTransaction {
                 transactionType,
                 amount,
                 counterpartyAccountNumber,
+                null,
+                null,
                 LocalDateTime.now()
         );
     }
@@ -89,6 +101,29 @@ public class UserAccountTransaction {
             final AccountTransactionType transactionType,
             final Integer amount,
             final String counterpartyAccountNumber,
+            final LocalDateTime createdAt) {
+        return create(
+                userId,
+                accountType,
+                passSubscriptionId,
+                transactionType,
+                amount,
+                counterpartyAccountNumber,
+                null,
+                null,
+                createdAt
+        );
+    }
+
+    public static UserAccountTransaction create(
+            final Long userId,
+            final AccountType accountType,
+            final Long passSubscriptionId,
+            final AccountTransactionType transactionType,
+            final Integer amount,
+            final String counterpartyAccountNumber,
+            final String transactionSummary,
+            final String ssafyTransactionUniqueNo,
             final LocalDateTime createdAt) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
@@ -113,6 +148,31 @@ public class UserAccountTransaction {
                 transactionType,
                 amount,
                 counterpartyAccountNumber,
+                transactionSummary,
+                ssafyTransactionUniqueNo,
                 createdAt);
+    }
+
+    public static UserAccountTransaction createSsafySynced(
+            final Long userId,
+            final AccountType accountType,
+            final AccountTransactionType transactionType,
+            final Integer amount,
+            final String counterpartyAccountNumber,
+            final String transactionSummary,
+            final String ssafyTransactionUniqueNo,
+            final LocalDateTime createdAt
+    ) {
+        return create(
+                userId,
+                accountType,
+                null,
+                transactionType,
+                amount,
+                counterpartyAccountNumber,
+                transactionSummary,
+                ssafyTransactionUniqueNo,
+                createdAt
+        );
     }
 }

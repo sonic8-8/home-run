@@ -29,7 +29,6 @@ ssafy:
     bank-code: "001"
     bank-name: 한국은행
     account-type-unique-no: test-account-type
-    main-initial-balance: 10000000
 
 public-data:
   api:

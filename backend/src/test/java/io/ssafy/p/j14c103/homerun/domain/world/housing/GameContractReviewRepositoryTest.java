@@ -103,4 +103,40 @@ class GameContractReviewRepositoryTest {
         assertThat(result.orElseThrow().getReviewedAt())
                 .isEqualTo(LocalDateTime.of(2026, 3, 16, 10, 0));
     }
+
+    @DisplayName("reviewedAt이 같으면 id 내림차순으로 최신 리뷰를 조회한다.")
+    @Test
+    void findLatestReviewByGameSessionIdAndPropertyIdWithIdTieBreaker() {
+        GameContractReview first = GameContractReview.create(
+                1L,
+                101L,
+                ContractReviewStatus.FAILED,
+                List.of("TRAP-01"),
+                List.of("TRAP-01"),
+                ContractResult.FAIL,
+                LocalDateTime.of(2026, 3, 16, 10, 0)
+        );
+
+        GameContractReview second = GameContractReview.create(
+                1L,
+                101L,
+                ContractReviewStatus.PASSED,
+                List.of("TRAP-01", "TRAP-02"),
+                List.of("TRAP-01", "TRAP-02"),
+                ContractResult.SAFE,
+                LocalDateTime.of(2026, 3, 16, 10, 0)
+        );
+
+        gameContractReviewRepository.saveAndFlush(first);
+        gameContractReviewRepository.saveAndFlush(second);
+        entityManager.clear();
+
+        Optional<GameContractReview> result =
+                gameContractReviewRepository
+                    .findTopByGameSessionIdAndPropertyIdOrderByReviewedAtDescIdDesc(1L, 101L);
+
+        assertThat(result).isPresent();
+        assertThat(result.orElseThrow().getReviewStatus()).isEqualTo(ContractReviewStatus.PASSED);
+        assertThat(result.orElseThrow().getContractResult()).isEqualTo(ContractResult.SAFE);
+    }
 }

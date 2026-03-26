@@ -2,8 +2,12 @@ package io.ssafy.p.j14c103.homerun.api.service.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.MainAccountInitialBalanceService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
 import io.ssafy.p.j14c103.homerun.client.kis.KisStockClient;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
@@ -35,9 +39,11 @@ import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -48,6 +54,9 @@ import org.springframework.web.client.RestClientException;
 @SpringBootTest
 @ActiveProfiles("test")
 class UserAssetLinkServiceTest {
+
+    private static final int MIN_MAIN_INITIAL_BALANCE = 3_000_000;
+    private static final int MAX_MAIN_INITIAL_BALANCE = 10_000_000;
 
     @Autowired
     private UserAssetLinkService userAssetLinkService;
@@ -91,6 +100,9 @@ class UserAssetLinkServiceTest {
     @Autowired
     private SsafyAccountProperties ssafyAccountProperties;
 
+    @Autowired
+    private MainAccountInitialBalanceService mainAccountInitialBalanceService;
+
     @MockitoBean
     private SsafyMemberClient ssafyMemberClient;
 
@@ -99,6 +111,11 @@ class UserAssetLinkServiceTest {
 
     @MockitoBean
     private KisStockClient kisStockClient;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(userAssetLinkService, "ssafyAccountProperties", ssafyAccountProperties);
+    }
 
     @AfterEach
     void tearDown() {
@@ -131,8 +148,8 @@ class UserAssetLinkServiceTest {
         given(ssafyDemandDepositClient.createDemandDepositAccount("test-user-key", "test-account-type"))
                 .willReturn(Map.of("accountNo", "0011111111111111"))
                 .willReturn(Map.of("accountNo", "0012222222222222"));
-        given(ssafyDemandDepositClient.depositAccount("test-user-key", "0011111111111111", 10_000_000L))
-                .willReturn(Map.of("status", "success"));
+        given(ssafyDemandDepositClient.depositAccount(eq("test-user-key"), eq("0011111111111111"), anyLong()))
+                .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
 
         // when
         final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
@@ -149,14 +166,27 @@ class UserAssetLinkServiceTest {
                 .orElseThrow();
         final UserAccount seedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.SEEDMONEY)
                 .orElseThrow();
-        assertThat(mainAccount.getBalanceSnapshot()).isEqualTo(10_000_000);
+        assertThat(mainAccount.getBalanceSnapshot()).isBetween(MIN_MAIN_INITIAL_BALANCE, MAX_MAIN_INITIAL_BALANCE);
+        assertThat(mainAccount.getBalanceSnapshot() % 10_000).isZero();
+        assertThat(mainAccount.getBalanceSnapshot())
+                .isEqualTo(mainAccountInitialBalanceService.generateInitialBalance(user.getId()));
+        assertThat(mainAccount.getMainInitialHistorySeeded()).isTrue();
         assertThat(seedmoneyAccount.getBalanceSnapshot()).isZero();
+        final ArgumentCaptor<Long> depositAmountCaptor = ArgumentCaptor.forClass(Long.class);
+        then(ssafyDemandDepositClient).should()
+                .depositAccount(eq("test-user-key"), eq("0011111111111111"), depositAmountCaptor.capture());
+        assertThat(depositAmountCaptor.getValue()).isEqualTo((long) mainAccount.getBalanceSnapshot());
         assertThat(userAccountTransactionRepository.findAll())
-                .anySatisfy(transaction -> {
-                    assertThat(transaction.getAccountType()).isEqualTo(AccountType.MAIN);
-                    assertThat(transaction.getTransactionType()).isEqualTo(AccountTransactionType.DEPOSIT);
-                    assertThat(transaction.getAmount()).isEqualTo(10_000_000);
-                });
+                .isNotEmpty();
+        final int currentBalanceFromHistory = userAccountTransactionRepository.findAll().stream()
+                .filter(transaction -> transaction.getAccountType() == AccountType.MAIN)
+                .mapToInt(transaction -> transaction.getTransactionType() == AccountTransactionType.WITHDRAW
+                        ? -transaction.getAmount()
+                        : transaction.getAmount())
+                .sum();
+        assertThat(currentBalanceFromHistory).isEqualTo(mainAccount.getBalanceSnapshot());
+        assertThat(userAccountTransactionRepository.findAll())
+                .anySatisfy(transaction -> assertThat(transaction.getTransactionSummary()).isEqualTo("초기 자산 설정"));
         assertThat(userFinancialProductRepository.findByUserIdAndActiveYnTrue(user.getId())).isNotEmpty();
         assertThat(ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(user.getId())).isNotEmpty();
         assertThat(userFinancialSummaryRepository.findById(user.getId())).isPresent();
@@ -178,8 +208,8 @@ class UserAssetLinkServiceTest {
         given(ssafyDemandDepositClient.createDemandDepositAccount("fallback-user-key", "test-account-type"))
                 .willReturn(Map.of("accountNo", "0013333333333333"))
                 .willReturn(Map.of("accountNo", "0014444444444444"));
-        given(ssafyDemandDepositClient.depositAccount("fallback-user-key", "0013333333333333", 10_000_000L))
-                .willReturn(Map.of("status", "success"));
+        given(ssafyDemandDepositClient.depositAccount(eq("fallback-user-key"), eq("0013333333333333"), anyLong()))
+                .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
 
         // when
         final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
@@ -187,6 +217,9 @@ class UserAssetLinkServiceTest {
         // then
         assertThat(response.isAssetLinked()).isTrue();
         assertThat(userRepository.findById(user.getId()).orElseThrow().getSsafyUserKey()).isEqualTo("fallback-user-key");
+        final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN)
+                .orElseThrow();
+        assertThat(mainAccount.getBalanceSnapshot()).isEqualTo(mainAccountInitialBalanceService.generateInitialBalance(user.getId()));
     }
 
     @DisplayName("이미 연동된 사용자는 계좌를 중복 생성하지 않는다.")
@@ -265,7 +298,7 @@ class UserAssetLinkServiceTest {
         ReflectionTestUtils.setField(
                 userAssetLinkService,
                 "ssafyAccountProperties",
-                SsafyAccountProperties.of("001", "한국은행", "", 10_000_000L)
+                SsafyAccountProperties.of("001", "한국은행", "")
         );
 
         // when & then

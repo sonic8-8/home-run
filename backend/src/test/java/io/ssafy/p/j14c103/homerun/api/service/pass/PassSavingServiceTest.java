@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.verify;
 
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSaveServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassHistoryResponse;
 import io.ssafy.p.j14c103.homerun.api.service.pass.response.PassSaveResponse;
@@ -73,6 +75,9 @@ class PassSavingServiceTest {
     @MockitoBean
     private UserFinancialSummaryService userFinancialSummaryService;
 
+    @MockitoBean
+    private UserSsafyAccountSyncService userSsafyAccountSyncService;
+
     @DisplayName("PASS 저축 시 MAIN에서 SEEDMONEY로 이체하고 거래 이력을 저장한다")
     @Test
     void save() {
@@ -84,12 +89,22 @@ class PassSavingServiceTest {
                 .build();
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
         given(demandDepositClient.transferAccount(any(), any(), any(), anyLong()))
-                .willReturn(Map.of("status", "success"));
-        given(demandDepositClient.inquireAccountList("test-key"))
-                .willReturn(List.of(
-                        Map.of("accountNo", "출금계좌", "accountBalance", "295000"),
-                        Map.of("accountNo", "시드머니계좌", "accountBalance", "295000")
+                .willReturn(Map.of(
+                        "REC",
+                        List.of(
+                                Map.of("accountNo", "출금계좌", "transactionUniqueNo", "61"),
+                                Map.of("accountNo", "시드머니계좌", "transactionUniqueNo", "62")
+                        )
                 ));
+        willAnswer(invocation -> {
+            userAccountRepository.findByUserIdAndAccountType(1L, AccountType.MAIN)
+                    .orElseThrow()
+                    .updateBalance(295000);
+            userAccountRepository.findByUserIdAndAccountType(1L, AccountType.SEEDMONEY)
+                    .orElseThrow()
+                    .updateBalance(295000);
+            return null;
+        }).given(userSsafyAccountSyncService).syncLinkedAccounts(1L);
 
         // when
         final PassSaveResponse result = passSavingService.save(1L, request);
@@ -109,10 +124,6 @@ class PassSavingServiceTest {
         assertThat(seedmoneyTransactions.get(0).getTransactionType()).isEqualTo("SAVE");
         assertThat(seedmoneyTransactions.get(0).getPassId()).isEqualTo(subscription.getId());
         assertThat(userPassTransactionRepository.findAll()).hasSize(1);
-        assertThat(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.MAIN).orElseThrow().getBalanceSnapshot())
-                .isEqualTo(295000);
-        assertThat(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.SEEDMONEY).orElseThrow().getBalanceSnapshot())
-                .isEqualTo(295000);
         verify(demandDepositClient).transferAccount("test-key", "시드머니계좌", "출금계좌", 5000);
         verify(userFinancialSummaryService).getSummary(1L);
     }

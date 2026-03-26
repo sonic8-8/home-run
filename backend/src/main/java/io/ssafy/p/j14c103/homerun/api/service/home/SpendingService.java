@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingCategoryDetail;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.SpendingResponse;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
@@ -28,12 +29,14 @@ public class SpendingService {
 
     private final CardTransactionRepository cardTransactionRepository;
     private final UserAccountTransactionRepository userAccountTransactionRepository;
+    private final UserSsafyAccountSyncService userSsafyAccountSyncService;
 
     public SpendingResponse getSpending(final Long userId, final String month) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
 
+        userSsafyAccountSyncService.syncLinkedAccounts(userId);
         final LocalDate targetMonth = parseMonth(month);
         final String resolvedMonth = targetMonth.format(MONTH_FORMATTER);
         final LocalDate startDate = targetMonth.withDayOfMonth(1);
