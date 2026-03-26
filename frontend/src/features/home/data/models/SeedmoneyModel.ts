@@ -18,3 +18,7 @@ export interface SeedmoneyDepositRequestModel {
   fromAccountNumber: string;
   amount: number;
 }
+
+export interface SeedmoneyCreateRequestModel {
+  accountTypeUniqueNo: string;
+}

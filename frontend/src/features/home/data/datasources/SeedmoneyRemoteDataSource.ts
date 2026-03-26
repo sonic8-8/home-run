@@ -4,9 +4,14 @@ import type {
   SeedmoneyTransactionModel,
   SeedmoneyTransferRequestModel,
   SeedmoneyDepositRequestModel,
+  SeedmoneyCreateRequestModel,
 } from '../models/SeedmoneyModel';
 
 export class SeedmoneyRemoteDataSource {
+  create(body: SeedmoneyCreateRequestModel): Promise<SeedmoneyAccountModel> {
+    return apiClient.post<SeedmoneyAccountModel>('/api/seedmoney/create', body);
+  }
+
   getAccount(): Promise<SeedmoneyAccountModel> {
     return apiClient.get<SeedmoneyAccountModel>('/api/seedmoney/account');
   }
