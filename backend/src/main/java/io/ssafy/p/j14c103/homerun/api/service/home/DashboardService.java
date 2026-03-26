@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
 import io.ssafy.p.j14c103.homerun.api.service.home.response.DashboardResponse;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
@@ -21,12 +22,14 @@ public class DashboardService {
     private final UserAccountTransactionRepository userAccountTransactionRepository;
     private final CardTransactionRepository cardTransactionRepository;
     private final UserFinancialSummaryService userFinancialSummaryService;
+    private final UserSsafyAccountSyncService userSsafyAccountSyncService;
 
     public DashboardResponse getDashboard(final Long userId) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
 
+        userSsafyAccountSyncService.syncLinkedAccounts(userId);
         final UserFinancialSummary summary = userFinancialSummaryService.getSummary(userId);
         final Money totalAssets = Money.of(summary.getTotalAssetAmount().longValue());
         final Money monthlyIncome = calculateMonthlyIncome(userId);

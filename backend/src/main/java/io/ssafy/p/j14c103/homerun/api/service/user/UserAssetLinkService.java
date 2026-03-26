@@ -1,17 +1,17 @@
 package io.ssafy.p.j14c103.homerun.api.service.user;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.MainAccountInitialBalanceService;
+import io.ssafy.p.j14c103.homerun.api.service.account.MainAccountInitialHistoryService;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialMockDataService;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.SeedmoneyAccountProjectionService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyMemberClient;
 import io.ssafy.p.j14c103.homerun.config.SsafyAccountProperties;
-import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
-import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransaction;
-import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -32,10 +32,12 @@ public class UserAssetLinkService {
     private final SsafyMemberClient ssafyMemberClient;
     private final SsafyDemandDepositClient ssafyDemandDepositClient;
     private final UserAccountRepository userAccountRepository;
-    private final UserAccountTransactionRepository userAccountTransactionRepository;
     private final SsafyAccountProperties ssafyAccountProperties;
     private final UserFinancialMockDataService userFinancialMockDataService;
     private final UserFinancialSummaryService userFinancialSummaryService;
+    private final MainAccountInitialBalanceService mainAccountInitialBalanceService;
+    private final MainAccountInitialHistoryService mainAccountInitialHistoryService;
+    private final SeedmoneyAccountProjectionService seedmoneyAccountProjectionService;
 
     public UserAssetLinkResponse linkAssets(final Long userId) {
         final User user = userRepository.findById(userId)
@@ -64,6 +66,9 @@ public class UserAssetLinkService {
             seedmoneyAccountCreated = true;
         }
 
+        final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
+                .orElseThrow(() -> new IllegalStateException("주계좌 생성 후 조회에 실패했습니다."));
+        mainAccountInitialHistoryService.seedInitialHistory(userId);
         userFinancialMockDataService.createInitialData(userId);
         userFinancialSummaryService.getSummary(userId);
 
@@ -109,17 +114,19 @@ public class UserAssetLinkService {
     }
 
     private void createMainAccount(final Long userId, final String ssafyUserKey) {
+        final int initialBalance = mainAccountInitialBalanceService.generateInitialBalance(userId);
         final Map<String, Object> response = ssafyDemandDepositClient.createDemandDepositAccount(
                 ssafyUserKey,
                 ssafyAccountProperties.getAccountTypeUniqueNo()
         );
         final String accountNumber = extractAccountNumber(response);
 
-        ssafyDemandDepositClient.depositAccount(
+        final Map<String, Object> depositResponse = ssafyDemandDepositClient.depositAccount(
                 ssafyUserKey,
                 accountNumber,
-                ssafyAccountProperties.getMainInitialBalance()
+                initialBalance
         );
+        final String bootstrapTransactionUniqueNo = extractTransactionUniqueNo(depositResponse);
 
         final UserAccount account = UserAccount.create(
                 userId,
@@ -127,19 +134,10 @@ public class UserAssetLinkService {
                 ssafyAccountProperties.getBankCode(),
                 ssafyAccountProperties.getBankName(),
                 accountNumber,
-                (int) ssafyAccountProperties.getMainInitialBalance()
+                initialBalance
         );
+        account.initializeSsafySync(bootstrapTransactionUniqueNo);
         userAccountRepository.save(account);
-
-        final UserAccountTransaction transaction = UserAccountTransaction.create(
-                userId,
-                AccountType.MAIN,
-                null,
-                AccountTransactionType.DEPOSIT,
-                (int) ssafyAccountProperties.getMainInitialBalance(),
-                null
-        );
-        userAccountTransactionRepository.save(transaction);
     }
 
     private void createSeedmoneyAccount(final Long userId, final String ssafyUserKey) {
@@ -157,7 +155,9 @@ public class UserAssetLinkService {
                 accountNumber,
                 0
         );
+        account.initializeSsafySync(null);
         userAccountRepository.save(account);
+        seedmoneyAccountProjectionService.syncFromUserAccount(account);
     }
 
     private String extractAccountNumber(final Map<String, Object> response) {
@@ -171,5 +171,18 @@ public class UserAssetLinkService {
             throw new HomerunException(ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID);
         }
         return accountNumber;
+    }
+
+    private String extractTransactionUniqueNo(final Map<String, Object> response) {
+        final Object value = response.get("transactionUniqueNo");
+        if (value == null) {
+            return null;
+        }
+
+        final String transactionUniqueNo = String.valueOf(value);
+        if (transactionUniqueNo.isBlank()) {
+            return null;
+        }
+        return transactionUniqueNo;
     }
 }

@@ -23,7 +23,6 @@ ssafy:
     bank-code: ${SSAFY_BANK_CODE:001}
     bank-name: ${SSAFY_BANK_NAME:한국은행}
     account-type-unique-no: ${SSAFY_ACCOUNT_TYPE_UNIQUE_NO:}
-    main-initial-balance: ${SSAFY_MAIN_INITIAL_BALANCE:10000000}
 
 fss:
   api:

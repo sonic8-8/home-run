@@ -13,4 +13,12 @@ public interface UserAccountTransactionRepository extends JpaRepository<UserAcco
             LocalDateTime start,
             LocalDateTime end
     );
+
+    boolean existsByUserIdAndAccountTypeAndSsafyTransactionUniqueNo(
+            Long userId,
+            AccountType accountType,
+            String ssafyTransactionUniqueNo
+    );
+
+    boolean existsByUserIdAndAccountType(Long userId, AccountType accountType);
 }

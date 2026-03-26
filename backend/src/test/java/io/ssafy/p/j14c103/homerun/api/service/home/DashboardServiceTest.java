@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.home;
 
+import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -42,6 +43,9 @@ class DashboardServiceTest {
 
     @Mock
     private UserFinancialSummaryService userFinancialSummaryService;
+
+    @Mock
+    private UserSsafyAccountSyncService userSsafyAccountSyncService;
 
     @InjectMocks
     private DashboardService dashboardService;
