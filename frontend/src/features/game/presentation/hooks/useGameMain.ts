@@ -73,7 +73,7 @@ export const useGameMain = () => {
       }
     };
     load();
-  }, [sessionId]);
+  }, [fetchTurn]);
 
   const totalAssets =
     assets !== null

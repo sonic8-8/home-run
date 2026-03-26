@@ -5,16 +5,15 @@ import { GetGameTurnUseCase } from '@features/game/domain/usecases/GetGameTurnUs
 import { GetLatestNewsUseCase } from '@features/game/domain/usecases/GetLatestNewsUseCase'
 import type { GameTurn, TurnNews } from '@features/game/domain/entities/GameTurn'
 
+const gameWorldRepo = new GameWorldRepositoryImpl(new GameWorldRemoteDataSource())
+const getTurnUseCase = new GetGameTurnUseCase(gameWorldRepo)
+const getLatestNewsUseCase = new GetLatestNewsUseCase(gameWorldRepo)
+
 export function useGameWorld(sessionId: number) {
   const [turn, setTurn] = useState<GameTurn | null>(null)
   const [news, setNews] = useState<TurnNews | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const dataSource = new GameWorldRemoteDataSource()
-  const repository = new GameWorldRepositoryImpl(dataSource)
-  const getTurnUseCase = new GetGameTurnUseCase(repository)
-  const getLatestNewsUseCase = new GetLatestNewsUseCase(repository)
 
   const fetchTurn = useCallback(async (): Promise<GameTurn | null> => {
     setLoading(true)

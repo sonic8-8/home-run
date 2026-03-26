@@ -6,17 +6,16 @@ import { GetStockHoldingsUseCase } from '@features/stock/domain/usecases/GetStoc
 import { OrderStockUseCase } from '@features/stock/domain/usecases/OrderStockUseCase'
 import type { StockMarket, StockHoldings, StockOrder, StockOrderParams } from '@features/stock/domain/entities/Stock'
 
+const stockRepo = new StockRepositoryImpl(new StockRemoteDataSource())
+const getMarketUseCase = new GetStockMarketUseCase(stockRepo)
+const getHoldingsUseCase = new GetStockHoldingsUseCase(stockRepo)
+const orderUseCase = new OrderStockUseCase(stockRepo)
+
 export function useStock(sessionId: number) {
   const [market, setMarket] = useState<StockMarket | null>(null)
   const [holdings, setHoldings] = useState<StockHoldings | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const dataSource = new StockRemoteDataSource()
-  const repository = new StockRepositoryImpl(dataSource)
-  const getMarketUseCase = new GetStockMarketUseCase(repository)
-  const getHoldingsUseCase = new GetStockHoldingsUseCase(repository)
-  const orderUseCase = new OrderStockUseCase(repository)
 
   const fetchMarket = useCallback(async () => {
     setLoading(true)
