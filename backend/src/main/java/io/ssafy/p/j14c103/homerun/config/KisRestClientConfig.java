@@ -23,13 +23,15 @@ public class KisRestClientConfig {
 
     @Bean
     public RestClient kisRestClient(
+            final RestClient.Builder restClientBuilder,
             final KisApiProperties kisApiProperties,
             @Qualifier("kisClientHttpRequestFactory")
             final ClientHttpRequestFactory kisClientHttpRequestFactory
     ) {
-        return RestClient.builder()
+        return restClientBuilder.clone()
                 .baseUrl(kisApiProperties.getBaseUrl())
                 .requestFactory(kisClientHttpRequestFactory)
+                .observationConvention(new HomerunClientObservationConvention("kis"))
                 .build();
     }
 }
