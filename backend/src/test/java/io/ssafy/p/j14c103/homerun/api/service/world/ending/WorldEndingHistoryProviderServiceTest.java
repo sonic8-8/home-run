@@ -11,6 +11,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
+import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
+import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.event.GameEventLog;
 import io.ssafy.p.j14c103.homerun.domain.history.event.GameEventLogRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLog;
@@ -47,6 +49,9 @@ class WorldEndingHistoryProviderServiceTest {
 
     @Autowired
     private GameHousingRepository gameHousingRepository;
+
+    @Autowired
+    private GameplayHistoryRepository gameplayHistoryRepository;
 
     @DisplayName("엔딩 히스토리는 뉴스와 이벤트를 turn 오름차순으로 집계하고 현재 주거 스냅샷을 함께 반환한다")
     @Test
@@ -105,6 +110,32 @@ class WorldEndingHistoryProviderServiceTest {
                 301L
             )
         );
+        gameplayHistoryRepository.saveAndFlush(
+            GameplayHistory.builder()
+                .gameId(Math.toIntExact(gameSession.getGameSessionId()))
+                .eventId(920001)
+                .tableName("게임주거")
+                .columnName("주거형태,보증금,월세,관리비,현재매물ID")
+                .targetKey1(String.valueOf(gameSession.getGameSessionId()))
+                .beforeValue("{\"housingType\":\"STUDIO\",\"propertyId\":201}")
+                .afterValue("{\"housingType\":\"VILLA\",\"propertyId\":202}")
+                .summary("전세 빌라로 이사했다.")
+                .occurredTurn(6)
+                .build()
+        );
+        gameplayHistoryRepository.saveAndFlush(
+            GameplayHistory.builder()
+                .gameId(Math.toIntExact(gameSession.getGameSessionId()))
+                .eventId(920001)
+                .tableName("게임주거")
+                .columnName("주거형태,보증금,월세,관리비,현재매물ID")
+                .targetKey1(String.valueOf(gameSession.getGameSessionId()))
+                .beforeValue("{\"housingType\":\"VILLA\",\"propertyId\":202}")
+                .afterValue("{\"housingType\":\"OWNED_APT\",\"propertyId\":301}")
+                .summary("자가 아파트를 마련했다.")
+                .occurredTurn(12)
+                .build()
+        );
 
         // when
         final WorldEndingHistoryProviderResponse response =
@@ -117,6 +148,13 @@ class WorldEndingHistoryProviderServiceTest {
         assertThat(response.getEventHistories())
             .extracting(WorldEndingHistoryProviderResponse.EventHistoryItem::getTurnNumber)
             .containsExactly(7, 9);
+        assertThat(response.getHousingHistories())
+            .extracting(WorldEndingHistoryProviderResponse.HousingHistoryItem::getTurnNumber)
+            .containsExactly(6, 12);
+        assertThat(response.getHousingHistories().get(0).getAfterState().getHousingType())
+            .isEqualTo(HousingType.VILLA);
+        assertThat(response.getHousingHistories().get(1).getAfterState().getPropertyId())
+            .isEqualTo(301L);
         assertThat(response.getHousingSnapshot().getCurrentHousingType()).isEqualTo(HousingType.OWNED_APT);
         assertThat(response.getHousingSnapshot().getCurrentPropertyId()).isEqualTo(301L);
         assertThat(response.getHousingSnapshot().getTargetPropertyId()).isEqualTo(450L);
@@ -135,6 +173,7 @@ class WorldEndingHistoryProviderServiceTest {
         // then
         assertThat(response.getNewsHistories()).isEmpty();
         assertThat(response.getEventHistories()).isEmpty();
+        assertThat(response.getHousingHistories()).isEmpty();
         assertThat(response.getHousingSnapshot().getCurrentHousingType()).isNull();
         assertThat(response.getHousingSnapshot().getCurrentPropertyId()).isNull();
         assertThat(response.getHousingSnapshot().getTargetPropertyId()).isEqualTo(777L);

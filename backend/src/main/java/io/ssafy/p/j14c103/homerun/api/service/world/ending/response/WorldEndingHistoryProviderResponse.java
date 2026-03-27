@@ -11,24 +11,33 @@ public class WorldEndingHistoryProviderResponse {
 
     private final List<NewsHistoryItem> newsHistories;
     private final List<EventHistoryItem> eventHistories;
+    private final List<HousingHistoryItem> housingHistories;
     private final HousingSnapshotItem housingSnapshot;
 
     private WorldEndingHistoryProviderResponse(
         final List<NewsHistoryItem> newsHistories,
         final List<EventHistoryItem> eventHistories,
+        final List<HousingHistoryItem> housingHistories,
         final HousingSnapshotItem housingSnapshot
     ) {
         this.newsHistories = List.copyOf(newsHistories);
         this.eventHistories = List.copyOf(eventHistories);
+        this.housingHistories = List.copyOf(housingHistories);
         this.housingSnapshot = housingSnapshot;
     }
 
     public static WorldEndingHistoryProviderResponse of(
         final List<NewsHistoryItem> newsHistories,
         final List<EventHistoryItem> eventHistories,
+        final List<HousingHistoryItem> housingHistories,
         final HousingSnapshotItem housingSnapshot
     ) {
-        return new WorldEndingHistoryProviderResponse(newsHistories, eventHistories, housingSnapshot);
+        return new WorldEndingHistoryProviderResponse(
+            newsHistories,
+            eventHistories,
+            housingHistories,
+            housingSnapshot
+        );
     }
 
     @Getter
@@ -124,6 +133,58 @@ public class WorldEndingHistoryProviderResponse {
             final Long targetPropertyId
         ) {
             return new HousingSnapshotItem(currentHousingType, currentPropertyId, targetPropertyId);
+        }
+    }
+
+    @Getter
+    public static class HousingHistoryItem {
+
+        private final Integer turnNumber;
+        private final String summary;
+        private final HousingStateItem beforeState;
+        private final HousingStateItem afterState;
+
+        private HousingHistoryItem(
+            final Integer turnNumber,
+            final String summary,
+            final HousingStateItem beforeState,
+            final HousingStateItem afterState
+        ) {
+            this.turnNumber = turnNumber;
+            this.summary = summary;
+            this.beforeState = beforeState;
+            this.afterState = afterState;
+        }
+
+        public static HousingHistoryItem of(
+            final Integer turnNumber,
+            final String summary,
+            final HousingStateItem beforeState,
+            final HousingStateItem afterState
+        ) {
+            return new HousingHistoryItem(turnNumber, summary, beforeState, afterState);
+        }
+    }
+
+    @Getter
+    public static class HousingStateItem {
+
+        private final HousingType housingType;
+        private final Long propertyId;
+
+        private HousingStateItem(
+            final HousingType housingType,
+            final Long propertyId
+        ) {
+            this.housingType = housingType;
+            this.propertyId = propertyId;
+        }
+
+        public static HousingStateItem of(
+            final HousingType housingType,
+            final Long propertyId
+        ) {
+            return new HousingStateItem(housingType, propertyId);
         }
     }
 }
