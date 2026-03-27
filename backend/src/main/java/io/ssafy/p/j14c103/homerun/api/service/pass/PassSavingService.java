@@ -31,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
@@ -114,15 +115,17 @@ public class PassSavingService {
                 subscription.getId(), amount);
         userPassTransactionRepository.save(passTransaction);
 
-        // 총 저축 합계 계산
-        final int totalSaved = calculateTotalSaved(userId);
+        final List<SeedmoneyTransaction> saveTransactions =
+                seedmoneyTransactionRepository.findByUserIdAndTransactionType(userId, "SAVE");
+        final int subscriptionTotalSaved = calculateSubscriptionTotalSaved(subscription, saveTransactions);
+        final int overallTotalSaved = calculateOverallTotalSaved(saveTransactions);
         userSsafyAccountSyncService.advanceSyncBaseline(mainAccount, mainTransactionUniqueNo);
         userSsafyAccountSyncService.advanceSyncBaseline(seedmoneyAccount, seedmoneyTransactionUniqueNo);
         userSsafyAccountSyncService.syncLinkedAccounts(userId);
         userFinancialSummaryService.getSummary(userId);
-        final int remainingBalance = seedmoneyAccount.getBalanceSnapshot();
+        final int remainingBalance = getRequiredSeedmoneyAccount(userId).getBalanceSnapshot();
 
-        return PassSaveResponse.of(amount, totalSaved, remainingBalance);
+        return PassSaveResponse.of(amount, subscriptionTotalSaved, overallTotalSaved, remainingBalance);
     }
 
     public PassWidgetResponse getWidget(final Long userId) {
@@ -160,10 +163,36 @@ public class PassSavingService {
                 .sum();
     }
 
-    private int calculateTotalSaved(final Long userId) {
-        return seedmoneyTransactionRepository.findByUserIdAndTransactionType(userId, "SAVE").stream()
+    private int calculateOverallTotalSaved(final List<SeedmoneyTransaction> saveTransactions) {
+        return saveTransactions.stream()
                 .mapToInt(SeedmoneyTransaction::getAmount)
                 .sum();
+    }
+
+    private int calculateSubscriptionTotalSaved(
+            final PassSubscription subscription,
+            final List<SeedmoneyTransaction> saveTransactions
+    ) {
+        return saveTransactions.stream()
+                .filter(transaction -> isMatchingPassSave(subscription, transaction))
+                .mapToInt(SeedmoneyTransaction::getAmount)
+                .sum();
+    }
+
+    private boolean isMatchingPassSave(
+            final PassSubscription subscription,
+            final SeedmoneyTransaction transaction
+    ) {
+        if (subscription.getId() != null && subscription.getId().equals(transaction.getPassId())) {
+            return true;
+        }
+
+        return Objects.equals(subscription.getPassProduct().getId(), transaction.getPassId());
+    }
+
+    private UserAccount getRequiredSeedmoneyAccount(final Long userId) {
+        return userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
+                .orElseThrow(() -> new IllegalArgumentException("저축 계좌가 없습니다. 먼저 계좌를 개설해주세요."));
     }
 
     private String extractTransactionUniqueNo(
