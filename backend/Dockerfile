@@ -1,17 +1,24 @@
 FROM gradle:8.14.3-jdk17 AS base
 
 WORKDIR /workspace
-COPY . .
-RUN chmod +x ./gradlew
+ENV GRADLE_USER_HOME=/home/gradle/.gradle
 
-FROM base AS tester
-RUN ./gradlew --no-daemon test
+COPY gradlew build.gradle settings.gradle ./
+COPY gradle ./gradle
+RUN chmod +x ./gradlew
+RUN ./gradlew --no-daemon --build-cache help
+
+FROM base AS source
+COPY src ./src
+
+FROM source AS tester
+RUN ./gradlew --no-daemon --build-cache test
 
 FROM tester AS docs
-RUN ./gradlew --no-daemon asciidoctor -x test
+RUN ./gradlew --no-daemon --build-cache asciidoctor -x test
 
 FROM tester AS builder
-RUN ./gradlew --no-daemon bootJar -x test
+RUN ./gradlew --no-daemon --build-cache bootJar -x test
 
 FROM eclipse-temurin:17-jre
 
