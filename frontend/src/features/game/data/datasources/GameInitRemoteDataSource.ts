@@ -1,3 +1,4 @@
+import { injectable } from 'tsyringe';
 import { apiClient } from '@core/network/apiClient';
 import type {
   CharacterOptionsResponseModel,
@@ -8,6 +9,7 @@ import type {
   TargetPropertyListResponseModel,
 } from '../models/GameInitModel';
 
+@injectable()
 export class GameInitRemoteDataSource {
   getCharacters(): Promise<CharacterOptionsResponseModel> {
     return apiClient.get<CharacterOptionsResponseModel>('/api/games/characters');

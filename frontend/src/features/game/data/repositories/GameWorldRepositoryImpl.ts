@@ -1,11 +1,16 @@
+import { inject, injectable } from 'tsyringe'
 import type { IGameWorldRepository } from '@features/game/domain/repositories/IGameWorldRepository'
 import type { GameTurn, TurnNews, EconomicCyclePhase } from '@features/game/domain/entities/GameTurn'
-import type { GameWorldRemoteDataSource } from '@features/game/data/datasources/GameWorldRemoteDataSource'
+import { GameWorldRemoteDataSource } from '@features/game/data/datasources/GameWorldRemoteDataSource'
 
+@injectable()
 export class GameWorldRepositoryImpl implements IGameWorldRepository {
   private readonly dataSource: GameWorldRemoteDataSource
 
-  constructor(dataSource: GameWorldRemoteDataSource) {
+  constructor(
+    @inject(GameWorldRemoteDataSource)
+    dataSource: GameWorldRemoteDataSource,
+  ) {
     this.dataSource = dataSource
   }
 

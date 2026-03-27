@@ -1,3 +1,4 @@
+import { inject, injectable } from 'tsyringe';
 import type { IGameInitRepository } from '../../domain/repositories/IGameInitRepository';
 import type { CharacterOption, CharacterType } from '../../domain/entities/CharacterOption';
 import type { JobTypeInfo } from '../../domain/entities/JobTypeInfo';
@@ -6,9 +7,15 @@ import type { ProfileOption } from '../../domain/entities/ProfileOption';
 import type { Region, District, TargetProperty } from '../../domain/entities/Region';
 import { GameInitRemoteDataSource } from '../datasources/GameInitRemoteDataSource';
 
+@injectable()
 export class GameInitRepositoryImpl implements IGameInitRepository {
   private readonly dataSource: GameInitRemoteDataSource;
-  constructor(dataSource: GameInitRemoteDataSource) { this.dataSource = dataSource; }
+  constructor(
+    @inject(GameInitRemoteDataSource)
+    dataSource: GameInitRemoteDataSource,
+  ) {
+    this.dataSource = dataSource;
+  }
 
   async getCharacters(): Promise<CharacterOption[]> {
     const m = await this.dataSource.getCharacters();

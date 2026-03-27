@@ -1,4 +1,5 @@
 import { injectable } from 'tsyringe';
+import type { PropertyListQuery } from '../../domain/repositories/IRealEstateRepository';
 import type {
   PropertiesResponseModel,
   PropertyModel,
@@ -11,11 +12,24 @@ import { apiClient } from '@core/network/apiClient';
 
 @injectable()
 export class RealEstateRemoteDataSource {
-  async getProperties(sessionId: number, bounds?: string): Promise<PropertiesResponseModel> {
-    const query = bounds ? `?bounds=${encodeURIComponent(bounds)}` : '';
-    return apiClient.get<PropertiesResponseModel>(
-      `/api/games/sessions/${sessionId}/real-estate/properties${query}`,
-    );
+  async getProperties(query: PropertyListQuery): Promise<PropertiesResponseModel> {
+    if (query.sessionId !== undefined) {
+      const boundsQuery = query.bounds
+        ? `?bounds=${encodeURIComponent(query.bounds)}`
+        : '';
+
+      return apiClient.get<PropertiesResponseModel>(
+        `/api/games/sessions/${query.sessionId}/real-estate/properties${boundsQuery}`,
+      );
+    }
+
+    if (query.regionCode !== undefined && query.districtCode !== undefined) {
+      return apiClient.get<PropertiesResponseModel>(
+        `/api/games/regions/${query.regionCode}/districts/${query.districtCode}/properties`,
+      );
+    }
+
+    throw new Error('매물 조회 조건이 부족합니다.');
   }
 
   async getPropertyDetail(sessionId: number, propertyId: string): Promise<PropertyModel> {

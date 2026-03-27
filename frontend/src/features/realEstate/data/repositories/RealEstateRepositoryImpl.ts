@@ -1,16 +1,24 @@
-import type { IRealEstateRepository } from '../../domain/repositories/IRealEstateRepository';
+import { inject, injectable } from 'tsyringe';
+import type {
+  IRealEstateRepository,
+  PropertyListQuery,
+} from '../../domain/repositories/IRealEstateRepository';
 import type { Property, PropertySummary, HousingType } from '../../domain/entities/Property';
 import type { RegistryDocument, ContractResponse, PurchaseResponse, ContractResult } from '../../domain/entities/PropertyDocument';
 import { RealEstateRemoteDataSource } from '../datasources/RealEstateRemoteDataSource';
 
+@injectable()
 export class RealEstateRepositoryImpl implements IRealEstateRepository {
   private readonly dataSource: RealEstateRemoteDataSource;
-  constructor(dataSource: RealEstateRemoteDataSource) { this.dataSource = dataSource; }
+  constructor(
+    @inject(RealEstateRemoteDataSource)
+    dataSource: RealEstateRemoteDataSource,
+  ) { this.dataSource = dataSource; }
 
-  async getProperties(sessionId: number, bounds?: string): Promise<PropertySummary[]> {
-    const response = await this.dataSource.getProperties(sessionId, bounds);
+  async getProperties(query: PropertyListQuery): Promise<PropertySummary[]> {
+    const response = await this.dataSource.getProperties(query);
     return response.properties.map((m) => ({
-      propertyId: m.propertyId,
+      propertyId: String(m.propertyId),
       name: m.name,
       recentPrice: m.recentPrice,
       latitude: m.latitude,

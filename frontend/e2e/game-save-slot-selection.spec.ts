@@ -17,6 +17,16 @@ function seedAuthenticatedUser(page: Page) {
   });
 }
 
+async function mockExternalScripts(page: Page) {
+  await page.route('**/openapi/v3/maps.js*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/javascript',
+      body: '',
+    });
+  });
+}
+
 async function mockGameSlots(page: Page) {
   await page.route('**/api/games/sessions', async (route) => {
     await route.fulfill({
@@ -130,6 +140,7 @@ async function mockCharacterOptions(page: Page) {
 test.describe('game save slot selection', () => {
   test('opens the game main page when clicking an existing save slot', async ({ page }) => {
     await seedAuthenticatedUser(page);
+    await mockExternalScripts(page);
     await mockGameSlots(page);
     await mockGameMainTurn(page);
     await mockLatestNews(page);
@@ -144,6 +155,7 @@ test.describe('game save slot selection', () => {
 
   test('opens the character selection page when clicking an empty slot', async ({ page }) => {
     await seedAuthenticatedUser(page);
+    await mockExternalScripts(page);
     await mockGameSlots(page);
     await mockCharacterOptions(page);
     await page.goto('/game/save');

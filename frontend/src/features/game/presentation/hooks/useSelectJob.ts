@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
+import { container } from '@core/di/container';
 import type { JobTypeInfo } from '@features/game/domain/entities/JobTypeInfo';
-import { GameInitRemoteDataSource } from '../../data/datasources/GameInitRemoteDataSource';
-import { GameInitRepositoryImpl } from '../../data/repositories/GameInitRepositoryImpl';
 import { GetJobTypesUseCase } from '../../domain/usecases/GetJobTypesUseCase';
-
-const repository = new GameInitRepositoryImpl(new GameInitRemoteDataSource());
-const getJobTypesUseCase = new GetJobTypesUseCase(repository);
 
 export const useSelectJob = () => {
   const [jobs, setJobs] = useState<JobTypeInfo[]>([]);
@@ -14,6 +10,8 @@ export const useSelectJob = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const getJobTypesUseCase = container.resolve(GetJobTypesUseCase);
+
     getJobTypesUseCase.execute()
       .then((data) => setJobs(data))
       .catch(() => setError('직업 목록을 불러오지 못했습니다.'))
