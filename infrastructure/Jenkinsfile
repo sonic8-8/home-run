@@ -56,6 +56,7 @@ pipeline {
         FRONTEND_IMAGE = 'homerun-frontend:develop'
         BACKEND_IMAGE = 'homerun-backend:develop'
         BACKEND_DOCS_IMAGE = 'homerun-backend-docs:develop'
+        BACKEND_BUILDKIT_DOCKERFILE = 'backend/Dockerfile.buildkit-cache'
         COMPOSE_FILE = 'infrastructure/docker/docker-compose.runtime.yml'
         ENV_FILE = '.env.runtime'
         FRONTEND_HOST_PORT = '3000'
@@ -95,23 +96,35 @@ pipeline {
             }
         }
 
-        stage('Frontend Validate') {
-            steps {
-                script {
-                    env.PIPELINE_STAGE = 'Frontend Validate'
+        stage('Validate And Test') {
+            parallel {
+                stage('Frontend Validate') {
+                    steps {
+                        script {
+                            env.PIPELINE_STAGE = 'Frontend Validate'
+                        }
+                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                            sh 'docker build --target validator -t homerun-frontend-validator -f frontend/Dockerfile frontend'
+                        }
+                    }
                 }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    sh 'docker build --target validator -t homerun-frontend-validator -f frontend/Dockerfile frontend'
-                }
-            }
-        }
 
-        stage('Backend Test') {
-            steps {
-                script {
-                    env.PIPELINE_STAGE = 'Backend Test'
+                stage('Backend Test') {
+                    steps {
+                        script {
+                            env.PIPELINE_STAGE = 'Backend Test'
+                        }
+                        sh '''
+                            docker buildx build \
+                              --progress=plain \
+                              --load \
+                              --target tester \
+                              -t homerun-backend-tester \
+                              -f ${BACKEND_BUILDKIT_DOCKERFILE} \
+                              backend
+                        '''
+                    }
                 }
-                sh 'docker build --target tester -t homerun-backend-tester -f backend/Dockerfile backend'
             }
         }
 
@@ -124,7 +137,15 @@ pipeline {
                     rm -rf frontend/generated-docs
                     mkdir -p frontend/generated-docs
                 '''
-                sh 'docker build --target docs -t ${BACKEND_DOCS_IMAGE} -f backend/Dockerfile backend'
+                sh '''
+                    docker buildx build \
+                      --progress=plain \
+                      --load \
+                      --target docs \
+                      -t ${BACKEND_DOCS_IMAGE} \
+                      -f ${BACKEND_BUILDKIT_DOCKERFILE} \
+                      backend
+                '''
                 sh '''
                     DOCS_CONTAINER=$(docker create ${BACKEND_DOCS_IMAGE})
                     trap 'docker rm -f "$DOCS_CONTAINER" >/dev/null 2>&1 || true' EXIT
@@ -135,8 +156,23 @@ pipeline {
                     docker rm -f "$DOCS_CONTAINER" >/dev/null 2>&1 || true
                     trap - EXIT
                 '''
-                sh 'docker build -t ${FRONTEND_IMAGE} -f frontend/Dockerfile frontend'
-                sh 'docker build -t ${BACKEND_IMAGE} -f backend/Dockerfile backend'
+                script {
+                    parallel(
+                        'Frontend Runtime Image': {
+                            sh 'docker build -t ${FRONTEND_IMAGE} -f frontend/Dockerfile frontend'
+                        },
+                        'Backend Runtime Image': {
+                            sh '''
+                                docker buildx build \
+                                  --progress=plain \
+                                  --load \
+                                  -t ${BACKEND_IMAGE} \
+                                  -f ${BACKEND_BUILDKIT_DOCKERFILE} \
+                                  backend
+                            '''
+                        }
+                    )
+                }
             }
         }
 
