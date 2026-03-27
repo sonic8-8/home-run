@@ -1,13 +1,13 @@
 import type { IRealEstateRepository } from '../../domain/repositories/IRealEstateRepository';
 import type { Property, PropertySummary, HousingType } from '../../domain/entities/Property';
-import type { PropertyDocument, Trap, ContractResponse, PurchaseResponse, ContractResult } from '../../domain/entities/PropertyDocument';
+import type { RegistryDocument, ContractResponse, PurchaseResponse, ContractResult } from '../../domain/entities/PropertyDocument';
 import { RealEstateRemoteDataSource } from '../datasources/RealEstateRemoteDataSource';
 
 export class RealEstateRepositoryImpl implements IRealEstateRepository {
   private readonly dataSource: RealEstateRemoteDataSource;
   constructor(dataSource: RealEstateRemoteDataSource) { this.dataSource = dataSource; }
 
-  async getProperties(sessionId: number, bounds: string): Promise<PropertySummary[]> {
+  async getProperties(sessionId: number, bounds?: string): Promise<PropertySummary[]> {
     const response = await this.dataSource.getProperties(sessionId, bounds);
     return response.properties.map((m) => ({
       propertyId: m.propertyId,
@@ -48,18 +48,29 @@ export class RealEstateRepositoryImpl implements IRealEstateRepository {
     };
   }
 
-  async getDocuments(sessionId: number, propertyId: string): Promise<PropertyDocument[]> {
-    const response = await this.dataSource.getDocuments(sessionId, propertyId);
-    return response.documents.map((d) => ({
-      documentId: d.documentId,
-      type: d.type,
-      imageUrl: d.imageUrl,
-      checklist: d.checklist.map((t): Trap => ({
-        trapId: t.trapId,
-        label: t.label,
-        isTrapped: t.isTrapped,
-      })),
-    }));
+  async getDocuments(sessionId: number, propertyId: string): Promise<RegistryDocument> {
+    const m = await this.dataSource.getDocuments(sessionId, propertyId);
+    const mapSection = (s: typeof m.solution.gapgu) => ({
+      verdict: s.verdict as '위험' | '정상',
+      issueSummary: s.issueSummary,
+      keyPoints: s.keyPoints,
+      feedbackCorrect: s.feedbackCorrect,
+      feedbackWrong: s.feedbackWrong,
+    });
+    return {
+      propertyId: m.propertyId,
+      propertyName: m.propertyName,
+      address: m.address,
+      salePrice: m.salePrice,
+      documentType: m.documentType,
+      gapguRows: m.gapguRows.map((r) => ({ rankNo: r.rankNo, purpose: r.purpose, receipt: r.receipt, reason: r.reason, details: r.details })),
+      eulguRows: m.eulguRows.map((r) => ({ rankNo: r.rankNo, purpose: r.purpose, receipt: r.receipt, reason: r.reason, details: r.details })),
+      solution: {
+        verdict: m.solution.verdict as '위험' | '정상',
+        gapgu: mapSection(m.solution.gapgu),
+        eulgu: mapSection(m.solution.eulgu),
+      },
+    };
   }
 
   async contract(sessionId: number, propertyId: string, checkedTraps: string[]): Promise<ContractResponse> {

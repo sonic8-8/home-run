@@ -91,4 +91,38 @@ class GameNewsLogRepositoryTest {
             .extracting(GameNewsLog::getHeadlineSnapshot)
             .containsExactly("채용 한파 심화", "금리 인하 기조 지속");
     }
+
+    @DisplayName("GameNewsLog는 세션 기준 turn 오름차순으로 뉴스 이력을 조회할 수 있다")
+    @Test
+    void findNewsHistoryByGameSessionIdOrderByTurnNumberAsc() {
+        // given
+        gameNewsLogRepository.saveAndFlush(
+            GameNewsLog.create(
+                2001L,
+                10,
+                "NEWS-002",
+                "채용 한파 심화",
+                LocalDate.of(2026, 10, 1)
+            )
+        );
+        gameNewsLogRepository.saveAndFlush(
+            GameNewsLog.create(
+                2001L,
+                8,
+                "NEWS-001",
+                "금리 인하 기조 지속",
+                LocalDate.of(2026, 8, 1)
+            )
+        );
+        entityManager.clear();
+
+        // when
+        final List<GameNewsLog> result =
+            gameNewsLogRepository.findAllByGameSessionIdOrderByTurnNumberAscGameNewsLogIdAsc(2001L);
+
+        // then
+        assertThat(result)
+            .extracting(GameNewsLog::getTurnNumber)
+            .containsExactly(8, 10);
+    }
 }

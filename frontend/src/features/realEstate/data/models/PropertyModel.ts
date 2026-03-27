@@ -29,21 +29,37 @@ export interface PropertyModel {
   specs: PropertySpecsModel;
 }
 
-export interface TrapModel {
-  trapId: string;
-  label: string;
-  isTrapped: boolean;
+export interface RegistryRowModel {
+  rankNo: string;
+  purpose: string;
+  receipt: string;
+  reason: string;
+  details: string;
 }
 
-export interface DocumentModel {
-  documentId: number;
-  type: string;
-  imageUrl: string;
-  checklist: TrapModel[];
+export interface SectionSolutionModel {
+  verdict: string;
+  issueSummary: string;
+  keyPoints: string[];
+  feedbackCorrect: string;
+  feedbackWrong: string;
 }
 
-export interface DocumentsResponseModel {
-  documents: DocumentModel[];
+export interface RegistryDocumentResponseModel {
+  propertyId: number;
+  propertyName: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  salePrice: number;
+  documentType: string;
+  gapguRows: RegistryRowModel[];
+  eulguRows: RegistryRowModel[];
+  solution: {
+    verdict: string;
+    gapgu: SectionSolutionModel;
+    eulgu: SectionSolutionModel;
+  };
 }
 
 export interface PurchaseRequestModel {

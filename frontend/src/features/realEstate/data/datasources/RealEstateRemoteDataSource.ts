@@ -3,7 +3,7 @@ import type {
   PropertiesResponseModel,
   PropertyModel,
   PurchaseResponseModel,
-  DocumentsResponseModel,
+  RegistryDocumentResponseModel,
   ContractRequestModel,
   ContractResponseModel,
 } from '../models/PropertyModel';
@@ -11,9 +11,10 @@ import { apiClient } from '@core/network/apiClient';
 
 @injectable()
 export class RealEstateRemoteDataSource {
-  async getProperties(sessionId: number, bounds: string): Promise<PropertiesResponseModel> {
+  async getProperties(sessionId: number, bounds?: string): Promise<PropertiesResponseModel> {
+    const query = bounds ? `?bounds=${encodeURIComponent(bounds)}` : '';
     return apiClient.get<PropertiesResponseModel>(
-      `/api/games/sessions/${sessionId}/real-estate/properties?bounds=${bounds}`,
+      `/api/games/sessions/${sessionId}/real-estate/properties${query}`,
     );
   }
 
@@ -30,8 +31,8 @@ export class RealEstateRemoteDataSource {
     );
   }
 
-  async getDocuments(sessionId: number, propertyId: string): Promise<DocumentsResponseModel> {
-    return apiClient.get<DocumentsResponseModel>(
+  async getDocuments(sessionId: number, propertyId: string): Promise<RegistryDocumentResponseModel> {
+    return apiClient.get<RegistryDocumentResponseModel>(
       `/api/games/sessions/${sessionId}/real-estate/properties/${propertyId}/documents`,
     );
   }

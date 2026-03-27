@@ -60,7 +60,7 @@ class PassSavingControllerTest extends RestDocsTestSupport {
     void save() throws Exception {
         // given
         given(passSavingService.save(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
-                .willReturn(PassSaveResponse.of(5000, 70000, 295000));
+                .willReturn(PassSaveResponse.of(5000, 10000, 70000, 295000));
 
         // when & then
         mockMvc.perform(post("/api/pass/save")
@@ -76,7 +76,9 @@ class PassSavingControllerTest extends RestDocsTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.savedAmount").value(5000))
-                .andExpect(jsonPath("$.data.totalSaved").value(70000))
+                .andExpect(jsonPath("$.data.totalSaved").value(10000))
+                .andExpect(jsonPath("$.data.subscriptionTotalSaved").value(10000))
+                .andExpect(jsonPath("$.data.overallTotalSaved").value(70000))
                 .andDo(document("pass/save/success",
                         requestHeaders(authorizationHeader()),
                         requestFields(
@@ -86,7 +88,9 @@ class PassSavingControllerTest extends RestDocsTestSupport {
                         apiResponseFields(
                                 "즉시 저축 결과",
                                 fieldWithPath("savedAmount").type(JsonFieldType.NUMBER).description("이번에 저축한 금액"),
-                                fieldWithPath("totalSaved").type(JsonFieldType.NUMBER).description("누적 저축 금액"),
+                                fieldWithPath("totalSaved").type(JsonFieldType.NUMBER).description("현재 PASS 구독 누적 저축 금액(하위 호환)"),
+                                fieldWithPath("subscriptionTotalSaved").type(JsonFieldType.NUMBER).description("현재 PASS 구독 누적 저축 금액"),
+                                fieldWithPath("overallTotalSaved").type(JsonFieldType.NUMBER).description("전체 PASS 누적 저축 금액"),
                                 fieldWithPath("remainingBalance").type(JsonFieldType.NUMBER).description("저축 후 남은 잔액")
                         )
                 ));

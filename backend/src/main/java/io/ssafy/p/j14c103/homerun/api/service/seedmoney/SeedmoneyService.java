@@ -76,8 +76,7 @@ public class SeedmoneyService {
         validateUserId(userId);
         userSsafyAccountSyncService.syncLinkedAccounts(userId);
 
-        final UserAccount account = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
-                .orElseThrow(() -> new IllegalArgumentException("시드머니 계좌가 없습니다."));
+        final UserAccount account = getRequiredSeedmoneyAccount(userId);
         userFinancialSummaryService.getSummary(userId);
 
         return SeedmoneyAccountResponse.of(
@@ -123,8 +122,9 @@ public class SeedmoneyService {
         userSsafyAccountSyncService.advanceSyncBaseline(account, seedmoneyTransactionUniqueNo);
         userSsafyAccountSyncService.syncLinkedAccounts(userId);
         userFinancialSummaryService.getSummary(userId);
+        final UserAccount refreshedAccount = getRequiredSeedmoneyAccount(userId);
 
-        return SeedmoneyTransactionResponse.of("TXN-" + transaction.getId(), account.getBalanceSnapshot());
+        return SeedmoneyTransactionResponse.of("TXN-" + transaction.getId(), refreshedAccount.getBalanceSnapshot());
     }
 
     @Transactional
@@ -180,14 +180,20 @@ public class SeedmoneyService {
         userSsafyAccountSyncService.advanceSyncBaseline(account, seedmoneyTransactionUniqueNo);
         userSsafyAccountSyncService.syncLinkedAccounts(userId);
         userFinancialSummaryService.getSummary(userId);
+        final UserAccount refreshedAccount = getRequiredSeedmoneyAccount(userId);
 
-        return SeedmoneyTransactionResponse.of("TXN-" + transaction.getId(), account.getBalanceSnapshot());
+        return SeedmoneyTransactionResponse.of("TXN-" + transaction.getId(), refreshedAccount.getBalanceSnapshot());
     }
 
     private void validateUserId(final Long userId) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
+    }
+
+    private UserAccount getRequiredSeedmoneyAccount(final Long userId) {
+        return userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
+                .orElseThrow(() -> new IllegalArgumentException("시드머니 계좌가 없습니다."));
     }
 
     private String resolveAccountTypeUniqueNo(final SeedmoneyCreateServiceRequest request) {

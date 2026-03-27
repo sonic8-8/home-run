@@ -12,6 +12,7 @@ import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncServic
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyDepositServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.request.SeedmoneyTransferServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyAccountResponse;
+import io.ssafy.p.j14c103.homerun.api.service.seedmoney.response.SeedmoneyTransactionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.config.SsafyAccountProperties;
@@ -90,13 +91,14 @@ class SeedmoneyServiceTest {
     void transfer() {
         // given
         final UserAccount account = UserAccount.create(1L, AccountType.SEEDMONEY, "001", "한국은행", "시드머니계좌", 100000);
+        final UserAccount refreshedAccount = UserAccount.create(1L, AccountType.SEEDMONEY, "001", "한국은행", "시드머니계좌", 90000);
         final SeedmoneyTransferServiceRequest request = SeedmoneyTransferServiceRequest.builder()
                 .amount(10000L)
                 .toAccountNumber("외부계좌")
                 .build();
 
         given(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.SEEDMONEY))
-                .willReturn(Optional.of(account));
+                .willReturn(Optional.of(account), Optional.of(refreshedAccount));
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
         given(demandDepositClient.transferAccount(any(), any(), any(), eq(10000L)))
                 .willReturn(Map.of(
@@ -107,11 +109,13 @@ class SeedmoneyServiceTest {
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        seedmoneyService.transfer(1L, request);
+        final SeedmoneyTransactionResponse result = seedmoneyService.transfer(1L, request);
 
         // then
+        assertThat(result.getRemainingBalance()).isEqualTo(90000);
         verify(seedmoneyTransactionRepository).save(any(SeedmoneyTransaction.class));
         verify(userAccountTransactionRepository).save(any(UserAccountTransaction.class));
+        verify(userSsafyAccountSyncService).syncLinkedAccounts(1L);
         verify(userFinancialSummaryService).getSummary(1L);
     }
 
@@ -120,13 +124,16 @@ class SeedmoneyServiceTest {
     void deposit() {
         // given
         final UserAccount account = UserAccount.create(1L, AccountType.SEEDMONEY, "001", "한국은행", "시드머니계좌", 100000);
+        final UserAccount refreshedAccount = UserAccount.create(1L, AccountType.SEEDMONEY, "001", "한국은행", "시드머니계좌", 120000);
         final SeedmoneyDepositServiceRequest request = SeedmoneyDepositServiceRequest.builder()
                 .amount(20000L)
                 .fromAccountNumber("외부계좌")
                 .build();
 
         given(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.SEEDMONEY))
-                .willReturn(Optional.of(account));
+                .willReturn(Optional.of(account), Optional.of(refreshedAccount));
+        given(userAccountRepository.findByUserIdAndAccountType(1L, AccountType.MAIN))
+                .willReturn(Optional.empty());
         given(userAuthContextService.getRequiredSsafyUserKey(1L)).willReturn("test-key");
         given(demandDepositClient.transferAccount(any(), any(), any(), eq(20000L)))
                 .willReturn(Map.of(
@@ -137,11 +144,13 @@ class SeedmoneyServiceTest {
                 .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        seedmoneyService.deposit(1L, request);
+        final SeedmoneyTransactionResponse result = seedmoneyService.deposit(1L, request);
 
         // then
+        assertThat(result.getRemainingBalance()).isEqualTo(120000);
         verify(seedmoneyTransactionRepository).save(any(SeedmoneyTransaction.class));
         verify(userAccountTransactionRepository).save(any(UserAccountTransaction.class));
+        verify(userSsafyAccountSyncService).syncLinkedAccounts(1L);
         verify(userFinancialSummaryService).getSummary(1L);
     }
 

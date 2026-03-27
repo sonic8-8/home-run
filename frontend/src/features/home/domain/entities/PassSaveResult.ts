@@ -1,5 +1,6 @@
 export interface PassSaveResult {
   savedAmount: number;
-  totalSaved: number;
+  subscriptionTotalSaved: number;
+  overallTotalSaved: number;
   remainingBalance: number;
 }

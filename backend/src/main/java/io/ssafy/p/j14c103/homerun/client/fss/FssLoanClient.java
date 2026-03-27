@@ -1,22 +1,29 @@
 package io.ssafy.p.j14c103.homerun.client.fss;
 
 import io.ssafy.p.j14c103.homerun.config.FssApiProperties;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import java.util.*;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class FssLoanClient {
 
     private static final String TOP_FIN_GRP_NO_BANK = "020000";
 
-    private final RestTemplate restTemplate;
+    private final RestClient fssRestClient;
     private final FssApiProperties properties;
+
+    public FssLoanClient(
+        @Qualifier("fssRestClient") final RestClient fssRestClient,
+        final FssApiProperties properties
+    ) {
+        this.fssRestClient = fssRestClient;
+        this.properties = properties;
+    }
 
     /**
      * 개인신용대출 상품 조회
@@ -41,14 +48,16 @@ public class FssLoanClient {
 
     @SuppressWarnings("unchecked")
     private FssLoanResponse fetchProducts(final String apiName, final String productType) {
-        final String url = String.format("%s/%s.json?auth=%s&topFinGrpNo=%s&pageNo=1",
-                properties.getBaseUrl(),
-                apiName,
-                properties.getAuthKey(),
-                TOP_FIN_GRP_NO_BANK);
-
         try {
-            final Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            final Map<String, Object> response = (Map<String, Object>) fssRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .pathSegment(apiName + ".json")
+                    .queryParam("auth", properties.getAuthKey())
+                    .queryParam("topFinGrpNo", TOP_FIN_GRP_NO_BANK)
+                    .queryParam("pageNo", 1)
+                    .build())
+                .retrieve()
+                .body(Map.class);
             if (response == null) {
                 log.warn("금감원 {} API 응답이 없습니다.", productType);
                 return FssLoanResponse.empty();

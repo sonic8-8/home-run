@@ -1,10 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNaverMap } from '../../hooks/useNaverMap';
 import { useProperties } from '../../hooks/useProperties';
 import { useMapMarkers } from '../../hooks/useMapMarkers';
 import { PropertyDetailPanel } from '../PropertyDetailPanel/PropertyDetailPanel';
+import { RegistryDocumentModal } from '../RegistryDocumentModal/RegistryDocumentModal';
 import { formatPriceWon } from '../../utils/formatUtils';
 import type { MapMode } from '../../pages/RealEstatePage/RealEstatePage';
+import type { RegistryDocument } from '../../../domain/entities/PropertyDocument';
+import { RealEstateRemoteDataSource } from '../../../data/datasources/RealEstateRemoteDataSource';
+import { RealEstateRepositoryImpl } from '../../../data/repositories/RealEstateRepositoryImpl';
+import { GetDocumentsUseCase } from '../../../domain/usecases/GetDocumentsUseCase';
+
+const dataSource = new RealEstateRemoteDataSource();
+const repository = new RealEstateRepositoryImpl(dataSource);
+const getDocumentsUseCase = new GetDocumentsUseCase(repository);
 
 /**
  * 동 레벨 지도 컴포넌트 (게임용).
@@ -32,10 +41,36 @@ export function DistrictMap({
     useProperties(mapInstance, sessionId);
   const { renderPropertyMarkers } = useMapMarkers(mapInstance);
 
+  const [registryDoc, setRegistryDoc] = useState<RegistryDocument | null>(null);
+  const [registryModalOpen, setRegistryModalOpen] = useState(false);
+
   useEffect(() => {
     if (!mapInstance || properties.length === 0) return;
     renderPropertyMarkers(properties, selectedProperty?.propertyId ?? null, selectProperty);
   }, [mapInstance, properties, selectedProperty, renderPropertyMarkers, selectProperty]);
+
+  const handleBrowsePurchase = useCallback(async (propertyId: string) => {
+    try {
+      const doc = await getDocumentsUseCase.execute(sessionId, propertyId);
+      setRegistryDoc(doc);
+      setRegistryModalOpen(true);
+    } catch {
+      // 문서 조회 실패 시 모달 미표시
+    }
+  }, [sessionId]);
+
+  const handleRegistrySuccess = useCallback(() => {
+    setRegistryModalOpen(false);
+    setRegistryDoc(null);
+    // TODO: 구매 확정 플로우 연결
+  }, []);
+
+  const propertyDetailProps = {
+    mode,
+    onSelect: onPropertySelected,
+    onLoanRequest,
+    onBrowsePurchase: mode === 'browse' ? handleBrowsePurchase : undefined,
+  };
 
   // 네이버 지도 SDK 미로드 시 카드 목록 폴백
   if (naverAvailable === false) {
@@ -57,9 +92,7 @@ export function DistrictMap({
               summary={selectedProperty}
               detail={selectedPropertyDetail}
               onClose={clearSelection}
-              mode={mode}
-              onSelect={onPropertySelected}
-              onLoanRequest={onLoanRequest}
+              {...propertyDetailProps}
             />
           </div>
         )}
@@ -113,6 +146,15 @@ export function DistrictMap({
             <div style={{ color: '#9ca3af', fontSize: 14 }}>매물을 불러오는 중...</div>
           )}
         </div>
+
+        {registryDoc && (
+          <RegistryDocumentModal
+            isOpen={registryModalOpen}
+            onClose={() => setRegistryModalOpen(false)}
+            doc={registryDoc}
+            onSuccess={handleRegistrySuccess}
+          />
+        )}
       </div>
     );
   }
@@ -126,9 +168,16 @@ export function DistrictMap({
           summary={selectedProperty}
           detail={selectedPropertyDetail}
           onClose={clearSelection}
-          mode={mode}
-          onSelect={onPropertySelected}
-          onLoanRequest={onLoanRequest}
+          {...propertyDetailProps}
+        />
+      )}
+
+      {registryDoc && (
+        <RegistryDocumentModal
+          isOpen={registryModalOpen}
+          onClose={() => setRegistryModalOpen(false)}
+          doc={registryDoc}
+          onSuccess={handleRegistrySuccess}
         />
       )}
     </div>

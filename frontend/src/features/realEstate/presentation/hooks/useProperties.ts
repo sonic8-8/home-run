@@ -29,8 +29,7 @@ export function useProperties(_mapInstance: any, sessionId: number) {
 
     let cancelled = false;
 
-    // TODO: bounds를 지도 viewport에서 동적으로 계산
-    getPropertiesUseCase.execute(sessionId, '').then((list) => {
+    getPropertiesUseCase.execute(sessionId).then((list) => {
       if (!cancelled) {
         setProperties(list);
         setLoaded(true);
