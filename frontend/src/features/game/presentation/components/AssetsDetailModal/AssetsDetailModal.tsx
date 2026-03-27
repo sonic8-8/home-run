@@ -8,7 +8,7 @@ interface Props {
   assets: GameAssets | null;
 }
 
-type Tab = 'assets' | 'stocks' | 'news';
+type Tab = 'assets' | 'stocks';
 
 const HOUSING_LABEL: Record<string, string> = {
   NONE:       '',
@@ -48,12 +48,6 @@ export function AssetsDetailModal({ isOpen, onClose, assets }: Props) {
               onClick={() => setActiveTab('stocks')}
             >
               주식
-            </button>
-            <button
-              className={activeTab === 'news' ? styles.tabActive : styles.tab}
-              onClick={() => setActiveTab('news')}
-            >
-              지난뉴스
             </button>
           </div>
           <button className={styles.saveButton} title="저장">
@@ -177,12 +171,6 @@ export function AssetsDetailModal({ isOpen, onClose, assets }: Props) {
           </div>
         )}
 
-        {/* 지난뉴스 탭 */}
-        {activeTab === 'news' && (
-          <div className={styles.content}>
-            <p className={styles.placeholder}>지난 뉴스 — 준비 중</p>
-          </div>
-        )}
       </div>
     </div>
   );

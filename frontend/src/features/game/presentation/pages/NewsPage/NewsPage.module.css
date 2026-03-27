@@ -1,0 +1,171 @@
+.page {
+  min-height: 100vh;
+  background: #fdf8f0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 헤더 ─────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px 12px;
+  background: #fdf8f0;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.backBtn:hover {
+  background: #ede7d8;
+}
+
+.headerCenter {
+  text-align: center;
+  flex: 1;
+}
+
+.headerTitle {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #1a1a1a;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.headerSub {
+  font-size: 12px;
+  color: #777;
+  letter-spacing: 1px;
+  margin-top: 3px;
+}
+
+.headerRight {
+  width: 90px;
+}
+
+.mastheadLine {
+  height: 2px;
+  background: #2c2c2c;
+  margin: 0 32px 0;
+}
+
+/* ── 메인 ─────────────────────────────────────── */
+.main {
+  flex: 1;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 뉴스 카드 ──────────────────────────────────── */
+.card {
+  background: #fff;
+  border: 1px solid #d4c9b0;
+  border-radius: 4px;
+  padding: 20px 22px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.cycleBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.cyclePos {
+  background: #d4edda;
+  color: #1a5c2e;
+  border: 1px solid #a3d4b0;
+}
+
+.cycleNeg {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f1aeb5;
+}
+
+.source {
+  font-size: 11px;
+  color: #888;
+  margin-left: auto;
+}
+
+.date {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.headline {
+  font-size: 17px;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1.45;
+  margin: 0 0 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.content {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  margin: 0 0 12px;
+  border-top: 1px solid #ede7d8;
+  padding-top: 12px;
+}
+
+.toggleBtn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #888;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toggleBtn:hover {
+  color: #333;
+}
+
+/* ── 상태 메시지 ──────────────────────────────── */
+.status {
+  text-align: center;
+  color: #aaa;
+  padding: 60px 0;
+  font-size: 14px;
+}
+
+.statusError {
+  color: #c0392b;
+}

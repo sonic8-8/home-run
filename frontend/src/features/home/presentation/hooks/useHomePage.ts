@@ -12,6 +12,7 @@ import type { LoanRecommendationData } from '../../domain/entities/LoanRecommend
 import type { MyCard } from '../../domain/entities/MyCard';
 import type { Spending } from '../../domain/entities/Spending';
 
+import type { AssetLinkInput } from '../../domain/entities/AssetLinkInput';
 import { UserRemoteDataSource } from '../../data/datasources/UserRemoteDataSource';
 import { UserRepositoryImpl } from '../../data/repositories/UserRepositoryImpl';
 import { GetUserMeUseCase } from '../../domain/usecases/GetUserMeUseCase';
@@ -161,8 +162,8 @@ export const useHomePage = () => {
     fetchAll();
   }, [fetchAll]);
 
-  const handleLinkAssets = useCallback(async () => {
-    await linkAssets.execute();
+  const handleLinkAssets = useCallback(async (input: AssetLinkInput) => {
+    await linkAssets.execute(input);
     setIsAssetLinked(true);
     await fetchAll();
   }, [fetchAll]);

@@ -8,6 +8,7 @@ export const ROUTES = {
   GAME_SET_NICKNAME: '/game/set-nickname',
   GAME_SELECT_START_METHOD: '/game/select-start-method',
   GAME_SELECT_JOB: '/game/select-job',
+  GAME_NEWS: '/game/news',
   LOAN:     '/loan',
   PROPERTY: '/property',
   CARD:     '/card',
