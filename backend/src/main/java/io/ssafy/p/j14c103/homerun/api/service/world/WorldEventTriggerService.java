@@ -45,8 +45,14 @@ public class WorldEventTriggerService {
             .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
         final WorldEventTriggerPolicy.TriggerContext triggerContext = WorldEventTriggerPolicy.TriggerContext.of(
             requireEconomicCycleType(gameSession),
+            resolveCycleType(gameSession),
+            requireHousingType(gameSession),
             requireKnowledge(gameStat),
-            requireTenureTurns(gameCareer)
+            requireHealth(gameStat),
+            requireFatigue(gameStat),
+            requireStress(gameStat),
+            requireTenureTurns(gameCareer),
+            requireEmploymentStatus(gameCareer)
         );
 
         return gameEventRepository.findAllByActiveYnTrueOrderByGameEventIdAsc().stream()
@@ -107,11 +113,59 @@ public class WorldEventTriggerService {
         return gameStat.getKnowledge();
     }
 
+    private Integer requireHealth(final GameStat gameStat) {
+        if (gameStat.getHealth() == null) {
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+        }
+
+        return gameStat.getHealth();
+    }
+
+    private Integer requireFatigue(final GameStat gameStat) {
+        if (gameStat.getFatigue() == null) {
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+        }
+
+        return gameStat.getFatigue();
+    }
+
+    private Integer requireStress(final GameStat gameStat) {
+        if (gameStat.getStress() == null) {
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+        }
+
+        return gameStat.getStress();
+    }
+
     private Integer requireTenureTurns(final GameCareer gameCareer) {
         if (gameCareer.getTenureTurns() == null) {
             throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
         }
 
         return gameCareer.getTenureTurns();
+    }
+
+    private String resolveCycleType(final GameSession gameSession) {
+        if (gameSession.getCycleType() == null) {
+            return null;
+        }
+
+        return gameSession.getCycleType().name();
+    }
+
+    private String requireHousingType(final GameSession gameSession) {
+        if (gameSession.getHousingType() == null) {
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+        }
+
+        return gameSession.getHousingType().name();
+    }
+
+    private String requireEmploymentStatus(final GameCareer gameCareer) {
+        if (gameCareer.getEmploymentStatus() == null) {
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+        }
+
+        return gameCareer.getEmploymentStatus().name();
     }
 }

@@ -15,7 +15,7 @@ class WorldContentSeedPolicyTest {
 
     private final WorldContentSeedPolicy worldContentSeedPolicy = new WorldContentSeedPolicy();
 
-    @DisplayName("정책 계산 결과는 뉴스 20건과 이벤트 4건을 반환한다")
+    @DisplayName("정책 계산 결과는 뉴스 20건과 이벤트 12건을 반환한다")
     @Test
     void calculateSeedPlan() {
         // when
@@ -23,7 +23,7 @@ class WorldContentSeedPolicyTest {
 
         // then
         assertThat(seedPlan.newsSeeds()).hasSize(20);
-        assertThat(seedPlan.eventSeeds()).hasSize(4);
+        assertThat(seedPlan.eventSeeds()).hasSize(12);
     }
 
     @DisplayName("뉴스 seed 정의에 sectorImpact가 없으면 예외가 발생한다")
