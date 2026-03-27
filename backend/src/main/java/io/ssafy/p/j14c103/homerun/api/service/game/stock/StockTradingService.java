@@ -1,9 +1,14 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.stock;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.stock.request.StockOrderServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.stock.response.StockHoldingsServiceResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.stock.response.StockMarketServiceResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.stock.response.StockOrderServiceResponse;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketState;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateId;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.OrderStatus;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.OrderType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHolding;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHoldingId;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHoldingRepository;
@@ -14,6 +19,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockOrderRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,6 +67,71 @@ public class StockTradingService {
      */
     public List<StockHolding> getHoldings(final Long gameSessionId) {
         return stockHoldingRepository.findAllByGameSessionId(gameSessionId);
+    }
+
+    public StockMarketServiceResponse getMarket(final Long gameSessionId) {
+        final List<GameStockMarketState> states = getMarketPrices(gameSessionId);
+        final Map<String, StockMarket> marketMap = stockMarketRepository.findAll().stream()
+                .collect(Collectors.toMap(StockMarket::getStockCode, market -> market));
+
+        final List<StockMarketServiceResponse.StockItemResponse> items = states.stream()
+                .map(state -> {
+                    final StockMarket market = marketMap.get(state.getStockCode());
+                    final String stockName = market != null ? market.getStockName() : state.getStockCode();
+                    return StockMarketServiceResponse.StockItemResponse.of(
+                            state.getStockCode(),
+                            stockName,
+                            state.getCurrentPriceAmount()
+                    );
+                })
+                .toList();
+
+        return StockMarketServiceResponse.of(items);
+    }
+
+    public StockHoldingsServiceResponse getHoldingsSummary(final Long gameSessionId) {
+        final List<StockHolding> holdings = getHoldings(gameSessionId);
+        final Map<String, StockMarket> marketMap = stockMarketRepository.findAll().stream()
+                .collect(Collectors.toMap(StockMarket::getStockCode, market -> market));
+
+        final List<StockHoldingsServiceResponse.HoldingItemResponse> items = holdings.stream()
+                .map(holding -> {
+                    final StockMarket market = marketMap.get(holding.getStockCode());
+                    final String stockName = market != null ? market.getStockName() : holding.getStockCode();
+                    final int currentPrice = resolveCurrentPrice(gameSessionId, holding.getStockCode());
+
+                    return StockHoldingsServiceResponse.HoldingItemResponse.of(
+                            holding.getStockCode(),
+                            stockName,
+                            currentPrice,
+                            holding.getQuantity(),
+                            holding.getAveragePurchasePriceAmount()
+                    );
+                })
+                .toList();
+
+        return StockHoldingsServiceResponse.of(items);
+    }
+
+    @Transactional
+    public StockOrderServiceResponse placeOrder(
+            final Long gameSessionId,
+            final StockOrderServiceRequest request
+    ) {
+        final int currentTurn = 1;
+        final OrderType orderType = OrderType.valueOf(request.getOrderType());
+        final StockOrder order = placeOrder(gameSessionId, request, currentTurn, orderType);
+        final int currentPrice = resolveCurrentPrice(gameSessionId, request.getStockCode());
+
+        return StockOrderServiceResponse.of(
+                order.getStockOrderId(),
+                order.getStockCode(),
+                order.getOrderType().name(),
+                order.getQuantity(),
+                currentPrice,
+                "턴 " + order.getExecuteTurn(),
+                order.getOrderStatus().name()
+        );
     }
 
     /**
@@ -175,6 +247,25 @@ public class StockTradingService {
                 });
 
         return totalProceeds;
+    }
+
+    private StockOrder placeOrder(
+            final Long gameSessionId,
+            final StockOrderServiceRequest request,
+            final int currentTurn,
+            final OrderType orderType
+    ) {
+        if (orderType == OrderType.BUY) {
+            return placeBuyOrder(gameSessionId, request.getStockCode(), request.getQuantity(), currentTurn);
+        }
+
+        return placeSellOrder(gameSessionId, request.getStockCode(), request.getQuantity(), currentTurn);
+    }
+
+    private int resolveCurrentPrice(final Long gameSessionId, final String stockCode) {
+        return gameStockMarketStateRepository.findById(new GameStockMarketStateId(gameSessionId, stockCode))
+                .map(GameStockMarketState::getCurrentPriceAmount)
+                .orElse(0);
     }
 
     private void validateStockExists(final Long gameSessionId, final String stockCode) {

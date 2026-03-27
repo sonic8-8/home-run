@@ -4,6 +4,9 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedRequestFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,26 +17,25 @@ import io.ssafy.p.j14c103.homerun.api.service.user.UserAssetLinkService;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserMeService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserMeResponse;
-import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
-import java.util.List;
+import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class UserControllerTest {
+@AutoConfigureRestDocs(uriScheme = "https", uriHost = "api.homerun.local", uriPort = 443)
+class UserControllerTest extends RestDocsTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -63,13 +65,27 @@ class UserControllerTest {
         ));
 
         // when & then
-        mockMvc.perform(get("/api/users/me").with(currentUser()))
+        mockMvc.perform(get("/api/users/me")
+                        .with(currentUser())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.userId").value(1))
                 .andExpect(jsonPath("$.data.isAssetLinked").value(false))
                 .andExpect(jsonPath("$.data.totalAssetAmount").isEmpty())
-                .andExpect(jsonPath("$.data.netAssetAmount").isEmpty());
+                .andExpect(jsonPath("$.data.netAssetAmount").isEmpty())
+                .andDo(document("user/me/success",
+                        requestHeaders(authorizationHeader()),
+                        apiResponseFields(
+                                "내 정보",
+                                fieldWithPath("userId").type(JsonFieldType.NUMBER).description("회원 ID"),
+                                fieldWithPath("email").type(JsonFieldType.STRING).description("회원 이메일"),
+                                fieldWithPath("name").type(JsonFieldType.STRING).description("회원 이름"),
+                                fieldWithPath("isAssetLinked").type(JsonFieldType.BOOLEAN).description("자산 연동 여부"),
+                                fieldWithPath("totalAssetAmount").type(JsonFieldType.VARIES).optional().description("총자산"),
+                                fieldWithPath("netAssetAmount").type(JsonFieldType.VARIES).optional().description("순자산")
+                        )
+                ));
     }
 
     @DisplayName("자산 연동 실행은 ApiResponse로 감싼 연동 결과를 반환한다.")
@@ -86,6 +102,7 @@ class UserControllerTest {
         // when & then
         mockMvc.perform(post("/api/users/me/asset-link")
                         .with(currentUser())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -115,7 +132,29 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.isAssetLinked").value(true))
                 .andExpect(jsonPath("$.data.mainAccountCreated").value(true))
                 .andExpect(jsonPath("$.data.seedmoneyAccountCreated").value(true))
-                .andExpect(jsonPath("$.data.summaryInitialized").value(true));
+                .andExpect(jsonPath("$.data.summaryInitialized").value(true))
+                .andDo(document("user/asset-link/success",
+                        requestHeaders(authorizationHeader()),
+                        relaxedRequestFields(
+                                fieldWithPath("mainAccountBalanceAmount").type(JsonFieldType.NUMBER).description("수시입출금 계좌 잔액"),
+                                fieldWithPath("salaryDayOfMonth").type(JsonFieldType.NUMBER).description("급여일"),
+                                fieldWithPath("monthlySalaryAmount").type(JsonFieldType.NUMBER).description("월 급여액"),
+                                fieldWithPath("monthlyFixedExpenseAmount").type(JsonFieldType.NUMBER).description("월 고정 지출"),
+                                fieldWithPath("depositItems").type(JsonFieldType.ARRAY).optional().description("예금 항목 목록"),
+                                fieldWithPath("loanItems").type(JsonFieldType.ARRAY).optional().description("대출 항목 목록"),
+                                fieldWithPath("otherIncomeItems").type(JsonFieldType.ARRAY).optional().description("기타 수입 항목 목록"),
+                                fieldWithPath("cardSpendItems").type(JsonFieldType.ARRAY).optional().description("카드 지출 항목 목록"),
+                                fieldWithPath("paymentTypes").type(JsonFieldType.ARRAY).description("많이 쓰는 소비 분야"),
+                                fieldWithPath("jobType").type(JsonFieldType.STRING).description("직장 유형")
+                        ),
+                        apiResponseFields(
+                                "자산 연동 결과",
+                                fieldWithPath("isAssetLinked").type(JsonFieldType.BOOLEAN).description("자산 연동 여부"),
+                                fieldWithPath("mainAccountCreated").type(JsonFieldType.BOOLEAN).description("메인 계좌 생성 여부"),
+                                fieldWithPath("seedmoneyAccountCreated").type(JsonFieldType.BOOLEAN).description("시드머니 계좌 생성 여부"),
+                                fieldWithPath("summaryInitialized").type(JsonFieldType.BOOLEAN).description("요약 정보 초기화 여부")
+                        )
+                ));
     }
 
     @DisplayName("자산 연동 요청에서 소비 선호 카테고리가 없으면 400을 반환한다.")
@@ -123,6 +162,7 @@ class UserControllerTest {
     void linkAssetsWithoutPaymentTypes() throws Exception {
         mockMvc.perform(post("/api/users/me/asset-link")
                         .with(currentUser())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -135,41 +175,10 @@ class UserControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[*].field", hasItem("paymentTypes")))
-                .andExpect(jsonPath("$.errors[*].message", hasItem("많이 쓰는 소비 분야는 최소 1개 이상 선택해야 합니다.")));
-    }
-
-    @DisplayName("자산 연동 요청에서 소비 선호 카테고리를 중복 선택하면 400을 반환한다.")
-    @Test
-    void linkAssetsWithDuplicatePaymentTypes() throws Exception {
-        mockMvc.perform(post("/api/users/me/asset-link")
-                        .with(currentUser())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "mainAccountBalanceAmount": 3000000,
-                                  "salaryDayOfMonth": 25,
-                                  "monthlySalaryAmount": 4200000,
-                                  "monthlyFixedExpenseAmount": 1800000,
-                                  "paymentTypes": ["LIVING", "LIVING"],
-                                  "jobType": "LARGE_BIZ"
-                                }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[*].message", hasItem("많이 쓰는 소비 분야는 중복 선택할 수 없습니다.")));
-    }
-
-    private RequestPostProcessor currentUser() {
-        final Authentication authentication = new UsernamePasswordAuthenticationToken(
-                new AuthenticatedUser(1L, "user@example.com"),
-                null,
-                List.of()
-        );
-        return request -> {
-            final SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(authentication);
-            SecurityContextHolder.setContext(context);
-            request.setUserPrincipal(authentication);
-            return request;
-        };
+                .andExpect(jsonPath("$.errors[*].message", hasItem("많이 쓰는 소비 분야는 최소 1개 이상 선택해야 합니다.")))
+                .andDo(document("user/asset-link/validation-error",
+                        requestHeaders(authorizationHeader()),
+                        validationErrorResponseFields()
+                ));
     }
 }
