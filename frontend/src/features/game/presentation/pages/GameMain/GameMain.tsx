@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import { useGameMain } from '@features/game/presentation/hooks/useGameMain';
 import { AssetsDetailModal } from '@features/game/presentation/components/AssetsDetailModal/AssetsDetailModal';
+import { NewsEventModal } from '@features/game/presentation/components/NewsEventModal/NewsEventModal';
 import { LoanProductsPanel } from '@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel';
 import { CardRecommendPanel } from '@features/game/presentation/components/CardRecommendPanel/CardRecommendPanel';
 import { LoanReviewResultModal } from '@features/loan/presentation/components/LoanReviewResultModal';
@@ -55,6 +56,20 @@ export function GameMain() {
     leftView, setLeftView,
     preSelectedPropertyId, preSelectedPropertyName, preSelectedPropertyPrice,
   } = useGameMain();
+
+  const [newsOpen, setNewsOpen] = useState(false);
+
+  // 새 달(턴)이 시작될 때 뉴스 모달 자동 오픈
+  // sessionStorage에 마지막으로 뉴스를 본 날짜를 저장해 중복 방지
+  useEffect(() => {
+    if (!currentDate || !sessionId) return;
+    const storageKey = `news_seen_date_${sessionId}`;
+    const lastSeen = sessionStorage.getItem(storageKey);
+    if (lastSeen !== currentDate) {
+      setNewsOpen(true);
+      sessionStorage.setItem(storageKey, currentDate);
+    }
+  }, [currentDate, sessionId]);
 
   const [loanApplication, setLoanApplication] = useState<LoanApplication | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -160,6 +175,18 @@ export function GameMain() {
                 >
                   카드 추천
                 </button>
+                <button
+                  className={styles.menuButton}
+                  onClick={() => setNewsOpen(true)}
+                >
+                  이달의 뉴스
+                </button>
+                <button
+                  className={styles.menuButton}
+                  onClick={() => navigate(ROUTES.GAME_NEWS, { state: { sessionId } })}
+                >
+                  뉴스 전체 보기
+                </button>
               </div>
             </section>
 
@@ -186,6 +213,7 @@ export function GameMain() {
       </div>
 
       <AssetsDetailModal isOpen={isModalOpen} onClose={closeModal} assets={assets} />
+      <NewsEventModal isOpen={newsOpen} onClose={() => setNewsOpen(false)} sessionId={sessionId} />
 
       {loanApplication && (
         <>
