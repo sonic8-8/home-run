@@ -96,6 +96,10 @@ operation::card/list/success[snippets='http-request,request-headers,http-respons
 
 operation::card/recommendations/success[snippets='http-request,request-headers,http-response,response-fields']
 
+=== 카드 추천 조회 V2
+
+operation::card/recommendations-v2/success[snippets='http-request,request-headers,http-response,response-fields']
+
 == 캐릭터 API
 
 === 캐릭터 선택지 조회
