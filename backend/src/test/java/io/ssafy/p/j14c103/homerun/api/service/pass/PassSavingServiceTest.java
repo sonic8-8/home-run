@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.verify;
 
+import jakarta.persistence.EntityManager;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
 import io.ssafy.p.j14c103.homerun.api.service.account.UserSsafyAccountSyncService;
 import io.ssafy.p.j14c103.homerun.api.service.pass.request.PassSaveServiceRequest;
@@ -66,6 +67,9 @@ class PassSavingServiceTest {
     @Autowired
     private UserPassTransactionRepository userPassTransactionRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @MockitoBean
     private SsafyDemandDepositClient demandDepositClient;
 
@@ -82,8 +86,11 @@ class PassSavingServiceTest {
     @Test
     void save() {
         // given
-        final PassSubscription subscription = saveActiveSubscription();
+        final PassSubscription subscription = saveSubscription("커피 PASS", 5000, "출금계좌");
+        final PassSubscription otherSubscription = saveSubscription("배달 PASS", 20000, "출금계좌");
         saveAccounts();
+        seedmoneyTransactionRepository.save(SeedmoneyTransaction.createSave(1L, subscription.getId(), 5000));
+        seedmoneyTransactionRepository.save(SeedmoneyTransaction.createSave(1L, otherSubscription.getId(), 20000));
         final PassSaveServiceRequest request = PassSaveServiceRequest.builder()
                 .subscriptionId(subscription.getId())
                 .build();
@@ -97,6 +104,8 @@ class PassSavingServiceTest {
                         )
                 ));
         willAnswer(invocation -> {
+            entityManager.flush();
+            entityManager.clear();
             userAccountRepository.findByUserIdAndAccountType(1L, AccountType.MAIN)
                     .orElseThrow()
                     .updateBalance(295000);
@@ -114,15 +123,21 @@ class PassSavingServiceTest {
         final List<SeedmoneyTransaction> seedmoneyTransactions = seedmoneyTransactionRepository.findAll();
 
         assertThat(result.getSavedAmount()).isEqualTo(5000);
-        assertThat(result.getTotalSaved()).isEqualTo(5000);
+        assertThat(result.getTotalSaved()).isEqualTo(10000);
+        assertThat(result.getSubscriptionTotalSaved()).isEqualTo(10000);
+        assertThat(result.getOverallTotalSaved()).isEqualTo(30000);
         assertThat(result.getRemainingBalance()).isEqualTo(295000);
         assertThat(accountTransactions).hasSize(2);
         assertThat(accountTransactions)
                 .extracting(UserAccountTransaction::getTransactionType)
                 .containsExactlyInAnyOrder(AccountTransactionType.PASS_SAVE_OUT, AccountTransactionType.PASS_SAVE_IN);
-        assertThat(seedmoneyTransactions).hasSize(1);
-        assertThat(seedmoneyTransactions.get(0).getTransactionType()).isEqualTo("SAVE");
-        assertThat(seedmoneyTransactions.get(0).getPassId()).isEqualTo(subscription.getId());
+        assertThat(seedmoneyTransactions).hasSize(3);
+        assertThat(seedmoneyTransactions)
+                .extracting(SeedmoneyTransaction::getTransactionType)
+                .containsOnly("SAVE");
+        assertThat(seedmoneyTransactions.stream()
+                .filter(transaction -> subscription.getId().equals(transaction.getPassId()))
+                .count()).isEqualTo(2);
         assertThat(userPassTransactionRepository.findAll()).hasSize(1);
         verify(demandDepositClient).transferAccount("test-key", "시드머니계좌", "출금계좌", 5000);
         verify(userFinancialSummaryService).getSummary(1L);
@@ -171,14 +186,14 @@ class PassSavingServiceTest {
                 .hasMessageContaining("사용자 ID는 필수입니다.");
     }
 
-    private PassSubscription saveActiveSubscription() {
+    private PassSubscription saveSubscription(final String name, final int amountPerSave, final String sourceAccountNo) {
         final PassProduct product = passProductRepository.save(PassProduct.create(
-                "커피 PASS",
-                5000,
+                name,
+                amountPerSave,
                 "커피 한 잔 절약"
         ));
         return passSubscriptionRepository.save(
-                PassSubscription.create(1L, product, 5000, "출금계좌")
+                PassSubscription.create(1L, product, amountPerSave, sourceAccountNo)
         );
     }
 

@@ -49,7 +49,12 @@ export class PassRepositoryImpl implements IPassRepository {
 
   async save(subscriptionId: number): Promise<PassSaveResult> {
     const m = await this.dataSource.save(subscriptionId);
-    return { savedAmount: m.savedAmount, totalSaved: m.totalSaved, remainingBalance: m.remainingBalance };
+    return {
+      savedAmount: m.savedAmount,
+      subscriptionTotalSaved: m.subscriptionTotalSaved,
+      overallTotalSaved: m.overallTotalSaved,
+      remainingBalance: m.remainingBalance,
+    };
   }
 
   async getWidget(): Promise<PassWidgetData> {

@@ -40,6 +40,8 @@ export interface PassSaveRequestModel {
 export interface PassSaveResponseModel {
   savedAmount: number;
   totalSaved: number;
+  subscriptionTotalSaved: number;
+  overallTotalSaved: number;
   remainingBalance: number;
 }
 
