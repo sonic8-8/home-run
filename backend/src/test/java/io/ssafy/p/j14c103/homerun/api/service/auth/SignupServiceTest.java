@@ -60,7 +60,6 @@ class SignupServiceTest {
                 .name("홍길동")
                 .email("user@example.com")
                 .password("Password123!")
-                .paymentTypes(java.util.List.of("LIVING", "TRANSPORT", "TELECOM"))
                 .build();
 
         // when
@@ -76,7 +75,7 @@ class SignupServiceTest {
         assertThat(savedUser.getName()).isEqualTo("홍길동");
         assertThat(savedUser.getAuthProvider()).isEqualTo(AuthProvider.EMAIL);
         assertThat(savedUser.hasSsafyLink()).isFalse();
-        assertThat(savedUser.getPaymentType()).isEqualTo("LIVING,TRANSPORT,TELECOM");
+        assertThat(savedUser.getPaymentType()).isNull();
         assertThat(passwordEncoder.matches("Password123!", savedUser.getPasswordHash())).isTrue();
         assertThat(userAccountRepository.findByUserId(savedUser.getId())).isEmpty();
         assertThat(userFinancialSummaryRepository.findById(savedUser.getId())).isEmpty();
@@ -96,7 +95,6 @@ class SignupServiceTest {
                 .name("홍길동")
                 .email("user@example.com")
                 .password("Password123!")
-                .paymentTypes(java.util.List.of("LIVING"))
                 .build();
 
         // when & then

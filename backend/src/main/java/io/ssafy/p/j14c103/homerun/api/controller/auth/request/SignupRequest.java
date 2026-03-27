@@ -1,15 +1,11 @@
 package io.ssafy.p.j14c103.homerun.api.controller.auth.request;
 
 import io.ssafy.p.j14c103.homerun.api.service.auth.request.SignupServiceRequest;
-import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,26 +33,19 @@ public class SignupRequest {
     @NotNull(message = "{validation.auth.signup.termsAgreed.notNull}")
     private Boolean termsAgreed;
 
-    @NotEmpty(message = "{validation.auth.signup.paymentTypes.notEmpty}")
-    @Size(max = 3, message = "{validation.auth.signup.paymentTypes.size}")
-    @Valid
-    private List<String> paymentTypes;
-
     @Builder
     private SignupRequest(
             String name,
             String email,
             String password,
             String passwordConfirm,
-            Boolean termsAgreed,
-            List<String> paymentTypes
+            Boolean termsAgreed
     ) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.passwordConfirm = passwordConfirm;
         this.termsAgreed = termsAgreed;
-        this.paymentTypes = paymentTypes;
     }
 
     public SignupServiceRequest toServiceRequest() {
@@ -64,7 +53,6 @@ public class SignupRequest {
                 .name(name)
                 .email(email)
                 .password(password)
-                .paymentTypes(paymentTypes)
                 .build();
     }
 
@@ -80,32 +68,5 @@ public class SignupRequest {
     @AssertTrue(message = "{validation.auth.signup.termsAgreed.assertTrue}")
     public boolean isTermsAgreed() {
         return Boolean.TRUE.equals(termsAgreed);
-    }
-
-    @AssertTrue(message = "{validation.auth.signup.paymentTypes.unique}")
-    public boolean isPaymentTypesUnique() {
-        if (paymentTypes == null) {
-            return true;
-        }
-
-        return paymentTypes.stream().distinct().count() == paymentTypes.size();
-    }
-
-    @AssertTrue(message = "{validation.auth.signup.paymentTypes.allowed}")
-    public boolean isPaymentTypesAllowed() {
-        if (paymentTypes == null) {
-            return true;
-        }
-
-        return paymentTypes.stream()
-                .allMatch(this::isAllowedPaymentType);
-    }
-
-    private boolean isAllowedPaymentType(final String paymentType) {
-        try {
-            return SpendingCategory.fromCode(paymentType).isUserSelectable();
-        } catch (final IllegalArgumentException exception) {
-            return false;
-        }
     }
 }

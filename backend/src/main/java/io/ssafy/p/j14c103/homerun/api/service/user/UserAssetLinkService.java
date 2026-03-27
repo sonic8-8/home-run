@@ -109,6 +109,7 @@ public class UserAssetLinkService {
             final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
                     .orElseThrow(() -> new IllegalStateException("주계좌 생성 후 조회에 실패했습니다."));
             mainAccount.updateBalance(request.getMainAccountBalanceAmount());
+            user.updatePaymentType(request.joinedPaymentTypes());
             saveUserAssetProfile(userId, request);
             saveUserAssetItems(userId, request);
             userFinancialMockDataService.createInitialData(userId, toFinancialInitializationRequest(request));

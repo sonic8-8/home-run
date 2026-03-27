@@ -8,7 +8,9 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -50,6 +52,10 @@ public class UserAssetLinkRequest {
     @Valid
     private List<CardSpendItemRequest> cardSpendItems;
 
+    @NotEmpty(message = "{validation.user.assetLink.paymentTypes.notEmpty}")
+    @Size(max = 3, message = "{validation.user.assetLink.paymentTypes.size}")
+    private List<String> paymentTypes;
+
     @Builder
     private UserAssetLinkRequest(
             final Integer mainAccountBalanceAmount,
@@ -60,7 +66,8 @@ public class UserAssetLinkRequest {
             final List<NamedAmountItemRequest> depositItems,
             final List<NamedAmountItemRequest> loanItems,
             final List<NamedAmountItemRequest> otherIncomeItems,
-            final List<CardSpendItemRequest> cardSpendItems
+            final List<CardSpendItemRequest> cardSpendItems,
+            final List<String> paymentTypes
     ) {
         this.mainAccountBalanceAmount = mainAccountBalanceAmount;
         this.salaryDayOfMonth = salaryDayOfMonth;
@@ -71,6 +78,7 @@ public class UserAssetLinkRequest {
         this.loanItems = loanItems;
         this.otherIncomeItems = otherIncomeItems;
         this.cardSpendItems = cardSpendItems;
+        this.paymentTypes = paymentTypes;
     }
 
     public UserAssetLinkServiceRequest toServiceRequest() {
@@ -84,6 +92,7 @@ public class UserAssetLinkRequest {
                 .loanItems(toNamedAmountItems(loanItems))
                 .otherIncomeItems(toNamedAmountItems(otherIncomeItems))
                 .cardSpendItems(toCardSpendItems(cardSpendItems))
+                .paymentTypes(toPaymentTypes(paymentTypes))
                 .build();
     }
 
@@ -113,6 +122,25 @@ public class UserAssetLinkRequest {
         return cardSpendItems.stream()
                 .map(CardSpendItemRequest::getCategory)
                 .allMatch(this::isAllowedCardCategory);
+    }
+
+    @AssertTrue(message = "{validation.user.assetLink.paymentTypes.unique}")
+    public boolean isPaymentTypesUnique() {
+        if (paymentTypes == null) {
+            return true;
+        }
+
+        return paymentTypes.stream().distinct().count() == paymentTypes.size();
+    }
+
+    @AssertTrue(message = "{validation.user.assetLink.paymentTypes.allowed}")
+    public boolean isPaymentTypesAllowed() {
+        if (paymentTypes == null) {
+            return true;
+        }
+
+        return paymentTypes.stream()
+                .allMatch(this::isAllowedPaymentType);
     }
 
     private List<UserAssetLinkServiceRequest.NamedAmountItem> toNamedAmountItems(
@@ -145,9 +173,25 @@ public class UserAssetLinkRequest {
                 .toList();
     }
 
+    private List<String> toPaymentTypes(final List<String> items) {
+        if (items == null) {
+            return List.of();
+        }
+
+        return List.copyOf(items);
+    }
+
     private boolean isAllowedCardCategory(final String categoryCode) {
         try {
             return SpendingCategory.fromCode(categoryCode).isUserSelectable();
+        } catch (final IllegalArgumentException exception) {
+            return false;
+        }
+    }
+
+    private boolean isAllowedPaymentType(final String paymentTypeCode) {
+        try {
+            return SpendingCategory.fromCode(paymentTypeCode).isUserSelectable();
         } catch (final IllegalArgumentException exception) {
             return false;
         }
