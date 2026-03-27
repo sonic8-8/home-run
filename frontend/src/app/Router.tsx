@@ -17,7 +17,7 @@ const GameStartPage = lazy(() =>
 );
 
 const GameSaveSlotPage = lazy(() =>
-  import('@features/game/presentation/pages/GameSaveSlot/GameSaveSlot')
+  import('@features/game/presentation/pages/GameSaveSlot/GameSaveSlotPage')
 );
 
 const SelectCharacterPage = lazy(() =>

@@ -65,8 +65,11 @@
 }
 
 .slotEmpty {
-  cursor: default;
-  opacity: 0.6;
+  background-color: #15155d;
+}
+
+.slotEnded {
+  opacity: 0.8;
 }
 
 .slotNumber {

@@ -1,36 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { GameSlot } from '@features/game/domain/entities/GameSlot';
 import { ROUTES } from '@app/routes';
-
-// Mock data — TODO: container.resolve(GetGameSlotsUseCase).execute() 로 교체
-const MOCK_SLOTS: GameSlot[] = [
-  {
-    slotNumber: 1,
-    sessionId: 1,
-    status: 'IN_PROGRESS',
-    characterName: '김싸피',
-    jobType: 'LARGE_BIZ',
-    totalAssets: 1_000_000,
-    createdAt: '2026-03-06',
-    currentTurn: 12,
-  },
-  {
-    slotNumber: 2,
-    sessionId: 2,
-    status: 'IN_PROGRESS',
-    characterName: '김싸피',
-    jobType: 'FREELANCER',
-    totalAssets: 1_000,
-    createdAt: '2026-03-06',
-    currentTurn: 3,
-  },
-  {
-    slotNumber: 3,
-    sessionId: null,
-    status: 'EMPTY',
-  },
-];
+import { container } from '@core/di/container';
+import { GetGameSlotsUseCase } from '@features/game/domain/usecases/GetGameSlotsUseCase';
 
 export const useGameSaveSlots = () => {
   const [slots, setSlots] = useState<GameSlot[]>([]);
@@ -39,33 +12,64 @@ export const useGameSaveSlots = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchSlots = async () => {
+    let isMounted = true;
+
+    const fetchSlots = async (): Promise<void> => {
       setIsLoading(true);
       setError(null);
       try {
-        // TODO: const useCase = container.resolve(GetGameSlotsUseCase);
-        // TODO: const result = await useCase.execute();
-        // setSlots(result);
-        setSlots(MOCK_SLOTS);
-      } catch {
-        setError('세이브 데이터를 불러오지 못했습니다.');
+        const useCase = container.resolve(GetGameSlotsUseCase);
+        const result = await useCase.execute();
+        if (!isMounted) {
+          return;
+        }
+        setSlots(result);
+      } catch (fetchError) {
+        if (!isMounted) {
+          return;
+        }
+        setSlots([]);
+        setError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : '세이브 데이터를 불러오지 못했습니다.',
+        );
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
-    fetchSlots();
+
+    void fetchSlots();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const handleSelectSlot = useCallback(
-    (slot: GameSlot) => {
-      if (slot.status === 'EMPTY') {
-        navigate(ROUTES.GAME_SELECT_CHARACTER, { state: { slotNumber: slot.slotNumber } });
-        return;
-      }
-      navigate(ROUTES.GAME, { state: { sessionId: slot.sessionId } });
-    },
-    [navigate],
-  );
+  const handleSelectSlot = (slot: GameSlot) => {
+    setError(null);
+
+    if (slot.status === 'EMPTY') {
+      navigate(ROUTES.GAME_SELECT_CHARACTER, {
+        state: { slotNumber: slot.slotNumber },
+      });
+      return;
+    }
+
+    if (slot.status !== 'IN_PROGRESS') {
+      setError('종료된 세션은 아직 이어하기를 지원하지 않습니다.');
+      return;
+    }
+
+    if (slot.sessionId === null) {
+      setError('세션 정보를 확인하지 못했습니다.');
+      return;
+    }
+
+    navigate(ROUTES.GAME, { state: { sessionId: slot.sessionId } });
+  };
 
   return { slots, isLoading, error, handleSelectSlot };
 };
