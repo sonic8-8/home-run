@@ -67,7 +67,8 @@ class FssRestClientConfigTest {
     @Test
     void recordsHttpClientMetricWithCommonClientTag() {
         for (final String client : new String[] {"ssafy", "kis", "fss"}) {
-            try (SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry()) {
+            final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+            try {
                 final ObservationRegistry observationRegistry = ObservationRegistry.create();
                 observationRegistry.observationConfig()
                         .observationHandler(new DefaultMeterObservationHandler(meterRegistry));
@@ -89,6 +90,8 @@ class FssRestClientConfigTest {
                         .tag(HomerunClientObservationConvention.CLIENT_TAG, client)
                         .timer();
                 assertThat(timer.count()).isEqualTo(1);
+            } finally {
+                meterRegistry.close();
             }
         }
     }
