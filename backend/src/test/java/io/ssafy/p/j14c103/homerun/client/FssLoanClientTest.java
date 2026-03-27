@@ -9,6 +9,7 @@ import io.ssafy.p.j14c103.homerun.config.FssApiProperties;
 import io.ssafy.p.j14c103.homerun.config.FssRestClientConfig;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,8 +48,8 @@ class FssLoanClientTest {
                     ]
                   }
                 }
-                """.getBytes();
-            exchange.getResponseHeaders().add("Content-Type", "application/json");
+                """.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json;charset=UTF-8");
             exchange.sendResponseHeaders(200, body.length);
             try (OutputStream responseBody = exchange.getResponseBody()) {
                 responseBody.write(body);
@@ -79,8 +80,9 @@ class FssLoanClientTest {
         delayedServer.createContext("/creditLoanProductsSearch.json", exchange -> {
             try {
                 Thread.sleep(Duration.ofSeconds(15).toMillis());
-                byte[] body = "{\"result\":{\"err_cd\":\"000\",\"baseList\":[],\"optionList\":[]}}".getBytes();
-                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                byte[] body = "{\"result\":{\"err_cd\":\"000\",\"baseList\":[],\"optionList\":[]}}"
+                    .getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "application/json;charset=UTF-8");
                 exchange.sendResponseHeaders(200, body.length);
                 try (OutputStream responseBody = exchange.getResponseBody()) {
                     responseBody.write(body);
