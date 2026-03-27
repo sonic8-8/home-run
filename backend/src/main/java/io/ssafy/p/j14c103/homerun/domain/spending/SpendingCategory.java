@@ -11,6 +11,7 @@ public enum SpendingCategory {
     TELECOM("통신"),
     OVERSEAS("해외"),
     LIVING("생활"),
+    FIXED_EXPENSE("고정지출"),
     TRANSFER("이체");
 
     private final String displayName;
@@ -21,6 +22,21 @@ public enum SpendingCategory {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public boolean isUserSelectable() {
+        return this != TRANSFER && this != FIXED_EXPENSE;
+    }
+
+    public static SpendingCategory fromCode(final String code) {
+        if (code == null || code.isBlank()) {
+            throw new IllegalArgumentException("소비 카테고리 코드는 필수입니다.");
+        }
+
+        return Arrays.stream(values())
+                .filter(category -> category.name().equals(code))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("허용되지 않은 소비 카테고리 코드입니다."));
     }
 
     public static SpendingCategory from(final String categoryName) {
