@@ -40,4 +40,5 @@ class JwtAuthenticationEntryPointTest {
         assertThat(body.get("errors").isArray()).isTrue();
         assertThat(body.get("errors").isEmpty()).isTrue();
     }
+
 }
