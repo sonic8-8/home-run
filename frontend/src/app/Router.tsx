@@ -17,7 +17,7 @@ const GameStartPage = lazy(() =>
 );
 
 const GameSaveSlotPage = lazy(() =>
-  import('@features/game/presentation/pages/GameSaveSlot/GameSaveSlot')
+  import('@features/game/presentation/pages/GameSaveSlot/GameSaveSlotPage')
 );
 
 const SelectCharacterPage = lazy(() =>
@@ -52,6 +52,12 @@ const DevPreviewPage = lazy(() =>
   import('@features/game/presentation/pages/DevPreview/DevPreview')
 );
 
+const NewsPage = lazy(() =>
+  import('@features/game/presentation/pages/NewsPage/NewsPage').then((m) => ({
+    default: m.NewsPage,
+  }))
+);
+
 const router = createBrowserRouter([
   { path: '/dev', element: <Suspense fallback={null}><DevPreviewPage /></Suspense> },
   {
@@ -71,6 +77,7 @@ const router = createBrowserRouter([
       { path: ROUTES.GAME_SET_NICKNAME, element: <Suspense fallback={null}><SetNicknamePage /></Suspense> },
       { path: ROUTES.GAME_SELECT_START_METHOD, element: <Suspense fallback={null}><SelectStartMethodPage /></Suspense> },
       { path: ROUTES.GAME_SELECT_JOB, element: <Suspense fallback={null}><SelectJobPage /></Suspense> },
+      { path: ROUTES.GAME_NEWS, element: <Suspense fallback={null}><NewsPage /></Suspense> },
       { path: ROUTES.LOAN,     element: <TempPage /> },
       { path: ROUTES.PROPERTY, element: <Suspense fallback={null}><RealEstatePage /></Suspense> },
       { path: ROUTES.CARD,     element: <TempPage /> },

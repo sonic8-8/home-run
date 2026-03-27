@@ -131,7 +131,6 @@ class SecurityConfigTest {
                 .password("Password123!")
                 .passwordConfirm("Password123!")
                 .termsAgreed(true)
-                .paymentTypes(java.util.List.of("LIVING"))
                 .build();
         SignupResponse response = SignupResponse.builder()
                 .userId(1L)

@@ -1,9 +1,16 @@
-export type SlotStatus = 'IN_PROGRESS' | 'EMPTY';
+export type SlotStatus =
+  | 'EMPTY'
+  | 'IN_PROGRESS'
+  | 'CLEAR'
+  | 'BANKRUPT'
+  | 'TIMEOUT'
+  | 'FORECLOSURE';
 
 export type JobType =
   | 'LARGE_BIZ'
   | 'MID_BIZ'
   | 'SMALL_BIZ'
+  | 'STARTUP'
   | 'FREELANCER';
 
 export interface GameSlot {
