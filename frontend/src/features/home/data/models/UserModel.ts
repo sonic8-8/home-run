@@ -13,10 +13,11 @@ export interface AssetLinkRequestModel {
   monthlySalaryAmount: number;
   monthlyFixedExpenseAmount: number;
   jobType: string;
-  depositItems: { balance: number }[];
-  loanItems: { balance: number }[];
-  otherIncomeItems: { amount: number }[];
-  cardSpendItems: { category: string; monthlyAmount: number }[];
+  depositItems: { name: string; amount: number }[];
+  loanItems: { name: string; amount: number }[];
+  otherIncomeItems: { name: string; amount: number }[];
+  cardSpendItems: { category: string; amount: number }[];
+  paymentTypes: string[];
 }
 
 export interface AssetLinkResponseModel {

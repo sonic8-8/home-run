@@ -1,21 +1,14 @@
 export type JobType = 'SMALL_BIZ' | 'MID_BIZ' | 'LARGE_BIZ' | 'STARTUP' | 'FREELANCER';
 export type CardSpendCategory = 'LIVING' | 'TRANSPORT' | 'TELECOM' | 'FUEL' | 'MART' | 'EDUCATION' | 'OVERSEAS';
 
-export interface DepositItem {
-  balance: number;
-}
-
-export interface LoanItem {
-  balance: number;
-}
-
-export interface OtherIncomeItem {
+export interface NamedAmountItem {
+  name: string;
   amount: number;
 }
 
 export interface CardSpendItem {
   category: CardSpendCategory;
-  monthlyAmount: number;
+  amount: number;
 }
 
 export interface AssetLinkInput {
@@ -24,8 +17,9 @@ export interface AssetLinkInput {
   monthlySalaryAmount: number;
   monthlyFixedExpenseAmount: number;
   jobType: JobType;
-  depositItems: DepositItem[];
-  loanItems: LoanItem[];
-  otherIncomeItems: OtherIncomeItem[];
+  depositItems: NamedAmountItem[];
+  loanItems: NamedAmountItem[];
+  otherIncomeItems: NamedAmountItem[];
   cardSpendItems: CardSpendItem[];
+  paymentTypes: string[];
 }
