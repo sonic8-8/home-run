@@ -3,6 +3,8 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
@@ -20,6 +22,7 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDate;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +42,9 @@ class GameWorldResultServiceTest {
 
     @Autowired
     private GameHousingRepository gameHousingRepository;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @AfterEach
     void tearDown() {
@@ -82,6 +88,7 @@ class GameWorldResultServiceTest {
         assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isEqualTo(201L);
         assertThat(result.getHousingSnapshot().getTargetPropertyId()).isEqualTo(101L);
         assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isFalse();
+        assertTimerRecorded("success");
     }
 
     @DisplayName("현재 주거 데이터가 없어도 기본 housing snapshot을 포함한 world result를 반환한다")
@@ -126,6 +133,7 @@ class GameWorldResultServiceTest {
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_SESSION_NOT_FOUND);
+        assertTimerRecorded("failure");
     }
 
     @DisplayName("세션의 경제 사이클 값이 잘못되면 world cycle 상태 에러를 던진다")
@@ -145,6 +153,16 @@ class GameWorldResultServiceTest {
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.WORLD_CYCLE_STATE_INVALID);
+        assertTimerRecorded("failure");
+    }
+
+    private void assertTimerRecorded(final String result) {
+        final Timer timer = meterRegistry.get("homerun.turn.commit.duration")
+            .tag("boundary", "world-result")
+            .tag("result", result)
+            .timer();
+        assertThat(timer.count()).isEqualTo(1);
+        assertThat(timer.totalTime(TimeUnit.NANOSECONDS)).isGreaterThanOrEqualTo(0L);
     }
 
     private GameSession createGameSession(
