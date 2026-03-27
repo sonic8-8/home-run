@@ -292,7 +292,7 @@ class WorldPendingResolveFlowIntegrationTest {
             .extracting(GameWorldResult.EventCandidate::getEventCode)
             .contains("EVT-STATUS-001");
         assertThat(burnoutEvent.getType()).isEqualTo(EventPresentationType.LETTER);
-        assertThat(burnoutEvent.getChoices()).isEmpty();
+        assertThat(burnoutEvent.getChoices()).isNull();
         assertThat(resolveResult.getSelectedChoiceCode()).isNull();
         assertThat(resolveResult.getResultSummary()).contains("번아웃");
         assertThat(gamePendingEventRepository.findById(burnoutEvent.getEventId()).orElseThrow().isResolvedYn()).isTrue();

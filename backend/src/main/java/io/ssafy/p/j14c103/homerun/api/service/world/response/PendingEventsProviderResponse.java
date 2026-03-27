@@ -55,7 +55,7 @@ public class PendingEventsProviderResponse {
             this.title = title;
             this.description = description;
             this.imageUrl = imageUrl;
-            this.choices = List.copyOf(choices);
+            this.choices = choices == null ? null : List.copyOf(choices);
             this.sender = sender;
             this.receiver = receiver;
             this.date = date;
