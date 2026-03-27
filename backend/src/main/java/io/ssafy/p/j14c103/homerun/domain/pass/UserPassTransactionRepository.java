@@ -7,4 +7,10 @@ import java.util.List;
 public interface UserPassTransactionRepository extends JpaRepository<UserPassTransaction, Long> {
 
     List<UserPassTransaction> findBySubscriptionIdAndTransactionDateAfter(Long subscriptionId, String transactionDate);
+
+    List<UserPassTransaction> findBySubscriptionIdAndTransactionDateBetween(
+            Long subscriptionId,
+            String startTransactionDate,
+            String endTransactionDate
+    );
 }

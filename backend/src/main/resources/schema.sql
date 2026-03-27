@@ -15,6 +15,77 @@ create table if not exists users (
   constraint uq_users__ssafy_user_key unique (ssafy_user_key)
 );
 
+alter table if exists user_financial_products
+  add column if not exists source_type varchar(20) default 'SYSTEM';
+
+create table if not exists user_asset_profiles (
+  user_id integer primary key,
+  main_account_balance_amount integer not null,
+  salary_day_of_month integer not null,
+  monthly_salary_amount integer not null,
+  monthly_fixed_expense_amount integer not null,
+  job_type varchar(30) not null,
+  updated_at timestamp not null default current_timestamp,
+  constraint fk_user_asset_profiles__user
+    foreign key (user_id) references users (user_id)
+);
+
+create table if not exists user_asset_deposits (
+  user_asset_deposit_id integer generated always as identity primary key,
+  user_id integer not null,
+  name varchar(100) not null,
+  amount integer not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_user_asset_deposits__user
+    foreign key (user_id) references users (user_id)
+);
+
+create table if not exists user_asset_loans (
+  user_asset_loan_id integer generated always as identity primary key,
+  user_id integer not null,
+  name varchar(100) not null,
+  amount integer not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_user_asset_loans__user
+    foreign key (user_id) references users (user_id)
+);
+
+create table if not exists user_asset_other_incomes (
+  user_asset_other_income_id integer generated always as identity primary key,
+  user_id integer not null,
+  name varchar(100) not null,
+  amount integer not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_user_asset_other_incomes__user
+    foreign key (user_id) references users (user_id)
+);
+
+create table if not exists user_asset_card_spends (
+  user_asset_card_spend_id integer generated always as identity primary key,
+  user_id integer not null,
+  category varchar(30) not null,
+  amount integer not null,
+  created_at timestamp not null default current_timestamp,
+  constraint fk_user_asset_card_spends__user
+    foreign key (user_id) references users (user_id)
+);
+
+create table if not exists user_home_credit_score_snapshots (
+  user_home_credit_score_snapshot_id integer generated always as identity primary key,
+  user_id integer not null,
+  score_month_start date not null,
+  snapshot_type varchar(20) not null,
+  payment_history integer not null,
+  amounts_owed integer not null,
+  credit_length integer not null,
+  credit_mix integer not null,
+  new_credit integer not null,
+  created_at timestamp not null default current_timestamp,
+  constraint uq_user_home_credit_score_snapshots__user_month unique (user_id, score_month_start),
+  constraint fk_user_home_credit_score_snapshots__user
+    foreign key (user_id) references users (user_id)
+);
+
 -- PASS product catalog for savings challenges.
 create table if not exists pass_products (
   pass_product_id integer generated always as identity primary key,

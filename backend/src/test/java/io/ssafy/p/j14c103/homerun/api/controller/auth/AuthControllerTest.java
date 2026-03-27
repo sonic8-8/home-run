@@ -26,6 +26,7 @@ import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import java.util.List;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,7 +79,8 @@ class AuthControllerTest extends RestDocsTestSupport {
                                   "email": "user@example.com",
                                   "password": "Password123!",
                                   "passwordConfirm": "Password123!",
-                                  "termsAgreed": true
+                                  "termsAgreed": true,
+                                  "paymentTypes": ["LIVING", "TRANSPORT", "TELECOM"]
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -93,7 +95,8 @@ class AuthControllerTest extends RestDocsTestSupport {
                                 fieldWithPath("email").type(JsonFieldType.STRING).description("로그인 이메일"),
                                 fieldWithPath("password").type(JsonFieldType.STRING).description("비밀번호"),
                                 fieldWithPath("passwordConfirm").type(JsonFieldType.STRING).description("비밀번호 확인"),
-                                fieldWithPath("termsAgreed").type(JsonFieldType.BOOLEAN).description("약관 동의 여부")
+                                fieldWithPath("termsAgreed").type(JsonFieldType.BOOLEAN).description("약관 동의 여부"),
+                                fieldWithPath("paymentTypes").type(JsonFieldType.ARRAY).description("많이 쓰는 소비 분야 코드 목록")
                         ),
                         apiResponseFields(
                                 "회원가입 결과",
@@ -114,6 +117,7 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .password("Password123!")
                 .passwordConfirm("Password123!")
                 .termsAgreed(true)
+                .paymentTypes(List.of("LIVING"))
                 .build();
         given(signupService.signup(any(SignupServiceRequest.class)))
                 .willThrow(new HomerunException(ErrorCode.USER_EMAIL_DUPLICATE));
@@ -137,6 +141,7 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .password("Password123!")
                 .passwordConfirm("Password1234!")
                 .termsAgreed(true)
+                .paymentTypes(List.of("LIVING"))
                 .build();
 
         // when & then
@@ -160,6 +165,7 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .password("Password123!")
                 .passwordConfirm("Password123!")
                 .termsAgreed(false)
+                .paymentTypes(List.of("LIVING"))
                 .build();
 
         // when & then
@@ -174,6 +180,67 @@ class AuthControllerTest extends RestDocsTestSupport {
                 .andDo(document("auth/signup/validation-error",
                         validationErrorResponseFields()
                 ));
+    }
+
+    @DisplayName("소비 선호 카테고리가 비어 있으면 400을 반환한다.")
+    @Test
+    void signupWithoutPaymentTypes() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "홍길동",
+                                  "email": "user@example.com",
+                                  "password": "Password123!",
+                                  "passwordConfirm": "Password123!",
+                                  "termsAgreed": true,
+                                  "paymentTypes": []
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andExpect(jsonPath("$.errors[*].field", hasItem("paymentTypes")))
+                .andExpect(jsonPath("$.errors[*].message", hasItem("많이 쓰는 소비 분야는 최소 1개 이상 선택해야 합니다.")));
+    }
+
+    @DisplayName("소비 선호 카테고리를 중복 선택하면 400을 반환한다.")
+    @Test
+    void signupWithDuplicatePaymentTypes() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "홍길동",
+                                  "email": "user@example.com",
+                                  "password": "Password123!",
+                                  "passwordConfirm": "Password123!",
+                                  "termsAgreed": true,
+                                  "paymentTypes": ["LIVING", "LIVING"]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andExpect(jsonPath("$.errors[*].message", hasItem("많이 쓰는 소비 분야는 중복 선택할 수 없습니다.")));
+    }
+
+    @DisplayName("허용되지 않은 소비 선호 카테고리가 있으면 400을 반환한다.")
+    @Test
+    void signupWithInvalidPaymentType() throws Exception {
+        mockMvc.perform(post("/api/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "홍길동",
+                                  "email": "user@example.com",
+                                  "password": "Password123!",
+                                  "passwordConfirm": "Password123!",
+                                  "termsAgreed": true,
+                                  "paymentTypes": ["TRANSFER"]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+                .andExpect(jsonPath("$.errors[*].message", hasItem("허용되지 않은 소비 분야 코드가 포함되어 있습니다.")));
     }
 
     @DisplayName("로그인 요청이 성공하면 200과 토큰 응답을 반환한다.")

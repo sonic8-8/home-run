@@ -13,6 +13,7 @@ public class UserMeResponse {
     @JsonProperty("isAssetLinked")
     private boolean isAssetLinked;
     private Integer totalAssetAmount;
+    private Integer netAssetAmount;
 
     @Builder
     private UserMeResponse(
@@ -20,13 +21,15 @@ public class UserMeResponse {
             final String email,
             final String name,
             final boolean isAssetLinked,
-            final Integer totalAssetAmount
+            final Integer totalAssetAmount,
+            final Integer netAssetAmount
     ) {
         this.userId = userId;
         this.email = email;
         this.name = name;
         this.isAssetLinked = isAssetLinked;
         this.totalAssetAmount = totalAssetAmount;
+        this.netAssetAmount = netAssetAmount;
     }
 
     public static UserMeResponse of(
@@ -34,7 +37,8 @@ public class UserMeResponse {
             final String email,
             final String name,
             final boolean isAssetLinked,
-            final Integer totalAssetAmount
+            final Integer totalAssetAmount,
+            final Integer netAssetAmount
     ) {
         return UserMeResponse.builder()
                 .userId(userId)
@@ -42,6 +46,7 @@ public class UserMeResponse {
                 .name(name)
                 .isAssetLinked(isAssetLinked)
                 .totalAssetAmount(totalAssetAmount)
+                .netAssetAmount(netAssetAmount)
                 .build();
     }
 }

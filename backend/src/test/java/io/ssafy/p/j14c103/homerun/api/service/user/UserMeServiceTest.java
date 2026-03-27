@@ -63,6 +63,7 @@ class UserMeServiceTest {
         // then
         assertThat(response.isAssetLinked()).isFalse();
         assertThat(response.getTotalAssetAmount()).isNull();
+        assertThat(response.getNetAssetAmount()).isNull();
     }
 
     @DisplayName("연동 완료 사용자는 연동 여부 true와 총자산을 반환한다.")
@@ -103,6 +104,7 @@ class UserMeServiceTest {
         // then
         assertThat(response.isAssetLinked()).isTrue();
         assertThat(response.getTotalAssetAmount()).isEqualTo(10_000_000);
+        assertThat(response.getNetAssetAmount()).isEqualTo(10_000_000);
     }
 
     @DisplayName("SSAFY 연동이 있어도 계좌가 누락되면 미연동으로 본다.")
@@ -131,5 +133,6 @@ class UserMeServiceTest {
         // then
         assertThat(response.isAssetLinked()).isFalse();
         assertThat(response.getTotalAssetAmount()).isNull();
+        assertThat(response.getNetAssetAmount()).isNull();
     }
 }

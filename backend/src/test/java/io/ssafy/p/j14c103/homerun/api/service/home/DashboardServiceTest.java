@@ -19,6 +19,9 @@ import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.card.OwnedCard;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummary;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,6 +50,15 @@ class DashboardServiceTest {
     @Mock
     private UserSsafyAccountSyncService userSsafyAccountSyncService;
 
+    @Mock
+    private UserAssetProfileRepository userAssetProfileRepository;
+
+    @Mock
+    private UserAssetOtherIncomeRepository userAssetOtherIncomeRepository;
+
+    @Mock
+    private UserAssetCardSpendRepository userAssetCardSpendRepository;
+
     @InjectMocks
     private DashboardService dashboardService;
 
@@ -56,6 +68,7 @@ class DashboardServiceTest {
         // given
         final Long userId = 1L;
         given(userFinancialSummaryService.getSummary(userId)).willReturn(summary(userId, 8_000_000, 0, 8_000_000));
+        given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.empty());
         given(userAccountTransactionRepository.findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(
                 org.mockito.ArgumentMatchers.eq(userId),
                 org.mockito.ArgumentMatchers.any(LocalDateTime.class)
@@ -89,6 +102,7 @@ class DashboardServiceTest {
         // given
         final Long userId = 1L;
         given(userFinancialSummaryService.getSummary(userId)).willReturn(summary(userId, 8_000_000, 0, 8_000_000));
+        given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.empty());
         given(userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN))
                 .willReturn(java.util.Optional.of(UserAccount.create(
                         userId, AccountType.MAIN, "001", "한국은행", "0011111111111111", 5_000_000
@@ -121,6 +135,46 @@ class DashboardServiceTest {
         // then
         assertThat(response.getMonthlyIncome()).isEqualTo(Money.of(5_000_000L));
         assertThat(response.getMonthlyExpense()).isEqualTo(Money.of(700_000L));
+    }
+
+    @DisplayName("온보딩 프로필이 있으면 월급, 기타수입, 고정지출, 카드지출 합계로 홈 수치를 계산한다")
+    @Test
+    void getDashboard_profileBasedIncomeAndExpense() {
+        final Long userId = 1L;
+        given(userFinancialSummaryService.getSummary(userId)).willReturn(summary(userId, 15_000_000, 3_000_000, 12_000_000));
+        given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.of(
+                io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile.create(
+                        userId,
+                        3_000_000,
+                        25,
+                        4_000_000,
+                        1_500_000,
+                        io.ssafy.p.j14c103.homerun.domain.character.career.JobType.LARGE_BIZ
+                )
+        ));
+        given(userAssetOtherIncomeRepository.findAllByUserIdOrderByIdAsc(userId)).willReturn(List.of(
+                io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncome.create(userId, "부업", 300_000)
+        ));
+        given(userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId)).willReturn(List.of(
+                io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpend.create(
+                        userId,
+                        io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory.LIVING,
+                        200_000
+                )
+        ));
+        given(userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN))
+                .willReturn(java.util.Optional.of(UserAccount.create(
+                        userId, AccountType.MAIN, "001", "한국은행", "0011111111111111", 3_000_000
+                )));
+        given(userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY))
+                .willReturn(java.util.Optional.of(UserAccount.create(
+                        userId, AccountType.SEEDMONEY, "001", "한국은행", "0012222222222222", 0
+                )));
+
+        final DashboardResponse response = dashboardService.getDashboard(userId);
+
+        assertThat(response.getMonthlyIncome()).isEqualTo(Money.of(4_300_000L));
+        assertThat(response.getMonthlyExpense()).isEqualTo(Money.of(1_700_000L));
     }
 
     @DisplayName("userId가 null이면 예외가 발생한다")

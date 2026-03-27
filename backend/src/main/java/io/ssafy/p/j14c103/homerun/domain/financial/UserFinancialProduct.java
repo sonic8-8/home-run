@@ -40,6 +40,10 @@ public class UserFinancialProduct {
     @Column(name = "current_balance_amount", nullable = false)
     private Integer currentBalanceAmount;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_type", nullable = false, length = 20)
+    private FinancialProductSourceType sourceType;
+
     @Column(name = "opened_at", nullable = false)
     private LocalDateTime openedAt;
 
@@ -52,6 +56,7 @@ public class UserFinancialProduct {
             final String institutionName,
             final String productName,
             final Integer currentBalanceAmount,
+            final FinancialProductSourceType sourceType,
             final LocalDateTime openedAt
     ) {
         this.userId = userId;
@@ -59,6 +64,7 @@ public class UserFinancialProduct {
         this.institutionName = institutionName;
         this.productName = productName;
         this.currentBalanceAmount = currentBalanceAmount;
+        this.sourceType = sourceType;
         this.openedAt = openedAt;
         this.activeYn = true;
     }
@@ -70,6 +76,26 @@ public class UserFinancialProduct {
             final String productName,
             final Integer currentBalanceAmount,
             final LocalDateTime openedAt
+    ) {
+        return create(
+                userId,
+                productType,
+                institutionName,
+                productName,
+                currentBalanceAmount,
+                openedAt,
+                FinancialProductSourceType.SYSTEM
+        );
+    }
+
+    public static UserFinancialProduct create(
+            final Long userId,
+            final FinancialProductType productType,
+            final String institutionName,
+            final String productName,
+            final Integer currentBalanceAmount,
+            final LocalDateTime openedAt,
+            final FinancialProductSourceType sourceType
     ) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
@@ -86,6 +112,9 @@ public class UserFinancialProduct {
         if (currentBalanceAmount == null || currentBalanceAmount < 0) {
             throw new IllegalArgumentException("잔액은 0 이상이어야 합니다.");
         }
+        if (sourceType == null) {
+            throw new IllegalArgumentException("금융상품 출처는 필수입니다.");
+        }
         if (openedAt == null) {
             throw new IllegalArgumentException("개설일은 필수입니다.");
         }
@@ -96,6 +125,7 @@ public class UserFinancialProduct {
                 institutionName,
                 productName,
                 currentBalanceAmount,
+                sourceType,
                 openedAt
         );
     }

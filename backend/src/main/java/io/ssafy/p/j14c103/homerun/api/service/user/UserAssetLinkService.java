@@ -1,9 +1,10 @@
 package io.ssafy.p.j14c103.homerun.api.service.user;
 
-import io.ssafy.p.j14c103.homerun.api.service.account.MainAccountInitialBalanceService;
-import io.ssafy.p.j14c103.homerun.api.service.account.MainAccountInitialHistoryService;
+import io.ssafy.p.j14c103.homerun.api.service.financial.request.UserFinancialInitializationServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialMockDataService;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
+import io.ssafy.p.j14c103.homerun.api.service.home.credit.FicoCreditScoringService;
+import io.ssafy.p.j14c103.homerun.api.service.user.request.UserAssetLinkServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.SeedmoneyAccountProjectionService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
@@ -12,6 +13,16 @@ import io.ssafy.p.j14c103.homerun.config.SsafyAccountProperties;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpend;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetDeposit;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetDepositRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetLoan;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetLoanRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncome;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -37,11 +48,18 @@ public class UserAssetLinkService {
     private final SsafyAccountProperties ssafyAccountProperties;
     private final UserFinancialMockDataService userFinancialMockDataService;
     private final UserFinancialSummaryService userFinancialSummaryService;
-    private final MainAccountInitialBalanceService mainAccountInitialBalanceService;
-    private final MainAccountInitialHistoryService mainAccountInitialHistoryService;
+    private final FicoCreditScoringService ficoCreditScoringService;
     private final SeedmoneyAccountProjectionService seedmoneyAccountProjectionService;
+    private final UserAssetProfileRepository userAssetProfileRepository;
+    private final UserAssetDepositRepository userAssetDepositRepository;
+    private final UserAssetLoanRepository userAssetLoanRepository;
+    private final UserAssetOtherIncomeRepository userAssetOtherIncomeRepository;
+    private final UserAssetCardSpendRepository userAssetCardSpendRepository;
 
-    public UserAssetLinkResponse linkAssets(final Long userId) {
+    public UserAssetLinkResponse linkAssets(
+            final Long userId,
+            final UserAssetLinkServiceRequest request
+    ) {
         log.info("사용자 자산 연동 시작. userId={}", userId);
 
         boolean hasSsafyLink = false;
@@ -58,6 +76,7 @@ public class UserAssetLinkService {
             hasMainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN).isPresent();
             hasSeedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
                     .isPresent();
+            final boolean hasAssetProfile = userAssetProfileRepository.findById(userId).isPresent();
 
             log.info(
                     "사용자 자산 연동 현재 상태. userId={}, hasSsafyLink={}, hasMainAccount={}, hasSeedmoneyAccount={}",
@@ -67,17 +86,17 @@ public class UserAssetLinkService {
                     hasSeedmoneyAccount
             );
 
-            if (hasSsafyLink && hasMainAccount && hasSeedmoneyAccount) {
-                log.info("사용자 자산 연동 생략. 이미 모든 연동이 완료되었습니다. userId={}", userId);
-                return UserAssetLinkResponse.of(true, false, false, false);
+            final boolean requiresAccountProvisioning = !hasSsafyLink || !hasMainAccount || !hasSeedmoneyAccount;
+            final String ssafyUserKey;
+            if (requiresAccountProvisioning) {
+                validateAccountConfig();
+                ssafyUserKey = resolveSsafyUserKey(user);
+            } else {
+                ssafyUserKey = user.getSsafyUserKey();
             }
 
-            validateAccountConfig();
-
-            final String ssafyUserKey = resolveSsafyUserKey(user);
-
             if (!hasMainAccount) {
-                createMainAccount(userId, ssafyUserKey);
+                createMainAccount(userId, ssafyUserKey, request.getMainAccountBalanceAmount());
                 mainAccountCreated = true;
                 log.info("주계좌 생성 완료. userId={}", userId);
             }
@@ -87,11 +106,14 @@ public class UserAssetLinkService {
                 log.info("시드머니 계좌 생성 완료. userId={}", userId);
             }
 
-            userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
+            final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
                     .orElseThrow(() -> new IllegalStateException("주계좌 생성 후 조회에 실패했습니다."));
-            mainAccountInitialHistoryService.seedInitialHistory(userId);
-            userFinancialMockDataService.createInitialData(userId);
+            mainAccount.updateBalance(request.getMainAccountBalanceAmount());
+            saveUserAssetProfile(userId, request);
+            saveUserAssetItems(userId, request);
+            userFinancialMockDataService.createInitialData(userId, toFinancialInitializationRequest(request));
             userFinancialSummaryService.getSummary(userId);
+            ficoCreditScoringService.initializeOnboardingSnapshot(userId, !hasAssetProfile);
 
             final UserAssetLinkResponse response = UserAssetLinkResponse.of(
                     true,
@@ -185,20 +207,84 @@ public class UserAssetLinkService {
         return userKey;
     }
 
-    private void createMainAccount(final Long userId, final String ssafyUserKey) {
-        final int initialBalance = mainAccountInitialBalanceService.generateInitialBalance(userId);
+    private void saveUserAssetProfile(
+            final Long userId,
+            final UserAssetLinkServiceRequest request
+    ) {
+        final UserAssetProfile profile = userAssetProfileRepository.findById(userId)
+                .orElseGet(() -> UserAssetProfile.create(
+                        userId,
+                        request.getMainAccountBalanceAmount(),
+                        request.getSalaryDayOfMonth(),
+                        request.getMonthlySalaryAmount(),
+                        request.getMonthlyFixedExpenseAmount(),
+                        request.getJobType()
+                ));
+        if (!profile.getUserId().equals(userId)) {
+            throw new IllegalStateException("잘못된 자산 프로필 사용자 ID입니다.");
+        }
+        profile.update(
+                request.getMainAccountBalanceAmount(),
+                request.getSalaryDayOfMonth(),
+                request.getMonthlySalaryAmount(),
+                request.getMonthlyFixedExpenseAmount(),
+                request.getJobType()
+        );
+        userAssetProfileRepository.save(profile);
+    }
+
+    private void saveUserAssetItems(
+            final Long userId,
+            final UserAssetLinkServiceRequest request
+    ) {
+        userAssetDepositRepository.deleteByUserId(userId);
+        userAssetLoanRepository.deleteByUserId(userId);
+        userAssetOtherIncomeRepository.deleteByUserId(userId);
+        userAssetCardSpendRepository.deleteByUserId(userId);
+
+        userAssetDepositRepository.saveAll(request.getDepositItems().stream()
+                .map(item -> UserAssetDeposit.create(userId, item.getName(), item.getAmount()))
+                .toList());
+        userAssetLoanRepository.saveAll(request.getLoanItems().stream()
+                .map(item -> UserAssetLoan.create(userId, item.getName(), item.getAmount()))
+                .toList());
+        userAssetOtherIncomeRepository.saveAll(request.getOtherIncomeItems().stream()
+                .map(item -> UserAssetOtherIncome.create(userId, item.getName(), item.getAmount()))
+                .toList());
+        userAssetCardSpendRepository.saveAll(request.getCardSpendItems().stream()
+                .map(item -> UserAssetCardSpend.create(userId, item.getCategory(), item.getAmount()))
+                .toList());
+    }
+
+    private UserFinancialInitializationServiceRequest toFinancialInitializationRequest(
+            final UserAssetLinkServiceRequest request
+    ) {
+        return UserFinancialInitializationServiceRequest.builder()
+                .depositItems(request.getDepositItems().stream()
+                        .map(item -> UserFinancialInitializationServiceRequest.NamedAmountItem.builder()
+                                .name(item.getName())
+                                .amount(item.getAmount())
+                                .build())
+                        .toList())
+                .loanItems(request.getLoanItems().stream()
+                        .map(item -> UserFinancialInitializationServiceRequest.NamedAmountItem.builder()
+                                .name(item.getName())
+                                .amount(item.getAmount())
+                                .build())
+                        .toList())
+                .build();
+    }
+
+    private void createMainAccount(
+            final Long userId,
+            final String ssafyUserKey,
+            final int initialBalance
+    ) {
         final Map<String, Object> response = ssafyDemandDepositClient.createDemandDepositAccount(
                 ssafyUserKey,
                 ssafyAccountProperties.getAccountTypeUniqueNo()
         );
         final String accountNumber = extractAccountNumber(response);
-
-        final Map<String, Object> depositResponse = ssafyDemandDepositClient.depositAccount(
-                ssafyUserKey,
-                accountNumber,
-                initialBalance
-        );
-        final String bootstrapTransactionUniqueNo = extractTransactionUniqueNo(depositResponse);
 
         final UserAccount account = UserAccount.create(
                 userId,
@@ -208,7 +294,16 @@ public class UserAssetLinkService {
                 accountNumber,
                 initialBalance
         );
-        account.initializeSsafySync(bootstrapTransactionUniqueNo);
+        if (initialBalance > 0) {
+            final Map<String, Object> depositResponse = ssafyDemandDepositClient.depositAccount(
+                    ssafyUserKey,
+                    accountNumber,
+                    initialBalance
+            );
+            account.initializeSsafySync(extractTransactionUniqueNo(depositResponse));
+        } else {
+            account.initializeSsafySync(null);
+        }
         userAccountRepository.save(account);
     }
 

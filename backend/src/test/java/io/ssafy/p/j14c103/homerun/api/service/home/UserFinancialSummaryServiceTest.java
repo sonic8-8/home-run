@@ -13,6 +13,7 @@ import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductType;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductSourceType;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProduct;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummary;
@@ -226,7 +227,8 @@ class UserFinancialSummaryServiceTest {
                 "기관",
                 productType.name() + " 상품",
                 currentBalanceAmount,
-                LocalDateTime.now().minusMonths(12)
+                LocalDateTime.now().minusMonths(12),
+                FinancialProductSourceType.SYSTEM
         );
         ReflectionTestUtils.setField(product, "id", id);
         return product;
