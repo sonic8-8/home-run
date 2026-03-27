@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.controller.user;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -105,6 +106,7 @@ class UserControllerTest {
                                     {"category": "LIVING", "amount": 200000},
                                     {"category": "TRANSPORT", "amount": 100000}
                                   ],
+                                  "paymentTypes": ["LIVING", "TRANSPORT"],
                                   "jobType": "LARGE_BIZ"
                                 }
                                 """))
@@ -114,6 +116,46 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.mainAccountCreated").value(true))
                 .andExpect(jsonPath("$.data.seedmoneyAccountCreated").value(true))
                 .andExpect(jsonPath("$.data.summaryInitialized").value(true));
+    }
+
+    @DisplayName("자산 연동 요청에서 소비 선호 카테고리가 없으면 400을 반환한다.")
+    @Test
+    void linkAssetsWithoutPaymentTypes() throws Exception {
+        mockMvc.perform(post("/api/users/me/asset-link")
+                        .with(currentUser())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "mainAccountBalanceAmount": 3000000,
+                                  "salaryDayOfMonth": 25,
+                                  "monthlySalaryAmount": 4200000,
+                                  "monthlyFixedExpenseAmount": 1800000,
+                                  "jobType": "LARGE_BIZ"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[*].field", hasItem("paymentTypes")))
+                .andExpect(jsonPath("$.errors[*].message", hasItem("많이 쓰는 소비 분야는 최소 1개 이상 선택해야 합니다.")));
+    }
+
+    @DisplayName("자산 연동 요청에서 소비 선호 카테고리를 중복 선택하면 400을 반환한다.")
+    @Test
+    void linkAssetsWithDuplicatePaymentTypes() throws Exception {
+        mockMvc.perform(post("/api/users/me/asset-link")
+                        .with(currentUser())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "mainAccountBalanceAmount": 3000000,
+                                  "salaryDayOfMonth": 25,
+                                  "monthlySalaryAmount": 4200000,
+                                  "monthlyFixedExpenseAmount": 1800000,
+                                  "paymentTypes": ["LIVING", "LIVING"],
+                                  "jobType": "LARGE_BIZ"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[*].message", hasItem("많이 쓰는 소비 분야는 중복 선택할 수 없습니다.")));
     }
 
     private RequestPostProcessor currentUser() {

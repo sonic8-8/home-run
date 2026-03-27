@@ -20,6 +20,7 @@ public class UserAssetLinkServiceRequest {
     private List<NamedAmountItem> loanItems;
     private List<NamedAmountItem> otherIncomeItems;
     private List<CardSpendItem> cardSpendItems;
+    private List<String> paymentTypes;
 
     @Builder
     private UserAssetLinkServiceRequest(
@@ -31,7 +32,8 @@ public class UserAssetLinkServiceRequest {
             final List<NamedAmountItem> depositItems,
             final List<NamedAmountItem> loanItems,
             final List<NamedAmountItem> otherIncomeItems,
-            final List<CardSpendItem> cardSpendItems
+            final List<CardSpendItem> cardSpendItems,
+            final List<String> paymentTypes
     ) {
         this.mainAccountBalanceAmount = mainAccountBalanceAmount;
         this.salaryDayOfMonth = salaryDayOfMonth;
@@ -42,6 +44,7 @@ public class UserAssetLinkServiceRequest {
         this.loanItems = normalizeNamedItems(loanItems);
         this.otherIncomeItems = normalizeNamedItems(otherIncomeItems);
         this.cardSpendItems = normalizeCardSpendItems(cardSpendItems);
+        this.paymentTypes = normalizePaymentTypes(paymentTypes);
     }
 
     public int totalDepositAmount() {
@@ -68,6 +71,10 @@ public class UserAssetLinkServiceRequest {
                 .sum();
     }
 
+    public String joinedPaymentTypes() {
+        return String.join(",", paymentTypes);
+    }
+
     private List<NamedAmountItem> normalizeNamedItems(final List<NamedAmountItem> items) {
         if (items == null) {
             return List.of();
@@ -76,6 +83,13 @@ public class UserAssetLinkServiceRequest {
     }
 
     private List<CardSpendItem> normalizeCardSpendItems(final List<CardSpendItem> items) {
+        if (items == null) {
+            return List.of();
+        }
+        return List.copyOf(items);
+    }
+
+    private List<String> normalizePaymentTypes(final List<String> items) {
         if (items == null) {
             return List.of();
         }

@@ -187,6 +187,7 @@ class UserAssetLinkServiceTest {
         assertThat(response.isSeedmoneyAccountCreated()).isTrue();
         assertThat(response.isSummaryInitialized()).isTrue();
         assertThat(savedUser.getSsafyUserKey()).isEqualTo("test-user-key");
+        assertThat(savedUser.getPaymentType()).isEqualTo("LIVING,TRANSPORT");
 
         final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN)
                 .orElseThrow();
@@ -305,6 +306,7 @@ class UserAssetLinkServiceTest {
         final User user = saveUser("user@example.com");
         final UserAssetLinkServiceRequest request = assetLinkRequest();
         user.linkSsafy("existing-user-key", LocalDateTime.now());
+        user.updatePaymentType("FUEL,MART");
         userRepository.saveAndFlush(user);
         userAccountRepository.save(UserAccount.create(
                 user.getId(),
@@ -337,6 +339,10 @@ class UserAssetLinkServiceTest {
                 .get()
                 .extracting(UserAccount::getBalanceSnapshot)
                 .isEqualTo(request.getMainAccountBalanceAmount());
+        assertThat(userRepository.findById(user.getId())).isPresent()
+                .get()
+                .extracting(User::getPaymentType)
+                .isEqualTo("LIVING,TRANSPORT");
     }
 
     @DisplayName("재연동 시 자산 연동이 만든 금융상품만 교체하고 기존 시스템 상품은 유지한다.")
@@ -636,6 +642,7 @@ class UserAssetLinkServiceTest {
                                 .amount(120_000)
                                 .build()
                 ))
+                .paymentTypes(java.util.List.of("LIVING", "TRANSPORT"))
                 .build();
     }
 
