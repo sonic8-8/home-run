@@ -4,4 +4,5 @@ export interface UserMe {
   name: string;
   isAssetLinked: boolean;
   totalAssetAmount: number | null;
+  netAssetAmount: number | null;
 }
