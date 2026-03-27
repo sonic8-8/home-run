@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.domain.spending;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,5 +48,35 @@ class SpendingCategoryTest {
     void getDisplayName() {
         assertThat(SpendingCategory.FUEL.getDisplayName()).isEqualTo("주유");
         assertThat(SpendingCategory.TRANSFER.getDisplayName()).isEqualTo("이체");
+    }
+
+    @DisplayName("저장된 코드값으로 추천 카테고리를 찾을 수 있다")
+    @ParameterizedTest
+    @CsvSource({
+            "LIVING, LIVING",
+            "transport, TRANSPORT",
+            " TELECOM , TELECOM"
+    })
+    void fromStoredCode(final String storedCode, final SpendingCategory expected) {
+        assertThat(SpendingCategory.fromStoredCode(storedCode)).contains(expected);
+    }
+
+    @DisplayName("저장된 코드값이 TRANSFER면 추천 카테고리에서 제외된다")
+    @Test
+    void fromStoredCode_transferReturnsEmpty() {
+        assertThat(SpendingCategory.fromStoredCode("TRANSFER")).isEmpty();
+    }
+
+    @DisplayName("저장된 코드 목록은 유효한 추천 카테고리만 중복 없이 반환한다")
+    @Test
+    void fromStoredCodes_filtersUnknownAndDuplicateCodes() {
+        assertThat(SpendingCategory.fromStoredCodes("LIVING,UNKNOWN,TRANSPORT,LIVING,TRANSFER"))
+                .containsExactly(SpendingCategory.LIVING, SpendingCategory.TRANSPORT);
+    }
+
+    @DisplayName("저장된 코드 목록이 비어 있으면 빈 목록을 반환한다")
+    @Test
+    void fromStoredCodes_blankReturnsEmptyList() {
+        assertThat(SpendingCategory.fromStoredCodes("  ")).isEqualTo(List.of());
     }
 }

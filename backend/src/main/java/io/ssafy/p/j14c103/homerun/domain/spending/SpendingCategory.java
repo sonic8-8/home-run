@@ -1,6 +1,9 @@
 package io.ssafy.p.j14c103.homerun.domain.spending;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 public enum SpendingCategory {
 
@@ -37,6 +40,35 @@ public enum SpendingCategory {
                 .filter(category -> category.name().equals(code))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("허용되지 않은 소비 카테고리 코드입니다."));
+    }
+
+    public static Optional<SpendingCategory> fromStoredCode(final String storedCode) {
+        if (storedCode == null || storedCode.isBlank()) {
+            return Optional.empty();
+        }
+
+        final String normalized = storedCode.trim().toUpperCase(Locale.ROOT);
+        try {
+            final SpendingCategory category = valueOf(normalized);
+            if (category == TRANSFER) {
+                return Optional.empty();
+            }
+            return Optional.of(category);
+        } catch (final IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    public static List<SpendingCategory> fromStoredCodes(final String storedCodes) {
+        if (storedCodes == null || storedCodes.isBlank()) {
+            return List.of();
+        }
+
+        return Arrays.stream(storedCodes.split(","))
+                .map(SpendingCategory::fromStoredCode)
+                .flatMap(Optional::stream)
+                .distinct()
+                .toList();
     }
 
     public static SpendingCategory from(final String categoryName) {
