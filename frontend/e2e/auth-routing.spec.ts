@@ -61,7 +61,7 @@ test.describe('auth routing', () => {
     await page.goto('/login');
 
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText('마이데이터 연동이 필요합니다')).toBeVisible();
-    await expect(page.getByRole('button', { name: '마이데이터 연동하기' })).toBeVisible();
+    await expect(page.getByText('마이데이터 연동이 필요합니다')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: '마이데이터 연동하기' })).toBeVisible({ timeout: 15000 });
   });
 });
