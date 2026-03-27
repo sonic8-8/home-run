@@ -70,6 +70,22 @@ create table if not exists user_asset_card_spends (
     foreign key (user_id) references users (user_id)
 );
 
+create table if not exists user_home_credit_score_snapshots (
+  user_home_credit_score_snapshot_id integer generated always as identity primary key,
+  user_id integer not null,
+  score_month_start date not null,
+  snapshot_type varchar(20) not null,
+  payment_history integer not null,
+  amounts_owed integer not null,
+  credit_length integer not null,
+  credit_mix integer not null,
+  new_credit integer not null,
+  created_at timestamp not null default current_timestamp,
+  constraint uq_user_home_credit_score_snapshots__user_month unique (user_id, score_month_start),
+  constraint fk_user_home_credit_score_snapshots__user
+    foreign key (user_id) references users (user_id)
+);
+
 -- PASS product catalog for savings challenges.
 create table if not exists pass_products (
   pass_product_id integer generated always as identity primary key,
