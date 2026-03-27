@@ -19,9 +19,15 @@ export function KoreaMap({
   onPropertySelected,
   onLoanRequest,
 }: {
-  sessionId: number;
+  sessionId?: number;
   mode?: MapMode;
-  onPropertySelected?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
+  onPropertySelected?: (selection: {
+    propertyId: string;
+    propertyName: string;
+    propertyPrice: number;
+    regionCode: string;
+    districtCode: string;
+  }) => void;
   onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
 }) {
   const [view, setView] = useState<ViewState>({ level: 'country' });
@@ -113,6 +119,7 @@ export function KoreaMap({
               className="absolute inset-0"
             >
               <DistrictMap
+                regionCode={view.data.code}
                 guCode={view.guCode}
                 guCenter={view.guCenter}
                 guName={view.guName}

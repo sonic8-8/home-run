@@ -2,8 +2,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+const viteCacheDir = path.resolve(
+  process.env.TMPDIR ?? process.env.TEMP ?? process.env.TMP ?? '/tmp',
+  's14p21c103-frontend-vite',
+)
+
 // https://vite.dev/config/
 export default defineConfig({
+  cacheDir: viteCacheDir,
   plugins: [
     react({
       babel: {

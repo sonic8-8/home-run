@@ -1,5 +1,5 @@
 export interface PropertySummaryModel {
-  propertyId: string;
+  propertyId: string | number;
   name: string;
   recentPrice: number;
   latitude: number;

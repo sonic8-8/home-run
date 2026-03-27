@@ -1,24 +1,23 @@
 import { useState, useCallback } from 'react'
-import { GameWorldRemoteDataSource } from '@features/game/data/datasources/GameWorldRemoteDataSource'
-import { GameWorldRepositoryImpl } from '@features/game/data/repositories/GameWorldRepositoryImpl'
+import { container } from '@core/di/container'
 import { GetGameTurnUseCase } from '@features/game/domain/usecases/GetGameTurnUseCase'
 import { GetLatestNewsUseCase } from '@features/game/domain/usecases/GetLatestNewsUseCase'
 import type { GameTurn, TurnNews } from '@features/game/domain/entities/GameTurn'
 
-const gameWorldRepo = new GameWorldRepositoryImpl(new GameWorldRemoteDataSource())
-const getTurnUseCase = new GetGameTurnUseCase(gameWorldRepo)
-const getLatestNewsUseCase = new GetLatestNewsUseCase(gameWorldRepo)
-
-export function useGameWorld(sessionId: number) {
+export function useGameWorld(sessionId: number | null) {
   const [turn, setTurn] = useState<GameTurn | null>(null)
   const [news, setNews] = useState<TurnNews | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchTurn = useCallback(async (): Promise<GameTurn | null> => {
+    if (sessionId === null) {
+      return null
+    }
     setLoading(true)
     setError(null)
     try {
+      const getTurnUseCase = container.resolve(GetGameTurnUseCase)
       const result = await getTurnUseCase.execute(sessionId)
       setTurn(result)
       return result
@@ -31,9 +30,13 @@ export function useGameWorld(sessionId: number) {
   }, [sessionId])
 
   const fetchLatestNews = useCallback(async (): Promise<TurnNews | null> => {
+    if (sessionId === null) {
+      return null
+    }
     setLoading(true)
     setError(null)
     try {
+      const getLatestNewsUseCase = container.resolve(GetLatestNewsUseCase)
       const result = await getLatestNewsUseCase.execute(sessionId)
       setNews(result)
       return result
