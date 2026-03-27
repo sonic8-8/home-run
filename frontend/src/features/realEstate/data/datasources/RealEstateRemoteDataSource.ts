@@ -11,9 +11,10 @@ import { apiClient } from '@core/network/apiClient';
 
 @injectable()
 export class RealEstateRemoteDataSource {
-  async getProperties(sessionId: number, bounds: string): Promise<PropertiesResponseModel> {
+  async getProperties(sessionId: number, bounds?: string): Promise<PropertiesResponseModel> {
+    const query = bounds ? `?bounds=${encodeURIComponent(bounds)}` : '';
     return apiClient.get<PropertiesResponseModel>(
-      `/api/games/sessions/${sessionId}/real-estate/properties?bounds=${bounds}`,
+      `/api/games/sessions/${sessionId}/real-estate/properties${query}`,
     );
   }
 
