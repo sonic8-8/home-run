@@ -12,6 +12,8 @@ import io.ssafy.p.j14c103.homerun.domain.card.CardProduct;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistory;
 import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistoryRepository;
+import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
+import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -19,9 +21,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,6 +45,16 @@ public class CardService {
                     .thenComparing(Comparator.comparing(
                             CardRecommendationCandidate::rawSaving,
                             Comparator.naturalOrder()
+                    ).reversed())
+                    .thenComparing(candidate -> candidate.cardProduct().getCardName());
+    private static final Comparator<PreferenceRecommendationCandidate> PREFERENCE_RECOMMENDATION_ORDER =
+            Comparator.<PreferenceRecommendationCandidate, BigDecimal>comparing(
+                            PreferenceRecommendationCandidate::highestMatchedRate,
+                            Comparator.naturalOrder()
+                    )
+                    .reversed()
+                    .thenComparing(Comparator.comparingInt(
+                            PreferenceRecommendationCandidate::matchedBenefitCount
                     ).reversed())
                     .thenComparing(candidate -> candidate.cardProduct().getCardName());
 
@@ -88,6 +102,29 @@ public class CardService {
         return CardRecommendationResponse.of(recommendations);
     }
 
+    @Transactional(readOnly = true)
+    public CardRecommendationResponse getPreferenceRecommendations(final Long userId) {
+        final User user = getRequiredUser(userId);
+        final List<SpendingCategory> preferredCategories = SpendingCategory.fromStoredCodes(user.getPaymentType());
+        if (preferredCategories.isEmpty()) {
+            return buildFallbackRecommendations();
+        }
+
+        final Set<SpendingCategory> preferredCategorySet = EnumSet.copyOf(preferredCategories);
+        final List<CardResponse> recommendations = cardProductRepository.findByActiveYnTrueOrderByCardNameAsc().stream()
+                .map(cardProduct -> toPreferenceRecommendationCandidate(cardProduct, preferredCategorySet))
+                .filter(candidate -> candidate.highestMatchedRate().signum() > 0)
+                .sorted(PREFERENCE_RECOMMENDATION_ORDER)
+                .limit(5)
+                .map(this::toCardResponse)
+                .toList();
+        if (recommendations.isEmpty()) {
+            return buildFallbackRecommendations();
+        }
+
+        return CardRecommendationResponse.of(recommendations);
+    }
+
     private CardRecommendationResponse buildFallbackRecommendations() {
         final List<CardResponse> recommendations = cardProductRepository.findTop5ByActiveYnTrueOrderByCardNameAsc()
                 .stream()
@@ -105,6 +142,15 @@ public class CardService {
                 .filter(history -> history.getPaymentDate().getYear() == latestYear)
                 .filter(history -> history.getPaymentDate().getMonthValue() == latestMonth)
                 .toList();
+    }
+
+    private User getRequiredUser(final Long userId) {
+        if (userId == null) {
+            throw new HomerunException(ErrorCode.USER_ID_REQUIRED);
+        }
+
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new HomerunException(ErrorCode.USER_NOT_FOUND));
     }
 
     private void validateUser(final Long userId) {
@@ -137,12 +183,31 @@ public class CardService {
         );
     }
 
+    private PreferenceRecommendationCandidate toPreferenceRecommendationCandidate(
+            final CardProduct cardProduct,
+            final Set<SpendingCategory> preferredCategories
+    ) {
+        final List<CardBenefitResponse> benefits = parseBenefits(cardProduct.getActiveBenefits());
+        final PreferenceRecommendationScore score = calculatePreferenceScore(benefits, preferredCategories);
+
+        return new PreferenceRecommendationCandidate(
+                cardProduct,
+                benefits,
+                score.highestMatchedRate(),
+                score.matchedBenefitCount()
+        );
+    }
+
     private CardResponse toCardResponse(final CardProduct cardProduct) {
         final List<CardBenefitResponse> benefits = parseBenefits(cardProduct.getActiveBenefits());
         return toCardResponse(cardProduct, benefits);
     }
 
     private CardResponse toCardResponse(final CardRecommendationCandidate candidate) {
+        return toCardResponse(candidate.cardProduct(), candidate.benefits());
+    }
+
+    private CardResponse toCardResponse(final PreferenceRecommendationCandidate candidate) {
         return toCardResponse(candidate.cardProduct(), candidate.benefits());
     }
 
@@ -222,6 +287,28 @@ public class CardService {
         return new SavingAmounts(rawSaving, estimatedSaving);
     }
 
+    private PreferenceRecommendationScore calculatePreferenceScore(
+            final List<CardBenefitResponse> benefits,
+            final Set<SpendingCategory> preferredCategories
+    ) {
+        BigDecimal highestMatchedRate = BigDecimal.ZERO;
+        int matchedBenefitCount = 0;
+
+        for (final CardBenefitResponse benefit : benefits) {
+            final SpendingCategory category = SpendingCategory.from(benefit.getCategoryName());
+            if (!preferredCategories.contains(category)) {
+                continue;
+            }
+
+            matchedBenefitCount++;
+            if (benefit.getDiscountRate().compareTo(highestMatchedRate) > 0) {
+                highestMatchedRate = benefit.getDiscountRate();
+            }
+        }
+
+        return new PreferenceRecommendationScore(highestMatchedRate, matchedBenefitCount);
+    }
+
     private List<CardBenefitResponse> parseBenefits(final String activeBenefits) {
         if (activeBenefits == null || activeBenefits.isBlank()) {
             return List.of();
@@ -282,9 +369,23 @@ public class CardService {
     ) {
     }
 
+    private record PreferenceRecommendationCandidate(
+            CardProduct cardProduct,
+            List<CardBenefitResponse> benefits,
+            BigDecimal highestMatchedRate,
+            int matchedBenefitCount
+    ) {
+    }
+
     private record SavingAmounts(
             BigDecimal rawSaving,
             BigDecimal estimatedSaving
+    ) {
+    }
+
+    private record PreferenceRecommendationScore(
+            BigDecimal highestMatchedRate,
+            int matchedBenefitCount
     ) {
     }
 }

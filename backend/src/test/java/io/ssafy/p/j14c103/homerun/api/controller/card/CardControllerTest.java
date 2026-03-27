@@ -120,6 +120,43 @@ class CardControllerTest extends RestDocsTestSupport {
                 ));
     }
 
+    @DisplayName("카드 추천 v2 조회는 ApiResponse로 감싼 추천 목록을 반환한다")
+    @Test
+    void getPreferenceRecommendations() throws Exception {
+        // given
+        given(cardService.getPreferenceRecommendations(1L))
+                .willReturn(CardRecommendationResponse.of(List.of(sampleCard(4L, "Delta Card"))));
+
+        // when & then
+        mockMvc.perform(get("/api/cards/recommendations/v2")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .with(currentUser()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.recommendations[0].cardProductId").value(4L))
+                .andExpect(jsonPath("$.data.recommendations[0].cardName").value("Delta Card"))
+                .andDo(document("card/recommendations-v2/success",
+                        requestHeaders(authorizationHeader()),
+                        apiResponseFields(
+                                "추천 카드 목록",
+                                fieldWithPath("recommendations").type(JsonFieldType.ARRAY).description("추천 카드 목록"),
+                                fieldWithPath("recommendations[].cardProductId").type(JsonFieldType.NUMBER).description("카드 상품 ID"),
+                                fieldWithPath("recommendations[].cardName").type(JsonFieldType.STRING).description("카드 이름"),
+                                fieldWithPath("recommendations[].cardIssuerName").type(JsonFieldType.STRING).description("카드사 이름"),
+                                fieldWithPath("recommendations[].cardDescription").type(JsonFieldType.STRING).description("카드 설명"),
+                                fieldWithPath("recommendations[].baselinePerformanceAmount").type(JsonFieldType.NUMBER).description("전월 실적 기준 금액"),
+                                fieldWithPath("recommendations[].maxBenefitLimitAmount").type(JsonFieldType.NUMBER).description("최대 혜택 한도"),
+                                fieldWithPath("recommendations[].cardImageUrl").type(JsonFieldType.STRING).description("카드 이미지 URL"),
+                                fieldWithPath("recommendations[].activeBenefits").type(JsonFieldType.ARRAY).description("활성 혜택 목록"),
+                                fieldWithPath("recommendations[].activeBenefits[].categoryId").type(JsonFieldType.STRING).description("혜택 카테고리 ID"),
+                                fieldWithPath("recommendations[].activeBenefits[].categoryName").type(JsonFieldType.STRING).description("혜택 카테고리명"),
+                                fieldWithPath("recommendations[].activeBenefits[].categoryDescription").type(JsonFieldType.STRING).description("혜택 카테고리 설명"),
+                                fieldWithPath("recommendations[].activeBenefits[].discountRate").type(JsonFieldType.NUMBER).description("할인율"),
+                                fieldWithPath("recommendations[].activeBenefits[].exampleMerchants").type(JsonFieldType.ARRAY).description("예시 가맹점 목록")
+                        )
+                ));
+    }
+
     private CardResponse sampleCard(final Long cardProductId, final String cardName) {
         return CardResponse.of(
                 cardProductId,

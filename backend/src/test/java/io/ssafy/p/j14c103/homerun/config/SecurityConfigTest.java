@@ -328,6 +328,7 @@ class SecurityConfigTest {
                 Arguments.of("/api/games/regions/11/districts/11710/properties"),
                 Arguments.of("/api/cards"),
                 Arguments.of("/api/cards/recommendations"),
+                Arguments.of("/api/cards/recommendations/v2"),
                 Arguments.of("/api/home/dashboard"),
                 Arguments.of("/api/home/spending"),
                 Arguments.of("/api/home/loan-recommendations"),

@@ -31,4 +31,13 @@ public class CardController {
         final CardRecommendationResponse response = cardService.getRecommendations(authenticatedUser.getUserId());
         return ApiResponse.ok(response);
     }
+
+    @GetMapping("/recommendations/v2")
+    public ApiResponse<CardRecommendationResponse> getPreferenceRecommendations(
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser
+    ) {
+        final CardRecommendationResponse response = cardService
+                .getPreferenceRecommendations(authenticatedUser.getUserId());
+        return ApiResponse.ok(response);
+    }
 }

@@ -262,6 +262,96 @@ class CardServiceTest {
                 .containsExactly("High Raw Card", "Low Raw Card", "Under Cap Card");
     }
 
+    @DisplayName("카드 추천 v2는 회원가입 소비분야만 사용해 카드를 추천한다")
+    @Test
+    void getPreferenceRecommendations_usesPaymentTypeOnly() {
+        // given
+        final User user = userRepository.save(User.register(
+                Email.of("preference-user@ssafy.com"),
+                "tester",
+                "hashed-password"
+        ));
+        user.updatePaymentType("LIVING");
+        userRepository.flush();
+
+        memberPaymentHistoryRepository.save(MemberPaymentHistory.create(
+                user.getId(), TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, "카카오T", 900000, LocalDate.of(2026, 2, 20)));
+
+        cardProductRepository.save(CardProduct.create(
+                "Transport Max", "Issuer", "설명", 0, 50000,
+                singleBenefitJson(TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, 20.0), "transport.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Living Pick", "Issuer", "설명", 0, 50000,
+                singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 10.0), "living.png", true));
+
+        // when
+        final CardRecommendationResponse response = cardService.getPreferenceRecommendations(user.getId());
+
+        // then
+        assertThat(response.getRecommendations())
+                .extracting(card -> card.getCardName())
+                .containsExactly("Living Pick");
+    }
+
+    @DisplayName("카드 추천 v2는 최고 할인율이 같으면 매칭 혜택 개수와 카드명으로 정렬한다")
+    @Test
+    void getPreferenceRecommendations_usesMatchCountAndCardNameAsTieBreaker() {
+        // given
+        final User user = userRepository.save(User.register(
+                Email.of("preference-tie-user@ssafy.com"),
+                "tester",
+                "hashed-password"
+        ));
+        user.updatePaymentType("LIVING,TRANSPORT");
+        userRepository.flush();
+
+        cardProductRepository.save(CardProduct.create(
+                "Bravo Single", "Issuer", "설명", 0, 50000,
+                singleBenefitJson(LIVING_CATEGORY_ID, LIVING_CATEGORY_NAME, 12.0), "bravo.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Alpha Dual", "Issuer", "설명", 0, 50000,
+                mixedBenefitJsonWithLivingTop(), "alpha.png", true));
+        cardProductRepository.save(CardProduct.create(
+                "Charlie Low", "Issuer", "설명", 0, 50000,
+                singleBenefitJson(TRANSPORT_CATEGORY_ID, TRANSPORT_CATEGORY_NAME, 8.0), "charlie.png", true));
+
+        // when
+        final CardRecommendationResponse response = cardService.getPreferenceRecommendations(user.getId());
+
+        // then
+        assertThat(response.getRecommendations())
+                .extracting(card -> card.getCardName())
+                .containsExactly("Alpha Dual", "Bravo Single", "Charlie Low");
+    }
+
+    @DisplayName("카드 추천 v2는 회원가입 소비분야가 없거나 유효하지 않으면 이름순 fallback을 반환한다")
+    @Test
+    void getPreferenceRecommendations_withoutValidPaymentType_returnsFallback() {
+        // given
+        final User user = userRepository.save(User.register(
+                Email.of("preference-fallback-user@ssafy.com"),
+                "tester",
+                "hashed-password"
+        ));
+        user.updatePaymentType("TRANSFER,UNKNOWN");
+        userRepository.flush();
+
+        cardProductRepository.save(CardProduct.create("Foxtrot Card", "Issuer", "설명", 300000, 40000, BENEFITS_JSON, "f.png", true));
+        cardProductRepository.save(CardProduct.create("Echo Card", "Issuer", "설명", 300000, 40000, BENEFITS_JSON, "e.png", true));
+        cardProductRepository.save(CardProduct.create("Delta Card", "Issuer", "설명", 300000, 40000, BENEFITS_JSON, "d.png", true));
+        cardProductRepository.save(CardProduct.create("Charlie Card", "Issuer", "설명", 300000, 40000, BENEFITS_JSON, "c.png", true));
+        cardProductRepository.save(CardProduct.create("Bravo Card", "Issuer", "설명", 300000, 40000, BENEFITS_JSON, "b.png", true));
+        cardProductRepository.save(CardProduct.create("Alpha Card", "Issuer", "설명", 300000, 40000, BENEFITS_JSON, "a.png", true));
+
+        // when
+        final CardRecommendationResponse response = cardService.getPreferenceRecommendations(user.getId());
+
+        // then
+        assertThat(response.getRecommendations())
+                .extracting(card -> card.getCardName())
+                .containsExactly("Alpha Card", "Bravo Card", "Charlie Card", "Delta Card", "Echo Card");
+    }
+
     @DisplayName("카드 추천에서 존재하지 않는 사용자면 ErrorCode 기반 예외가 발생한다")
     @Test
     void getRecommendations_userNotFound() {
@@ -428,6 +518,27 @@ class CardServiceTest {
                     "categoryName": "통신",
                     "categoryDescription": "",
                     "discountRate": 10.0,
+                    "exampleMerchants": ["sample"]
+                  }
+                ]
+                """;
+    }
+
+    private String mixedBenefitJsonWithLivingTop() {
+        return """
+                [
+                  {
+                    "categoryId": "CG-9ca85f66311a23d",
+                    "categoryName": "생활",
+                    "categoryDescription": "",
+                    "discountRate": 12.0,
+                    "exampleMerchants": ["sample"]
+                  },
+                  {
+                    "categoryId": "CG-4fa85f6455cad4a",
+                    "categoryName": "교통",
+                    "categoryDescription": "",
+                    "discountRate": 6.0,
                     "exampleMerchants": ["sample"]
                   }
                 ]
