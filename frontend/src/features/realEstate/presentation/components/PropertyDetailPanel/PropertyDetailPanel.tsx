@@ -17,6 +17,7 @@ export function PropertyDetailPanel({
   mode = 'browse',
   onSelect,
   onLoanRequest,
+  onBrowsePurchase,
 }: {
   summary: PropertySummary;
   detail: Property | null;
@@ -24,6 +25,7 @@ export function PropertyDetailPanel({
   mode?: MapMode;
   onSelect?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
   onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
+  onBrowsePurchase?: (propertyId: string) => void;
 }) {
   const pyeong = detail ? toSquarePyeong(detail.specs.area) : null;
 
@@ -172,9 +174,7 @@ export function PropertyDetailPanel({
                 cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
-              onClick={() => {
-                // TODO: open purchase/contract flow
-              }}
+              onClick={() => onBrowsePurchase?.(summary.propertyId)}
             >
               구매하기
             </button>
