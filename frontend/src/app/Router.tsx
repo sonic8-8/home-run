@@ -37,8 +37,8 @@ const SelectJobPage = lazy(() =>
 );
 
 const GameMainPage = lazy(() =>
-  import('@features/game/presentation/pages/GameMain/GameMain').then((m) => ({
-    default: m.GameMain,
+  import('@features/game/presentation/pages/GameMain/GameMainPage').then((m) => ({
+    default: m.GameMainPage,
   }))
 );
 

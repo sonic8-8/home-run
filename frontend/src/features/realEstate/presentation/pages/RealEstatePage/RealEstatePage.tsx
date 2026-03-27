@@ -7,10 +7,25 @@ import { LoanConfirmModal } from '@features/loan/presentation/components/LoanCon
 import type { LoanApplication } from '@features/loan/domain/entities/LoanApplication';
 
 export type MapMode = 'new-game' | 'loan-apply' | 'browse';
+type CharacterType = 'MALE' | 'FEMALE';
+type JobType =
+  | 'LARGE_BIZ'
+  | 'MID_BIZ'
+  | 'SMALL_BIZ'
+  | 'STARTUP'
+  | 'FREELANCER';
 
 interface LocationState {
   mode?: MapMode;
   sessionId?: number;
+  slotNumber?: number;
+  characterType?: CharacterType;
+  characterName?: string;
+  jobType?: JobType;
+  useMyData?: boolean;
+  regionCode?: string;
+  districtCode?: string;
+  targetPropertyId?: number;
   productId?: string;
   preSelectedPropertyId?: string;
   preSelectedPropertyName?: string;
@@ -35,7 +50,7 @@ export function RealEstatePage() {
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
   const mode = state.mode ?? 'browse';
-  const sessionId = state.sessionId ?? 1;
+  const sessionId = state.sessionId;
 
   // loan-apply 모드이고 매물이 이미 선택된 경우 → 지도 스킵, 즉시 심사 모달
   const hasPreSelected =
@@ -52,6 +67,36 @@ export function RealEstatePage() {
       : null,
   );
 
+  if (mode !== 'new-game' && sessionId === undefined) {
+    return <div>세션 정보를 확인하지 못했습니다.</div>;
+  }
+
+  const handlePropertySelected = (selection: {
+    propertyId: string;
+    propertyName: string;
+    propertyPrice: number;
+    regionCode: string;
+    districtCode: string;
+  }) => {
+    if (mode === 'new-game') {
+      navigate(ROUTES.GAME, {
+        state: {
+          ...state,
+          targetPropertyId: Number(selection.propertyId),
+          regionCode: selection.regionCode,
+          districtCode: selection.districtCode,
+        },
+      });
+      return;
+    }
+
+    // TODO: POST /games/sessions/{sessionId}/loans/apply { productId, propertyId }
+    setLoanApplication(
+      buildMockApp(selection.propertyName, selection.propertyPrice),
+    );
+    setReviewOpen(true);
+  };
+
   const handleLoanRequest = (propertyId: string, propertyName: string, propertyPrice: number) => {
     // browse 모드에서 대출 신청 → GameMain 대출 패널 오픈 + 매물 정보 전달
     navigate(ROUTES.GAME, {
@@ -63,18 +108,6 @@ export function RealEstatePage() {
         preSelectedPropertyPrice: propertyPrice,
       },
     });
-  };
-
-  const handlePropertySelected = (propertyId: string, propertyName: string, propertyPrice: number) => {
-    if (mode === 'new-game') {
-      navigate(ROUTES.GAME, {
-        state: { ...state, targetPropertyId: propertyId },
-      });
-    } else if (mode === 'loan-apply') {
-      // TODO: POST /games/sessions/{sessionId}/loans/apply { productId, propertyId }
-      setLoanApplication(buildMockApp(propertyName, propertyPrice));
-      setReviewOpen(true);
-    }
   };
 
   return (

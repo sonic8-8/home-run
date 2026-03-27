@@ -1,11 +1,23 @@
-import type { IRealEstateRepository } from '../repositories/IRealEstateRepository';
+import { inject, injectable } from 'tsyringe';
+import { DI_TOKENS } from '@core/di/tokens';
+import type {
+  IRealEstateRepository,
+  PropertyListQuery,
+} from '../repositories/IRealEstateRepository';
 import type { PropertySummary } from '../entities/Property';
 
+@injectable()
 export class GetPropertiesUseCase {
   private readonly repository: IRealEstateRepository;
-  constructor(repository: IRealEstateRepository) { this.repository = repository; }
 
-  async execute(sessionId: number, bounds?: string): Promise<PropertySummary[]> {
-    return this.repository.getProperties(sessionId, bounds);
+  constructor(
+    @inject(DI_TOKENS.IRealEstateRepository)
+    repository: IRealEstateRepository,
+  ) {
+    this.repository = repository;
+  }
+
+  async execute(query: PropertyListQuery): Promise<PropertySummary[]> {
+    return this.repository.getProperties(query);
   }
 }

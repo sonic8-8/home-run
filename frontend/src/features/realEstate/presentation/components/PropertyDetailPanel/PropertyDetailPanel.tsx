@@ -117,8 +117,24 @@ export function PropertyDetailPanel({
           )}
         </div>
       ) : (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 13, color: '#9ca3af' }}>상세 정보 불러오는 중...</div>
+        <div style={{ padding: '16px', borderBottom: '1px solid #f3f4f6', flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12 }}>
+            {mode === 'new-game' ? '목표 매물 정보' : '매물 정보'}
+          </div>
+          <InfoRow label="매물명" value={summary.name} />
+          <InfoRow label="현재 시세" value={formatPriceWon(summary.recentPrice)} />
+          <div
+            style={{
+              marginTop: 12,
+              fontSize: 12,
+              color: '#6b7280',
+              lineHeight: 1.6,
+            }}
+          >
+            {mode === 'new-game'
+              ? '게임 시작 전에는 목표 매물의 요약 정보만 제공합니다.'
+              : '상세 정보 불러오는 중...'}
+          </div>
         </div>
       )}
 

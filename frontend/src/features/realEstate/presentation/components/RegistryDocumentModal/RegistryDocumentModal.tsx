@@ -54,14 +54,6 @@ export function RegistryDocumentModal({ isOpen, onClose, doc, onSuccess }: Props
     if (isOpen) syncMagnifier();
   }, [isOpen, userMarks, submitted, syncMagnifier]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setUserMarks([]);
-      setSubmitted(false);
-      setOfficialMarks([]);
-    }
-  }, [isOpen]);
-
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!stageRef.current || !paperSourceRef.current) return;
     const stageRect = stageRef.current.getBoundingClientRect();
