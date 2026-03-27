@@ -1,14 +1,32 @@
-export interface Trap {
-  readonly trapId: string;
-  readonly label: string;
-  readonly isTrapped: boolean;
+export interface RegistryRow {
+  readonly rankNo: string;
+  readonly purpose: string;
+  readonly receipt: string;
+  readonly reason: string;
+  readonly details: string;
 }
 
-export interface PropertyDocument {
-  readonly documentId: number;
-  readonly type: string;
-  readonly imageUrl: string;
-  readonly checklist: readonly Trap[];
+export interface SectionSolution {
+  readonly verdict: '위험' | '정상';
+  readonly issueSummary: string;
+  readonly keyPoints: readonly string[];
+  readonly feedbackCorrect: string;
+  readonly feedbackWrong: string;
+}
+
+export interface RegistryDocument {
+  readonly propertyId: number;
+  readonly propertyName: string;
+  readonly address: string;
+  readonly salePrice: number;
+  readonly documentType: string;
+  readonly gapguRows: readonly RegistryRow[];
+  readonly eulguRows: readonly RegistryRow[];
+  readonly solution: {
+    readonly verdict: '위험' | '정상';
+    readonly gapgu: SectionSolution;
+    readonly eulgu: SectionSolution;
+  };
 }
 
 export type ContractResult = 'SAFE' | 'TRAPPED' | 'PARTIAL';
