@@ -15,10 +15,17 @@ public class WorldEventTriggerPolicy {
     private static final String GAME_STATS = "game_stats";
     private static final String GAME_CAREERS = "game_careers";
     private static final String ECONOMIC_CYCLE_TYPE = "economic_cycle_type";
+    private static final String CYCLE_TYPE = "cycle_type";
+    private static final String HOUSING_TYPE = "housing_type";
     private static final String KNOWLEDGE = "knowledge";
+    private static final String HEALTH = "health";
+    private static final String FATIGUE = "fatigue";
+    private static final String STRESS = "stress";
     private static final String TENURE_TURNS = "tenure_turns";
+    private static final String EMPLOYMENT_STATUS = "employment_status";
     private static final String EQ = "EQ";
     private static final String GTE = "GTE";
+    private static final String LTE = "LTE";
     private static final String AND = "AND";
     private static final String OR = "OR";
     private static final String OVERTIME_EVENT_CODE = "EVT-OVERTIME-001";
@@ -137,6 +144,9 @@ public class WorldEventTriggerPolicy {
         if (GTE.equals(condition.getComparisonOperator())) {
             return evaluateGreaterThanOrEqual(condition, triggerContext);
         }
+        if (LTE.equals(condition.getComparisonOperator())) {
+            return evaluateLessThanOrEqual(condition, triggerContext);
+        }
 
         throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
     }
@@ -149,6 +159,9 @@ public class WorldEventTriggerPolicy {
         final String criteriaValue = condition.getCriteriaTextValue();
         if (criteriaValue == null || criteriaValue.isBlank()) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+        if (actualValue == null || actualValue.isBlank()) {
+            return false;
         }
 
         return actualValue.equals(criteriaValue);
@@ -167,6 +180,19 @@ public class WorldEventTriggerPolicy {
         return actualValue.compareTo(criteriaValue) >= 0;
     }
 
+    private boolean evaluateLessThanOrEqual(
+        final EventCondition condition,
+        final TriggerContext triggerContext
+    ) {
+        final BigDecimal actualValue = resolveNumericValue(condition, triggerContext);
+        final BigDecimal criteriaValue = condition.getCriteriaNumberValue1();
+        if (criteriaValue == null) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+
+        return actualValue.compareTo(criteriaValue) <= 0;
+    }
+
     private String resolveTextValue(
         final EventCondition condition,
         final TriggerContext triggerContext
@@ -174,6 +200,18 @@ public class WorldEventTriggerPolicy {
         if (GAME_SESSIONS.equals(condition.getTargetTableName())
             && ECONOMIC_CYCLE_TYPE.equals(condition.getTargetColumnName())) {
             return triggerContext.economicCycleType();
+        }
+        if (GAME_SESSIONS.equals(condition.getTargetTableName())
+            && CYCLE_TYPE.equals(condition.getTargetColumnName())) {
+            return triggerContext.cycleType();
+        }
+        if (GAME_SESSIONS.equals(condition.getTargetTableName())
+            && HOUSING_TYPE.equals(condition.getTargetColumnName())) {
+            return requireTextValue(triggerContext.housingType());
+        }
+        if (GAME_CAREERS.equals(condition.getTargetTableName())
+            && EMPLOYMENT_STATUS.equals(condition.getTargetColumnName())) {
+            return requireTextValue(triggerContext.employmentStatus());
         }
 
         throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
@@ -186,6 +224,18 @@ public class WorldEventTriggerPolicy {
         if (GAME_STATS.equals(condition.getTargetTableName())
             && KNOWLEDGE.equals(condition.getTargetColumnName())) {
             return BigDecimal.valueOf(triggerContext.knowledge().longValue());
+        }
+        if (GAME_STATS.equals(condition.getTargetTableName())
+            && HEALTH.equals(condition.getTargetColumnName())) {
+            return BigDecimal.valueOf(triggerContext.health().longValue());
+        }
+        if (GAME_STATS.equals(condition.getTargetTableName())
+            && FATIGUE.equals(condition.getTargetColumnName())) {
+            return BigDecimal.valueOf(triggerContext.fatigue().longValue());
+        }
+        if (GAME_STATS.equals(condition.getTargetTableName())
+            && STRESS.equals(condition.getTargetColumnName())) {
+            return BigDecimal.valueOf(triggerContext.stress().longValue());
         }
         if (GAME_CAREERS.equals(condition.getTargetTableName())
             && TENURE_TURNS.equals(condition.getTargetColumnName())) {
@@ -211,6 +261,14 @@ public class WorldEventTriggerPolicy {
         return roll;
     }
 
+    private String requireTextValue(final String value) {
+        if (value == null || value.isBlank()) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+
+        return value;
+    }
+
     private void validateGameEvent(final GameEvent gameEvent) {
         if (gameEvent == null || gameEvent.getEventTriggerType() == null) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
@@ -225,15 +283,27 @@ public class WorldEventTriggerPolicy {
 
     public record TriggerContext(
         String economicCycleType,
+        String cycleType,
+        String housingType,
         Integer knowledge,
-        Integer tenureTurns
+        Integer health,
+        Integer fatigue,
+        Integer stress,
+        Integer tenureTurns,
+        String employmentStatus
     ) {
 
         public TriggerContext {
             if (economicCycleType == null || economicCycleType.isBlank()) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
-            if (knowledge == null || tenureTurns == null) {
+            if (housingType == null || housingType.isBlank()) {
+                throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+            }
+            if (employmentStatus == null || employmentStatus.isBlank()) {
+                throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+            }
+            if (knowledge == null || health == null || fatigue == null || stress == null || tenureTurns == null) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
         }
@@ -243,7 +313,41 @@ public class WorldEventTriggerPolicy {
             final Integer knowledge,
             final Integer tenureTurns
         ) {
-            return new TriggerContext(economicCycleType, knowledge, tenureTurns);
+            return new TriggerContext(
+                economicCycleType,
+                null,
+                "STUDIO",
+                knowledge,
+                70,
+                20,
+                20,
+                tenureTurns,
+                "EMPLOYED"
+            );
+        }
+
+        public static TriggerContext of(
+            final String economicCycleType,
+            final String cycleType,
+            final String housingType,
+            final Integer knowledge,
+            final Integer health,
+            final Integer fatigue,
+            final Integer stress,
+            final Integer tenureTurns,
+            final String employmentStatus
+        ) {
+            return new TriggerContext(
+                economicCycleType,
+                cycleType,
+                housingType,
+                knowledge,
+                health,
+                fatigue,
+                stress,
+                tenureTurns,
+                employmentStatus
+            );
         }
     }
 }

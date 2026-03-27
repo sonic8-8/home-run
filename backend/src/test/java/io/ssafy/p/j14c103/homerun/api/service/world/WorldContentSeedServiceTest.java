@@ -51,7 +51,7 @@ class WorldContentSeedServiceTest {
         newsMasterRepository.deleteAllInBatch();
     }
 
-    @DisplayName("seed를 실행하면 뉴스 20건과 이벤트 4건이 적재된다")
+    @DisplayName("seed를 실행하면 뉴스 20건과 이벤트 12건이 적재된다")
     @Test
     void seedWorldContents() {
         // when
@@ -59,7 +59,7 @@ class WorldContentSeedServiceTest {
 
         // then
         assertThat(newsMasterRepository.count()).isEqualTo(20);
-        assertThat(gameEventRepository.count()).isEqualTo(4);
+        assertThat(gameEventRepository.count()).isEqualTo(12);
     }
 
     @DisplayName("같은 seed를 다시 실행해도 뉴스와 이벤트 수가 증가하지 않는다")
@@ -125,6 +125,56 @@ class WorldContentSeedServiceTest {
             .containsExactlyInAnyOrder(
                 org.assertj.core.groups.Tuple.tuple("game_stats", "knowledge"),
                 org.assertj.core.groups.Tuple.tuple("game_careers", "tenure_turns")
+            );
+    }
+
+    @DisplayName("입원 이벤트는 CHOICE, CONDITION, health 범위 조건 계약으로 적재된다")
+    @Test
+    void seedHospitalizationEventContract() {
+        // given
+        worldContentSeedService.seed();
+
+        // when
+        final GameEvent event = findEventByCode("EVT-STATUS-002");
+        final List<EventCondition> conditions = eventConditionRepository.findAll().stream()
+            .filter(condition -> condition.getGameEventId().equals(event.getGameEventId()))
+            .toList();
+
+        // then
+        assertThat(event.getEventPresentationType()).isEqualTo(EventPresentationType.CHOICE);
+        assertThat(event.getEventTriggerType()).isEqualTo(EventTriggerType.CONDITION);
+        assertThat(conditions)
+            .extracting(EventCondition::getTargetTableName, EventCondition::getTargetColumnName, EventCondition::getComparisonOperator)
+            .containsExactlyInAnyOrder(
+                org.assertj.core.groups.Tuple.tuple("game_stats", "health", "GTE"),
+                org.assertj.core.groups.Tuple.tuple("game_stats", "health", "LTE")
+            );
+    }
+
+    @DisplayName("금리 변동 이벤트는 RATE_HIKE cycle_type 조건과 2개 선택지 계약으로 적재된다")
+    @Test
+    void seedRateChangeEventContract() {
+        // given
+        worldContentSeedService.seed();
+
+        // when
+        final GameEvent event = findEventByCode("EVT-RATE-001");
+        final List<EventChoice> choices = eventChoiceRepository
+            .findAllByGameEventIdOrderByChoiceOrderAsc(event.getGameEventId());
+        final List<EventCondition> conditions = eventConditionRepository.findAll().stream()
+            .filter(condition -> condition.getGameEventId().equals(event.getGameEventId()))
+            .toList();
+
+        // then
+        assertThat(event.getEventPresentationType()).isEqualTo(EventPresentationType.CHOICE);
+        assertThat(event.getEventTriggerType()).isEqualTo(EventTriggerType.CYCLE);
+        assertThat(choices)
+            .extracting(EventChoice::getChoiceCode)
+            .containsExactly("A", "B");
+        assertThat(conditions)
+            .extracting(EventCondition::getTargetTableName, EventCondition::getTargetColumnName, EventCondition::getCriteriaTextValue)
+            .containsExactly(
+                org.assertj.core.groups.Tuple.tuple("game_sessions", "cycle_type", "CYCLE_RATE_HIKE")
             );
     }
 

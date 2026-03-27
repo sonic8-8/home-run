@@ -16,6 +16,7 @@ public class WorldContentSeedPolicy {
     private static final String COLUMN_COMPARISON = "COLUMN_COMPARISON";
     private static final String EQ = "EQ";
     private static final String GTE = "GTE";
+    private static final String LTE = "LTE";
     private static final String AND = "AND";
     private static final String OR = "OR";
 
@@ -69,7 +70,7 @@ public class WorldContentSeedPolicy {
                 optionalText(definition, "senderName"),
                 optionalText(definition, "receiverName"),
                 requiredText(definition, "description", requiredText(definition, "eventName")),
-                toChoiceSeeds(requiredList(definition, "choices")),
+                toChoiceSeeds(optionalList(definition, "choices")),
                 toConditionSeeds(optionalList(definition, "conditions")),
                 toEffectSeeds(optionalList(definition, "effects"))
             );
@@ -450,6 +451,217 @@ public class WorldContentSeedPolicy {
                     effect("REJECT", 1, IMMEDIATE, null, null, NOTE, null, null,
                         "거절 시 현재 직장 유지")
                 )
+            ),
+            event(
+                "RENT_INCREASE_NOTICE",
+                "EVT-HOUSING-001",
+                "월세 인상 통보",
+                EventPresentationType.CHOICE,
+                EventTriggerType.CYCLE,
+                new BigDecimal("0.0300"),
+                "/images/events/rent-increase.png",
+                "집주인",
+                "김싸피",
+                "이번 달부터 월세를 올려야 한다는 통보가 왔습니다.",
+                List.of(
+                    choice("A", "수락한다", 1, "오른 월세를 감수하고 계속 거주한다."),
+                    choice("B", "이사한다", 2, "이사 비용을 감수하고 새로운 집을 찾는다.")
+                ),
+                List.of(
+                    condition(1, 1, COLUMN_COMPARISON, "game_sessions", "housing_type", EQ,
+                        "STUDIO", null, OR),
+                    condition(2, 1, COLUMN_COMPARISON, "game_sessions", "housing_type", EQ,
+                        "VILLA", null, OR)
+                ),
+                List.of(
+                    effect("A", 1, IMMEDIATE, "game_sessions", "cash", ADD, -200_000, null,
+                        "오른 월세를 반영한다"),
+                    effect("A", 2, IMMEDIATE, "game_stats", "stress", ADD, 5, null,
+                        "고정 지출 부담 증가"),
+                    effect("B", 1, IMMEDIATE, "game_sessions", "cash", ADD, -500_000, null,
+                        "이사 비용이 발생한다"),
+                    effect("B", 2, IMMEDIATE, "game_stats", "fatigue", ADD, 10, null,
+                        "이사 준비로 피로가 누적된다")
+                )
+            ),
+            event(
+                "APPLIANCE_BREAKDOWN",
+                "EVT-HOME-001",
+                "가전제품 고장",
+                EventPresentationType.CHOICE,
+                EventTriggerType.PROBABILITY,
+                new BigDecimal("0.0400"),
+                "/images/events/appliance-breakdown.png",
+                null,
+                null,
+                "살고 있는 집의 필수 가전이 갑자기 고장 났습니다.",
+                List.of(
+                    choice("A", "수리한다", 1, "당장 필요한 만큼만 고쳐서 버틴다."),
+                    choice("B", "교체한다", 2, "비용이 들더라도 새 제품으로 교체한다.")
+                ),
+                List.of(),
+                List.of(
+                    effect("A", 1, IMMEDIATE, "game_sessions", "cash", ADD, -300_000, null,
+                        "수리 비용"),
+                    effect("B", 1, IMMEDIATE, "game_sessions", "cash", ADD, -800_000, null,
+                        "교체 비용"),
+                    effect("B", 2, IMMEDIATE, "game_stats", "stress", ADD, -5, null,
+                        "불편이 해소되어 스트레스가 줄어든다")
+                )
+            ),
+            event(
+                "BURNOUT",
+                "EVT-STATUS-001",
+                "번아웃",
+                EventPresentationType.LETTER,
+                EventTriggerType.CONDITION,
+                null,
+                "/images/events/burnout.png",
+                null,
+                null,
+                "피로와 스트레스가 한계에 다다라 번아웃 상태에 빠졌습니다.",
+                List.of(),
+                List.of(
+                    condition(1, 1, COLUMN_COMPARISON, "game_stats", "fatigue", GTE,
+                        null, new BigDecimal("80"), AND),
+                    condition(1, 2, COLUMN_COMPARISON, "game_stats", "stress", GTE,
+                        null, new BigDecimal("80"), AND)
+                ),
+                List.of(
+                    effect(null, 1, IMMEDIATE, null, null, NOTE, null, null,
+                        "다음 턴 슬롯 축소와 능력 획득 제한은 캐릭터 도메인에서 해석")
+                )
+            ),
+            event(
+                "HOSPITALIZATION",
+                "EVT-STATUS-002",
+                "입원",
+                EventPresentationType.CHOICE,
+                EventTriggerType.CONDITION,
+                null,
+                "/images/events/hospitalization.png",
+                "응급실",
+                "김싸피",
+                "체력 저하로 병원 치료가 필요하다는 진단을 받았습니다.",
+                List.of(
+                    choice("A", "일반 진료를 받는다", 1, "기본 치료만 받고 빠르게 회복한다."),
+                    choice("B", "정밀 검진을 받는다", 2, "비용을 더 내고 확실히 관리한다.")
+                ),
+                List.of(
+                    condition(1, 1, COLUMN_COMPARISON, "game_stats", "health", GTE,
+                        null, new BigDecimal("10"), AND),
+                    condition(1, 2, COLUMN_COMPARISON, "game_stats", "health", LTE,
+                        null, new BigDecimal("29"), AND)
+                ),
+                List.of(
+                    effect("A", 1, IMMEDIATE, "game_sessions", "cash", ADD, -500_000, null,
+                        "기본 치료 비용"),
+                    effect("A", 2, IMMEDIATE, "game_stats", "health", ADD, 10, null,
+                        "기본 치료로 체력이 회복된다"),
+                    effect("B", 1, IMMEDIATE, "game_sessions", "cash", ADD, -1_200_000, null,
+                        "정밀 검진 비용"),
+                    effect("B", 2, IMMEDIATE, "game_stats", "health", ADD, 20, null,
+                        "정밀 치료로 체력이 더 회복된다"),
+                    effect("B", 3, IMMEDIATE, "game_stats", "stress", ADD, -5, null,
+                        "불안이 줄어 스트레스가 감소한다")
+                )
+            ),
+            event(
+                "FORCED_RESIGNATION",
+                "EVT-STATUS-003",
+                "강제 퇴사",
+                EventPresentationType.LETTER,
+                EventTriggerType.CONDITION,
+                null,
+                "/images/events/forced-resignation.png",
+                "인사팀",
+                "김싸피",
+                "건강 악화로 더 이상 근무를 지속할 수 없어 강제 퇴사 처리됩니다.",
+                List.of(),
+                List.of(
+                    condition(1, 1, COLUMN_COMPARISON, "game_stats", "health", LTE,
+                        null, new BigDecimal("9"), AND),
+                    condition(1, 2, COLUMN_COMPARISON, "game_careers", "employment_status", EQ,
+                        "EMPLOYED", null, AND),
+                    condition(2, 1, COLUMN_COMPARISON, "game_stats", "health", LTE,
+                        null, new BigDecimal("9"), AND),
+                    condition(2, 2, COLUMN_COMPARISON, "game_careers", "employment_status", EQ,
+                        "PROBATION", null, AND)
+                ),
+                List.of(
+                    effect(null, 1, IMMEDIATE, null, null, NOTE, null, null,
+                        "강제 퇴사와 실업 급여 반영은 커리어 도메인에서 해석")
+                )
+            ),
+            event(
+                "REAL_ESTATE_REGULATION",
+                "EVT-REG-001",
+                "부동산 규제",
+                EventPresentationType.LETTER,
+                EventTriggerType.CYCLE,
+                new BigDecimal("0.3000"),
+                "/images/events/real-estate-regulation.png",
+                "국토부 알림",
+                "김싸피",
+                "긴축 국면 속에서 부동산 규제 강화 소식이 전해졌습니다.",
+                List.of(),
+                List.of(
+                    condition(1, 1, COLUMN_COMPARISON, "game_sessions", "cycle_type", EQ,
+                        "CYCLE_RATE_HIKE", null, AND)
+                ),
+                List.of(
+                    effect(null, 1, IMMEDIATE, null, null, NOTE, null, null,
+                        "부동산 시세 영향은 월드 결과 계산에서 해석")
+                )
+            ),
+            event(
+                "RATE_CHANGE",
+                "EVT-RATE-001",
+                "금리 변동",
+                EventPresentationType.CHOICE,
+                EventTriggerType.CYCLE,
+                new BigDecimal("0.1000"),
+                "/images/events/rate-change.png",
+                "주거 금융센터",
+                "김싸피",
+                "금리 환경이 바뀌어 자금 계획을 다시 점검해야 합니다.",
+                List.of(
+                    choice("A", "지출을 줄여 대응한다", 1, "현금 흐름을 지키는 데 집중한다."),
+                    choice("B", "기존 계획을 유지한다", 2, "투자와 소비 계획을 그대로 가져간다.")
+                ),
+                List.of(
+                    condition(1, 1, COLUMN_COMPARISON, "game_sessions", "cycle_type", EQ,
+                        "CYCLE_RATE_HIKE", null, AND)
+                ),
+                List.of(
+                    effect("A", 1, IMMEDIATE, "game_stats", "stress", ADD, -3, null,
+                        "미리 대비해 불안이 줄어든다"),
+                    effect("B", 1, IMMEDIATE, "game_stats", "stress", ADD, 5, null,
+                        "금리 부담으로 스트레스가 증가한다")
+                )
+            ),
+            event(
+                "HIRING_FREEZE",
+                "EVT-JOB-002",
+                "채용 한파",
+                EventPresentationType.LETTER,
+                EventTriggerType.CYCLE,
+                new BigDecimal("0.1500"),
+                "/images/events/hiring-freeze.png",
+                "채용 시장 브리핑",
+                "김싸피",
+                "위기 국면 속에서 채용 한파가 심해져 재취업이 더 어려워졌습니다.",
+                List.of(),
+                List.of(
+                    condition(1, 1, COLUMN_COMPARISON, "game_sessions", "economic_cycle_type", EQ,
+                        "CRISIS", null, AND),
+                    condition(1, 2, COLUMN_COMPARISON, "game_careers", "employment_status", EQ,
+                        "UNEMPLOYED", null, AND)
+                ),
+                List.of(
+                    effect(null, 1, IMMEDIATE, null, null, NOTE, null, null,
+                        "재취업 추가 대기 반영은 커리어 도메인에서 해석")
+                )
             )
         );
     }
@@ -577,7 +789,7 @@ public class WorldContentSeedPolicy {
             if (newsSeeds == null || newsSeeds.size() != 20) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
-            if (eventSeeds == null || eventSeeds.size() != 4) {
+            if (eventSeeds == null || eventSeeds.size() != 12) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
         }
@@ -636,10 +848,13 @@ public class WorldContentSeedPolicy {
             if (presentationType == null || triggerType == null) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
-            if (choices == null || choices.isEmpty()) {
+            if (choices == null) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
             if (conditions == null || effects == null) {
+                throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+            }
+            if (requiresChoices(presentationType) && choices.isEmpty()) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
             if (triggerType == EventTriggerType.CONDITION && conditions.isEmpty()) {
@@ -648,6 +863,12 @@ public class WorldContentSeedPolicy {
             if (triggerType == EventTriggerType.CYCLE && conditions.isEmpty()) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
+        }
+
+        private static boolean requiresChoices(final EventPresentationType presentationType) {
+            return presentationType == EventPresentationType.CHOICE
+                || presentationType == EventPresentationType.PHONE
+                || presentationType == EventPresentationType.JOB_TRANSFER;
         }
     }
 

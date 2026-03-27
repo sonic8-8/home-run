@@ -175,7 +175,7 @@ class WorldEventTriggerPolicyTest {
                 "COLUMN_COMPARISON",
                 "game_stats",
                 "knowledge",
-                "LTE",
+                "LT",
                 null,
                 new BigDecimal("80"),
                 null,
@@ -190,5 +190,66 @@ class WorldEventTriggerPolicyTest {
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+    }
+
+    @DisplayName("health 상한 조건은 LTE 연산자로 판정할 수 있다")
+    @Test
+    void isTriggeredWithLteHealthCondition() {
+        // given
+        final GameEvent gameEvent = GameEvent.create(
+            "HOSPITALIZATION",
+            "EVT-STATUS-002",
+            "입원",
+            EventPresentationType.CHOICE,
+            EventTriggerType.CONDITION,
+            null,
+            true,
+            null,
+            null,
+            null,
+            "체력 저하로 병원 치료가 필요합니다.",
+            true
+        );
+        final List<EventCondition> conditions = List.of(
+            EventCondition.create(
+                1,
+                1,
+                1,
+                "COLUMN_COMPARISON",
+                "game_stats",
+                "health",
+                "GTE",
+                null,
+                new BigDecimal("10"),
+                null,
+                "AND"
+            ),
+            EventCondition.create(
+                1,
+                1,
+                2,
+                "COLUMN_COMPARISON",
+                "game_stats",
+                "health",
+                "LTE",
+                null,
+                new BigDecimal("29"),
+                null,
+                "AND"
+            )
+        );
+        final WorldEventTriggerPolicy.TriggerContext triggerContext =
+            WorldEventTriggerPolicy.TriggerContext.of("RECOVERY", null, "STUDIO", 60, 25, 20, 20, 12, "EMPLOYED");
+
+        // when
+        final boolean triggered = worldEventTriggerPolicy.isTriggered(
+            gameEvent,
+            conditions,
+            triggerContext,
+            null
+        );
+
+        // then
+        assertThat(triggered).isTrue();
     }
 }
