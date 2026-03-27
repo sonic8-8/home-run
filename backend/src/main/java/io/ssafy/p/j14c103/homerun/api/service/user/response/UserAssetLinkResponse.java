@@ -1,14 +1,15 @@
 package io.ssafy.p.j14c103.homerun.api.service.user.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 public class UserAssetLinkResponse {
 
-    @JsonProperty("isAssetLinked")
-    private boolean isAssetLinked;
+    @Getter(AccessLevel.NONE)
+    private boolean assetLinked;
     private boolean mainAccountCreated;
     private boolean seedmoneyAccountCreated;
     private boolean summaryInitialized;
@@ -20,7 +21,7 @@ public class UserAssetLinkResponse {
             final boolean seedmoneyAccountCreated,
             final boolean summaryInitialized
     ) {
-        this.isAssetLinked = isAssetLinked;
+        this.assetLinked = isAssetLinked;
         this.mainAccountCreated = mainAccountCreated;
         this.seedmoneyAccountCreated = seedmoneyAccountCreated;
         this.summaryInitialized = summaryInitialized;
@@ -38,5 +39,10 @@ public class UserAssetLinkResponse {
                 .seedmoneyAccountCreated(seedmoneyAccountCreated)
                 .summaryInitialized(summaryInitialized)
                 .build();
+    }
+
+    @JsonProperty("isAssetLinked")
+    public boolean isAssetLinked() {
+        return assetLinked;
     }
 }

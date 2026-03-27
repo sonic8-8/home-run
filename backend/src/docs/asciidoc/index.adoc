@@ -13,7 +13,7 @@
 === 성공 응답
 
 JSON 기반 성공 응답은 `status`, `message`, `data` 구조의 `ApiResponse` 로 반환합니다.
-이미지 다운로드처럼 바이너리 본문을 반환하는 API는 응답 헤더와 바이너리 바디를 직접 반환합니다.
+대시보드 SSE 구독 API는 `text/event-stream` 응답을 직접 반환합니다.
 
 === 에러 응답
 
@@ -46,11 +46,29 @@ operation::auth/refresh/success[snippets='http-request,request-headers,http-resp
 
 operation::auth/refresh/unauthorized[snippets='http-request,request-headers,http-response,response-fields']
 
+== 사용자 API
+
+=== 내 정보 조회
+
+operation::user/me/success[snippets='http-request,request-headers,http-response,response-fields']
+
+=== 자산 연동 실행
+
+operation::user/asset-link/success[snippets='http-request,request-headers,request-fields,http-response,response-fields']
+
+=== 자산 연동 요청 검증 실패
+
+operation::user/asset-link/validation-error[snippets='http-request,request-headers,http-response,response-fields']
+
 == 홈 API
 
 === 대시보드 조회
 
 operation::home/dashboard/success[snippets='http-request,request-headers,http-response,response-fields']
+
+=== 대시보드 SSE 구독
+
+operation::home/dashboard/subscribe/success[snippets='http-request,request-headers,http-response,response-headers']
 
 === 신용 점수 조회
 
@@ -63,6 +81,20 @@ operation::home/loan-recommendations/success[snippets='http-request,request-head
 === 소비 분석 조회
 
 operation::home/spending/success[snippets='http-request,request-headers,query-parameters,http-response,response-fields']
+
+== 대출 API
+
+=== 대출 상품 목록 조회
+
+operation::loan/products/success[snippets='http-request,request-headers,path-parameters,query-parameters,http-response,response-fields']
+
+=== 이자 계산
+
+operation::loan/calculate/success[snippets='http-request,request-headers,path-parameters,request-fields,http-response,response-fields']
+
+=== 이자 계산 검증 실패
+
+operation::loan/calculate/validation-error[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
 
 == 시드머니 API
 
@@ -174,6 +206,24 @@ operation::pass/widget/success[snippets='http-request,request-headers,http-respo
 
 operation::pass/history/success[snippets='http-request,request-headers,query-parameters,http-response,response-fields']
 
+== 주식 API
+
+=== 주식 시장 조회
+
+operation::stock/market/success[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+
+=== 보유 주식 조회
+
+operation::stock/holdings/success[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+
+=== 주식 주문
+
+operation::stock/orders/success[snippets='http-request,request-headers,path-parameters,request-fields,http-response,response-fields']
+
+=== 주식 주문 검증 실패
+
+operation::stock/orders/validation-error[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+
 == 게임 진행 API
 
 === 턴 조회
@@ -205,12 +255,3 @@ operation::real-estate/documents/property-not-found[snippets='http-request,reque
 === 세션 없음
 
 operation::real-estate/documents/session-not-found[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
-
-== 이미지 API
-
-이 섹션의 API는 `oci.enabled=true` 일 때만 노출됩니다.
-응답은 `ApiResponse` 래퍼가 아닌 바이너리 본문과 응답 헤더로 제공됩니다.
-
-=== 이미지 다운로드
-
-operation::image/download/success[snippets='http-request,request-headers,query-parameters,response-headers']
