@@ -10,6 +10,7 @@ import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -84,5 +85,45 @@ class GameEventLogRepositoryTest {
         assertThat(result.orElseThrow().getSelectedChoiceCode()).isEqualTo("HANG_UP");
         assertThat(result.orElseThrow().getResultEffects()).containsEntry("stress", -2);
         assertThat(result.orElseThrow().getResultSummary()).isEqualTo("전화를 끊고 피해를 막았다.");
+    }
+
+    @DisplayName("GameEventLog는 세션 기준 turn 오름차순으로 이벤트 이력을 조회할 수 있다")
+    @Test
+    void findEventLogsByGameSessionIdOrderByTurnNumberAsc() {
+        // given
+        gameEventLogRepository.saveAndFlush(
+            GameEventLog.create(
+                3001L,
+                11,
+                101,
+                null,
+                null,
+                Map.of(),
+                "후순위 이벤트",
+                LocalDateTime.of(2026, 11, 1, 10, 0)
+            )
+        );
+        gameEventLogRepository.saveAndFlush(
+            GameEventLog.create(
+                3001L,
+                7,
+                100,
+                null,
+                null,
+                Map.of(),
+                "선행 이벤트",
+                LocalDateTime.of(2026, 7, 1, 10, 0)
+            )
+        );
+        entityManager.clear();
+
+        // when
+        final List<GameEventLog> result =
+            gameEventLogRepository.findAllByGameSessionIdOrderByTurnNumberAscGameEventLogIdAsc(3001L);
+
+        // then
+        assertThat(result)
+            .extracting(GameEventLog::getTurnNumber)
+            .containsExactly(7, 11);
     }
 }
