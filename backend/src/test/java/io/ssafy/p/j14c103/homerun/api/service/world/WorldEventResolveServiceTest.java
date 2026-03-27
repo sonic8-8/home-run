@@ -271,6 +271,86 @@ class WorldEventResolveServiceTest {
             .containsExactly(-150_000, 5);
     }
 
+    @DisplayName("입원 이벤트를 일반 진료로 resolve하면 cash와 health 효과를 계산한다")
+    @Test
+    void resolveHospitalizationEvent() {
+        // given
+        worldContentSeedService.seed();
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(13));
+
+        final GameEvent hospitalizationEvent = findEventByCode("EVT-STATUS-002");
+        final EventChoice selectedChoice = eventChoiceRepository
+            .findAllByGameEventIdOrderByChoiceOrderAsc(hospitalizationEvent.getGameEventId())
+            .stream()
+            .filter(choice -> "A".equals(choice.getChoiceCode()))
+            .findFirst()
+            .orElseThrow();
+        final GamePendingEvent pendingEvent = gamePendingEventRepository.saveAndFlush(
+            GamePendingEvent.create(
+                gameSession.getGameSessionId(),
+                13,
+                hospitalizationEvent.getGameEventId(),
+                EventPresentationType.CHOICE,
+                Map.of("description", hospitalizationEvent.getDescription()),
+                false,
+                LocalDateTime.of(2026, 3, 20, 13, 0)
+            )
+        );
+
+        // when
+        final EventResolveResult result = worldEventResolveService.resolveEvent(
+            gameSession.getGameSessionId(),
+            pendingEvent.getGamePendingEventId(),
+            selectedChoice.getEventChoiceId()
+        );
+
+        // then
+        assertThat(result.getSelectedChoiceCode()).isEqualTo("A");
+        assertThat(result.getResultEffects())
+            .extracting(
+                EventResolveResult.ResolvedEffect::getTargetColumnName,
+                EventResolveResult.ResolvedEffect::getBaseNumberValue
+            )
+            .containsExactly(
+                org.assertj.core.groups.Tuple.tuple("cash", -500_000),
+                org.assertj.core.groups.Tuple.tuple("health", 10)
+            );
+    }
+
+    @DisplayName("번아웃 이벤트는 choiceId 없이 resolve 가능하고 note effect를 반환한다")
+    @Test
+    void resolveBurnoutEventWithoutChoice() {
+        // given
+        worldContentSeedService.seed();
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(15));
+
+        final GameEvent burnoutEvent = findEventByCode("EVT-STATUS-001");
+        final GamePendingEvent pendingEvent = gamePendingEventRepository.saveAndFlush(
+            GamePendingEvent.create(
+                gameSession.getGameSessionId(),
+                15,
+                burnoutEvent.getGameEventId(),
+                EventPresentationType.LETTER,
+                Map.of("description", burnoutEvent.getDescription()),
+                false,
+                LocalDateTime.of(2026, 3, 20, 15, 0)
+            )
+        );
+
+        // when
+        final EventResolveResult result = worldEventResolveService.resolveEvent(
+            gameSession.getGameSessionId(),
+            pendingEvent.getGamePendingEventId(),
+            null
+        );
+
+        // then
+        assertThat(result.getEventChoiceId()).isNull();
+        assertThat(result.getResultEffects()).hasSize(1);
+        assertThat(result.getResultEffects().get(0).getNote())
+            .contains("캐릭터 도메인");
+    }
+
     private GamePendingEvent findPendingEvent(final Long gameSessionId) {
         return gamePendingEventRepository
             .findAllByGameSessionIdAndResolvedYnFalseOrderByCreatedAtAscGamePendingEventIdAsc(gameSessionId)
