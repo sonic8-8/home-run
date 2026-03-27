@@ -7,7 +7,13 @@ export interface GameSlotModel {
   currentTurn?: number;
   totalAssets?: number;
   createdAt?: string;
-  status: 'IN_PROGRESS' | 'EMPTY';
+  status:
+    | 'EMPTY'
+    | 'IN_PROGRESS'
+    | 'CLEAR'
+    | 'BANKRUPT'
+    | 'TIMEOUT'
+    | 'FORECLOSURE';
 }
 
 export interface GameSessionsResponseModel {
