@@ -1,12 +1,16 @@
-// import { injectable, inject } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
+import { DI_TOKENS } from '@core/di/tokens';
 import type { IGameSessionRepository } from '../repositories/IGameSessionRepository';
 import type { GameSlot } from '../entities/GameSlot';
 
-// @injectable()
+@injectable()
 export class GetGameSlotsUseCase {
   private readonly repository: IGameSessionRepository;
 
-  constructor(repository: IGameSessionRepository) {
+  constructor(
+    @inject(DI_TOKENS.IGameSessionRepository)
+    repository: IGameSessionRepository,
+  ) {
     this.repository = repository;
   }
 
