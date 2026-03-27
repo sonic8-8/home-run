@@ -8,4 +8,9 @@ import org.springframework.stereotype.Repository;
 public interface GameplayHistoryRepository extends JpaRepository<GameplayHistory, Integer> {
 
     List<GameplayHistory> findAllByGameIdOrderByOccurredTurnAscHistoryIdAsc(Integer gameId);
+
+    List<GameplayHistory> findAllByGameIdAndTableNameOrderByOccurredTurnAscHistoryIdAsc(
+        Integer gameId,
+        String tableName
+    );
 }
