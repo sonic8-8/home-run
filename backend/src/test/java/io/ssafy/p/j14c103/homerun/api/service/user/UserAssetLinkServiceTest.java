@@ -41,6 +41,7 @@ import io.ssafy.p.j14c103.homerun.domain.user.UserAssetDepositRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetLoanRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserHomeCreditScoreSnapshotRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
@@ -96,6 +97,9 @@ class UserAssetLinkServiceTest {
     private UserAssetProfileRepository userAssetProfileRepository;
 
     @Autowired
+    private UserHomeCreditScoreSnapshotRepository userHomeCreditScoreSnapshotRepository;
+
+    @Autowired
     private UserAssetDepositRepository userAssetDepositRepository;
 
     @Autowired
@@ -146,6 +150,7 @@ class UserAssetLinkServiceTest {
         userFinancialTransactionRepository.deleteAllInBatch();
         userFinancialProductRepository.deleteAllInBatch();
         userFinancialSummaryRepository.deleteAllInBatch();
+        userHomeCreditScoreSnapshotRepository.deleteAllInBatch();
         userAssetCardSpendRepository.deleteAllInBatch();
         userAssetOtherIncomeRepository.deleteAllInBatch();
         userAssetLoanRepository.deleteAllInBatch();
@@ -236,6 +241,10 @@ class UserAssetLinkServiceTest {
                         15_000_000,
                         -3_500_000
                 );
+        assertThat(userHomeCreditScoreSnapshotRepository.findByUserIdAndScoreMonthStart(
+                user.getId(),
+                java.time.LocalDate.now().withDayOfMonth(1)
+        )).isPresent();
     }
 
     @DisplayName("SSAFY 회원 생성이 실패하면 회원 조회로 userKey를 확보한다.")

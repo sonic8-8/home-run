@@ -21,4 +21,11 @@ public interface SeedmoneyTransactionRepository extends JpaRepository<SeedmoneyT
 
     List<SeedmoneyTransaction> findByUserIdAndTransactionTypeAndCreatedAtAfter(
             Long userId, String transactionType, LocalDateTime after);
+
+    List<SeedmoneyTransaction> findByUserIdAndTransactionTypeAndCreatedAtBetween(
+            Long userId,
+            String transactionType,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 }

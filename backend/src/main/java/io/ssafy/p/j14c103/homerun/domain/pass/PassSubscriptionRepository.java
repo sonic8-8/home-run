@@ -9,5 +9,7 @@ public interface PassSubscriptionRepository extends JpaRepository<PassSubscripti
 
     List<PassSubscription> findByUserIdAndIsActiveTrue(Long userId);
 
+    List<PassSubscription> findAllByUserIdOrderBySubscribedAtAsc(Long userId);
+
     Optional<PassSubscription> findByIdAndUserId(Long id, Long userId);
 }

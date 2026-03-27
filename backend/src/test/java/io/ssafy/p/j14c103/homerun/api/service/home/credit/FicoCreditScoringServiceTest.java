@@ -1,11 +1,15 @@
 package io.ssafy.p.j14c103.homerun.api.service.home.credit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
-import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.pass.PassProduct;
+import io.ssafy.p.j14c103.homerun.domain.pass.PassProductRepository;
+import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
+import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
+import io.ssafy.p.j14c103.homerun.domain.user.HomeCreditScoreSnapshotType;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpend;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetDeposit;
@@ -16,29 +20,34 @@ import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncome;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserHomeCreditScoreSnapshotRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
 class FicoCreditScoringServiceTest {
 
+    private static final ZoneId TEST_ZONE = ZoneId.of("Asia/Seoul");
+
     @Autowired
     private FicoCreditScoringService ficoCreditScoringService;
 
     @MockitoBean
-    private SsafyCreditCardClient creditCardClient;
-
-    @Autowired
-    private UserAuthContextService userAuthContextService;
+    private Clock appClock;
 
     @Autowired
     private UserRepository userRepository;
@@ -58,10 +67,20 @@ class FicoCreditScoringServiceTest {
     @Autowired
     private UserAssetCardSpendRepository userAssetCardSpendRepository;
 
+    @Autowired
+    private UserHomeCreditScoreSnapshotRepository userHomeCreditScoreSnapshotRepository;
+
+    @Autowired
+    private PassProductRepository passProductRepository;
+
+    @Autowired
+    private PassSubscriptionRepository passSubscriptionRepository;
+
     private Long userId;
 
     @BeforeEach
     void setUp() {
+        setNow(LocalDateTime.of(2026, 3, 27, 10, 0));
         final User user = User.register(Email.of("test@test.com"), "tester", "password");
         userRepository.save(user);
         this.userId = user.getId();
@@ -145,5 +164,55 @@ class FicoCreditScoringServiceTest {
         // then
         assertThat(stableScore.getScore()).isGreaterThan(riskyScore.getScore());
         assertThat(stableScore.getGrade()).isLessThanOrEqualTo(riskyScore.getGrade());
+    }
+
+    @Test
+    @DisplayName("현재 달 CSS는 고정되고 다음 달 1일에 새 스냅샷으로 갱신된다")
+    void creditScoreSnapshotIsFrozenUntilNextMonthStart() {
+        // given
+        userAssetProfileRepository.save(UserAssetProfile.create(
+                userId,
+                3_000_000,
+                25,
+                4_000_000,
+                1_500_000,
+                JobType.MID_BIZ
+        ));
+        userAssetDepositRepository.save(UserAssetDeposit.create(userId, "정기예금", 5_000_000));
+
+        // when
+        final CreditScore marchScore = ficoCreditScoringService.calculate(userId);
+
+        // then
+        assertThat(userHomeCreditScoreSnapshotRepository.findByUserIdAndScoreMonthStart(userId, LocalDate.of(2026, 3, 1)))
+                .isPresent()
+                .get()
+                .extracting(snapshot -> snapshot.getSnapshotType())
+                .isEqualTo(HomeCreditScoreSnapshotType.INITIAL);
+
+        final PassProduct passProduct = passProductRepository.save(PassProduct.create("커피 PASS", 5_000, "커피값 절약"));
+        final PassSubscription passSubscription = passSubscriptionRepository.save(
+                PassSubscription.create(userId, passProduct, 5_000, "001-1234-5678")
+        );
+        ReflectionTestUtils.setField(passSubscription, "subscribedAt", LocalDateTime.of(2026, 3, 28, 12, 0));
+
+        final CreditScore sameMonthScore = ficoCreditScoringService.calculate(userId);
+        assertThat(sameMonthScore.getScore()).isEqualTo(marchScore.getScore());
+
+        setNow(LocalDateTime.of(2026, 4, 1, 10, 0));
+
+        final CreditScore aprilScore = ficoCreditScoringService.calculate(userId);
+
+        assertThat(userHomeCreditScoreSnapshotRepository.findByUserIdAndScoreMonthStart(userId, LocalDate.of(2026, 4, 1)))
+                .isPresent()
+                .get()
+                .extracting(snapshot -> snapshot.getSnapshotType())
+                .isEqualTo(HomeCreditScoreSnapshotType.MONTHLY);
+        assertThat(aprilScore.getScore()).isNotEqualTo(marchScore.getScore());
+    }
+
+    private void setNow(final LocalDateTime localDateTime) {
+        given(appClock.getZone()).willReturn(TEST_ZONE);
+        given(appClock.instant()).willReturn(localDateTime.atZone(TEST_ZONE).toInstant());
     }
 }

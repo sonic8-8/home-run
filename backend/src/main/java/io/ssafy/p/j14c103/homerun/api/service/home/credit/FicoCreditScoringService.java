@@ -1,408 +1,689 @@
 package io.ssafy.p.j14c103.homerun.api.service.home.credit;
 
-import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyCreditCardClient;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransaction;
+import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.card.OwnedCard;
+import io.ssafy.p.j14c103.homerun.domain.card.OwnedCardRepository;
+import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductType;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProduct;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscription;
 import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransaction;
 import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransactionRepository;
-import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.HomeCreditScoreSnapshotType;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetDepositRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetLoanRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
 import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContext;
-import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
-import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.user.UserHomeCreditScoreSnapshot;
+import io.ssafy.p.j14c103.homerun.domain.user.UserHomeCreditScoreSnapshotRepository;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * FICO 프레임워크 기반 자체 CSS (Credit Scoring System).
- * <p>
- * 비례식 산출, 보수적 기준.
- * 모든 금융 활동 기록은 1년(365일) 기반.
- * </p>
- * <p>
- * 데이터 인식:
- * - 시드머니 거래유형: SAVE(PASS 저축), DEPOSIT(입금), TRANSFER(출금/송금)
- * - 카드 거래: SSAFY 금융망 inquireCreditCardTransactionList
- * - PASS 이행: UserPassTransaction (구독별 저축 거래)
- * </p>
- * <p>
- * 2분기 로직 (보수적):
- * - 이력 있음: 실제 금융 활동 기반 비례식 산출
- * - 이력 없음: 보수적 기본 점수 (증명 불가 = 낮게)
- * </p>
+ * 홈 전용 내부 CSS 계산기.
+ * 현재 월 점수는 월 1일 기준으로 한 번 생성된 스냅샷을 그대로 사용한다.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FicoCreditScoringService implements CreditScoreProvider {
 
-    /** 모든 금융 활동 기준 기간: 1년 */
     private static final int BASE_PERIOD_DAYS = 365;
-
-    /** New Credit 기준 기간: 6개월 */
     private static final int NEW_CREDIT_PERIOD_DAYS = 180;
-
-    /** Credit Length 만점 기준: 1년 */
     private static final int LENGTH_MAX_DAYS = 365;
 
-    // Payment History
     private static final int MIN_PAYMENT = 35;
     private static final int MAX_PAYMENT = 350;
-    private static final int NO_HISTORY_PAYMENT = 175; // 보수적: 만점의 50%
+    private static final int NO_HISTORY_PAYMENT = 175;
+    private static final int PROFILE_PAYMENT_MAX = 250;
 
-    // Amounts Owed
     private static final int MIN_OWED = 30;
     private static final int MAX_OWED = 300;
-    private static final int NO_HISTORY_OWED = 200; // 보수적: 만점의 67%
+    private static final int NO_HISTORY_OWED = 200;
 
-    // Credit Length
     private static final int MIN_LENGTH = 15;
     private static final int MAX_LENGTH = 150;
+    private static final int NEUTRAL_LENGTH = 83;
 
-    // Credit Mix
     private static final int MIN_MIX = 20;
     private static final int MAX_MIX = 100;
+    private static final int CREDIT_MIX_TYPE_COUNT = 5;
 
-    // New Credit
     private static final int MIN_NEW_CREDIT = 20;
     private static final int MAX_NEW_CREDIT = 100;
 
+    private final UserAccountRepository userAccountRepository;
     private final PassSubscriptionRepository passSubscriptionRepository;
     private final UserPassTransactionRepository passTransactionRepository;
-    private final SeedmoneyAccountRepository seedmoneyAccountRepository;
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
-    private final SsafyCreditCardClient creditCardClient;
-    private final UserAuthContextService userAuthContextService;
+    private final OwnedCardRepository ownedCardRepository;
+    private final CardTransactionRepository cardTransactionRepository;
+    private final UserFinancialProductRepository userFinancialProductRepository;
     private final UserAssetProfileRepository userAssetProfileRepository;
     private final UserAssetDepositRepository userAssetDepositRepository;
     private final UserAssetLoanRepository userAssetLoanRepository;
     private final UserAssetOtherIncomeRepository userAssetOtherIncomeRepository;
     private final UserAssetCardSpendRepository userAssetCardSpendRepository;
+    private final UserHomeCreditScoreSnapshotRepository userHomeCreditScoreSnapshotRepository;
+    private final Clock appClock;
 
     @Override
+    @Transactional
     public CreditScore calculate(final Long userId) {
-        final boolean hasCreditHistory = hasCreditHistory(userId);
-        final UserAssetProfile assetProfile = userAssetProfileRepository.findById(userId).orElse(null);
+        return toCreditScore(resolveCurrentMonthSnapshot(userId, false, false));
+    }
 
-        if (!hasCreditHistory && assetProfile != null) {
-            return calculateFromAssetProfile(
-                    assetProfile,
-                    totalDepositAmount(userId),
-                    totalLoanAmount(userId),
-                    totalOtherIncomeAmount(userId),
-                    totalCardSpendAmount(userId),
-                    hasCardSpend(userId)
-            );
+    @Transactional
+    public CreditScore initializeOnboardingSnapshot(
+            final Long userId,
+            final boolean overwriteExisting
+    ) {
+        return toCreditScore(resolveCurrentMonthSnapshot(userId, overwriteExisting, true));
+    }
+
+    private UserHomeCreditScoreSnapshot resolveCurrentMonthSnapshot(
+            final Long userId,
+            final boolean overwriteExisting,
+            final boolean onboardingInitialization
+    ) {
+        final LocalDate scoreMonthStart = currentMonthStart();
+        final Optional<UserHomeCreditScoreSnapshot> existingSnapshot = userHomeCreditScoreSnapshotRepository
+                .findByUserIdAndScoreMonthStart(userId, scoreMonthStart);
+
+        if (existingSnapshot.isPresent() && !overwriteExisting) {
+            return existingSnapshot.get();
         }
 
-        final int paymentHistory = calcPaymentHistory(userId, hasCreditHistory);
-        final int amountsOwed = calcAmountsOwed(userId, hasCreditHistory);
-        final int creditLength = calcCreditLength(userId);
-        final int creditMix = calcCreditMix(userId);
-        final int newCredit = calcNewCredit(userId);
+        final boolean hasPreviousSnapshot = userHomeCreditScoreSnapshotRepository.existsByUserId(userId);
+        final CreditScore score;
+        final HomeCreditScoreSnapshotType snapshotType;
+
+        if (onboardingInitialization) {
+            score = calculateLive(userId, LocalDateTime.now(appClock));
+            snapshotType = HomeCreditScoreSnapshotType.INITIAL;
+        } else if (hasPreviousSnapshot) {
+            score = calculateLive(userId, scoreMonthStart.atStartOfDay());
+            snapshotType = HomeCreditScoreSnapshotType.MONTHLY;
+        } else {
+            score = calculateLive(userId, LocalDateTime.now(appClock));
+            snapshotType = HomeCreditScoreSnapshotType.INITIAL;
+        }
+
+        return upsertSnapshot(existingSnapshot.orElse(null), userId, scoreMonthStart, snapshotType, score);
+    }
+
+    private UserHomeCreditScoreSnapshot upsertSnapshot(
+            final UserHomeCreditScoreSnapshot existingSnapshot,
+            final Long userId,
+            final LocalDate scoreMonthStart,
+            final HomeCreditScoreSnapshotType snapshotType,
+            final CreditScore score
+    ) {
+        final LocalDateTime createdAt = LocalDateTime.now(appClock);
+        if (existingSnapshot != null) {
+            existingSnapshot.update(
+                    snapshotType,
+                    score.getPaymentHistory(),
+                    score.getAmountsOwed(),
+                    score.getCreditLength(),
+                    score.getCreditMix(),
+                    score.getNewCredit(),
+                    createdAt
+            );
+            return existingSnapshot;
+        }
+
+        return userHomeCreditScoreSnapshotRepository.save(UserHomeCreditScoreSnapshot.create(
+                userId,
+                scoreMonthStart,
+                snapshotType,
+                score.getPaymentHistory(),
+                score.getAmountsOwed(),
+                score.getCreditLength(),
+                score.getCreditMix(),
+                score.getNewCredit(),
+                createdAt
+        ));
+    }
+
+    private CreditScore calculateLive(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        final UserAssetProfile assetProfile = userAssetProfileRepository.findById(userId).orElse(null);
+        final int totalDepositAmount = totalDepositAmount(userId);
+        final int totalLoanAmount = totalLoanAmount(userId);
+        final int totalOtherIncomeAmount = totalOtherIncomeAmount(userId);
+        final int totalCardSpendAmount = totalCardSpendAmount(userId);
+        final boolean hasCardSignal = hasCardSignal(userId, referenceDateTime);
+        final boolean hasCreditHistory = hasCreditHistory(userId, referenceDateTime);
+
+        final int paymentHistory = calcPaymentHistory(
+                userId,
+                referenceDateTime,
+                hasCreditHistory,
+                assetProfile,
+                totalDepositAmount,
+                totalOtherIncomeAmount,
+                totalCardSpendAmount
+        );
+        final int amountsOwed = assetProfile != null
+                ? calcAmountsOwedFromAssetProfile(
+                userId,
+                assetProfile,
+                totalDepositAmount,
+                totalLoanAmount,
+                totalOtherIncomeAmount,
+                totalCardSpendAmount
+        )
+                : calcAmountsOwedFromTransactions(userId, referenceDateTime, hasCreditHistory);
+        final int creditLength = calcCreditLength(userId, referenceDateTime);
+        final int creditMix = calcCreditMix(
+                userId,
+                referenceDateTime,
+                totalDepositAmount,
+                totalLoanAmount,
+                hasCardSignal
+        );
+        final int newCredit = calcNewCredit(userId, referenceDateTime);
 
         final CreditScore result = CreditScore.of(
-                paymentHistory, amountsOwed, creditLength, creditMix, newCredit);
-        log.info("CSS 점수 산출 [userId={}, 이력={}]: {} ({}등급 {})",
-                userId, hasCreditHistory, result.getScore(), result.getGrade(), result.getGradeLabel());
+                paymentHistory,
+                amountsOwed,
+                creditLength,
+                creditMix,
+                newCredit
+        );
+        log.info(
+                "홈 CSS 스냅샷 계산 [userId={}, reference={}, score={}, grade={}]",
+                userId,
+                referenceDateTime,
+                result.getScore(),
+                result.getGrade()
+        );
         return result;
     }
 
-    /**
-     * 금융 이력 존재 여부.
-     * PASS 구독 또는 카드 보유 시 이력 있음.
-     */
-    private boolean hasCreditHistory(final Long userId) {
-        final List<PassSubscription> activeSubs =
-                passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
-        if (!activeSubs.isEmpty()) {
-            return true;
-        }
-        return getCardCount(userId) > 0;
-    }
-
-    // ──────────────────────────────────────────────────
-    // 1. Payment History (350점)
-    //    이력 있음: PASS 1년 이행률 + 카드 1년 거래 활동 (비례, 가중 평균)
-    //    이력 없음: 175점 (보수적 — 증명 불가)
-    // ──────────────────────────────────────────────────
-    private int calcPaymentHistory(final Long userId, final boolean hasCreditHistory) {
+    private int calcPaymentHistory(
+            final Long userId,
+            final LocalDateTime referenceDateTime,
+            final boolean hasCreditHistory,
+            final UserAssetProfile assetProfile,
+            final int totalDepositAmount,
+            final int totalOtherIncomeAmount,
+            final int totalCardSpendAmount
+    ) {
         if (!hasCreditHistory) {
-            return NO_HISTORY_PAYMENT;
+            if (assetProfile == null) {
+                return NO_HISTORY_PAYMENT;
+            }
+            return calcPaymentHistoryFromAssetProfile(
+                    userId,
+                    assetProfile,
+                    totalDepositAmount,
+                    totalOtherIncomeAmount,
+                    totalCardSpendAmount
+            );
         }
 
         int totalScore = 0;
         int factors = 0;
 
-        // PASS 1년 이행률 → 비례 점수
-        final List<PassSubscription> activeSubscriptions =
-                passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
-        if (!activeSubscriptions.isEmpty()) {
-            final double fulfillmentRate = calcPassFulfillmentRate(activeSubscriptions);
-            totalScore += proportional(fulfillmentRate, MIN_PAYMENT, MAX_PAYMENT);
+        final List<PassSubscription> relevantSubscriptions = relevantPassSubscriptions(userId, referenceDateTime);
+        if (!relevantSubscriptions.isEmpty()) {
+            totalScore += proportional(
+                    calcPassFulfillmentRate(relevantSubscriptions, referenceDateTime),
+                    MIN_PAYMENT,
+                    MAX_PAYMENT
+            );
             factors++;
         }
 
-        // 카드 1년 거래 활동
-        final int cardScore = calcCardActivity(userId);
+        final int cardScore = calcCardActivity(userId, referenceDateTime);
         if (cardScore >= 0) {
             totalScore += cardScore;
             factors++;
         }
 
         if (factors == 0) {
-            return NO_HISTORY_PAYMENT;
+            return assetProfile == null
+                    ? NO_HISTORY_PAYMENT
+                    : calcPaymentHistoryFromAssetProfile(
+                    userId,
+                    assetProfile,
+                    totalDepositAmount,
+                    totalOtherIncomeAmount,
+                    totalCardSpendAmount
+            );
         }
-
         return clamp(totalScore / factors, MIN_PAYMENT, MAX_PAYMENT);
     }
 
-    /**
-     * PASS 저축 이행률 (1년 기준, 0.0 ~ 1.0).
-     * 인식 방법: UserPassTransaction 테이블에서 구독별 저축 거래 수를 카운트.
-     */
-    private double calcPassFulfillmentRate(final List<PassSubscription> activeSubscriptions) {
-        final LocalDateTime oneYearAgo = LocalDateTime.now().minusDays(BASE_PERIOD_DAYS);
-        long actualSaves = 0;
-        final long expectedSaves = activeSubscriptions.size() * (long) BASE_PERIOD_DAYS;
+    private int calcPaymentHistoryFromAssetProfile(
+            final Long userId,
+            final UserAssetProfile profile,
+            final int totalDepositAmount,
+            final int totalOtherIncomeAmount,
+            final int totalCardSpendAmount
+    ) {
+        final int totalMonthlyIncomeAmount = profile.getMonthlySalaryAmount() + totalOtherIncomeAmount;
+        final int totalMonthlyExpenseAmount = profile.getMonthlyFixedExpenseAmount() + totalCardSpendAmount;
+        final int reserveAmount = resolveMainBalance(userId, profile)
+                + resolveSeedmoneyBalance(userId)
+                + totalDepositAmount;
+        final double jobStability = stabilityWeight(profile.getJobType());
+        final double reserveCushion = normalizeSavingsCushion(reserveAmount, totalMonthlyExpenseAmount);
+        final double cashflowHealth = normalizeCashflowHealth(
+                totalMonthlyIncomeAmount,
+                totalMonthlyExpenseAmount
+        );
+        final double paymentProxy = clampRatio(
+                (jobStability * 0.4)
+                        + (reserveCushion * 0.4)
+                        + (cashflowHealth * 0.2)
+        );
 
-        for (final PassSubscription sub : activeSubscriptions) {
-            final List<UserPassTransaction> txns = passTransactionRepository
-                    .findBySubscriptionIdAndTransactionDateAfter(sub.getId(), oneYearAgo.toString());
-            actualSaves += txns.size();
+        return proportional(paymentProxy, NO_HISTORY_PAYMENT, PROFILE_PAYMENT_MAX);
+    }
+
+    private double calcPassFulfillmentRate(
+            final List<PassSubscription> subscriptions,
+            final LocalDateTime referenceDateTime
+    ) {
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        final LocalDateTime windowStart = inclusiveReference.minusDays(BASE_PERIOD_DAYS);
+
+        long eligibleSaveDays = 0L;
+        long completedSaveDays = 0L;
+
+        for (final PassSubscription subscription : subscriptions) {
+            final LocalDateTime subscribedAt = subscription.getSubscribedAt();
+            if (subscribedAt == null) {
+                continue;
+            }
+
+            final LocalDateTime activeStart = subscribedAt.isAfter(windowStart) ? subscribedAt : windowStart;
+            final LocalDateTime canceledAt = subscription.getCanceledAt();
+            final LocalDateTime activeEnd = canceledAt == null || canceledAt.isAfter(inclusiveReference)
+                    ? inclusiveReference
+                    : canceledAt;
+
+            if (activeEnd.isBefore(activeStart)) {
+                continue;
+            }
+
+            eligibleSaveDays += ChronoUnit.DAYS.between(activeStart.toLocalDate(), activeEnd.toLocalDate()) + 1;
+            completedSaveDays += passTransactionRepository.findBySubscriptionIdAndTransactionDateBetween(
+                            subscription.getId(),
+                            activeStart.toString(),
+                            activeEnd.toString()
+                    ).stream()
+                    .map(UserPassTransaction::getTransactionDate)
+                    .map(this::parseTransactionDate)
+                    .flatMap(Optional::stream)
+                    .map(LocalDateTime::toLocalDate)
+                    .distinct()
+                    .count();
         }
 
-        if (expectedSaves == 0) {
+        if (eligibleSaveDays <= 0) {
             return 1.0;
         }
-
-        return Math.min((double) actualSaves / expectedSaves, 1.0);
+        return Math.min((double) completedSaveDays / eligibleSaveDays, 1.0);
     }
 
-    /**
-     * 카드 거래 활동 점수 (1년 기준).
-     * 인식 방법: SSAFY 금융망 inquireCreditCardTransactionList API.
-     * 카드 미보유 시 -1 반환 (factors에서 제외).
-     */
-    private int calcCardActivity(final Long userId) {
-        try {
-            final UserAuthContext ctx = userAuthContextService.getContext(userId);
-            if (!ctx.hasSsafyUserKey()) {
-                return -1;
-            }
-
-            final List<Map<String, Object>> cards = creditCardClient.inquireSignUpCreditCardList(ctx.ssafyUserKey());
-            if (cards.isEmpty()) {
-                return -1;
-            }
-
-            final String endDate = LocalDateTime.now().toLocalDate().toString().replace("-", "");
-            final String startDate = LocalDateTime.now().minusDays(BASE_PERIOD_DAYS)
-                    .toLocalDate().toString().replace("-", "");
-
-            boolean hasTransaction = false;
-            for (final Map<String, Object> card : cards) {
-                final String cardNo = (String) card.get("cardNo");
-                final String cvc = (String) card.get("cvc");
-                if (cardNo == null || cvc == null) continue;
-
-                final List<Map<String, Object>> txns = creditCardClient.inquireCreditCardTransactionList(
-                        ctx.ssafyUserKey(), cardNo, cvc, startDate, endDate);
-                if (!txns.isEmpty()) {
-                    hasTransaction = true;
-                    break;
-                }
-            }
-
-            return hasTransaction ? MAX_PAYMENT : (int) (MAX_PAYMENT * 0.5);
-        } catch (final Exception e) {
-            log.debug("카드 활동 조회 실패, Payment History에서 카드 제외", e);
+    private int calcCardActivity(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        if (getCardCount(userId, referenceDateTime) == 0) {
             return -1;
         }
+
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        final LocalDate startDate = inclusiveReference.minusDays(BASE_PERIOD_DAYS).toLocalDate();
+        final LocalDate endDate = inclusiveReference.toLocalDate();
+        final List<CardTransaction> transactions = cardTransactionRepository
+                .findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(userId, startDate, endDate);
+
+        return transactions.isEmpty() ? proportional(0.5, MIN_PAYMENT, MAX_PAYMENT) : MAX_PAYMENT;
     }
 
-    // ──────────────────────────────────────────────────
-    // 2. Amounts Owed (300점)
-    //    소비율 = 1년간 출금(TRANSFER) 합계 / 입금(DEPOSIT+SAVE) 합계
-    //    비례식: 300 × (1 - 소비율)
-    //    이력 없음: 200점 (보수적 — 부채 없으나 건전성 증명 불가)
-    //
-    //    인식 방법:
-    //    - 입금: transactionType = "DEPOSIT" (외부 입금) + "SAVE" (PASS 저축)
-    //    - 출금: transactionType = "TRANSFER" (외부 송금)
-    // ──────────────────────────────────────────────────
-    private int calcAmountsOwed(final Long userId, final boolean hasCreditHistory) {
+    private int calcAmountsOwedFromTransactions(
+            final Long userId,
+            final LocalDateTime referenceDateTime,
+            final boolean hasCreditHistory
+    ) {
         if (!hasCreditHistory) {
             return NO_HISTORY_OWED;
         }
 
-        final LocalDateTime oneYearAgo = LocalDateTime.now().minusDays(BASE_PERIOD_DAYS);
-
-        final List<SeedmoneyTransaction> deposits = seedmoneyTransactionRepository
-                .findByUserIdAndTransactionTypeAndCreatedAtAfter(userId, "DEPOSIT", oneYearAgo);
-        final List<SeedmoneyTransaction> saves = seedmoneyTransactionRepository
-                .findByUserIdAndTransactionTypeAndCreatedAtAfter(userId, "SAVE", oneYearAgo);
-        final List<SeedmoneyTransaction> transfers = seedmoneyTransactionRepository
-                .findByUserIdAndTransactionTypeAndCreatedAtAfter(userId, "TRANSFER", oneYearAgo);
-
-        final long totalIncome = deposits.stream().mapToLong(t -> Math.abs(t.getAmount().longValue())).sum()
-                + saves.stream().mapToLong(t -> Math.abs(t.getAmount().longValue())).sum();
-        final long totalOutflow = transfers.stream().mapToLong(t -> Math.abs(t.getAmount().longValue())).sum();
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        final LocalDateTime oneYearAgo = inclusiveReference.minusDays(BASE_PERIOD_DAYS);
+        final long totalIncome = transactionAmount(userId, "DEPOSIT", oneYearAgo, inclusiveReference)
+                + transactionAmount(userId, "SAVE", oneYearAgo, inclusiveReference);
+        final long totalOutflow = transactionAmount(userId, "TRANSFER", oneYearAgo, inclusiveReference);
 
         if (totalIncome == 0) {
             return totalOutflow == 0 ? NO_HISTORY_OWED : MIN_OWED;
         }
 
         final double spendingRatio = Math.min((double) totalOutflow / totalIncome, 1.5);
-        final double score = MAX_OWED * (1.0 - spendingRatio);
-        return clamp((int) Math.round(score), MIN_OWED, MAX_OWED);
+        final double scoreRatio = 1.0 - Math.min(spendingRatio, 1.0);
+        return proportional(scoreRatio, MIN_OWED, MAX_OWED);
     }
 
-    // ──────────────────────────────────────────────────
-    // 3. Credit Length (150점)
-    //    비례식: 150 × min(일수 / 365, 1.0)
-    //    만점 기준: 1년 (365일)
-    // ──────────────────────────────────────────────────
-    private int calcCreditLength(final Long userId) {
-        return seedmoneyAccountRepository.findByUserId(userId)
-                .map(account -> {
-                    final long days = ChronoUnit.DAYS.between(account.getUpdatedAt(), LocalDateTime.now());
-                    final double ratio = Math.min((double) days / LENGTH_MAX_DAYS, 1.0);
-                    return clamp((int) Math.round(MAX_LENGTH * ratio), MIN_LENGTH, MAX_LENGTH);
-                })
-                .orElse(MIN_LENGTH);
-    }
-
-    // ──────────────────────────────────────────────────
-    // 4. Credit Mix (100점)
-    //    비례식: 100 × (유형수 / 3)
-    // ──────────────────────────────────────────────────
-    private int calcCreditMix(final Long userId) {
-        int productTypes = 0;
-
-        if (seedmoneyAccountRepository.findByUserId(userId).isPresent()) {
-            productTypes++;
-        }
-
-        final List<PassSubscription> activeSubs =
-                passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
-        if (!activeSubs.isEmpty()) {
-            productTypes++;
-        }
-
-        if (getCardCount(userId) > 0) {
-            productTypes++;
-        }
-
-        final double ratio = (double) productTypes / 3.0;
-        return clamp((int) Math.round(MAX_MIX * ratio), MIN_MIX, MAX_MIX);
-    }
-
-    // ──────────────────────────────────────────────────
-    // 5. New Credit (100점)
-    //    기준 기간: 6개월 (180일)
-    //    비례식: 100 × max(1 - (구독수 - 1) × 0.12, 0.2)
-    //    0~1건 = 만점, 이후 건당 12% 감소
-    // ──────────────────────────────────────────────────
-    private int calcNewCredit(final Long userId) {
-        final LocalDateTime sixMonthsAgo = LocalDateTime.now().minusDays(NEW_CREDIT_PERIOD_DAYS);
-
-        final List<PassSubscription> allSubs =
-                passSubscriptionRepository.findByUserIdAndIsActiveTrue(userId);
-        final long recentNewSubs = allSubs.stream()
-                .filter(sub -> sub.getSubscribedAt() != null && sub.getSubscribedAt().isAfter(sixMonthsAgo))
-                .count();
-
-        if (recentNewSubs <= 1) {
-            return MAX_NEW_CREDIT;
-        }
-
-        final double penalty = (recentNewSubs - 1) * 0.12;
-        final double ratio = Math.max(1.0 - penalty, 0.2);
-        return clamp((int) Math.round(MAX_NEW_CREDIT * ratio), MIN_NEW_CREDIT, MAX_NEW_CREDIT);
-    }
-
-    private CreditScore calculateFromAssetProfile(
+    private int calcAmountsOwedFromAssetProfile(
+            final Long userId,
             final UserAssetProfile profile,
             final int totalDepositAmount,
             final int totalLoanAmount,
             final int totalOtherIncomeAmount,
-            final int totalCardSpendAmount,
-            final boolean hasCardSpend
+            final int totalCardSpendAmount
     ) {
         final int totalMonthlyIncomeAmount = profile.getMonthlySalaryAmount() + totalOtherIncomeAmount;
         final int totalMonthlyExpenseAmount = profile.getMonthlyFixedExpenseAmount() + totalCardSpendAmount;
-        final int reserveAmount = profile.getMainAccountBalanceAmount() + totalDepositAmount;
-        final double jobStability = stabilityWeight(profile.getJobType());
-        final double savingsCushion = normalizeSavingsCushion(
-                reserveAmount,
-                totalMonthlyExpenseAmount
-        );
+        final int totalAssetAmount = resolveMainBalance(userId, profile)
+                + resolveSeedmoneyBalance(userId)
+                + totalDepositAmount;
+        final double debtToIncome = normalizeDebtBurden(totalLoanAmount, totalMonthlyIncomeAmount);
+        final double debtToAsset = normalizeAssetDebtBurden(totalLoanAmount, totalAssetAmount);
         final double cashflowBurden = normalizeCashflowBurden(
                 totalMonthlyIncomeAmount,
                 totalMonthlyExpenseAmount
         );
-        final double debtBurden = normalizeDebtBurden(
-                totalLoanAmount,
-                totalMonthlyIncomeAmount
+        final double combinedBurden = clampRatio(
+                (debtToIncome * 0.5)
+                        + (debtToAsset * 0.3)
+                        + (cashflowBurden * 0.2)
         );
 
-        final int paymentHistory = proportional(
-                (jobStability * 0.6) + (savingsCushion * 0.4),
-                MIN_PAYMENT,
-                MAX_PAYMENT
-        );
-        final int amountsOwed = proportional(
-                1.0 - clampRatio((cashflowBurden * 0.7) + (debtBurden * 0.3)),
-                MIN_OWED,
-                MAX_OWED
-        );
-        final int creditLength = proportional(
-                (jobStability * 0.5) + (savingsCushion * 0.5),
-                MIN_LENGTH,
-                MAX_LENGTH
-        );
-        final int productTypes = countProductTypes(totalDepositAmount, totalLoanAmount, hasCardSpend);
-        final int creditMix = clamp((int) Math.round(MAX_MIX * (productTypes / 3.0)), MIN_MIX, MAX_MIX);
-        final int newCredit = (totalLoanAmount > 0 || hasCardSpend) ? 85 : MAX_NEW_CREDIT;
-
-        return CreditScore.of(paymentHistory, amountsOwed, creditLength, creditMix, newCredit);
+        return proportional(1.0 - combinedBurden, MIN_OWED, MAX_OWED);
     }
 
-    // ── 유틸 ──
+    private int calcCreditLength(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
 
-    private int proportional(final double ratio, final int min, final int max) {
-        return clamp((int) Math.round(max * ratio), min, max);
-    }
+        final Optional<LocalDateTime> earliestActivity = earliestAccountOpenedAt(userId, inclusiveReference)
+                .or(() -> earliestPassSubscribedAt(userId, inclusiveReference))
+                .or(() -> earliestCardOpenedAt(userId, inclusiveReference))
+                .or(() -> earliestFinancialProductOpenedAt(userId, inclusiveReference));
 
-    private int clamp(final int value, final int min, final int max) {
-        return Math.max(min, Math.min(value, max));
-    }
-
-    private int getCardCount(final Long userId) {
-        try {
-            final UserAuthContext ctx = userAuthContextService.getContext(userId);
-            if (!ctx.hasSsafyUserKey()) {
-                return 0;
-            }
-            return creditCardClient.inquireSignUpCreditCardList(ctx.ssafyUserKey()).size();
-        } catch (final Exception e) {
-            log.debug("카드 보유 조회 실패", e);
-            return 0;
+        if (earliestActivity.isEmpty()) {
+            return NEUTRAL_LENGTH;
         }
+
+        final long days = Math.max(0L, ChronoUnit.DAYS.between(earliestActivity.get(), inclusiveReference));
+        final double ratio = Math.min((double) days / LENGTH_MAX_DAYS, 1.0);
+        return proportional(ratio, MIN_LENGTH, MAX_LENGTH);
+    }
+
+    private int calcCreditMix(
+            final Long userId,
+            final LocalDateTime referenceDateTime,
+            final int totalDepositAmount,
+            final int totalLoanAmount,
+            final boolean hasCardSignal
+    ) {
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        int productTypes = 0;
+
+        final boolean hasCashAccount = userAccountRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .anyMatch(account -> !account.getOpenedAt().isAfter(inclusiveReference));
+        if (hasCashAccount) {
+            productTypes++;
+        }
+
+        final boolean hasPass = passSubscriptionRepository.findAllByUserIdOrderBySubscribedAtAsc(userId).stream()
+                .anyMatch(subscription -> isPassActiveAt(subscription, inclusiveReference));
+        if (hasPass) {
+            productTypes++;
+        }
+
+        if (hasCardSignal) {
+            productTypes++;
+        }
+
+        final boolean hasSavingProducts = totalDepositAmount > 0
+                || userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .anyMatch(product -> !product.getOpenedAt().isAfter(inclusiveReference)
+                        && (product.getProductType() == FinancialProductType.SAVING_DEPOSIT
+                        || product.getProductType() == FinancialProductType.INVESTMENT));
+        if (hasSavingProducts) {
+            productTypes++;
+        }
+
+        final boolean hasLoanProducts = totalLoanAmount > 0
+                || userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .anyMatch(product -> !product.getOpenedAt().isAfter(inclusiveReference)
+                        && product.getProductType() == FinancialProductType.LOAN);
+        if (hasLoanProducts) {
+            productTypes++;
+        }
+
+        return proportional((double) productTypes / CREDIT_MIX_TYPE_COUNT, MIN_MIX, MAX_MIX);
+    }
+
+    private int calcNewCredit(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        final LocalDateTime sixMonthsAgo = inclusiveReference.minusDays(NEW_CREDIT_PERIOD_DAYS);
+
+        final long recentNewPassCount = passSubscriptionRepository.findAllByUserIdOrderBySubscribedAtAsc(userId).stream()
+                .map(PassSubscription::getSubscribedAt)
+                .filter(subscribedAt -> isWithinRange(subscribedAt, sixMonthsAgo, inclusiveReference))
+                .count();
+
+        final long recentNewCardCount = ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId).stream()
+                .map(OwnedCard::getOpenedAt)
+                .filter(openedAt -> isWithinRange(openedAt, sixMonthsAgo, inclusiveReference))
+                .count();
+
+        final long recentNewFinancialProductCount = userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .map(UserFinancialProduct::getOpenedAt)
+                .filter(openedAt -> isWithinRange(openedAt, sixMonthsAgo, inclusiveReference))
+                .count();
+
+        final long recentNewCreditCount = recentNewPassCount + recentNewCardCount + recentNewFinancialProductCount;
+        if (recentNewCreditCount <= 1) {
+            return MAX_NEW_CREDIT;
+        }
+
+        final double penalty = (recentNewCreditCount - 1) * 0.12;
+        final double ratio = Math.max(1.0 - penalty, 0.2);
+        return proportional(ratio, MIN_NEW_CREDIT, MAX_NEW_CREDIT);
+    }
+
+    private LocalDate currentMonthStart() {
+        return LocalDate.now(appClock).withDayOfMonth(1);
+    }
+
+    private CreditScore toCreditScore(final UserHomeCreditScoreSnapshot snapshot) {
+        return CreditScore.of(
+                snapshot.getPaymentHistory(),
+                snapshot.getAmountsOwed(),
+                snapshot.getCreditLength(),
+                snapshot.getCreditMix(),
+                snapshot.getNewCredit()
+        );
+    }
+
+    private LocalDateTime toInclusiveReference(final LocalDateTime referenceDateTime) {
+        if (referenceDateTime.toLocalTime().equals(LocalTime.MIN)) {
+            return referenceDateTime.minusNanos(1);
+        }
+        return referenceDateTime;
+    }
+
+    private boolean hasCreditHistory(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        final boolean hasPass = passSubscriptionRepository.findAllByUserIdOrderBySubscribedAtAsc(userId).stream()
+                .anyMatch(subscription -> subscription.getSubscribedAt() != null
+                        && !subscription.getSubscribedAt().isAfter(inclusiveReference));
+        if (hasPass) {
+            return true;
+        }
+        return getCardCount(userId, referenceDateTime) > 0;
+    }
+
+    private List<PassSubscription> relevantPassSubscriptions(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        final LocalDateTime windowStart = inclusiveReference.minusDays(BASE_PERIOD_DAYS);
+        return passSubscriptionRepository.findAllByUserIdOrderBySubscribedAtAsc(userId).stream()
+                .filter(subscription -> overlapsWindow(subscription, windowStart, inclusiveReference))
+                .toList();
+    }
+
+    private boolean overlapsWindow(
+            final PassSubscription subscription,
+            final LocalDateTime windowStart,
+            final LocalDateTime inclusiveReference
+    ) {
+        final LocalDateTime subscribedAt = subscription.getSubscribedAt();
+        if (subscribedAt == null || subscribedAt.isAfter(inclusiveReference)) {
+            return false;
+        }
+        final LocalDateTime canceledAt = subscription.getCanceledAt();
+        return canceledAt == null || canceledAt.isAfter(windowStart);
+    }
+
+    private boolean isPassActiveAt(
+            final PassSubscription subscription,
+            final LocalDateTime inclusiveReference
+    ) {
+        final LocalDateTime subscribedAt = subscription.getSubscribedAt();
+        if (subscribedAt == null || subscribedAt.isAfter(inclusiveReference)) {
+            return false;
+        }
+        final LocalDateTime canceledAt = subscription.getCanceledAt();
+        return canceledAt == null || canceledAt.isAfter(inclusiveReference);
+    }
+
+    private Optional<LocalDateTime> earliestAccountOpenedAt(
+            final Long userId,
+            final LocalDateTime inclusiveReference
+    ) {
+        return userAccountRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .map(UserAccount::getOpenedAt)
+                .filter(openedAt -> !openedAt.isAfter(inclusiveReference))
+                .min(Comparator.naturalOrder());
+    }
+
+    private Optional<LocalDateTime> earliestPassSubscribedAt(
+            final Long userId,
+            final LocalDateTime inclusiveReference
+    ) {
+        return passSubscriptionRepository.findAllByUserIdOrderBySubscribedAtAsc(userId).stream()
+                .map(PassSubscription::getSubscribedAt)
+                .filter(subscribedAt -> subscribedAt != null && !subscribedAt.isAfter(inclusiveReference))
+                .min(Comparator.naturalOrder());
+    }
+
+    private Optional<LocalDateTime> earliestCardOpenedAt(
+            final Long userId,
+            final LocalDateTime inclusiveReference
+    ) {
+        return ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId).stream()
+                .map(OwnedCard::getOpenedAt)
+                .filter(openedAt -> !openedAt.isAfter(inclusiveReference))
+                .min(Comparator.naturalOrder());
+    }
+
+    private Optional<LocalDateTime> earliestFinancialProductOpenedAt(
+            final Long userId,
+            final LocalDateTime inclusiveReference
+    ) {
+        return userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .map(UserFinancialProduct::getOpenedAt)
+                .filter(openedAt -> !openedAt.isAfter(inclusiveReference))
+                .min(Comparator.naturalOrder());
+    }
+
+    private Optional<LocalDateTime> parseTransactionDate(final String transactionDate) {
+        try {
+            return Optional.of(LocalDateTime.parse(transactionDate));
+        } catch (final RuntimeException exception) {
+            return Optional.empty();
+        }
+    }
+
+    private long transactionAmount(
+            final Long userId,
+            final String transactionType,
+            final LocalDateTime start,
+            final LocalDateTime end
+    ) {
+        return seedmoneyTransactionRepository.findByUserIdAndTransactionTypeAndCreatedAtBetween(
+                        userId,
+                        transactionType,
+                        start,
+                        end
+                ).stream()
+                .mapToLong(transaction -> Math.abs(transaction.getAmount().longValue()))
+                .sum();
+    }
+
+    private int getCardCount(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
+        return (int) ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(userId).stream()
+                .filter(card -> !card.getOpenedAt().isAfter(inclusiveReference))
+                .count();
+    }
+
+    private boolean hasCardSignal(
+            final Long userId,
+            final LocalDateTime referenceDateTime
+    ) {
+        return hasCardSpendInput(userId) || getCardCount(userId, referenceDateTime) > 0;
+    }
+
+    private int resolveMainBalance(
+            final Long userId,
+            final UserAssetProfile profile
+    ) {
+        return userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
+                .map(UserAccount::getBalanceSnapshot)
+                .orElse(profile.getMainAccountBalanceAmount());
+    }
+
+    private int resolveSeedmoneyBalance(final Long userId) {
+        return userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
+                .map(UserAccount::getBalanceSnapshot)
+                .orElse(0);
     }
 
     private double stabilityWeight(final JobType jobType) {
@@ -419,26 +700,36 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     }
 
     private double normalizeSavingsCushion(
-            final int depositAmount,
-            final int monthlyFixedExpenseAmount
+            final int reserveAmount,
+            final int monthlyExpenseAmount
     ) {
-        if (depositAmount <= 0) {
+        if (reserveAmount <= 0) {
             return 0.0;
         }
-        if (monthlyFixedExpenseAmount <= 0) {
+        if (monthlyExpenseAmount <= 0) {
             return 1.0;
         }
-        return clampRatio((double) depositAmount / (monthlyFixedExpenseAmount * 6.0));
+        return clampRatio((double) reserveAmount / (monthlyExpenseAmount * 6.0));
+    }
+
+    private double normalizeCashflowHealth(
+            final int monthlyIncomeAmount,
+            final int monthlyExpenseAmount
+    ) {
+        if (monthlyIncomeAmount <= 0) {
+            return 0.0;
+        }
+        return clampRatio((double) (monthlyIncomeAmount - monthlyExpenseAmount) / monthlyIncomeAmount);
     }
 
     private double normalizeCashflowBurden(
             final int monthlyIncomeAmount,
-            final int monthlyFixedExpenseAmount
+            final int monthlyExpenseAmount
     ) {
         if (monthlyIncomeAmount <= 0) {
-            return monthlyFixedExpenseAmount > 0 ? 1.0 : 0.0;
+            return monthlyExpenseAmount > 0 ? 1.0 : 0.0;
         }
-        return clampRatio((double) monthlyFixedExpenseAmount / monthlyIncomeAmount);
+        return clampRatio((double) monthlyExpenseAmount / monthlyIncomeAmount);
     }
 
     private double normalizeDebtBurden(
@@ -454,8 +745,25 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         return clampRatio((double) loanAmount / (monthlyIncomeAmount * 12.0));
     }
 
-    private double clampRatio(final double value) {
-        return Math.max(0.0, Math.min(value, 1.0));
+    private double normalizeAssetDebtBurden(
+            final int loanAmount,
+            final int totalAssetAmount
+    ) {
+        if (loanAmount <= 0) {
+            return 0.0;
+        }
+        if (totalAssetAmount <= 0) {
+            return 1.0;
+        }
+        return clampRatio((double) loanAmount / totalAssetAmount);
+    }
+
+    private boolean isWithinRange(
+            final LocalDateTime value,
+            final LocalDateTime start,
+            final LocalDateTime inclusiveEnd
+    ) {
+        return value != null && !value.isBefore(start) && !value.isAfter(inclusiveEnd);
     }
 
     private int totalDepositAmount(final Long userId) {
@@ -482,25 +790,27 @@ public class FicoCreditScoringService implements CreditScoreProvider {
                 .sum();
     }
 
-    private boolean hasCardSpend(final Long userId) {
+    private boolean hasCardSpendInput(final Long userId) {
         return !userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId).isEmpty();
     }
 
-    private int countProductTypes(
-            final int totalDepositAmount,
-            final int totalLoanAmount,
-            final boolean hasCardSpend
+    private int proportional(
+            final double ratio,
+            final int min,
+            final int max
     ) {
-        int productTypes = 0;
-        if (totalDepositAmount > 0) {
-            productTypes++;
-        }
-        if (totalLoanAmount > 0) {
-            productTypes++;
-        }
-        if (hasCardSpend) {
-            productTypes++;
-        }
-        return productTypes;
+        return clamp((int) Math.round(max * clampRatio(ratio)), min, max);
+    }
+
+    private int clamp(
+            final int value,
+            final int min,
+            final int max
+    ) {
+        return Math.max(min, Math.min(value, max));
+    }
+
+    private double clampRatio(final double value) {
+        return Math.max(0.0, Math.min(value, 1.0));
     }
 }

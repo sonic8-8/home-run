@@ -3,6 +3,7 @@ package io.ssafy.p.j14c103.homerun.api.service.user;
 import io.ssafy.p.j14c103.homerun.api.service.financial.request.UserFinancialInitializationServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialMockDataService;
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
+import io.ssafy.p.j14c103.homerun.api.service.home.credit.FicoCreditScoringService;
 import io.ssafy.p.j14c103.homerun.api.service.user.request.UserAssetLinkServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.SeedmoneyAccountProjectionService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
@@ -47,6 +48,7 @@ public class UserAssetLinkService {
     private final SsafyAccountProperties ssafyAccountProperties;
     private final UserFinancialMockDataService userFinancialMockDataService;
     private final UserFinancialSummaryService userFinancialSummaryService;
+    private final FicoCreditScoringService ficoCreditScoringService;
     private final SeedmoneyAccountProjectionService seedmoneyAccountProjectionService;
     private final UserAssetProfileRepository userAssetProfileRepository;
     private final UserAssetDepositRepository userAssetDepositRepository;
@@ -74,6 +76,7 @@ public class UserAssetLinkService {
             hasMainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN).isPresent();
             hasSeedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
                     .isPresent();
+            final boolean hasAssetProfile = userAssetProfileRepository.findById(userId).isPresent();
 
             log.info(
                     "사용자 자산 연동 현재 상태. userId={}, hasSsafyLink={}, hasMainAccount={}, hasSeedmoneyAccount={}",
@@ -110,6 +113,7 @@ public class UserAssetLinkService {
             saveUserAssetItems(userId, request);
             userFinancialMockDataService.createInitialData(userId, toFinancialInitializationRequest(request));
             userFinancialSummaryService.getSummary(userId);
+            ficoCreditScoringService.initializeOnboardingSnapshot(userId, !hasAssetProfile);
 
             final UserAssetLinkResponse response = UserAssetLinkResponse.of(
                     true,
