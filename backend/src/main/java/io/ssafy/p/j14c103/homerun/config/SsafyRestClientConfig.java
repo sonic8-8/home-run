@@ -34,12 +34,14 @@ public class SsafyRestClientConfig {
 
     @Bean
     public RestClient ssafyRestClient(
+            final RestClient.Builder restClientBuilder,
             final SsafyApiProperties properties,
             @Qualifier("ssafyClientHttpRequestFactory")
             final ClientHttpRequestFactory ssafyClientHttpRequestFactory) {
-        return RestClient.builder()
+        return restClientBuilder.clone()
                 .baseUrl(properties.getBaseUrl())
                 .requestFactory(ssafyClientHttpRequestFactory)
+                .observationConvention(new HomerunClientObservationConvention("ssafy"))
                 .build();
     }
 }

@@ -30,9 +30,10 @@ public class FssRestClientConfig {
         final FssApiProperties fssApiProperties,
         @Qualifier("fssClientHttpRequestFactory") final ClientHttpRequestFactory fssClientHttpRequestFactory
     ) {
-        return restClientBuilder
+        return restClientBuilder.clone()
             .baseUrl(fssApiProperties.getBaseUrl())
             .requestFactory(fssClientHttpRequestFactory)
+            .observationConvention(new HomerunClientObservationConvention("fss"))
             .build();
     }
 }
