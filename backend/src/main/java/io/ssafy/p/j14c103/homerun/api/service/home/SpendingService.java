@@ -9,6 +9,8 @@ import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepositor
 import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,8 @@ public class SpendingService {
     private final CardTransactionRepository cardTransactionRepository;
     private final UserAccountTransactionRepository userAccountTransactionRepository;
     private final UserSsafyAccountSyncService userSsafyAccountSyncService;
+    private final UserAssetProfileRepository userAssetProfileRepository;
+    private final UserAssetCardSpendRepository userAssetCardSpendRepository;
 
     public SpendingResponse getSpending(final Long userId, final String month) {
         if (userId == null) {
@@ -41,6 +45,11 @@ public class SpendingService {
         final String resolvedMonth = targetMonth.format(MONTH_FORMATTER);
         final LocalDate startDate = targetMonth.withDayOfMonth(1);
         final LocalDate endDate = targetMonth.withDayOfMonth(targetMonth.lengthOfMonth());
+
+        final var profile = userAssetProfileRepository.findById(userId);
+        if (profile.isPresent()) {
+            return createProfileBasedResponse(userId, resolvedMonth, profile.get().getMonthlyFixedExpenseAmount());
+        }
 
         final Map<SpendingCategory, Money> categoryMap = new EnumMap<>(SpendingCategory.class);
 
@@ -55,6 +64,32 @@ public class SpendingService {
         final Money totalExpense = categoryMap.values().stream()
                 .reduce(Money.zero(), Money::add);
 
+        final List<SpendingCategoryDetail> details = categoryMap.entrySet().stream()
+                .sorted((a, b) -> b.getValue().getAmount().compareTo(a.getValue().getAmount()))
+                .map(entry -> SpendingCategoryDetail.of(entry.getKey(), entry.getValue(), totalExpense))
+                .collect(Collectors.toList());
+
+        return SpendingResponse.of(resolvedMonth, totalExpense, details);
+    }
+
+    private SpendingResponse createProfileBasedResponse(
+            final Long userId,
+            final String resolvedMonth,
+            final int monthlyFixedExpenseAmount
+    ) {
+        final Map<SpendingCategory, Money> categoryMap = new EnumMap<>(SpendingCategory.class);
+        if (monthlyFixedExpenseAmount > 0) {
+            categoryMap.put(SpendingCategory.FIXED_EXPENSE, Money.of(monthlyFixedExpenseAmount));
+        }
+        userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId)
+                .forEach(item -> categoryMap.merge(item.getCategory(), Money.of(item.getAmount()), Money::add));
+
+        if (categoryMap.isEmpty()) {
+            return SpendingResponse.of(resolvedMonth, Money.zero(), List.of());
+        }
+
+        final Money totalExpense = categoryMap.values().stream()
+                .reduce(Money.zero(), Money::add);
         final List<SpendingCategoryDetail> details = categoryMap.entrySet().stream()
                 .sorted((a, b) -> b.getValue().getAmount().compareTo(a.getValue().getAmount()))
                 .map(entry -> SpendingCategoryDetail.of(entry.getKey(), entry.getValue(), totalExpense))

@@ -1,16 +1,19 @@
 package io.ssafy.p.j14c103.homerun.api.controller.user;
 
+import io.ssafy.p.j14c103.homerun.api.controller.user.request.UserAssetLinkRequest;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAssetLinkService;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserMeService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserMeResponse;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,13 +36,14 @@ public class UserController {
 
     @PostMapping("/me/asset-link")
     public ApiResponse<UserAssetLinkResponse> linkAssets(
-            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
+            @Valid @RequestBody final UserAssetLinkRequest request
     ) {
         final Long userId = authenticatedUser != null ? authenticatedUser.getUserId() : null;
         log.info("내 자산 연동 API 호출. userId={}", userId);
 
         try {
-            final UserAssetLinkResponse response = userAssetLinkService.linkAssets(userId);
+            final UserAssetLinkResponse response = userAssetLinkService.linkAssets(userId, request.toServiceRequest());
             log.info(
                     "내 자산 연동 API 응답. userId={}, isAssetLinked={}, mainAccountCreated={}, seedmoneyAccountCreated={}, summaryInitialized={}",
                     userId,

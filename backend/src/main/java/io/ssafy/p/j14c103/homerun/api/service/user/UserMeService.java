@@ -36,23 +36,22 @@ public class UserMeService {
             userSsafyAccountSyncService.syncLinkedAccounts(userId);
         }
 
-        final Integer totalAssetAmount = resolveTotalAssetAmount(userId, isAssetLinked);
+        final UserFinancialSummary summary = resolveSummary(userId, isAssetLinked);
 
         return UserMeResponse.of(
                 user.getId(),
                 user.getEmail().getValue(),
                 user.getName(),
                 isAssetLinked,
-                totalAssetAmount
+                summary != null ? summary.getTotalAssetAmount() : null,
+                summary != null ? summary.getNetAssetAmount() : null
         );
     }
 
-    private Integer resolveTotalAssetAmount(final Long userId, final boolean isAssetLinked) {
+    private UserFinancialSummary resolveSummary(final Long userId, final boolean isAssetLinked) {
         if (!isAssetLinked) {
             return null;
         }
-
-        final UserFinancialSummary summary = userFinancialSummaryService.getSummary(userId);
-        return summary.getTotalAssetAmount();
+        return userFinancialSummaryService.getSummary(userId);
     }
 }

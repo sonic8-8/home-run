@@ -7,6 +7,7 @@ import io.ssafy.p.j14c103.homerun.api.service.auth.request.SignupServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummaryRepository;
+import io.ssafy.p.j14c103.homerun.domain.paymenthistory.MemberPaymentHistoryRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.AuthProvider;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
@@ -38,10 +39,14 @@ class SignupServiceTest {
     private UserFinancialSummaryRepository userFinancialSummaryRepository;
 
     @Autowired
+    private MemberPaymentHistoryRepository memberPaymentHistoryRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @AfterEach
     void tearDown() {
+        memberPaymentHistoryRepository.deleteAllInBatch();
         userFinancialSummaryRepository.deleteAllInBatch();
         userAccountRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
@@ -55,6 +60,7 @@ class SignupServiceTest {
                 .name("홍길동")
                 .email("user@example.com")
                 .password("Password123!")
+                .paymentTypes(java.util.List.of("LIVING", "TRANSPORT", "TELECOM"))
                 .build();
 
         // when
@@ -70,9 +76,11 @@ class SignupServiceTest {
         assertThat(savedUser.getName()).isEqualTo("홍길동");
         assertThat(savedUser.getAuthProvider()).isEqualTo(AuthProvider.EMAIL);
         assertThat(savedUser.hasSsafyLink()).isFalse();
+        assertThat(savedUser.getPaymentType()).isEqualTo("LIVING,TRANSPORT,TELECOM");
         assertThat(passwordEncoder.matches("Password123!", savedUser.getPasswordHash())).isTrue();
         assertThat(userAccountRepository.findByUserId(savedUser.getId())).isEmpty();
         assertThat(userFinancialSummaryRepository.findById(savedUser.getId())).isEmpty();
+        assertThat(memberPaymentHistoryRepository.findAll()).isEmpty();
     }
 
     @DisplayName("이미 가입된 이메일이면 예외가 발생한다.")
@@ -88,6 +96,7 @@ class SignupServiceTest {
                 .name("홍길동")
                 .email("user@example.com")
                 .password("Password123!")
+                .paymentTypes(java.util.List.of("LIVING"))
                 .build();
 
         // when & then

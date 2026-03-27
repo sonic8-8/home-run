@@ -12,6 +12,10 @@ import io.ssafy.p.j14c103.homerun.domain.card.CardTransaction;
 import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.card.OwnedCard;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpend;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +43,12 @@ class SpendingServiceTest {
     @Mock
     private UserSsafyAccountSyncService userSsafyAccountSyncService;
 
+    @Mock
+    private UserAssetProfileRepository userAssetProfileRepository;
+
+    @Mock
+    private UserAssetCardSpendRepository userAssetCardSpendRepository;
+
     @InjectMocks
     private SpendingService spendingService;
 
@@ -47,6 +57,7 @@ class SpendingServiceTest {
   void getSpending_cardCategories() {
     // given
     final Long userId = 1L;
+    given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.empty());
     given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
             userId,
             LocalDate.of(2026, 3, 1),
@@ -80,6 +91,7 @@ class SpendingServiceTest {
   void getSpending_transferFromDeposit() {
     // given
     final Long userId = 1L;
+    given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.empty());
     given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
             userId,
             LocalDate.of(2026, 3, 1),
@@ -133,6 +145,7 @@ class SpendingServiceTest {
   void getSpending_combined() {
     // given
     final Long userId = 1L;
+    given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.empty());
     given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
             userId,
             LocalDate.of(2026, 3, 1),
@@ -177,6 +190,7 @@ class SpendingServiceTest {
   void getSpending_nullMonth_currentMonth() {
     // given
     final Long userId = 1L;
+    given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.empty());
     given(cardTransactionRepository.findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(
             org.mockito.ArgumentMatchers.eq(userId),
             org.mockito.ArgumentMatchers.any(),
@@ -194,6 +208,32 @@ class SpendingServiceTest {
     // then
     assertThat(response.getTotalExpense()).isEqualTo(Money.zero());
     assertThat(response.getCategories()).isEmpty();
+  }
+
+  @DisplayName("온보딩 프로필이 있으면 고정지출과 카드 지출 입력으로 카테고리를 구성한다")
+  @Test
+  void getSpending_profileBased() {
+    final Long userId = 1L;
+    given(userAssetProfileRepository.findById(userId)).willReturn(java.util.Optional.of(
+            io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile.create(
+                    userId,
+                    3_000_000,
+                    25,
+                    4_000_000,
+                    1_500_000,
+                    io.ssafy.p.j14c103.homerun.domain.character.career.JobType.LARGE_BIZ
+            )
+    ));
+    given(userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId)).willReturn(List.of(
+            UserAssetCardSpend.create(userId, SpendingCategory.LIVING, 200_000),
+            UserAssetCardSpend.create(userId, SpendingCategory.TRANSPORT, 100_000)
+    ));
+
+    final SpendingResponse response = spendingService.getSpending(userId, "202603");
+
+    assertThat(response.getTotalExpense()).isEqualTo(Money.of(1_800_000L));
+    assertThat(response.getCategories()).hasSize(3);
+    assertThat(response.getCategories().get(0).getCategoryName()).isEqualTo("고정지출");
   }
 
   private CardTransaction sampleCardTransaction(
