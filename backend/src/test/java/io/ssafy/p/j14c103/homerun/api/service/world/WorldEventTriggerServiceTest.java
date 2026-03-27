@@ -16,6 +16,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoice;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventCondition;
@@ -175,6 +177,71 @@ class WorldEventTriggerServiceTest {
             .contains("EVT-OVERTIME-001");
     }
 
+    @DisplayName("피로와 스트레스가 모두 80 이상이면 번아웃 이벤트 후보를 계산한다")
+    @Test
+    void calculateEventCandidatesForBurnout() {
+        // given
+        worldContentSeedService.seed();
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(CyclePhase.BOOM));
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 70, 85, 82, 40, 50, 6));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 6));
+
+        // when
+        final List<GameWorldResult.EventCandidate> candidates = worldEventTriggerService
+            .calculateEventCandidates(gameSession.getGameSessionId(), Map.of());
+
+        // then
+        assertThat(candidates)
+            .extracting(GameWorldResult.EventCandidate::getEventCode)
+            .contains("EVT-STATUS-001");
+    }
+
+    @DisplayName("체력이 10 이상 29 이하면 입원 이벤트 후보를 계산한다")
+    @Test
+    void calculateEventCandidatesForHospitalization() {
+        // given
+        worldContentSeedService.seed();
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(CyclePhase.RECOVERY));
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 25, 30, 20, 40, 50, 6));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 6));
+
+        // when
+        final List<GameWorldResult.EventCandidate> candidates = worldEventTriggerService
+            .calculateEventCandidates(gameSession.getGameSessionId(), Map.of());
+
+        // then
+        assertThat(candidates)
+            .extracting(GameWorldResult.EventCandidate::getEventCode)
+            .contains("EVT-STATUS-002");
+    }
+
+    @DisplayName("긴축 cycle type에서는 금리 변동과 부동산 규제 이벤트 후보를 계산한다")
+    @Test
+    void calculateEventCandidatesForRateHikeEvents() {
+        // given
+        worldContentSeedService.seed();
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(CycleState.of(CyclePhase.RECOVERY, CycleType.CYCLE_RATE_HIKE, 12))
+        );
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 70, 20, 20, 50, 55, 6));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 6));
+
+        // when
+        final List<GameWorldResult.EventCandidate> candidates = worldEventTriggerService
+            .calculateEventCandidates(
+                gameSession.getGameSessionId(),
+                Map.of(
+                    "EVT-REG-001", new BigDecimal("0.1000"),
+                    "EVT-RATE-001", new BigDecimal("0.0500")
+                )
+            );
+
+        // then
+        assertThat(candidates)
+            .extracting(GameWorldResult.EventCandidate::getEventCode)
+            .contains("EVT-REG-001", "EVT-RATE-001");
+    }
+
     @DisplayName("지원하지 않는 비교 연산자가 있으면 서버 설정 오류로 실패한다")
     @Test
     void calculateEventCandidatesWithUnsupportedOperator() {
@@ -217,7 +284,7 @@ class WorldEventTriggerServiceTest {
                 "COLUMN_COMPARISON",
                 "game_stats",
                 "knowledge",
-                "LTE",
+                "LT",
                 null,
                 new BigDecimal("80"),
                 null,
@@ -257,6 +324,35 @@ class WorldEventTriggerServiceTest {
             Money.of(2_000_000L),
             Money.of(2_000_000L),
             cyclePhase
+        );
+        return gameSession;
+    }
+
+    private GameSession createGameSession(final CycleState cycleState) {
+        final GameSession gameSession = GameSession.create(
+            1L,
+            1,
+            "윤서",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "SEOUL",
+            "GANGNAM",
+            101L,
+            DataSourceType.PROFILE
+        );
+        gameSession.initializeCapital(
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            LocalDate.of(2026, 1, 1),
+            cycleState
+        );
+        gameSession.advanceTurn(
+            12,
+            LocalDate.of(2026, 1, 1),
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            cycleState
         );
         return gameSession;
     }

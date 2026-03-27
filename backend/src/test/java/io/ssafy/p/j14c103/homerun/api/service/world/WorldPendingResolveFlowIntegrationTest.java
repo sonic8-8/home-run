@@ -257,6 +257,47 @@ class WorldPendingResolveFlowIntegrationTest {
             );
     }
 
+    @DisplayName("번아웃 이벤트는 queue 이후 LETTER 타입 pending으로 조회되고 choice 없이 resolve 된다")
+    @Test
+    void pendingResolveFlowForBurnoutEvent() {
+        // given
+        worldContentSeedService.seed();
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(16, CyclePhase.BOOM));
+        final Long sessionId = gameSession.getGameSessionId();
+        final Integer gameId = sessionId.intValue();
+        gameStatRepository.saveAndFlush(GameStat.create(gameId, 70, 85, 82, 40, 50, 16));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameId, 8));
+
+        final List<GameWorldResult.EventCandidate> eventCandidates = worldEventTriggerService.calculateEventCandidates(
+            sessionId,
+            Map.of(
+                "EVT-VOICE-001", new BigDecimal("0.9000"),
+                "EVT-FAMILY-001", new BigDecimal("0.9000"),
+                "EVT-OVERTIME-001", new BigDecimal("0.9000")
+            )
+        );
+        worldPendingEventQueueService.enqueuePendingEvents(sessionId, eventCandidates);
+
+        // when
+        final PendingEventsProviderResponse pendingEvents = worldPendingEventProviderService.getPendingEvents(sessionId);
+        final PendingEventsProviderResponse.PendingEventItem burnoutEvent = findEventByTitle(pendingEvents, "번아웃");
+        final EventResolveExecutionResult resolveResult = worldEventResolveExecutionService.resolveEvent(
+            sessionId,
+            burnoutEvent.getEventId(),
+            null
+        );
+
+        // then
+        assertThat(eventCandidates)
+            .extracting(GameWorldResult.EventCandidate::getEventCode)
+            .contains("EVT-STATUS-001");
+        assertThat(burnoutEvent.getType()).isEqualTo(EventPresentationType.LETTER);
+        assertThat(burnoutEvent.getChoices()).isNull();
+        assertThat(resolveResult.getSelectedChoiceCode()).isNull();
+        assertThat(resolveResult.getResultSummary()).contains("번아웃");
+        assertThat(gamePendingEventRepository.findById(burnoutEvent.getEventId()).orElseThrow().isResolvedYn()).isTrue();
+    }
+
     private PendingEventsProviderResponse.PendingEventItem findEventByTitle(
         final PendingEventsProviderResponse pendingEvents,
         final String title
