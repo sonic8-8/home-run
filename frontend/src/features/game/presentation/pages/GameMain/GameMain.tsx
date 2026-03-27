@@ -181,12 +181,6 @@ export function GameMain() {
                 >
                   이달의 뉴스
                 </button>
-                <button
-                  className={styles.menuButton}
-                  onClick={() => navigate(ROUTES.GAME_NEWS, { state: { sessionId } })}
-                >
-                  뉴스 전체 보기
-                </button>
               </div>
             </section>
 
