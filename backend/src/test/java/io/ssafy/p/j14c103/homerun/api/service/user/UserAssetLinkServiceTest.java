@@ -7,13 +7,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
-import io.ssafy.p.j14c103.homerun.api.service.account.MainAccountInitialBalanceService;
+import io.ssafy.p.j14c103.homerun.api.service.user.request.UserAssetLinkServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
 import io.ssafy.p.j14c103.homerun.client.kis.KisStockClient;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyMemberClient;
 import io.ssafy.p.j14c103.homerun.config.SsafyAccountProperties;
-import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
+import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
@@ -25,12 +25,22 @@ import io.ssafy.p.j14c103.homerun.domain.card.OwnedCardRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductTemplate;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductTemplateRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductType;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductSourceType;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialTransactionType;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProduct;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummaryRepository;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialTransaction;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserInvestmentHolding;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserInvestmentHoldingRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarket;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarketRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetDepositRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetLoanRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
@@ -54,9 +64,6 @@ import org.springframework.web.client.RestClientException;
 @SpringBootTest
 @ActiveProfiles("test")
 class UserAssetLinkServiceTest {
-
-    private static final int MIN_MAIN_INITIAL_BALANCE = 3_000_000;
-    private static final int MAX_MAIN_INITIAL_BALANCE = 10_000_000;
 
     @Autowired
     private UserAssetLinkService userAssetLinkService;
@@ -86,6 +93,21 @@ class UserAssetLinkServiceTest {
     private UserFinancialSummaryRepository userFinancialSummaryRepository;
 
     @Autowired
+    private UserAssetProfileRepository userAssetProfileRepository;
+
+    @Autowired
+    private UserAssetDepositRepository userAssetDepositRepository;
+
+    @Autowired
+    private UserAssetLoanRepository userAssetLoanRepository;
+
+    @Autowired
+    private UserAssetOtherIncomeRepository userAssetOtherIncomeRepository;
+
+    @Autowired
+    private UserAssetCardSpendRepository userAssetCardSpendRepository;
+
+    @Autowired
     private StockMarketRepository stockMarketRepository;
 
     @Autowired
@@ -99,9 +121,6 @@ class UserAssetLinkServiceTest {
 
     @Autowired
     private SsafyAccountProperties ssafyAccountProperties;
-
-    @Autowired
-    private MainAccountInitialBalanceService mainAccountInitialBalanceService;
 
     @MockitoBean
     private SsafyMemberClient ssafyMemberClient;
@@ -127,6 +146,11 @@ class UserAssetLinkServiceTest {
         userFinancialTransactionRepository.deleteAllInBatch();
         userFinancialProductRepository.deleteAllInBatch();
         userFinancialSummaryRepository.deleteAllInBatch();
+        userAssetCardSpendRepository.deleteAllInBatch();
+        userAssetOtherIncomeRepository.deleteAllInBatch();
+        userAssetLoanRepository.deleteAllInBatch();
+        userAssetDepositRepository.deleteAllInBatch();
+        userAssetProfileRepository.deleteAllInBatch();
         financialProductTemplateRepository.deleteAllInBatch();
         stockMarketRepository.deleteAllInBatch();
         userAccountTransactionRepository.deleteAllInBatch();
@@ -134,15 +158,12 @@ class UserAssetLinkServiceTest {
         userRepository.deleteAllInBatch();
     }
 
-    @DisplayName("첫 자산 연동에 성공하면 계좌와 금융 mock 데이터를 초기화한다.")
+    @DisplayName("첫 자산 연동에 성공하면 계좌와 온보딩 입력 기반 금융 데이터를 초기화한다.")
     @Test
     void linkAssets() {
         // given
-        saveFinancialProductTemplates();
-        saveStockMarkets();
-        saveCardProducts();
-        stubCurrentPrices();
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         given(ssafyMemberClient.createMember("user@example.com"))
                 .willReturn(Map.of("userKey", "test-user-key"));
         given(ssafyDemandDepositClient.createDemandDepositAccount("test-user-key", "test-account-type"))
@@ -152,7 +173,7 @@ class UserAssetLinkServiceTest {
                 .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
 
         // when
-        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
 
         // then
         final User savedUser = userRepository.findById(user.getId()).orElseThrow();
@@ -166,41 +187,63 @@ class UserAssetLinkServiceTest {
                 .orElseThrow();
         final UserAccount seedmoneyAccount = userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.SEEDMONEY)
                 .orElseThrow();
-        assertThat(mainAccount.getBalanceSnapshot()).isBetween(MIN_MAIN_INITIAL_BALANCE, MAX_MAIN_INITIAL_BALANCE);
-        assertThat(mainAccount.getBalanceSnapshot() % 10_000).isZero();
-        assertThat(mainAccount.getBalanceSnapshot())
-                .isEqualTo(mainAccountInitialBalanceService.generateInitialBalance(user.getId()));
-        assertThat(mainAccount.getMainInitialHistorySeeded()).isTrue();
+        assertThat(mainAccount.getBalanceSnapshot()).isEqualTo(request.getMainAccountBalanceAmount());
         assertThat(seedmoneyAccount.getBalanceSnapshot()).isZero();
         final ArgumentCaptor<Long> depositAmountCaptor = ArgumentCaptor.forClass(Long.class);
         then(ssafyDemandDepositClient).should()
                 .depositAccount(eq("test-user-key"), eq("0011111111111111"), depositAmountCaptor.capture());
-        assertThat(depositAmountCaptor.getValue()).isEqualTo((long) mainAccount.getBalanceSnapshot());
-        assertThat(userAccountTransactionRepository.findAll())
-                .isNotEmpty();
-        final int currentBalanceFromHistory = userAccountTransactionRepository.findAll().stream()
-                .filter(transaction -> transaction.getAccountType() == AccountType.MAIN)
-                .mapToInt(transaction -> transaction.getTransactionType() == AccountTransactionType.WITHDRAW
-                        ? -transaction.getAmount()
-                        : transaction.getAmount())
-                .sum();
-        assertThat(currentBalanceFromHistory).isEqualTo(mainAccount.getBalanceSnapshot());
-        assertThat(userAccountTransactionRepository.findAll())
-                .anySatisfy(transaction -> assertThat(transaction.getTransactionSummary()).isEqualTo("초기 자산 설정"));
-        assertThat(userFinancialProductRepository.findByUserIdAndActiveYnTrue(user.getId())).isNotEmpty();
-        assertThat(ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(user.getId())).isNotEmpty();
-        assertThat(userFinancialSummaryRepository.findById(user.getId())).isPresent();
+        assertThat(depositAmountCaptor.getValue()).isEqualTo((long) request.getMainAccountBalanceAmount());
+        assertThat(userAccountTransactionRepository.findAll()).isEmpty();
+        assertThat(userFinancialProductRepository.findByUserIdAndActiveYnTrue(user.getId()))
+                .extracting(
+                        product -> product.getProductType().name(),
+                        UserFinancialProduct::getProductName,
+                        UserFinancialProduct::getCurrentBalanceAmount,
+                        product -> product.getSourceType().name()
+                )
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("SAVING_DEPOSIT", "정기예금", 7_000_000, "ASSET_LINK"),
+                        org.assertj.core.groups.Tuple.tuple("SAVING_DEPOSIT", "청약저축", 1_500_000, "ASSET_LINK"),
+                        org.assertj.core.groups.Tuple.tuple("LOAN", "신용대출", 12_000_000, "ASSET_LINK"),
+                        org.assertj.core.groups.Tuple.tuple("LOAN", "학자금대출", 3_000_000, "ASSET_LINK")
+                );
+        assertThat(ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(user.getId())).isEmpty();
+        assertThat(userAssetDepositRepository.findAllByUserIdOrderByIdAsc(user.getId())).hasSize(2);
+        assertThat(userAssetLoanRepository.findAllByUserIdOrderByIdAsc(user.getId())).hasSize(2);
+        assertThat(userAssetOtherIncomeRepository.findAllByUserIdOrderByIdAsc(user.getId())).hasSize(2);
+        assertThat(userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(user.getId())).hasSize(2);
+        assertThat(userAssetProfileRepository.findById(user.getId())).isPresent()
+                .get()
+                .extracting(
+                        profile -> profile.getMainAccountBalanceAmount(),
+                        profile -> profile.getSalaryDayOfMonth(),
+                        profile -> profile.getMonthlySalaryAmount(),
+                        profile -> profile.getMonthlyFixedExpenseAmount(),
+                        profile -> profile.getJobType()
+                )
+                .containsExactly(
+                        request.getMainAccountBalanceAmount(),
+                        request.getSalaryDayOfMonth(),
+                        request.getMonthlySalaryAmount(),
+                        request.getMonthlyFixedExpenseAmount(),
+                        request.getJobType()
+                );
+        assertThat(userFinancialSummaryRepository.findById(user.getId())).isPresent()
+                .get()
+                .extracting(summary -> summary.getTotalAssetAmount(), summary -> summary.getTotalDebtAmount(), summary -> summary.getNetAssetAmount())
+                .containsExactly(
+                        11_500_000,
+                        15_000_000,
+                        -3_500_000
+                );
     }
 
     @DisplayName("SSAFY 회원 생성이 실패하면 회원 조회로 userKey를 확보한다.")
     @Test
     void linkAssetsWithMemberSearchFallback() {
         // given
-        saveFinancialProductTemplates();
-        saveStockMarkets();
-        saveCardProducts();
-        stubCurrentPrices();
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         given(ssafyMemberClient.createMember("user@example.com"))
                 .willThrow(new RestClientException("duplicate"));
         given(ssafyMemberClient.searchMember("user@example.com"))
@@ -212,25 +255,22 @@ class UserAssetLinkServiceTest {
                 .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
 
         // when
-        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
 
         // then
         assertThat(response.isAssetLinked()).isTrue();
         assertThat(userRepository.findById(user.getId()).orElseThrow().getSsafyUserKey()).isEqualTo("fallback-user-key");
         final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN)
                 .orElseThrow();
-        assertThat(mainAccount.getBalanceSnapshot()).isEqualTo(mainAccountInitialBalanceService.generateInitialBalance(user.getId()));
+        assertThat(mainAccount.getBalanceSnapshot()).isEqualTo(request.getMainAccountBalanceAmount());
     }
 
     @DisplayName("SSAFY 회원 생성 응답이 비어도 회원 조회로 userKey를 확보한다.")
     @Test
     void linkAssetsWithCreateMemberRuntimeExceptionFallback() {
         // given
-        saveFinancialProductTemplates();
-        saveStockMarkets();
-        saveCardProducts();
-        stubCurrentPrices();
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         given(ssafyMemberClient.createMember("user@example.com"))
                 .willThrow(new RuntimeException("SSAFY 회원 생성 응답이 없습니다."));
         given(ssafyMemberClient.searchMember("user@example.com"))
@@ -242,7 +282,7 @@ class UserAssetLinkServiceTest {
                 .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
 
         // when
-        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
 
         // then
         assertThat(response.isAssetLinked()).isTrue();
@@ -254,6 +294,7 @@ class UserAssetLinkServiceTest {
     void linkAssetsWithAlreadyLinkedUser() {
         // given
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         user.linkSsafy("existing-user-key", LocalDateTime.now());
         userRepository.saveAndFlush(user);
         userAccountRepository.save(UserAccount.create(
@@ -274,25 +315,168 @@ class UserAssetLinkServiceTest {
         ));
 
         // when
-        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
 
         // then
         assertThat(response.isAssetLinked()).isTrue();
         assertThat(response.isMainAccountCreated()).isFalse();
         assertThat(response.isSeedmoneyAccountCreated()).isFalse();
-        assertThat(response.isSummaryInitialized()).isFalse();
+        assertThat(response.isSummaryInitialized()).isTrue();
         assertThat(userAccountRepository.findByUserId(user.getId())).hasSize(2);
+        assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN))
+                .isPresent()
+                .get()
+                .extracting(UserAccount::getBalanceSnapshot)
+                .isEqualTo(request.getMainAccountBalanceAmount());
+    }
+
+    @DisplayName("재연동 시 자산 연동이 만든 금융상품만 교체하고 기존 시스템 상품은 유지한다.")
+    @Test
+    void linkAssetsReplacesOnlyAssetLinkManagedProducts() {
+        // given
+        final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
+        user.linkSsafy("existing-user-key", LocalDateTime.now());
+        userRepository.saveAndFlush(user);
+        userAccountRepository.save(UserAccount.create(
+                user.getId(),
+                AccountType.MAIN,
+                "001",
+                "한국은행",
+                "0011111111111111",
+                10_000_000
+        ));
+        userAccountRepository.save(UserAccount.create(
+                user.getId(),
+                AccountType.SEEDMONEY,
+                "001",
+                "한국은행",
+                "0012222222222222",
+                0
+        ));
+
+        final UserFinancialProduct systemSavingProduct = userFinancialProductRepository.saveAndFlush(UserFinancialProduct.create(
+                user.getId(),
+                FinancialProductType.SAVING_DEPOSIT,
+                "KB국민은행",
+                "기존 적금",
+                4_000_000,
+                LocalDateTime.now().minusMonths(6),
+                FinancialProductSourceType.SYSTEM
+        ));
+        final UserFinancialProduct systemInvestmentProduct = userFinancialProductRepository.saveAndFlush(UserFinancialProduct.create(
+                user.getId(),
+                FinancialProductType.INVESTMENT,
+                "한국투자증권",
+                "기존 투자",
+                1_200_000,
+                LocalDateTime.now().minusMonths(4),
+                FinancialProductSourceType.SYSTEM
+        ));
+        final UserFinancialProduct legacyAssetLinkProduct = userFinancialProductRepository.saveAndFlush(UserFinancialProduct.create(
+                user.getId(),
+                FinancialProductType.SAVING_DEPOSIT,
+                "사용자 입력",
+                "이전 예금",
+                800_000,
+                LocalDateTime.now().minusMonths(2)
+        ));
+        final UserFinancialProduct managedLoanProduct = userFinancialProductRepository.saveAndFlush(UserFinancialProduct.create(
+                user.getId(),
+                FinancialProductType.LOAN,
+                "사용자 입력",
+                "이전 대출",
+                2_000_000,
+                LocalDateTime.now().minusMonths(2),
+                FinancialProductSourceType.ASSET_LINK
+        ));
+        userFinancialTransactionRepository.saveAndFlush(UserFinancialTransaction.create(
+                user.getId(),
+                systemInvestmentProduct.getId(),
+                FinancialTransactionType.BUY,
+                300_000,
+                LocalDateTime.now().minusMonths(3)
+        ));
+        userFinancialTransactionRepository.saveAndFlush(UserFinancialTransaction.create(
+                user.getId(),
+                managedLoanProduct.getId(),
+                FinancialTransactionType.REPAYMENT,
+                50_000,
+                LocalDateTime.now().minusMonths(1)
+        ));
+        userInvestmentHoldingRepository.saveAndFlush(UserInvestmentHolding.create(
+                user.getId(),
+                systemInvestmentProduct.getId(),
+                "005930",
+                3,
+                80_000,
+                90_000,
+                LocalDateTime.now().minusDays(1)
+        ));
+
+        // when
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
+
+        // then
+        assertThat(response.isAssetLinked()).isTrue();
+        assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN))
+                .isPresent()
+                .get()
+                .extracting(UserAccount::getBalanceSnapshot)
+                .isEqualTo(request.getMainAccountBalanceAmount());
+        final java.util.List<UserFinancialProduct> products = userFinancialProductRepository.findByUserIdAndActiveYnTrue(user.getId());
+        assertThat(products).hasSize(6);
+        assertThat(products)
+                .filteredOn(product -> product.getProductName().equals("기존 적금"))
+                .singleElement()
+                .extracting(
+                        UserFinancialProduct::getInstitutionName,
+                        UserFinancialProduct::getProductType,
+                        UserFinancialProduct::getCurrentBalanceAmount,
+                        UserFinancialProduct::getSourceType
+                )
+                .containsExactly("KB국민은행", FinancialProductType.SAVING_DEPOSIT, 4_000_000, FinancialProductSourceType.SYSTEM);
+        assertThat(products)
+                .filteredOn(product -> product.getProductName().equals("기존 투자"))
+                .singleElement()
+                .extracting(
+                        UserFinancialProduct::getInstitutionName,
+                        UserFinancialProduct::getProductType,
+                        UserFinancialProduct::getSourceType
+                )
+                .containsExactly("한국투자증권", FinancialProductType.INVESTMENT, FinancialProductSourceType.SYSTEM);
+        assertThat(products)
+                .filteredOn(product -> product.getSourceType() == FinancialProductSourceType.ASSET_LINK)
+                .extracting(
+                        UserFinancialProduct::getProductName,
+                        UserFinancialProduct::getProductType,
+                        UserFinancialProduct::getCurrentBalanceAmount
+                )
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("정기예금", FinancialProductType.SAVING_DEPOSIT, 7_000_000),
+                        org.assertj.core.groups.Tuple.tuple("청약저축", FinancialProductType.SAVING_DEPOSIT, 1_500_000),
+                        org.assertj.core.groups.Tuple.tuple("신용대출", FinancialProductType.LOAN, 12_000_000),
+                        org.assertj.core.groups.Tuple.tuple("학자금대출", FinancialProductType.LOAN, 3_000_000)
+                );
+        assertThat(products)
+                .extracting(UserFinancialProduct::getProductName)
+                .doesNotContain("이전 예금", "이전 대출");
+        assertThat(userFinancialTransactionRepository.findAll())
+                .extracting(UserFinancialTransaction::getUserFinancialProductId)
+                .contains(systemInvestmentProduct.getId())
+                .doesNotContain(legacyAssetLinkProduct.getId(), managedLoanProduct.getId());
+        assertThat(userInvestmentHoldingRepository.findByUserFinancialProductIdAndActiveYnTrue(systemInvestmentProduct.getId()))
+                .hasSize(1);
+        assertThat(userInvestmentHoldingRepository.findByUserFinancialProductIdAndActiveYnTrue(managedLoanProduct.getId()))
+                .isEmpty();
     }
 
     @DisplayName("부분 연동 상태면 누락된 계좌만 복구한다.")
     @Test
     void linkAssetsWithPartialState() {
         // given
-        saveFinancialProductTemplates();
-        saveStockMarkets();
-        saveCardProducts();
-        stubCurrentPrices();
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         user.linkSsafy("existing-user-key", LocalDateTime.now());
         userRepository.saveAndFlush(user);
         userAccountRepository.save(UserAccount.create(
@@ -307,7 +491,7 @@ class UserAssetLinkServiceTest {
                 .willReturn(Map.of("accountNo", "0012222222222222"));
 
         // when
-        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
 
         // then
         assertThat(response.isAssetLinked()).isTrue();
@@ -322,6 +506,7 @@ class UserAssetLinkServiceTest {
     void linkAssetsWithMissingAccountTypeUniqueNo() {
         // given
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         ReflectionTestUtils.setField(
                 userAssetLinkService,
                 "ssafyAccountProperties",
@@ -329,7 +514,7 @@ class UserAssetLinkServiceTest {
         );
 
         // when & then
-        assertThatThrownBy(() -> userAssetLinkService.linkAssets(user.getId()))
+        assertThatThrownBy(() -> userAssetLinkService.linkAssets(user.getId(), request))
                 .isInstanceOf(HomerunException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
@@ -339,11 +524,8 @@ class UserAssetLinkServiceTest {
     @Test
     void linkAssetsWithMissingUserKey() {
         // given
-        saveFinancialProductTemplates();
-        saveStockMarkets();
-        saveCardProducts();
-        stubCurrentPrices();
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         given(ssafyMemberClient.createMember("user@example.com"))
                 .willReturn(Map.of("status", "success"));
         given(ssafyMemberClient.searchMember("user@example.com"))
@@ -355,7 +537,7 @@ class UserAssetLinkServiceTest {
                 .willReturn(Map.of("transactionUniqueNo", "59", "transactionDate", "20260326"));
 
         // when
-        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId());
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
 
         // then
         assertThat(response.isAssetLinked()).isTrue();
@@ -367,13 +549,14 @@ class UserAssetLinkServiceTest {
     void linkAssetsWithMissingUserKeyFromCreateAndSearch() {
         // given
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         given(ssafyMemberClient.createMember("user@example.com"))
                 .willReturn(Map.of("status", "success"));
         given(ssafyMemberClient.searchMember("user@example.com"))
                 .willReturn(Map.of("status", "success"));
 
         // when & then
-        assertThatThrownBy(() -> userAssetLinkService.linkAssets(user.getId()))
+        assertThatThrownBy(() -> userAssetLinkService.linkAssets(user.getId(), request))
                 .isInstanceOf(HomerunException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID);
@@ -384,16 +567,67 @@ class UserAssetLinkServiceTest {
     void linkAssetsWithMissingAccountNumber() {
         // given
         final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
         given(ssafyMemberClient.createMember("user@example.com"))
                 .willReturn(Map.of("userKey", "test-user-key"));
         given(ssafyDemandDepositClient.createDemandDepositAccount("test-user-key", "test-account-type"))
                 .willReturn(Map.of("status", "success"));
 
         // when & then
-        assertThatThrownBy(() -> userAssetLinkService.linkAssets(user.getId()))
+        assertThatThrownBy(() -> userAssetLinkService.linkAssets(user.getId(), request))
                 .isInstanceOf(HomerunException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID);
+    }
+
+    private UserAssetLinkServiceRequest assetLinkRequest() {
+        return UserAssetLinkServiceRequest.builder()
+                .mainAccountBalanceAmount(3_000_000)
+                .salaryDayOfMonth(25)
+                .monthlySalaryAmount(4_200_000)
+                .monthlyFixedExpenseAmount(1_800_000)
+                .jobType(JobType.LARGE_BIZ)
+                .depositItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("정기예금")
+                                .amount(7_000_000)
+                                .build(),
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("청약저축")
+                                .amount(1_500_000)
+                                .build()
+                ))
+                .loanItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("신용대출")
+                                .amount(12_000_000)
+                                .build(),
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("학자금대출")
+                                .amount(3_000_000)
+                                .build()
+                ))
+                .otherIncomeItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("부업")
+                                .amount(300_000)
+                                .build(),
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("임대수입")
+                                .amount(200_000)
+                                .build()
+                ))
+                .cardSpendItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.CardSpendItem.builder()
+                                .category(io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory.LIVING)
+                                .amount(250_000)
+                                .build(),
+                        UserAssetLinkServiceRequest.CardSpendItem.builder()
+                                .category(io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory.TRANSPORT)
+                                .amount(120_000)
+                                .build()
+                ))
+                .build();
     }
 
     private User saveUser(final String email) {

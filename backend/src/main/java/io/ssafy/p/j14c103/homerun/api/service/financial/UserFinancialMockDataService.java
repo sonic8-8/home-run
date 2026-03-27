@@ -2,6 +2,7 @@ package io.ssafy.p.j14c103.homerun.api.service.financial;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.ssafy.p.j14c103.homerun.api.service.financial.request.UserFinancialInitializationServiceRequest;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProduct;
 import io.ssafy.p.j14c103.homerun.domain.card.CardProductRepository;
 import io.ssafy.p.j14c103.homerun.domain.card.CardTransaction;
@@ -11,6 +12,7 @@ import io.ssafy.p.j14c103.homerun.domain.card.OwnedCardRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductTemplate;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductTemplateRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductType;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductSourceType;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialTransactionType;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProduct;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProductRepository;
@@ -82,6 +84,71 @@ public class UserFinancialMockDataService {
         userFinancialSummaryService.getSummary(userId);
     }
 
+    public void createInitialData(
+            final Long userId,
+            final UserFinancialInitializationServiceRequest request
+    ) {
+        if (userId == null) {
+            throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("자산 연동 요청은 필수입니다.");
+        }
+
+        resetFinancialProducts(userId);
+        createSavingProducts(userId, request);
+        createLoanProducts(userId, request);
+        userFinancialSummaryService.getSummary(userId);
+    }
+
+    private void resetFinancialProducts(final Long userId) {
+        final List<UserFinancialProduct> existingProducts = userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .filter(this::isAssetLinkManagedProduct)
+                .toList();
+        if (existingProducts.isEmpty()) {
+            return;
+        }
+
+        final List<Long> productIds = existingProducts.stream()
+                .map(UserFinancialProduct::getId)
+                .toList();
+        userInvestmentHoldingRepository.deleteAllByUserFinancialProductIdIn(productIds);
+        userFinancialTransactionRepository.deleteAllByUserFinancialProductIdIn(productIds);
+        userFinancialProductRepository.deleteAll(existingProducts);
+    }
+
+    private void createSavingProducts(
+            final Long userId,
+            final UserFinancialInitializationServiceRequest request
+    ) {
+        request.getDepositItems().stream()
+                .filter(item -> item.getAmount() > 0)
+                .forEach(item -> createSavingProduct(userId, item.getName(), item.getAmount()));
+    }
+
+    private void createLoanProducts(
+            final Long userId,
+            final UserFinancialInitializationServiceRequest request
+    ) {
+        request.getLoanItems().stream()
+                .filter(item -> item.getAmount() > 0)
+                .forEach(item -> createLoanProduct(userId, item.getName(), item.getAmount()));
+    }
+
+    private boolean isAssetLinkManagedProduct(final UserFinancialProduct product) {
+        if (product.getProductType() != FinancialProductType.SAVING_DEPOSIT
+                && product.getProductType() != FinancialProductType.LOAN) {
+            return false;
+        }
+        if ("사용자 입력".equals(product.getInstitutionName())) {
+            return true;
+        }
+        if (product.getSourceType() == FinancialProductSourceType.ASSET_LINK) {
+            return true;
+        }
+        return false;
+    }
+
     private void createSavingProduct(final Long userId) {
         final FinancialProductTemplate template = pickTemplate(userId, FinancialProductType.SAVING_DEPOSIT, 0);
         if (template == null) {
@@ -106,7 +173,8 @@ public class UserFinancialMockDataService {
                 template.getInstitutionName(),
                 template.getProductName(),
                 balance,
-                openedAt
+                openedAt,
+                FinancialProductSourceType.MOCK
         ));
 
         int index = 0;
@@ -156,7 +224,8 @@ public class UserFinancialMockDataService {
                 template.getInstitutionName(),
                 template.getProductName(),
                 currentBalance,
-                openedAt
+                openedAt,
+                FinancialProductSourceType.MOCK
         ));
 
         holdingSeeds.forEach(seed -> userInvestmentHoldingRepository.save(UserInvestmentHolding.create(
@@ -215,7 +284,8 @@ public class UserFinancialMockDataService {
                 template.getInstitutionName(),
                 template.getProductName(),
                 currentBalance,
-                openedAt
+                openedAt,
+                FinancialProductSourceType.MOCK
         ));
 
         int index = 0;
@@ -265,6 +335,120 @@ public class UserFinancialMockDataService {
                     LocalDate.now().minusMonths(month).withDayOfMonth(21).atStartOfDay()
             ));
         }
+    }
+
+    private void createLoanProduct(
+            final Long userId,
+            final int loanAmount
+    ) {
+        final FinancialProductTemplate template = pickTemplate(userId, FinancialProductType.LOAN, 2);
+        if (template == null || loanAmount <= 0) {
+            return;
+        }
+
+        final UserFinancialProduct product = userFinancialProductRepository.save(UserFinancialProduct.create(
+                userId,
+                FinancialProductType.LOAN,
+                template.getInstitutionName(),
+                template.getProductName(),
+                loanAmount,
+                LocalDate.now().minusMonths(1).withDayOfMonth(1).atStartOfDay(),
+                FinancialProductSourceType.MOCK
+        ));
+
+        final int repaymentAmount = Math.max(10_000, loanAmount / 60);
+        userFinancialTransactionRepository.save(UserFinancialTransaction.create(
+                userId,
+                product.getId(),
+                FinancialTransactionType.REPAYMENT,
+                repaymentAmount,
+                LocalDate.now().minusMonths(1).withDayOfMonth(21).atStartOfDay()
+        ));
+    }
+
+    private void createLoanProduct(
+            final Long userId,
+            final String loanName,
+            final int loanAmount
+    ) {
+        if (loanAmount <= 0) {
+            return;
+        }
+
+        final UserFinancialProduct product = userFinancialProductRepository.save(UserFinancialProduct.create(
+                userId,
+                FinancialProductType.LOAN,
+                "사용자 입력",
+                loanName,
+                loanAmount,
+                LocalDate.now().atStartOfDay(),
+                FinancialProductSourceType.ASSET_LINK
+        ));
+
+        final int repaymentAmount = Math.max(10_000, loanAmount / 60);
+        userFinancialTransactionRepository.save(UserFinancialTransaction.create(
+                userId,
+                product.getId(),
+                FinancialTransactionType.REPAYMENT,
+                repaymentAmount,
+                LocalDate.now().atStartOfDay()
+        ));
+    }
+
+    private void createSavingProduct(
+            final Long userId,
+            final int depositAmount
+    ) {
+        final FinancialProductTemplate template = pickTemplate(userId, FinancialProductType.SAVING_DEPOSIT, 0);
+        if (template == null || depositAmount <= 0) {
+            return;
+        }
+
+        final UserFinancialProduct product = userFinancialProductRepository.save(UserFinancialProduct.create(
+                userId,
+                FinancialProductType.SAVING_DEPOSIT,
+                template.getInstitutionName(),
+                template.getProductName(),
+                depositAmount,
+                LocalDate.now().minusMonths(1).withDayOfMonth(5).atStartOfDay(),
+                FinancialProductSourceType.MOCK
+        ));
+
+        userFinancialTransactionRepository.save(UserFinancialTransaction.create(
+                userId,
+                product.getId(),
+                FinancialTransactionType.DEPOSIT,
+                depositAmount,
+                LocalDate.now().minusMonths(1).withDayOfMonth(5).atStartOfDay()
+        ));
+    }
+
+    private void createSavingProduct(
+            final Long userId,
+            final String depositName,
+            final int depositAmount
+    ) {
+        if (depositAmount <= 0) {
+            return;
+        }
+
+        final UserFinancialProduct product = userFinancialProductRepository.save(UserFinancialProduct.create(
+                userId,
+                FinancialProductType.SAVING_DEPOSIT,
+                "사용자 입력",
+                depositName,
+                depositAmount,
+                LocalDate.now().atStartOfDay(),
+                FinancialProductSourceType.ASSET_LINK
+        ));
+
+        userFinancialTransactionRepository.save(UserFinancialTransaction.create(
+                userId,
+                product.getId(),
+                FinancialTransactionType.DEPOSIT,
+                depositAmount,
+                LocalDate.now().atStartOfDay()
+        ));
     }
 
     private boolean shouldCreateLoanProduct(final Long userId) {

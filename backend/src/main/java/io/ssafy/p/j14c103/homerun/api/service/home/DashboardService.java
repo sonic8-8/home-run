@@ -10,7 +10,12 @@ import io.ssafy.p.j14c103.homerun.domain.account.UserAccountTransactionRepositor
 import io.ssafy.p.j14c103.homerun.domain.card.CardTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummary;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import java.time.LocalDate;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +28,9 @@ public class DashboardService {
     private final CardTransactionRepository cardTransactionRepository;
     private final UserFinancialSummaryService userFinancialSummaryService;
     private final UserSsafyAccountSyncService userSsafyAccountSyncService;
+    private final UserAssetProfileRepository userAssetProfileRepository;
+    private final UserAssetOtherIncomeRepository userAssetOtherIncomeRepository;
+    private final UserAssetCardSpendRepository userAssetCardSpendRepository;
 
     public DashboardResponse getDashboard(final Long userId) {
         if (userId == null) {
@@ -31,12 +39,17 @@ public class DashboardService {
 
         userSsafyAccountSyncService.syncLinkedAccounts(userId);
         final UserFinancialSummary summary = userFinancialSummaryService.getSummary(userId);
+        final Optional<UserAssetProfile> assetProfile = userAssetProfileRepository.findById(userId);
         final Money totalAssets = Money.of(summary.getTotalAssetAmount().longValue());
-        final Money monthlyIncome = calculateMonthlyIncome(userId);
-        final Money monthlyExpense = calculateMonthlyExpense(userId);
+        final Money monthlyIncome = assetProfile
+                .map(profile -> Money.of(profile.getMonthlySalaryAmount() + getOtherIncomeAmount(userId)))
+                .orElseGet(() -> calculateMonthlyIncome(userId));
+        final Money monthlyExpense = assetProfile
+                .map(profile -> Money.of(profile.getMonthlyFixedExpenseAmount() + getCardSpendAmount(userId)))
+                .orElseGet(() -> calculateMonthlyExpense(userId));
         final Money incomeChange = Money.zero();
         final Money expenseChange = Money.zero();
-        final int nextPaydayDays = calculateNextPaydayDays();
+        final int nextPaydayDays = calculateNextPaydayDays(assetProfile.map(UserAssetProfile::getSalaryDayOfMonth).orElse(25));
         final Money mainAccountBalance = Money.of(findAccountBalance(userId, AccountType.MAIN));
         final Money seedmoneyBalance = Money.of(findAccountBalance(userId, AccountType.SEEDMONEY));
 
@@ -52,9 +65,8 @@ public class DashboardService {
         );
     }
 
-    private int calculateNextPaydayDays() {
+    private int calculateNextPaydayDays(final int payday) {
         final LocalDate today = LocalDate.now();
-        final int payday = 25;
         LocalDate nextPayday = today.withDayOfMonth(payday);
         if (!today.isBefore(nextPayday)) {
             nextPayday = nextPayday.plusMonths(1);
@@ -89,6 +101,18 @@ public class DashboardService {
                 .sum();
 
         return Money.of(accountExpense + cardExpense);
+    }
+
+    private int getOtherIncomeAmount(final Long userId) {
+        return userAssetOtherIncomeRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                .mapToInt(item -> item.getAmount().intValue())
+                .sum();
+    }
+
+    private int getCardSpendAmount(final Long userId) {
+        return userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                .mapToInt(item -> item.getAmount().intValue())
+                .sum();
     }
 
     private long findAccountBalance(final Long userId, final AccountType accountType) {

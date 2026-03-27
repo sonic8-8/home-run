@@ -1,11 +1,14 @@
 package io.ssafy.p.j14c103.homerun.api.controller.user;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.ssafy.p.j14c103.homerun.api.service.user.request.UserAssetLinkServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAssetLinkService;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserMeService;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -53,6 +57,7 @@ class UserControllerTest {
                 "user@example.com",
                 "홍길동",
                 false,
+                null,
                 null
         ));
 
@@ -62,14 +67,15 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.userId").value(1))
                 .andExpect(jsonPath("$.data.isAssetLinked").value(false))
-                .andExpect(jsonPath("$.data.totalAssetAmount").isEmpty());
+                .andExpect(jsonPath("$.data.totalAssetAmount").isEmpty())
+                .andExpect(jsonPath("$.data.netAssetAmount").isEmpty());
     }
 
     @DisplayName("자산 연동 실행은 ApiResponse로 감싼 연동 결과를 반환한다.")
     @Test
     void linkAssets() throws Exception {
         // given
-        given(userAssetLinkService.linkAssets(1L)).willReturn(UserAssetLinkResponse.of(
+        given(userAssetLinkService.linkAssets(eq(1L), any(UserAssetLinkServiceRequest.class))).willReturn(UserAssetLinkResponse.of(
                 true,
                 true,
                 true,
@@ -77,7 +83,31 @@ class UserControllerTest {
         ));
 
         // when & then
-        mockMvc.perform(post("/api/users/me/asset-link").with(currentUser()))
+        mockMvc.perform(post("/api/users/me/asset-link")
+                        .with(currentUser())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "mainAccountBalanceAmount": 3000000,
+                                  "salaryDayOfMonth": 25,
+                                  "monthlySalaryAmount": 4200000,
+                                  "monthlyFixedExpenseAmount": 1800000,
+                                  "depositItems": [
+                                    {"name": "정기예금", "amount": 7000000}
+                                  ],
+                                  "loanItems": [
+                                    {"name": "신용대출", "amount": 12000000}
+                                  ],
+                                  "otherIncomeItems": [
+                                    {"name": "부업", "amount": 300000}
+                                  ],
+                                  "cardSpendItems": [
+                                    {"category": "LIVING", "amount": 200000},
+                                    {"category": "TRANSPORT", "amount": 100000}
+                                  ],
+                                  "jobType": "LARGE_BIZ"
+                                }
+                                """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.data.isAssetLinked").value(true))

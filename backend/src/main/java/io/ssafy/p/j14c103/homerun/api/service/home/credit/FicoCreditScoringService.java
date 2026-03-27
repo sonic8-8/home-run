@@ -8,8 +8,15 @@ import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetDepositRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetLoanRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContext;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
+import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -79,10 +86,27 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     private final SeedmoneyTransactionRepository seedmoneyTransactionRepository;
     private final SsafyCreditCardClient creditCardClient;
     private final UserAuthContextService userAuthContextService;
+    private final UserAssetProfileRepository userAssetProfileRepository;
+    private final UserAssetDepositRepository userAssetDepositRepository;
+    private final UserAssetLoanRepository userAssetLoanRepository;
+    private final UserAssetOtherIncomeRepository userAssetOtherIncomeRepository;
+    private final UserAssetCardSpendRepository userAssetCardSpendRepository;
 
     @Override
     public CreditScore calculate(final Long userId) {
         final boolean hasCreditHistory = hasCreditHistory(userId);
+        final UserAssetProfile assetProfile = userAssetProfileRepository.findById(userId).orElse(null);
+
+        if (!hasCreditHistory && assetProfile != null) {
+            return calculateFromAssetProfile(
+                    assetProfile,
+                    totalDepositAmount(userId),
+                    totalLoanAmount(userId),
+                    totalOtherIncomeAmount(userId),
+                    totalCardSpendAmount(userId),
+                    hasCardSpend(userId)
+            );
+        }
 
         final int paymentHistory = calcPaymentHistory(userId, hasCreditHistory);
         final int amountsOwed = calcAmountsOwed(userId, hasCreditHistory);
@@ -311,6 +335,53 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         return clamp((int) Math.round(MAX_NEW_CREDIT * ratio), MIN_NEW_CREDIT, MAX_NEW_CREDIT);
     }
 
+    private CreditScore calculateFromAssetProfile(
+            final UserAssetProfile profile,
+            final int totalDepositAmount,
+            final int totalLoanAmount,
+            final int totalOtherIncomeAmount,
+            final int totalCardSpendAmount,
+            final boolean hasCardSpend
+    ) {
+        final int totalMonthlyIncomeAmount = profile.getMonthlySalaryAmount() + totalOtherIncomeAmount;
+        final int totalMonthlyExpenseAmount = profile.getMonthlyFixedExpenseAmount() + totalCardSpendAmount;
+        final int reserveAmount = profile.getMainAccountBalanceAmount() + totalDepositAmount;
+        final double jobStability = stabilityWeight(profile.getJobType());
+        final double savingsCushion = normalizeSavingsCushion(
+                reserveAmount,
+                totalMonthlyExpenseAmount
+        );
+        final double cashflowBurden = normalizeCashflowBurden(
+                totalMonthlyIncomeAmount,
+                totalMonthlyExpenseAmount
+        );
+        final double debtBurden = normalizeDebtBurden(
+                totalLoanAmount,
+                totalMonthlyIncomeAmount
+        );
+
+        final int paymentHistory = proportional(
+                (jobStability * 0.6) + (savingsCushion * 0.4),
+                MIN_PAYMENT,
+                MAX_PAYMENT
+        );
+        final int amountsOwed = proportional(
+                1.0 - clampRatio((cashflowBurden * 0.7) + (debtBurden * 0.3)),
+                MIN_OWED,
+                MAX_OWED
+        );
+        final int creditLength = proportional(
+                (jobStability * 0.5) + (savingsCushion * 0.5),
+                MIN_LENGTH,
+                MAX_LENGTH
+        );
+        final int productTypes = countProductTypes(totalDepositAmount, totalLoanAmount, hasCardSpend);
+        final int creditMix = clamp((int) Math.round(MAX_MIX * (productTypes / 3.0)), MIN_MIX, MAX_MIX);
+        final int newCredit = (totalLoanAmount > 0 || hasCardSpend) ? 85 : MAX_NEW_CREDIT;
+
+        return CreditScore.of(paymentHistory, amountsOwed, creditLength, creditMix, newCredit);
+    }
+
     // ── 유틸 ──
 
     private int proportional(final double ratio, final int min, final int max) {
@@ -332,5 +403,104 @@ public class FicoCreditScoringService implements CreditScoreProvider {
             log.debug("카드 보유 조회 실패", e);
             return 0;
         }
+    }
+
+    private double stabilityWeight(final JobType jobType) {
+        if (jobType == null) {
+            return 0.5;
+        }
+        return switch (jobType) {
+            case LARGE_BIZ -> 0.95;
+            case MID_BIZ -> 0.85;
+            case SMALL_BIZ -> 0.75;
+            case STARTUP -> 0.65;
+            case FREELANCER -> 0.55;
+        };
+    }
+
+    private double normalizeSavingsCushion(
+            final int depositAmount,
+            final int monthlyFixedExpenseAmount
+    ) {
+        if (depositAmount <= 0) {
+            return 0.0;
+        }
+        if (monthlyFixedExpenseAmount <= 0) {
+            return 1.0;
+        }
+        return clampRatio((double) depositAmount / (monthlyFixedExpenseAmount * 6.0));
+    }
+
+    private double normalizeCashflowBurden(
+            final int monthlyIncomeAmount,
+            final int monthlyFixedExpenseAmount
+    ) {
+        if (monthlyIncomeAmount <= 0) {
+            return monthlyFixedExpenseAmount > 0 ? 1.0 : 0.0;
+        }
+        return clampRatio((double) monthlyFixedExpenseAmount / monthlyIncomeAmount);
+    }
+
+    private double normalizeDebtBurden(
+            final int loanAmount,
+            final int monthlyIncomeAmount
+    ) {
+        if (loanAmount <= 0) {
+            return 0.0;
+        }
+        if (monthlyIncomeAmount <= 0) {
+            return 1.0;
+        }
+        return clampRatio((double) loanAmount / (monthlyIncomeAmount * 12.0));
+    }
+
+    private double clampRatio(final double value) {
+        return Math.max(0.0, Math.min(value, 1.0));
+    }
+
+    private int totalDepositAmount(final Long userId) {
+        return userAssetDepositRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                .mapToInt(item -> item.getAmount().intValue())
+                .sum();
+    }
+
+    private int totalLoanAmount(final Long userId) {
+        return userAssetLoanRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                .mapToInt(item -> item.getAmount().intValue())
+                .sum();
+    }
+
+    private int totalOtherIncomeAmount(final Long userId) {
+        return userAssetOtherIncomeRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                .mapToInt(item -> item.getAmount().intValue())
+                .sum();
+    }
+
+    private int totalCardSpendAmount(final Long userId) {
+        return userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                .mapToInt(item -> item.getAmount().intValue())
+                .sum();
+    }
+
+    private boolean hasCardSpend(final Long userId) {
+        return !userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId).isEmpty();
+    }
+
+    private int countProductTypes(
+            final int totalDepositAmount,
+            final int totalLoanAmount,
+            final boolean hasCardSpend
+    ) {
+        int productTypes = 0;
+        if (totalDepositAmount > 0) {
+            productTypes++;
+        }
+        if (totalLoanAmount > 0) {
+            productTypes++;
+        }
+        if (hasCardSpend) {
+            productTypes++;
+        }
+        return productTypes;
     }
 }
