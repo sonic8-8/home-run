@@ -6,7 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.PendingEventsProviderResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
@@ -49,6 +54,12 @@ class WorldPendingEventProviderServiceTest {
     private GameSessionRepository gameSessionRepository;
 
     @Autowired
+    private GameStatRepository gameStatRepository;
+
+    @Autowired
+    private GameCareerRepository gameCareerRepository;
+
+    @Autowired
     private GamePendingEventRepository gamePendingEventRepository;
 
     @Autowired
@@ -69,6 +80,8 @@ class WorldPendingEventProviderServiceTest {
     @AfterEach
     void tearDown() {
         gamePendingEventRepository.deleteAllInBatch();
+        gameCareerRepository.deleteAllInBatch();
+        gameStatRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
         eventEffectRepository.deleteAllInBatch();
         eventConditionRepository.deleteAllInBatch();
@@ -136,8 +149,11 @@ class WorldPendingEventProviderServiceTest {
         // given
         worldContentSeedService.seed();
         final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(15));
+        gameStatRepository.saveAndFlush(GameStat.create(gameSession.getGameSessionId().intValue(), 70, 10, 10, 50, 70, 15));
+        gameCareerRepository.saveAndFlush(createGameCareer(gameSession.getGameSessionId().intValue(), 15));
 
         final GameEvent voiceEvent = findEventByCode("EVT-VOICE-001");
+        final GameEvent burnoutEvent = findEventByCode("EVT-STATUS-001");
         final GameEvent overtimeEvent = findEventByCode("EVT-OVERTIME-001");
         final GameEvent jobEvent = findEventByCode("EVT-JOB-001");
 
@@ -145,6 +161,7 @@ class WorldPendingEventProviderServiceTest {
             gameSession.getGameSessionId(),
             List.of(
                 toEventCandidate(voiceEvent),
+                toEventCandidate(burnoutEvent),
                 toEventCandidate(overtimeEvent),
                 toEventCandidate(jobEvent)
             )
@@ -166,6 +183,7 @@ class WorldPendingEventProviderServiceTest {
         assertThat(phoneEvent.getDate()).isNull();
         assertThat(phoneEvent.getOfferedSalary()).isNull();
         assertThat(phoneEvent.getCurrentSalary()).isNull();
+        assertThat(phoneEvent.getChoices()).isNotNull();
 
         final PendingEventsProviderResponse.PendingEventItem choiceEvent = findEventByType(
             response,
@@ -175,14 +193,28 @@ class WorldPendingEventProviderServiceTest {
         assertThat(choiceEvent.getSender()).isNull();
         assertThat(choiceEvent.getReceiver()).isNull();
 
+        final PendingEventsProviderResponse.PendingEventItem letterEvent = findEventByType(
+            response,
+            EventPresentationType.LETTER
+        );
+        assertThat(letterEvent.getDescription()).isNotBlank();
+        assertThat(letterEvent.getChoices()).isNull();
+        assertThat(letterEvent.getSender()).isNull();
+        assertThat(letterEvent.getReceiver()).isNull();
+        assertThat(letterEvent.getDate()).isNull();
+        assertThat(letterEvent.getOfferedSalary()).isNull();
+        assertThat(letterEvent.getCurrentSalary()).isNull();
+
         final PendingEventsProviderResponse.PendingEventItem jobTransferEvent = findEventByType(
             response,
             EventPresentationType.JOB_TRANSFER
         );
         assertThat(jobTransferEvent.getSender()).isEqualTo("OO 기업 인사팀");
         assertThat(jobTransferEvent.getReceiver()).isEqualTo("김싸피 님");
-        assertThat(jobTransferEvent.getOfferedSalary()).isNull();
-        assertThat(jobTransferEvent.getCurrentSalary()).isNull();
+        assertThat(jobTransferEvent.getDate()).isEqualTo(LocalDate.of(2026, 1, 1));
+        assertThat(jobTransferEvent.getOfferedSalary()).isNotNull();
+        assertThat(jobTransferEvent.getCurrentSalary()).isEqualTo(31_000_000);
+        assertThat(jobTransferEvent.getChoices()).isNotNull();
     }
 
     @DisplayName("선택지는 choiceOrder 순서로 반환되고 resolve에 사용할 choiceId를 포함한다")
@@ -278,5 +310,24 @@ class WorldPendingEventProviderServiceTest {
             CyclePhase.BOOM
         );
         return gameSession;
+    }
+
+    private GameCareer createGameCareer(final int gameId, final int tenureTurns) {
+        return GameCareer.builder()
+            .gameId(gameId)
+            .jobType(JobType.STARTUP)
+            .jobTitle("사원")
+            .salary(31_000_000)
+            .tenureTurns(tenureTurns)
+            .recentStudyCount(0)
+            .recentNetworkingCount(0)
+            .negotiationPreparationScore(0)
+            .lastNegotiatedTurn(0)
+            .employmentStatus(EmploymentStatus.EMPLOYED)
+            .probationEndTurn(null)
+            .rehireAvailableTurn(null)
+            .remainingUnemploymentBenefitTurns(0)
+            .salaryBeforeResignation(null)
+            .build();
     }
 }

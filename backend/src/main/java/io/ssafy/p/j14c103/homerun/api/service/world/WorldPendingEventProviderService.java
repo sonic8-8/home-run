@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.api.service.world.response.PendingEventsProvid
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoice;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GamePendingEvent;
@@ -70,9 +71,9 @@ public class WorldPendingEventProviderService {
         final Map<Integer, List<PendingEventsProviderResponse.PendingEventChoiceItem>> eventChoices
     ) {
         final GameEvent gameEvent = requireGameEvent(gameEvents, pendingEvent.getGameEventId());
-        final List<PendingEventsProviderResponse.PendingEventChoiceItem> choices = eventChoices.getOrDefault(
-            gameEvent.getGameEventId(),
-            List.of()
+        final List<PendingEventsProviderResponse.PendingEventChoiceItem> choices = resolveChoices(
+            gameEvent,
+            eventChoices
         );
 
         return PendingEventsProviderResponse.PendingEventItem.of(
@@ -88,6 +89,18 @@ public class WorldPendingEventProviderService {
             resolveInteger(pendingEvent.getPayload(), OFFERED_SALARY),
             resolveInteger(pendingEvent.getPayload(), CURRENT_SALARY)
         );
+    }
+
+    private List<PendingEventsProviderResponse.PendingEventChoiceItem> resolveChoices(
+        final GameEvent gameEvent,
+        final Map<Integer, List<PendingEventsProviderResponse.PendingEventChoiceItem>> eventChoices
+    ) {
+        if (gameEvent.getEventPresentationType() == EventPresentationType.LETTER
+            || gameEvent.getEventPresentationType() == EventPresentationType.GIFT) {
+            return null;
+        }
+
+        return eventChoices.getOrDefault(gameEvent.getGameEventId(), List.of());
     }
 
     private Map<Integer, GameEvent> findGameEvents(final List<GamePendingEvent> pendingEvents) {
