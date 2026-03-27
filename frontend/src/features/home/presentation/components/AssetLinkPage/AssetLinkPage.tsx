@@ -44,19 +44,25 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
   const [jobType, setJobType] = useState<JobType | ''>('');
 
   // Step 2
-  const [depositItems, setDepositItems] = useState<{ balance: string }[]>([]);
-  const [loanItems, setLoanItems] = useState<{ balance: string }[]>([]);
-  const [otherIncomeItems, setOtherIncomeItems] = useState<{ amount: string }[]>([]);
+  const [depositItems, setDepositItems] = useState<{ name: string; amount: string }[]>([]);
+  const [loanItems, setLoanItems] = useState<{ name: string; amount: string }[]>([]);
+  const [otherIncomeItems, setOtherIncomeItems] = useState<{ name: string; amount: string }[]>([]);
 
   // Step 3
-  const [cardSpendItems, setCardSpendItems] = useState<{ category: CardSpendCategory; monthlyAmount: string }[]>([]);
+  const [cardSpendItems, setCardSpendItems] = useState<{ category: CardSpendCategory; amount: string }[]>([]);
+  const [paymentTypes, setPaymentTypes] = useState<CardSpendCategory[]>([]);
 
   const validateStep1 = () => {
     if (!mainBalance) return '주 계좌 잔액을 입력해 주세요.';
-    if (!salaryDay || Number(salaryDay) < 1 || Number(salaryDay) > 31) return '급여일을 1~31 사이로 입력해 주세요.';
+    if (!salaryDay || Number(salaryDay) < 1 || Number(salaryDay) > 28) return '급여일을 1~28 사이로 입력해 주세요.';
     if (!monthlySalary) return '월 급여를 입력해 주세요.';
     if (!monthlyFixed) return '월 고정지출을 입력해 주세요.';
     if (!jobType) return '직업 유형을 선택해 주세요.';
+    return null;
+  };
+
+  const validateStep3 = () => {
+    if (paymentTypes.length === 0) return '주요 결제 카테고리를 1개 이상 선택해 주세요.';
     return null;
   };
 
@@ -74,7 +80,17 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
     setStep((s) => s - 1);
   };
 
+  const togglePaymentType = (cat: CardSpendCategory) => {
+    setPaymentTypes((prev) => {
+      if (prev.includes(cat)) return prev.filter((c) => c !== cat);
+      if (prev.length >= 3) return prev;
+      return [...prev, cat];
+    });
+  };
+
   const handleSubmit = async () => {
+    const err = validateStep3();
+    if (err) { setError(err); return; }
     setLoading(true);
     setError(null);
     try {
@@ -84,10 +100,11 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
         monthlySalaryAmount: Number(formatNumber(monthlySalary)),
         monthlyFixedExpenseAmount: Number(formatNumber(monthlyFixed)),
         jobType: jobType as JobType,
-        depositItems: depositItems.map((d) => ({ balance: Number(formatNumber(d.balance)) })),
-        loanItems: loanItems.map((l) => ({ balance: Number(formatNumber(l.balance)) })),
-        otherIncomeItems: otherIncomeItems.map((o) => ({ amount: Number(formatNumber(o.amount)) })),
-        cardSpendItems: cardSpendItems.map((c) => ({ category: c.category, monthlyAmount: Number(formatNumber(c.monthlyAmount)) })),
+        depositItems: depositItems.map((d) => ({ name: d.name, amount: Number(formatNumber(d.amount)) })),
+        loanItems: loanItems.map((l) => ({ name: l.name, amount: Number(formatNumber(l.amount)) })),
+        otherIncomeItems: otherIncomeItems.map((o) => ({ name: o.name, amount: Number(formatNumber(o.amount)) })),
+        cardSpendItems: cardSpendItems.map((c) => ({ category: c.category, amount: Number(formatNumber(c.amount)) })),
+        paymentTypes,
       };
       await onLink(input);
     } catch {
@@ -131,8 +148,8 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                   className={styles.input}
                   type="number"
                   min={1}
-                  max={31}
-                  placeholder="1 ~ 31"
+                  max={28}
+                  placeholder="1 ~ 28"
                   value={salaryDay}
                   onChange={(e) => setSalaryDay(e.target.value)}
                 />
@@ -186,12 +203,23 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                     <input
                       className={styles.input}
                       type="text"
-                      inputMode="numeric"
-                      placeholder="잔액 (원)"
-                      value={item.balance}
+                      placeholder="이름 (예: 국민은행 적금)"
+                      value={item.name}
                       onChange={(e) => {
                         const next = [...depositItems];
-                        next[i] = { balance: formatNumber(e.target.value) };
+                        next[i] = { ...next[i], name: e.target.value };
+                        setDepositItems(next);
+                      }}
+                    />
+                    <input
+                      className={styles.input}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="잔액 (원)"
+                      value={item.amount}
+                      onChange={(e) => {
+                        const next = [...depositItems];
+                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
                         setDepositItems(next);
                       }}
                     />
@@ -202,7 +230,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                     >삭제</button>
                   </div>
                 ))}
-                <button type="button" className={styles.addBtn} onClick={() => setDepositItems([...depositItems, { balance: '' }])}>
+                <button type="button" className={styles.addBtn} onClick={() => setDepositItems([...depositItems, { name: '', amount: '' }])}>
                   + 예금 추가
                 </button>
               </div>
@@ -214,12 +242,23 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                     <input
                       className={styles.input}
                       type="text"
-                      inputMode="numeric"
-                      placeholder="잔액 (원)"
-                      value={item.balance}
+                      placeholder="이름 (예: 신한 전세대출)"
+                      value={item.name}
                       onChange={(e) => {
                         const next = [...loanItems];
-                        next[i] = { balance: formatNumber(e.target.value) };
+                        next[i] = { ...next[i], name: e.target.value };
+                        setLoanItems(next);
+                      }}
+                    />
+                    <input
+                      className={styles.input}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="잔액 (원)"
+                      value={item.amount}
+                      onChange={(e) => {
+                        const next = [...loanItems];
+                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
                         setLoanItems(next);
                       }}
                     />
@@ -230,7 +269,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                     >삭제</button>
                   </div>
                 ))}
-                <button type="button" className={styles.addBtn} onClick={() => setLoanItems([...loanItems, { balance: '' }])}>
+                <button type="button" className={styles.addBtn} onClick={() => setLoanItems([...loanItems, { name: '', amount: '' }])}>
                   + 대출 추가
                 </button>
               </div>
@@ -242,12 +281,23 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                     <input
                       className={styles.input}
                       type="text"
+                      placeholder="이름 (예: 유튜브 수익)"
+                      value={item.name}
+                      onChange={(e) => {
+                        const next = [...otherIncomeItems];
+                        next[i] = { ...next[i], name: e.target.value };
+                        setOtherIncomeItems(next);
+                      }}
+                    />
+                    <input
+                      className={styles.input}
+                      type="text"
                       inputMode="numeric"
                       placeholder="월 금액 (원)"
                       value={item.amount}
                       onChange={(e) => {
                         const next = [...otherIncomeItems];
-                        next[i] = { amount: formatNumber(e.target.value) };
+                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
                         setOtherIncomeItems(next);
                       }}
                     />
@@ -258,7 +308,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                     >삭제</button>
                   </div>
                 ))}
-                <button type="button" className={styles.addBtn} onClick={() => setOtherIncomeItems([...otherIncomeItems, { amount: '' }])}>
+                <button type="button" className={styles.addBtn} onClick={() => setOtherIncomeItems([...otherIncomeItems, { name: '', amount: '' }])}>
                   + 기타 소득 추가
                 </button>
               </div>
@@ -267,57 +317,76 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
 
           {step === 2 && (
             <div className={styles.formSection}>
-              <div className={styles.sectionTitle}>카드 지출 내역을 입력해 주세요</div>
-              <div className={styles.hint}>월 평균 카드 지출 카테고리별로 입력해 주세요. (선택사항)</div>
-              {cardSpendItems.map((item, i) => (
-                <div key={i} className={styles.cardItemRow}>
-                  <select
-                    className={styles.selectSm}
-                    value={item.category}
-                    onChange={(e) => {
-                      const next = [...cardSpendItems];
-                      next[i] = { ...next[i], category: e.target.value as CardSpendCategory };
-                      setCardSpendItems(next);
-                    }}
-                  >
-                    {ALL_CARD_CATEGORIES.filter(
-                      (cat) => cat === item.category || !cardSpendItems.some((c, idx) => idx !== i && c.category === cat)
-                    ).map((cat) => (
-                      <option key={cat} value={cat}>{CARD_CATEGORY_LABELS[cat]}</option>
-                    ))}
-                  </select>
-                  <input
-                    className={styles.inputSm}
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="월 금액 (원)"
-                    value={item.monthlyAmount}
-                    onChange={(e) => {
-                      const next = [...cardSpendItems];
-                      next[i] = { ...next[i], monthlyAmount: formatNumber(e.target.value) };
-                      setCardSpendItems(next);
-                    }}
-                  />
+              <div className={styles.sectionTitle}>카드 지출 및 결제 유형을 설정해 주세요</div>
+
+              <div className={styles.subSection}>
+                <div className={styles.subTitle}>주요 결제 카테고리 <span className={styles.required}>*</span> <span className={styles.hint}>(1~3개 선택)</span></div>
+                <div className={styles.chipGroup}>
+                  {ALL_CARD_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={paymentTypes.includes(cat) ? styles.chipActive : styles.chip}
+                      onClick={() => togglePaymentType(cat)}
+                    >
+                      {CARD_CATEGORY_LABELS[cat]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.subSection}>
+                <div className={styles.subTitle}>월 평균 카드 지출 <span className={styles.hint}>(선택사항, 최대 3개)</span></div>
+                {cardSpendItems.map((item, i) => (
+                  <div key={i} className={styles.cardItemRow}>
+                    <select
+                      className={styles.selectSm}
+                      value={item.category}
+                      onChange={(e) => {
+                        const next = [...cardSpendItems];
+                        next[i] = { ...next[i], category: e.target.value as CardSpendCategory };
+                        setCardSpendItems(next);
+                      }}
+                    >
+                      {ALL_CARD_CATEGORIES.filter(
+                        (cat) => cat === item.category || !cardSpendItems.some((c, idx) => idx !== i && c.category === cat)
+                      ).map((cat) => (
+                        <option key={cat} value={cat}>{CARD_CATEGORY_LABELS[cat]}</option>
+                      ))}
+                    </select>
+                    <input
+                      className={styles.inputSm}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="월 금액 (원)"
+                      value={item.amount}
+                      onChange={(e) => {
+                        const next = [...cardSpendItems];
+                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
+                        setCardSpendItems(next);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className={styles.removeBtn}
+                      onClick={() => setCardSpendItems(cardSpendItems.filter((_, idx) => idx !== i))}
+                    >삭제</button>
+                  </div>
+                ))}
+                {cardSpendItems.length < 3 && (
                   <button
                     type="button"
-                    className={styles.removeBtn}
-                    onClick={() => setCardSpendItems(cardSpendItems.filter((_, idx) => idx !== i))}
-                  >삭제</button>
-                </div>
-              ))}
-              {cardSpendItems.length < ALL_CARD_CATEGORIES.length && (
-                <button
-                  type="button"
-                  className={styles.addBtn}
-                  onClick={() => {
-                    const used = new Set(cardSpendItems.map((c) => c.category));
-                    const next = ALL_CARD_CATEGORIES.find((cat) => !used.has(cat));
-                    if (next) setCardSpendItems([...cardSpendItems, { category: next, monthlyAmount: '' }]);
-                  }}
-                >
-                  + 카드 지출 추가
-                </button>
-              )}
+                    className={styles.addBtn}
+                    onClick={() => {
+                      const used = new Set(cardSpendItems.map((c) => c.category));
+                      const next = ALL_CARD_CATEGORIES.find((cat) => !used.has(cat));
+                      if (next) setCardSpendItems([...cardSpendItems, { category: next, amount: '' }]);
+                    }}
+                  >
+                    + 카드 지출 추가
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
