@@ -1,9 +1,11 @@
 package io.ssafy.p.j14c103.homerun.api.controller.user;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.relaxedRequestFields;
@@ -21,6 +23,7 @@ import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -155,6 +158,69 @@ class UserControllerTest extends RestDocsTestSupport {
                                 fieldWithPath("summaryInitialized").type(JsonFieldType.BOOLEAN).description("요약 정보 초기화 여부")
                         )
                 ));
+    }
+
+    @DisplayName("자산 연동 요청은 Integer 범위를 넘는 금액도 Long으로 서비스까지 전달한다.")
+    @Test
+    void linkAssetsWithLargeAmounts() throws Exception {
+        // given
+        given(userAssetLinkService.linkAssets(eq(1L), any(UserAssetLinkServiceRequest.class))).willReturn(UserAssetLinkResponse.of(
+                true,
+                true,
+                true,
+                true
+        ));
+
+        // when & then
+        mockMvc.perform(post("/api/users/me/asset-link")
+                        .with(currentUser())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "mainAccountBalanceAmount": 5000000000,
+                                  "salaryDayOfMonth": 25,
+                                  "monthlySalaryAmount": 3200000000,
+                                  "monthlyFixedExpenseAmount": 1100000000,
+                                  "depositItems": [
+                                    {"name": "고액 예금", "amount": 3500000000}
+                                  ],
+                                  "loanItems": [
+                                    {"name": "주택담보대출", "amount": 1900000000}
+                                  ],
+                                  "otherIncomeItems": [
+                                    {"name": "임대수익", "amount": 150000000}
+                                  ],
+                                  "cardSpendItems": [
+                                    {"category": "LIVING", "amount": 320000000}
+                                  ],
+                                  "paymentTypes": ["LIVING", "TRANSPORT"],
+                                  "jobType": "LARGE_BIZ"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.isAssetLinked").value(true));
+
+        final ArgumentCaptor<UserAssetLinkServiceRequest> requestCaptor =
+                ArgumentCaptor.forClass(UserAssetLinkServiceRequest.class);
+        then(userAssetLinkService).should().linkAssets(eq(1L), requestCaptor.capture());
+        final UserAssetLinkServiceRequest captured = requestCaptor.getValue();
+        assertThat(captured.getMainAccountBalanceAmount()).isEqualTo(5_000_000_000L);
+        assertThat(captured.getMonthlySalaryAmount()).isEqualTo(3_200_000_000L);
+        assertThat(captured.getMonthlyFixedExpenseAmount()).isEqualTo(1_100_000_000L);
+        assertThat(captured.getDepositItems()).singleElement()
+                .extracting(UserAssetLinkServiceRequest.NamedAmountItem::getAmount)
+                .isEqualTo(3_500_000_000L);
+        assertThat(captured.getLoanItems()).singleElement()
+                .extracting(UserAssetLinkServiceRequest.NamedAmountItem::getAmount)
+                .isEqualTo(1_900_000_000L);
+        assertThat(captured.getOtherIncomeItems()).singleElement()
+                .extracting(UserAssetLinkServiceRequest.NamedAmountItem::getAmount)
+                .isEqualTo(150_000_000L);
+        assertThat(captured.getCardSpendItems()).singleElement()
+                .extracting(UserAssetLinkServiceRequest.CardSpendItem::getAmount)
+                .isEqualTo(320_000_000L);
     }
 
     @DisplayName("자산 연동 요청에서 소비 선호 카테고리가 없으면 400을 반환한다.")

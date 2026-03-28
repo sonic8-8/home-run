@@ -208,10 +208,10 @@ class UserAssetLinkServiceTest {
                         product -> product.getSourceType().name()
                 )
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("SAVING_DEPOSIT", "정기예금", 7_000_000, "ASSET_LINK"),
-                        org.assertj.core.groups.Tuple.tuple("SAVING_DEPOSIT", "청약저축", 1_500_000, "ASSET_LINK"),
-                        org.assertj.core.groups.Tuple.tuple("LOAN", "신용대출", 12_000_000, "ASSET_LINK"),
-                        org.assertj.core.groups.Tuple.tuple("LOAN", "학자금대출", 3_000_000, "ASSET_LINK")
+                        org.assertj.core.groups.Tuple.tuple("SAVING_DEPOSIT", "정기예금", 7_000_000L, "ASSET_LINK"),
+                        org.assertj.core.groups.Tuple.tuple("SAVING_DEPOSIT", "청약저축", 1_500_000L, "ASSET_LINK"),
+                        org.assertj.core.groups.Tuple.tuple("LOAN", "신용대출", 12_000_000L, "ASSET_LINK"),
+                        org.assertj.core.groups.Tuple.tuple("LOAN", "학자금대출", 3_000_000L, "ASSET_LINK")
                 );
         assertThat(ownedCardRepository.findAllByUserIdAndActiveYnTrueOrderByOpenedAtDesc(user.getId())).isEmpty();
         assertThat(userAssetDepositRepository.findAllByUserIdOrderByIdAsc(user.getId())).hasSize(2);
@@ -238,14 +238,94 @@ class UserAssetLinkServiceTest {
                 .get()
                 .extracting(summary -> summary.getTotalAssetAmount(), summary -> summary.getTotalDebtAmount(), summary -> summary.getNetAssetAmount())
                 .containsExactly(
-                        11_500_000,
-                        15_000_000,
-                        -3_500_000
+                        11_500_000L,
+                        15_000_000L,
+                        -3_500_000L
                 );
         assertThat(userHomeCreditScoreSnapshotRepository.findByUserIdAndScoreMonthStart(
                 user.getId(),
                 java.time.LocalDate.now().withDayOfMonth(1)
         )).isPresent();
+    }
+
+    @DisplayName("50억대 자산도 오버플로우 없이 저장하고 요약한다.")
+    @Test
+    void linkAssetsWithLargeAmounts() {
+        // given
+        final User user = saveUser("large-user@example.com");
+        final UserAssetLinkServiceRequest request = largeAssetLinkRequest();
+        given(ssafyMemberClient.createMember("large-user@example.com"))
+                .willReturn(Map.of("userKey", "large-user-key"));
+        given(ssafyDemandDepositClient.createDemandDepositAccount("large-user-key", "test-account-type"))
+                .willReturn(Map.of("accountNo", "0099999999999991"))
+                .willReturn(Map.of("accountNo", "0099999999999992"));
+        given(ssafyDemandDepositClient.depositAccount(eq("large-user-key"), eq("0099999999999991"), anyLong()))
+                .willReturn(Map.of("transactionUniqueNo", "60", "transactionDate", "20260328"));
+
+        // when
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
+
+        // then
+        assertThat(response.isAssetLinked()).isTrue();
+        assertThat(response.isSummaryInitialized()).isTrue();
+        assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN))
+                .isPresent()
+                .get()
+                .extracting(UserAccount::getBalanceSnapshot)
+                .isEqualTo(5_000_000_000L);
+        final ArgumentCaptor<Long> depositAmountCaptor = ArgumentCaptor.forClass(Long.class);
+        then(ssafyDemandDepositClient).should()
+                .depositAccount(eq("large-user-key"), eq("0099999999999991"), depositAmountCaptor.capture());
+        assertThat(depositAmountCaptor.getValue()).isEqualTo(5_000_000_000L);
+        assertThat(userAssetDepositRepository.findAllByUserIdOrderByIdAsc(user.getId()))
+                .extracting(deposit -> deposit.getAmount())
+                .containsExactly(3_500_000_000L, 2_800_000_000L);
+        assertThat(userAssetLoanRepository.findAllByUserIdOrderByIdAsc(user.getId()))
+                .extracting(loan -> loan.getAmount())
+                .containsExactly(1_900_000_000L, 700_000_000L);
+        assertThat(userAssetOtherIncomeRepository.findAllByUserIdOrderByIdAsc(user.getId()))
+                .extracting(otherIncome -> otherIncome.getAmount())
+                .containsExactly(150_000_000L, 70_000_000L);
+        assertThat(userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(user.getId()))
+                .extracting(cardSpend -> cardSpend.getAmount())
+                .containsExactly(320_000_000L, 180_000_000L);
+        assertThat(userAssetProfileRepository.findById(user.getId())).isPresent()
+                .get()
+                .extracting(
+                        profile -> profile.getMainAccountBalanceAmount(),
+                        profile -> profile.getMonthlySalaryAmount(),
+                        profile -> profile.getMonthlyFixedExpenseAmount()
+                )
+                .containsExactly(5_000_000_000L, 3_200_000_000L, 1_100_000_000L);
+        assertThat(userFinancialProductRepository.findByUserIdAndActiveYnTrue(user.getId()))
+                .filteredOn(product -> product.getSourceType() == FinancialProductSourceType.ASSET_LINK)
+                .extracting(
+                        UserFinancialProduct::getProductName,
+                        UserFinancialProduct::getProductType,
+                        UserFinancialProduct::getCurrentBalanceAmount
+                )
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("고액 예금", FinancialProductType.SAVING_DEPOSIT, 3_500_000_000L),
+                        org.assertj.core.groups.Tuple.tuple("장기 적금", FinancialProductType.SAVING_DEPOSIT, 2_800_000_000L),
+                        org.assertj.core.groups.Tuple.tuple("주택담보대출", FinancialProductType.LOAN, 1_900_000_000L),
+                        org.assertj.core.groups.Tuple.tuple("전세대출", FinancialProductType.LOAN, 700_000_000L)
+                );
+        assertThat(userFinancialSummaryRepository.findById(user.getId())).isPresent()
+                .get()
+                .extracting(
+                        summary -> summary.getTotalAssetAmount(),
+                        summary -> summary.getTotalDebtAmount(),
+                        summary -> summary.getNetAssetAmount(),
+                        summary -> summary.getCashAssetAmount(),
+                        summary -> summary.getSavingAssetAmount()
+                )
+                .containsExactly(
+                        11_300_000_000L,
+                        2_600_000_000L,
+                        8_700_000_000L,
+                        5_000_000_000L,
+                        6_300_000_000L
+                );
     }
 
     @DisplayName("SSAFY 회원 생성이 실패하면 회원 조회로 userKey를 확보한다.")
@@ -450,7 +530,7 @@ class UserAssetLinkServiceTest {
                         UserFinancialProduct::getCurrentBalanceAmount,
                         UserFinancialProduct::getSourceType
                 )
-                .containsExactly("KB국민은행", FinancialProductType.SAVING_DEPOSIT, 4_000_000, FinancialProductSourceType.SYSTEM);
+                .containsExactly("KB국민은행", FinancialProductType.SAVING_DEPOSIT, 4_000_000L, FinancialProductSourceType.SYSTEM);
         assertThat(products)
                 .filteredOn(product -> product.getProductName().equals("기존 투자"))
                 .singleElement()
@@ -468,10 +548,10 @@ class UserAssetLinkServiceTest {
                         UserFinancialProduct::getCurrentBalanceAmount
                 )
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("정기예금", FinancialProductType.SAVING_DEPOSIT, 7_000_000),
-                        org.assertj.core.groups.Tuple.tuple("청약저축", FinancialProductType.SAVING_DEPOSIT, 1_500_000),
-                        org.assertj.core.groups.Tuple.tuple("신용대출", FinancialProductType.LOAN, 12_000_000),
-                        org.assertj.core.groups.Tuple.tuple("학자금대출", FinancialProductType.LOAN, 3_000_000)
+                        org.assertj.core.groups.Tuple.tuple("정기예금", FinancialProductType.SAVING_DEPOSIT, 7_000_000L),
+                        org.assertj.core.groups.Tuple.tuple("청약저축", FinancialProductType.SAVING_DEPOSIT, 1_500_000L),
+                        org.assertj.core.groups.Tuple.tuple("신용대출", FinancialProductType.LOAN, 12_000_000L),
+                        org.assertj.core.groups.Tuple.tuple("학자금대출", FinancialProductType.LOAN, 3_000_000L)
                 );
         assertThat(products)
                 .extracting(UserFinancialProduct::getProductName)
@@ -640,6 +720,57 @@ class UserAssetLinkServiceTest {
                         UserAssetLinkServiceRequest.CardSpendItem.builder()
                                 .category(io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory.TRANSPORT)
                                 .amount(120_000)
+                                .build()
+                ))
+                .paymentTypes(java.util.List.of("LIVING", "TRANSPORT"))
+                .build();
+    }
+
+    private UserAssetLinkServiceRequest largeAssetLinkRequest() {
+        return UserAssetLinkServiceRequest.builder()
+                .mainAccountBalanceAmount(5_000_000_000L)
+                .salaryDayOfMonth(25)
+                .monthlySalaryAmount(3_200_000_000L)
+                .monthlyFixedExpenseAmount(1_100_000_000L)
+                .jobType(JobType.LARGE_BIZ)
+                .depositItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("고액 예금")
+                                .amount(3_500_000_000L)
+                                .build(),
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("장기 적금")
+                                .amount(2_800_000_000L)
+                                .build()
+                ))
+                .loanItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("주택담보대출")
+                                .amount(1_900_000_000L)
+                                .build(),
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("전세대출")
+                                .amount(700_000_000L)
+                                .build()
+                ))
+                .otherIncomeItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("임대수익")
+                                .amount(150_000_000L)
+                                .build(),
+                        UserAssetLinkServiceRequest.NamedAmountItem.builder()
+                                .name("배당수익")
+                                .amount(70_000_000L)
+                                .build()
+                ))
+                .cardSpendItems(java.util.List.of(
+                        UserAssetLinkServiceRequest.CardSpendItem.builder()
+                                .category(io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory.LIVING)
+                                .amount(320_000_000L)
+                                .build(),
+                        UserAssetLinkServiceRequest.CardSpendItem.builder()
+                                .category(io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory.TRANSPORT)
+                                .amount(180_000_000L)
                                 .build()
                 ))
                 .paymentTypes(java.util.List.of("LIVING", "TRANSPORT"))
