@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppHeader } from '../AppHeader/AppHeader';
 import type { AssetLinkInput, JobType, CardSpendCategory } from '../../../domain/entities/AssetLinkInput';
+import { formatNumericInput, parseNumericInput } from '../../utils/money';
 import styles from './AssetLinkPage.module.css';
 
 interface AssetLinkPageProps {
@@ -28,8 +29,6 @@ const CARD_CATEGORY_LABELS: Record<CardSpendCategory, string> = {
 const ALL_CARD_CATEGORIES = Object.keys(CARD_CATEGORY_LABELS) as CardSpendCategory[];
 
 const STEPS = ['기본 정보', '금융 자산', '카드 지출'];
-
-const formatNumber = (value: string) => value.replace(/[^0-9]/g, '');
 
 export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
   const [step, setStep] = useState(0);
@@ -95,15 +94,15 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
     setError(null);
     try {
       const input: AssetLinkInput = {
-        mainAccountBalanceAmount: Number(formatNumber(mainBalance)),
+        mainAccountBalanceAmount: parseNumericInput(mainBalance),
         salaryDayOfMonth: Number(salaryDay),
-        monthlySalaryAmount: Number(formatNumber(monthlySalary)),
-        monthlyFixedExpenseAmount: Number(formatNumber(monthlyFixed)),
+        monthlySalaryAmount: parseNumericInput(monthlySalary),
+        monthlyFixedExpenseAmount: parseNumericInput(monthlyFixed),
         jobType: jobType as JobType,
-        depositItems: depositItems.map((d) => ({ name: d.name, amount: Number(formatNumber(d.amount)) })),
-        loanItems: loanItems.map((l) => ({ name: l.name, amount: Number(formatNumber(l.amount)) })),
-        otherIncomeItems: otherIncomeItems.map((o) => ({ name: o.name, amount: Number(formatNumber(o.amount)) })),
-        cardSpendItems: cardSpendItems.map((c) => ({ category: c.category, amount: Number(formatNumber(c.amount)) })),
+        depositItems: depositItems.map((d) => ({ name: d.name, amount: parseNumericInput(d.amount) })),
+        loanItems: loanItems.map((l) => ({ name: l.name, amount: parseNumericInput(l.amount) })),
+        otherIncomeItems: otherIncomeItems.map((o) => ({ name: o.name, amount: parseNumericInput(o.amount) })),
+        cardSpendItems: cardSpendItems.map((c) => ({ category: c.category, amount: parseNumericInput(c.amount) })),
         paymentTypes,
       };
       await onLink(input);
@@ -139,7 +138,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                   inputMode="numeric"
                   placeholder="예: 5000000"
                   value={mainBalance}
-                  onChange={(e) => setMainBalance(formatNumber(e.target.value))}
+                  onChange={(e) => setMainBalance(formatNumericInput(e.target.value))}
                 />
               </div>
               <div className={styles.field}>
@@ -162,7 +161,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                   inputMode="numeric"
                   placeholder="예: 3000000"
                   value={monthlySalary}
-                  onChange={(e) => setMonthlySalary(formatNumber(e.target.value))}
+                  onChange={(e) => setMonthlySalary(formatNumericInput(e.target.value))}
                 />
               </div>
               <div className={styles.field}>
@@ -173,7 +172,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                   inputMode="numeric"
                   placeholder="예: 1000000"
                   value={monthlyFixed}
-                  onChange={(e) => setMonthlyFixed(formatNumber(e.target.value))}
+                  onChange={(e) => setMonthlyFixed(formatNumericInput(e.target.value))}
                 />
               </div>
               <div className={styles.field}>
@@ -219,7 +218,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                       value={item.amount}
                       onChange={(e) => {
                         const next = [...depositItems];
-                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
+                        next[i] = { ...next[i], amount: formatNumericInput(e.target.value) };
                         setDepositItems(next);
                       }}
                     />
@@ -258,7 +257,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                       value={item.amount}
                       onChange={(e) => {
                         const next = [...loanItems];
-                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
+                        next[i] = { ...next[i], amount: formatNumericInput(e.target.value) };
                         setLoanItems(next);
                       }}
                     />
@@ -297,7 +296,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                       value={item.amount}
                       onChange={(e) => {
                         const next = [...otherIncomeItems];
-                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
+                        next[i] = { ...next[i], amount: formatNumericInput(e.target.value) };
                         setOtherIncomeItems(next);
                       }}
                     />
@@ -362,7 +361,7 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
                       value={item.amount}
                       onChange={(e) => {
                         const next = [...cardSpendItems];
-                        next[i] = { ...next[i], amount: formatNumber(e.target.value) };
+                        next[i] = { ...next[i], amount: formatNumericInput(e.target.value) };
                         setCardSpendItems(next);
                       }}
                     />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { SeedMoneyAccount } from '../../../domain/entities/SeedMoneyAccount';
 import type { Spending } from '../../../domain/entities/Spending';
+import { formatWon } from '../../utils/money';
 import styles from './SeedMoneyWidget.module.css';
 
 interface SeedMoneyWidgetProps {
@@ -23,7 +24,7 @@ export const SeedMoneyWidget: React.FC<SeedMoneyWidgetProps> = ({ account, spend
         </div>
       </div>
       <div className={styles.balance}>
-        {account.balance.toLocaleString()}원
+        {formatWon(account.balance)}
       </div>
       <div className={styles.actions}>
         <button className={styles.actionBtn} onClick={() => setShowHistory((v) => !v)}>
@@ -41,12 +42,12 @@ export const SeedMoneyWidget: React.FC<SeedMoneyWidgetProps> = ({ account, spend
               {spending.categories.map((c) => (
                 <div key={c.category} className={styles.historyRow}>
                   <span className={styles.historyCat}>{c.categoryName}</span>
-                  <span className={styles.historyAmount}>-{c.amount.toLocaleString()}원</span>
+                  <span className={styles.historyAmount}>-{formatWon(c.amount)}</span>
                 </div>
               ))}
               <div className={styles.historyTotal}>
                 <span>합계</span>
-                <span>-{spending.totalExpense.toLocaleString()}원</span>
+                <span>-{formatWon(spending.totalExpense)}</span>
               </div>
             </>
           ) : (
