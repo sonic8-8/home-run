@@ -10,7 +10,9 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnActionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnStateService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.AvailableActionsResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
@@ -39,6 +41,9 @@ class GameTurnControllerTest extends RestDocsTestSupport {
 
     @MockitoBean
     private GameTurnStateService gameTurnStateService;
+
+    @MockitoBean
+    private GameTurnActionService gameTurnActionService;
 
     @DisplayName("현재 턴 상태 조회는 게임 코어 응답 계약으로 현재 턴 정보를 반환한다.")
     @Test
@@ -123,6 +128,135 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_NOT_FOUND.getCode()))
             .andExpect(jsonPath("$.message").value(ErrorCode.GAME_SESSION_NOT_FOUND.getMessage()))
             .andDo(document("game-turn/state/not-found",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                basicErrorResponseFields()
+            ));
+    }
+
+    @DisplayName("선택 가능 행동 조회는 게임 코어 응답 계약으로 행동 목록을 반환한다.")
+    @Test
+    void getAvailableActions() throws Exception {
+        // given
+        final AvailableActionsResponse response = AvailableActionsResponse.of(
+            List.of(
+                AvailableActionsResponse.ActionResponse.of(
+                    "HOBBY",
+                    "취미",
+                    "/images/actions/hobby.png",
+                    AvailableActionsResponse.ActionEffectResponse.of(-100_000, 0, -2, -6, 6, 0)
+                )
+            ),
+            List.of(
+                AvailableActionsResponse.ActionResponse.of(
+                    "STUDY",
+                    "공부",
+                    "/images/actions/study.png",
+                    AvailableActionsResponse.ActionEffectResponse.of(0, 0, 6, 3, 0, 8)
+                ),
+                AvailableActionsResponse.ActionResponse.of(
+                    "REST",
+                    "휴식",
+                    "/images/actions/rest.png",
+                    AvailableActionsResponse.ActionEffectResponse.of(0, 3, -12, -8, 2, 0)
+                )
+            )
+        );
+        given(gameTurnActionService.getAvailableActions(1L, 1001L)).willReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn/actions", 1001L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.message").value("OK"))
+            .andExpect(jsonPath("$.data.shopping").isArray())
+            .andExpect(jsonPath("$.data.shopping.length()").value(1))
+            .andExpect(jsonPath("$.data.shopping[0].actionType").value("HOBBY"))
+            .andExpect(jsonPath("$.data.shopping[0].label").value("취미"))
+            .andExpect(jsonPath("$.data.shopping[0].iconUrl").value("/images/actions/hobby.png"))
+            .andExpect(jsonPath("$.data.shopping[0].effects.cash").value(-100000))
+            .andExpect(jsonPath("$.data.activities").isArray())
+            .andExpect(jsonPath("$.data.activities.length()").value(2))
+            .andExpect(jsonPath("$.data.activities[0].actionType").value("STUDY"))
+            .andExpect(jsonPath("$.data.activities[0].effects.knowledge").value(8))
+            .andExpect(jsonPath("$.data.activities[1].actionType").value("REST"))
+            .andExpect(jsonPath("$.data.activities[1].effects.fatigue").value(-12))
+            .andDo(document("game-turn/actions/success",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                apiResponseFields(
+                    "선택 가능 행동 목록",
+                    fieldWithPath("shopping").type(JsonFieldType.ARRAY).description("쇼핑 카테고리 행동 목록"),
+                    fieldWithPath("shopping[].actionType").type(JsonFieldType.STRING).description("행동 타입"),
+                    fieldWithPath("shopping[].label").type(JsonFieldType.STRING).description("행동 라벨"),
+                    fieldWithPath("shopping[].iconUrl").type(JsonFieldType.STRING).description("행동 아이콘 URL"),
+                    fieldWithPath("shopping[].effects").type(JsonFieldType.OBJECT).description("행동 효과"),
+                    fieldWithPath("shopping[].effects.cash").type(JsonFieldType.NUMBER).description("현금 변화량"),
+                    fieldWithPath("shopping[].effects.health").type(JsonFieldType.NUMBER).description("체력 변화량"),
+                    fieldWithPath("shopping[].effects.fatigue").type(JsonFieldType.NUMBER).description("피로 변화량"),
+                    fieldWithPath("shopping[].effects.stress").type(JsonFieldType.NUMBER).description("스트레스 변화량"),
+                    fieldWithPath("shopping[].effects.happiness").type(JsonFieldType.NUMBER).description("행복 변화량"),
+                    fieldWithPath("shopping[].effects.knowledge").type(JsonFieldType.NUMBER).description("지식 변화량"),
+                    fieldWithPath("activities").type(JsonFieldType.ARRAY).description("활동 카테고리 행동 목록"),
+                    fieldWithPath("activities[].actionType").type(JsonFieldType.STRING).description("행동 타입"),
+                    fieldWithPath("activities[].label").type(JsonFieldType.STRING).description("행동 라벨"),
+                    fieldWithPath("activities[].iconUrl").type(JsonFieldType.STRING).description("행동 아이콘 URL"),
+                    fieldWithPath("activities[].effects").type(JsonFieldType.OBJECT).description("행동 효과"),
+                    fieldWithPath("activities[].effects.cash").type(JsonFieldType.NUMBER).description("현금 변화량"),
+                    fieldWithPath("activities[].effects.health").type(JsonFieldType.NUMBER).description("체력 변화량"),
+                    fieldWithPath("activities[].effects.fatigue").type(JsonFieldType.NUMBER).description("피로 변화량"),
+                    fieldWithPath("activities[].effects.stress").type(JsonFieldType.NUMBER).description("스트레스 변화량"),
+                    fieldWithPath("activities[].effects.happiness").type(JsonFieldType.NUMBER).description("행복 변화량"),
+                    fieldWithPath("activities[].effects.knowledge").type(JsonFieldType.NUMBER).description("지식 변화량")
+                )
+            ));
+        then(gameTurnActionService).should().getAvailableActions(1L, 1001L);
+    }
+
+    @DisplayName("다른 사용자의 세션 행동 목록 조회는 403을 반환한다.")
+    @Test
+    void getOtherUsersAvailableActions() throws Exception {
+        // given
+        given(gameTurnActionService.getAvailableActions(1L, 88L))
+            .willThrow(new HomerunException(ErrorCode.GAME_SESSION_FORBIDDEN));
+
+        // when & then
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn/actions", 88L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_FORBIDDEN.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_SESSION_FORBIDDEN.getMessage()))
+            .andDo(document("game-turn/actions/forbidden",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                basicErrorResponseFields()
+            ));
+    }
+
+    @DisplayName("종료된 세션의 행동 목록 조회는 409를 반환한다.")
+    @Test
+    void getClosedSessionAvailableActions() throws Exception {
+        // given
+        given(gameTurnActionService.getAvailableActions(1L, 77L))
+            .willThrow(new HomerunException(ErrorCode.GAME_SESSION_CLOSED));
+
+        // when & then
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn/actions", 77L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_CLOSED.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_SESSION_CLOSED.getMessage()))
+            .andDo(document("game-turn/actions/closed",
                 requestHeaders(authorizationHeader()),
                 pathParameters(
                     parameterWithName("sessionId").description("게임 세션 ID")
