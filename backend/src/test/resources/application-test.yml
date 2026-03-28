@@ -48,6 +48,7 @@ app:
     enabled: false
     regions:
       - SEOUL
+      - GWANGJU
     from-year-month: 2024-01
     to-year-month: 2024-12
     dataset-types:
