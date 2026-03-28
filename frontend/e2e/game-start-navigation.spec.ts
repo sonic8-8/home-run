@@ -1,7 +1,22 @@
 import { test, expect, type Page } from '@playwright/test';
 
-function seedAuthenticatedUser(page: Page) {
-  return page.addInitScript(() => {
+async function seedAuthenticatedUser(page: Page) {
+  await page.route('**/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 200,
+        message: 'OK',
+        data: {
+          accessToken: 'refreshed-access-token',
+          accessTokenExpiresIn: 1800,
+        },
+      }),
+    });
+  });
+
+  await page.addInitScript(() => {
     window.localStorage.setItem(
       'auth',
       JSON.stringify({
@@ -10,6 +25,7 @@ function seedAuthenticatedUser(page: Page) {
           accessToken: 'access-token',
           refreshToken: 'refresh-token',
           nickname: '테스터',
+          accessTokenExpiresAt: Date.now() + 3_600_000,
         },
         version: 0,
       }),
@@ -118,8 +134,8 @@ test.describe('game start navigation', () => {
 
     await page.getByRole('button', { name: '이어하기' }).click();
 
-    await expect(page).toHaveURL(/\/game\/save$/);
-    await expect(page.getByText('SAVE')).toBeVisible();
+    await expect(page).toHaveURL(/\/game\/save\?mode=continue$/);
+    await expect(page.getByText('이어할 세션 선택')).toBeVisible();
     await expect(page.getByRole('button', { name: '슬롯 1 불러오기' })).toBeVisible();
   });
 
@@ -131,9 +147,21 @@ test.describe('game start navigation', () => {
 
     await page.getByRole('button', { name: '새로하기' }).click();
 
-    await expect(page).toHaveURL(/\/game\/save$/);
-    await expect(page.getByText('SAVE')).toBeVisible();
+    await expect(page).toHaveURL(/\/game\/save\?mode=new$/);
+    await expect(page.getByText('새로 시작할 슬롯 선택')).toBeVisible();
     await expect(page.getByRole('button', { name: '슬롯 3 새 게임 시작' })).toBeVisible();
+  });
+
+  test('opens the guide page from the game start screen', async ({ page }) => {
+    await seedAuthenticatedUser(page);
+    await page.goto('/game/start');
+
+    await page.getByRole('button', { name: '게임 가이드' }).click();
+
+    await expect(page).toHaveURL(/\/game\/guide$/);
+    await expect(page.getByRole('heading', { name: '홈런 플레이 가이드' })).toBeVisible();
+    await page.getByRole('button', { name: '게임 시작 화면으로 돌아가기' }).click();
+    await expect(page).toHaveURL(/\/game\/start$/);
   });
 
   test('skips job selection when starting with my data', async ({ page }) => {

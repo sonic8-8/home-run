@@ -17,6 +17,10 @@ const GameStartPage = lazy(() =>
   import('@features/game/presentation/pages/GameStart').then((m) => ({ default: m.GameStartPage }))
 );
 
+const GameGuidePage = lazy(() =>
+  import('@features/game/presentation/pages/GameGuide').then((m) => ({ default: m.GameGuidePage }))
+);
+
 const GameSaveSlotPage = lazy(() =>
   import('@features/game/presentation/pages/GameSaveSlot').then((m) => ({ default: m.GameSaveSlotPage }))
 );
@@ -78,6 +82,7 @@ const router = createBrowserRouter([
       { path: ROUTES.HOME,     element: <HomePage /> },
       { path: ROUTES.GAME,       element: <GameMainPage /> },
       { path: ROUTES.GAME_START, element: <GameStartPage /> },
+      { path: ROUTES.GAME_GUIDE, element: <GameGuidePage /> },
       { path: ROUTES.GAME_SAVE,  element: <GameSaveSlotPage /> },
       { path: ROUTES.GAME_SELECT_CHARACTER, element: <SelectCharacterPage /> },
       { path: ROUTES.GAME_SET_NICKNAME, element: <SetNicknamePage /> },

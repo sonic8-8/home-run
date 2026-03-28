@@ -120,6 +120,12 @@ export function GameMainPage() {
                 >
                   이달의 뉴스
                 </button>
+                <button
+                  className={styles.menuButton}
+                  onClick={() => navigate(ROUTES.GAME_GUIDE, { state: { from: 'main' as const } })}
+                >
+                  게임 가이드
+                </button>
               </div>
             </section>
           </div>

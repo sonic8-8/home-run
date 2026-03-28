@@ -1,5 +1,38 @@
 import { test, expect, type Page } from '@playwright/test';
 
+async function seedAuthenticatedUser(page: Page) {
+  await page.route('**/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 200,
+        message: 'OK',
+        data: {
+          accessToken: 'refreshed-access-token',
+          accessTokenExpiresIn: 1800,
+        },
+      }),
+    });
+  });
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      'auth',
+      JSON.stringify({
+        state: {
+          isAuthenticated: true,
+          accessToken: 'access-token',
+          refreshToken: 'refresh-token',
+          nickname: '테스터',
+          accessTokenExpiresAt: Date.now() + 3_600_000,
+        },
+        version: 0,
+      }),
+    );
+  });
+}
+
 interface AssetLinkMockData {
   totalAssetAmount: number;
   netAssetAmount: number;
@@ -30,23 +63,6 @@ async function waitForAssetLinkPageReady(page: Page) {
   await expect(page).toHaveURL(/\/$/);
   await userMeResponse;
   await expect(page.getByPlaceholder('예: 5000000')).toBeVisible();
-}
-
-function seedAuthenticatedUser(page: Page) {
-  return page.addInitScript(() => {
-    window.localStorage.setItem(
-      'auth',
-      JSON.stringify({
-        state: {
-          isAuthenticated: true,
-          accessToken: 'access-token',
-          refreshToken: 'refresh-token',
-          nickname: '테스터',
-        },
-        version: 0,
-      }),
-    );
-  });
 }
 
 async function mockAssetLinkFlow(
