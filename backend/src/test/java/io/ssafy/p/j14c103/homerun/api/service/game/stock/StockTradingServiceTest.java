@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketState;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateId;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateRepository;
@@ -22,18 +24,20 @@ import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class StockTradingServiceTest {
 
-    @InjectMocks
+    private static final String SETTLEMENT_PHASE_DURATION = "homerun.settlement.phase.duration";
+    private static final String STOCK_ORDER_SETTLEMENT_PHASE = "stock_order_settlement";
+
     private StockTradingService stockTradingService;
 
     @Mock
@@ -47,6 +51,19 @@ class StockTradingServiceTest {
 
     @Mock
     private StockOrderRepository stockOrderRepository;
+
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+
+    @BeforeEach
+    void setUp() {
+        stockTradingService = new StockTradingService(
+            stockMarketRepository,
+            gameStockMarketStateRepository,
+            stockHoldingRepository,
+            stockOrderRepository,
+            meterRegistry
+        );
+    }
 
     @DisplayName("게임 시작 시 stock_markets를 세션 상태로 복사한다")
     @Test
@@ -143,6 +160,7 @@ class StockTradingServiceTest {
     @Test
     void settleOrders_buy() {
         // given
+        final long timerCountBefore = settlementPhaseTimerCount();
         final StockOrder buyOrder = StockOrder.createBuyOrder(1L, "BIO", 5, 1);
         given(stockOrderRepository.findAllByGameSessionIdAndExecuteTurnAndOrderStatus(1L, 2, OrderStatus.PENDING))
                 .willReturn(List.of(buyOrder));
@@ -157,12 +175,14 @@ class StockTradingServiceTest {
         // then
         assertThat(cashChange).isEqualTo(-550000); // 110000 * 5
         assertThat(buyOrder.getOrderStatus()).isEqualTo(OrderStatus.EXECUTED);
+        assertThat(settlementPhaseTimerCount()).isEqualTo(timerCountBefore + 1);
     }
 
     @DisplayName("정산 시 PENDING 매도 주문이 체결되고 현금이 증가한다")
     @Test
     void settleOrders_sell() {
         // given
+        final long timerCountBefore = settlementPhaseTimerCount();
         final StockOrder sellOrder = StockOrder.createSellOrder(1L, "BIO", 3, 1);
         given(stockOrderRepository.findAllByGameSessionIdAndExecuteTurnAndOrderStatus(1L, 2, OrderStatus.PENDING))
                 .willReturn(List.of(sellOrder));
@@ -177,5 +197,16 @@ class StockTradingServiceTest {
         // then
         assertThat(cashChange).isEqualTo(360000); // 120000 * 3
         assertThat(sellOrder.getOrderStatus()).isEqualTo(OrderStatus.EXECUTED);
+        assertThat(settlementPhaseTimerCount()).isEqualTo(timerCountBefore + 1);
+    }
+
+    private long settlementPhaseTimerCount() {
+        final Timer timer = meterRegistry.find(SETTLEMENT_PHASE_DURATION)
+            .tag("phase", STOCK_ORDER_SETTLEMENT_PHASE)
+            .timer();
+        if (timer == null) {
+            return 0;
+        }
+        return timer.count();
     }
 }
