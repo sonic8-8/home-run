@@ -1,7 +1,7 @@
-package io.ssafy.p.j14c103.homerun.api.controller.world;
+package io.ssafy.p.j14c103.homerun.api.controller.game.turn;
 
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -10,7 +10,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.ssafy.p.j14c103.homerun.api.service.world.LatestTurnNewsService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnNewsService;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.LatestTurnNewsResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -28,18 +28,18 @@ import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(GameWorldController.class)
+@WebMvcTest(GameTurnNewsController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @AutoConfigureRestDocs(uriScheme = "https", uriHost = "api.homerun.local", uriPort = 443)
-class GameWorldControllerTest extends RestDocsTestSupport {
+class GameTurnNewsControllerTest extends RestDocsTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private LatestTurnNewsService latestTurnNewsService;
+    private GameTurnNewsService gameTurnNewsService;
 
-    @DisplayName("최신 턴 뉴스 조회 요청이 성공하면 현재 턴 뉴스 응답을 반환한다")
+    @DisplayName("최신 턴 뉴스 조회는 게임 코어 응답 계약으로 최신 뉴스 정보를 반환한다.")
     @Test
     void getLatestTurnNews() throws Exception {
         // given
@@ -55,10 +55,11 @@ class GameWorldControllerTest extends RestDocsTestSupport {
                 "BOOM_TO_CRISIS"
             ))
         );
-        given(latestTurnNewsService.getLatestTurnNews(anyLong())).willReturn(response);
+        given(gameTurnNewsService.getLatestTurnNews(1L, 1001L)).willReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", 1001L)
+                .with(currentUser())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200))
@@ -73,7 +74,7 @@ class GameWorldControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.data.news[0].sourceName").value("영남일보"))
             .andExpect(jsonPath("$.data.news[0].publishedDate").value("2026-01-01"))
             .andExpect(jsonPath("$.data.news[0].economicCycleType").value("BOOM_TO_CRISIS"))
-            .andDo(document("world/news/latest/success",
+            .andDo(document("game-turn/news/latest/success",
                 requestHeaders(authorizationHeader()),
                 pathParameters(
                     parameterWithName("sessionId").description("게임 세션 ID")
@@ -91,22 +92,47 @@ class GameWorldControllerTest extends RestDocsTestSupport {
                     fieldWithPath("news[].economicCycleType").type(JsonFieldType.STRING).description("경제 사이클 전환 유형")
                 )
             ));
+        then(gameTurnNewsService).should().getLatestTurnNews(1L, 1001L);
     }
 
-    @DisplayName("최신 턴 뉴스 조회 중 존재하지 않는 세션 ID면 400과 에러 응답을 반환한다")
+    @DisplayName("다른 사용자의 세션 최신 턴 뉴스 조회는 403을 반환한다.")
     @Test
-    void getLatestTurnNewsWithUnknownSessionId() throws Exception {
+    void getOtherUsersLatestTurnNews() throws Exception {
         // given
-        given(latestTurnNewsService.getLatestTurnNews(anyLong()))
-            .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
+        given(gameTurnNewsService.getLatestTurnNews(1L, 88L))
+            .willThrow(new HomerunException(ErrorCode.GAME_SESSION_FORBIDDEN));
+
+        // when & then
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", 88L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_FORBIDDEN.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_SESSION_FORBIDDEN.getMessage()))
+            .andDo(document("game-turn/news/latest/forbidden",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                basicErrorResponseFields()
+            ));
+    }
+
+    @DisplayName("존재하지 않는 세션의 최신 턴 뉴스 조회는 404를 반환한다.")
+    @Test
+    void getUnknownLatestTurnNews() throws Exception {
+        // given
+        given(gameTurnNewsService.getLatestTurnNews(1L, 9999L))
+            .willThrow(new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", 9999L)
+                .with(currentUser())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.code").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getCode()))
-            .andExpect(jsonPath("$.message").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getMessage()))
-            .andDo(document("world/news/latest/session-not-found",
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_SESSION_NOT_FOUND.getMessage()))
+            .andDo(document("game-turn/news/latest/not-found",
                 requestHeaders(authorizationHeader()),
                 pathParameters(
                     parameterWithName("sessionId").description("게임 세션 ID")

@@ -2,6 +2,8 @@ package io.ssafy.p.j14c103.homerun.api.service.world;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnStateService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.ending.WorldEndingHistoryProviderService;
 import io.ssafy.p.j14c103.homerun.api.service.world.ending.WorldForeclosureSignalProviderService;
 import io.ssafy.p.j14c103.homerun.api.service.world.ending.request.WorldForeclosureSignalProviderRequest;
@@ -18,7 +20,7 @@ import io.ssafy.p.j14c103.homerun.api.service.world.housing.response.PurchaseVal
 import io.ssafy.p.j14c103.homerun.api.service.world.housing.response.RealEstateDocumentsQueryResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.housing.response.WorldContractReviewSubmitServiceResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.housing.response.WorldPurchaseValidationServiceResponse;
-import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnResponse;
+import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnWorldStateResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.PendingEventsProviderResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.TargetPropertyValidationResponse;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
@@ -34,6 +36,9 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.user.Email;
+import io.ssafy.p.j14c103.homerun.domain.user.User;
+import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.ContractResult;
@@ -75,7 +80,10 @@ class WorldRegressionTest {
     private TargetPropertyValidationService targetPropertyValidationService;
 
     @Autowired
-    private GameWorldService gameWorldService;
+    private GameTurnStateService gameTurnStateService;
+
+    @Autowired
+    private GameTurnWorldStateService gameTurnWorldStateService;
 
     @Autowired
     private WorldEventTriggerService worldEventTriggerService;
@@ -128,12 +136,16 @@ class WorldRegressionTest {
     @Autowired
     private RealEstateDocumentRepository realEstateDocumentRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @DisplayName("목표 매물 검증부터 turn, pending resolve, ending history까지 대표 성공 흐름을 한 번에 검증한다")
     @Test
     void worldSuccessFlow() {
         // given
         worldHousingSeedService.seed();
         worldContentSeedService.seed();
+        final User user = saveUser("world-regression-success@example.com");
         final RealEstateProperty targetProperty = realEstatePropertyRepository.findByProviderId("PROP-HN-001")
             .orElseThrow();
         final TargetPropertyValidationResponse targetPropertyResponse =
@@ -143,7 +155,7 @@ class WorldRegressionTest {
                 targetProperty.getPropertyId()
             );
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
-            createWorldSession(12, CyclePhase.BOOM, targetProperty.getPropertyId())
+            createWorldSession(user.getId(), 12, CyclePhase.BOOM, targetProperty.getPropertyId())
         );
         final Integer gameId = Math.toIntExact(gameSession.getGameSessionId());
         gameStatRepository.saveAndFlush(GameStat.create(gameId, 70, 10, 10, 50, 70, 12));
@@ -199,7 +211,13 @@ class WorldRegressionTest {
         );
 
         // when
-        final GameTurnResponse turnResponse = gameWorldService.getTurn(gameSession.getGameSessionId());
+        final TurnStateResponse turnResponse = gameTurnStateService.getTurnState(
+            gameSession.getUserId(),
+            gameSession.getGameSessionId()
+        );
+        final GameTurnWorldStateResponse turnWorldState = gameTurnWorldStateService.getWorldState(
+            gameSession
+        );
         worldEventResolveExecutionService.resolveEvent(
             gameSession.getGameSessionId(),
             familyEvent.getEventId(),
@@ -212,7 +230,7 @@ class WorldRegressionTest {
         assertThat(targetPropertyResponse.getPropertyId()).isEqualTo(targetProperty.getPropertyId());
         assertThat(targetPropertyResponse.getHousingType()).isEqualTo(HousingType.OWNED_APT);
         assertThat(turnResponse.getTurnNumber()).isEqualTo(12);
-        assertThat(turnResponse.getEconomicCycle().getPhase()).isEqualTo(CyclePhase.BOOM);
+        assertThat(turnWorldState.getPhase()).isEqualTo(CyclePhase.BOOM);
         assertThat(familyEvent.getType()).isEqualTo(EventPresentationType.CHOICE);
         assertThat(endingHistory.getEventHistories()).hasSize(1);
         assertThat(endingHistory.getEventHistories().get(0).getSelectedChoiceCode()).isEqualTo("A");
@@ -245,7 +263,10 @@ class WorldRegressionTest {
                 RealEstateDocumentChecklistItem.create("TRAP-02", "근저당 확인", true)
             )
         ));
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createSimpleSession(property.getPropertyId()));
+        final User user = saveUser("world-regression-real-estate@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createSimpleSession(user.getId(), property.getPropertyId())
+        );
         final GameHousing beforeHousing = GameHousing.create(
             gameSession.getGameSessionId(),
             HousingType.STUDIO,
@@ -326,7 +347,10 @@ class WorldRegressionTest {
                 RealEstateDocumentChecklistItem.create("TRAP-NORMAL", "근저당 확인", true)
             )
         ));
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createSimpleSession(property.getPropertyId()));
+        final User user = saveUser("world-regression-signal@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createSimpleSession(user.getId(), property.getPropertyId())
+        );
 
         // when
         final WorldContractReviewSubmitServiceResponse reviewResponse =
@@ -392,12 +416,13 @@ class WorldRegressionTest {
     }
 
     private GameSession createWorldSession(
+        final Long userId,
         final int currentTurn,
         final CyclePhase cyclePhase,
         final Long targetPropertyId
     ) {
         final GameSession gameSession = GameSession.create(
-            1L,
+            userId,
             1,
             "윤서",
             CharacterType.FEMALE,
@@ -424,9 +449,9 @@ class WorldRegressionTest {
         return gameSession;
     }
 
-    private GameSession createSimpleSession(final Long targetPropertyId) {
+    private GameSession createSimpleSession(final Long userId, final Long targetPropertyId) {
         return GameSession.create(
-            1L,
+            userId,
             1,
             "홍길동",
             CharacterType.MALE,
@@ -437,6 +462,10 @@ class WorldRegressionTest {
             targetPropertyId,
             DataSourceType.MY_DATA
         );
+    }
+
+    private User saveUser(final String email) {
+        return userRepository.save(User.register(Email.of(email), "tester", "hashed-password"));
     }
 
     private GameCareer createGameCareer(final int gameSessionId, final int tenureTurns) {
