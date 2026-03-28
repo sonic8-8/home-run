@@ -10,13 +10,9 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldService;
 import io.ssafy.p.j14c103.homerun.api.service.world.LatestTurnNewsService;
-import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnResponse;
-import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.LatestTurnNewsResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
-import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDate;
@@ -41,78 +37,7 @@ class GameWorldControllerTest extends RestDocsTestSupport {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private GameWorldService gameWorldService;
-
-    @MockitoBean
     private LatestTurnNewsService latestTurnNewsService;
-
-    @DisplayName("턴 조회 요청이 성공하면 현재 턴 상태와 경제 사이클 응답을 반환한다")
-    @Test
-    void getTurn() throws Exception {
-        // given
-        GameTurnResponse response = GameTurnResponse.of(
-            12,
-            LocalDate.of(2026, 1, 1),
-            GameTurnResponse.EconomicCycleResponse.of(
-                CyclePhase.BOOM,
-                "경기 호황기"
-            ),
-            List.of()
-        );
-        given(gameWorldService.getTurn(anyLong())).willReturn(response);
-
-        // when & then
-        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", 1001L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200))
-            .andExpect(jsonPath("$.message").value("OK"))
-            .andExpect(jsonPath("$.data.turnNumber").value(12))
-            .andExpect(jsonPath("$.data.currentDate").value("2026-01-01"))
-            .andExpect(jsonPath("$.data.month").value(1))
-            .andExpect(jsonPath("$.data.economicCycle.phase").value("BOOM"))
-            .andExpect(jsonPath("$.data.economicCycle.description").value("경기 호황기"))
-            .andExpect(jsonPath("$.data.news").isArray())
-            .andExpect(jsonPath("$.data.news.length()").value(0))
-            .andDo(document("world/turn/success",
-                    requestHeaders(authorizationHeader()),
-                    pathParameters(
-                            parameterWithName("sessionId").description("게임 세션 ID")
-                    ),
-                    apiResponseFields(
-                            "현재 턴 정보",
-                            fieldWithPath("turnNumber").type(JsonFieldType.NUMBER).description("현재 턴 번호"),
-                            fieldWithPath("currentDate").type(JsonFieldType.STRING).description("현재 날짜"),
-                            fieldWithPath("month").type(JsonFieldType.NUMBER).description("현재 월"),
-                            fieldWithPath("economicCycle").type(JsonFieldType.OBJECT).description("경제 사이클 정보"),
-                            fieldWithPath("economicCycle.phase").type(JsonFieldType.STRING).description("경제 사이클 단계"),
-                            fieldWithPath("economicCycle.description").type(JsonFieldType.STRING).description("경제 사이클 설명"),
-                            fieldWithPath("news").type(JsonFieldType.ARRAY).description("턴 뉴스 목록")
-                    )
-            ));
-    }
-
-    @DisplayName("존재하지 않는 세션 ID면 400과 에러 응답을 반환한다")
-    @Test
-    void getTurnWithUnknownSessionId() throws Exception {
-        // given
-        given(gameWorldService.getTurn(anyLong()))
-            .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
-
-        // when & then
-        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", 9999L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.code").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getCode()))
-            .andExpect(jsonPath("$.message").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getMessage()))
-            .andDo(document("world/turn/session-not-found",
-                    requestHeaders(authorizationHeader()),
-                    pathParameters(
-                            parameterWithName("sessionId").description("게임 세션 ID")
-                    ),
-                    basicErrorResponseFields()
-            ));
-    }
 
     @DisplayName("최신 턴 뉴스 조회 요청이 성공하면 현재 턴 뉴스 응답을 반환한다")
     @Test
@@ -134,7 +59,7 @@ class GameWorldControllerTest extends RestDocsTestSupport {
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", 1001L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200))
             .andExpect(jsonPath("$.message").value("OK"))
@@ -149,22 +74,22 @@ class GameWorldControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.data.news[0].publishedDate").value("2026-01-01"))
             .andExpect(jsonPath("$.data.news[0].economicCycleType").value("BOOM_TO_CRISIS"))
             .andDo(document("world/news/latest/success",
-                    requestHeaders(authorizationHeader()),
-                    pathParameters(
-                            parameterWithName("sessionId").description("게임 세션 ID")
-                    ),
-                    apiResponseFields(
-                            "최신 턴 뉴스 정보",
-                            fieldWithPath("turnNumber").type(JsonFieldType.NUMBER).description("현재 턴 번호"),
-                            fieldWithPath("currentDate").type(JsonFieldType.STRING).description("현재 날짜"),
-                            fieldWithPath("news").type(JsonFieldType.ARRAY).description("최신 턴 뉴스 목록"),
-                            fieldWithPath("news[].newsId").type(JsonFieldType.STRING).description("뉴스 식별자"),
-                            fieldWithPath("news[].headline").type(JsonFieldType.STRING).description("뉴스 제목"),
-                            fieldWithPath("news[].content").type(JsonFieldType.STRING).description("뉴스 본문"),
-                            fieldWithPath("news[].sourceName").type(JsonFieldType.STRING).description("뉴스 출처"),
-                            fieldWithPath("news[].publishedDate").type(JsonFieldType.STRING).description("뉴스 발행일"),
-                            fieldWithPath("news[].economicCycleType").type(JsonFieldType.STRING).description("경제 사이클 전환 유형")
-                    )
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                apiResponseFields(
+                    "최신 턴 뉴스 정보",
+                    fieldWithPath("turnNumber").type(JsonFieldType.NUMBER).description("현재 턴 번호"),
+                    fieldWithPath("currentDate").type(JsonFieldType.STRING).description("현재 날짜"),
+                    fieldWithPath("news").type(JsonFieldType.ARRAY).description("최신 턴 뉴스 목록"),
+                    fieldWithPath("news[].newsId").type(JsonFieldType.STRING).description("뉴스 식별자"),
+                    fieldWithPath("news[].headline").type(JsonFieldType.STRING).description("뉴스 제목"),
+                    fieldWithPath("news[].content").type(JsonFieldType.STRING).description("뉴스 본문"),
+                    fieldWithPath("news[].sourceName").type(JsonFieldType.STRING).description("뉴스 출처"),
+                    fieldWithPath("news[].publishedDate").type(JsonFieldType.STRING).description("뉴스 발행일"),
+                    fieldWithPath("news[].economicCycleType").type(JsonFieldType.STRING).description("경제 사이클 전환 유형")
+                )
             ));
     }
 
@@ -177,16 +102,16 @@ class GameWorldControllerTest extends RestDocsTestSupport {
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", 9999L)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getCode()))
             .andExpect(jsonPath("$.message").value(ErrorCode.WORLD_SESSION_NOT_FOUND.getMessage()))
             .andDo(document("world/news/latest/session-not-found",
-                    requestHeaders(authorizationHeader()),
-                    pathParameters(
-                            parameterWithName("sessionId").description("게임 세션 ID")
-                    ),
-                    basicErrorResponseFields()
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                basicErrorResponseFields()
             ));
     }
 }
