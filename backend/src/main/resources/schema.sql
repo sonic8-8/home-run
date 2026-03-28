@@ -837,5 +837,7 @@ create table if not exists game_timelines (
   loan_balance_amount integer,
   salary_amount integer,
   constraint fk_game_timelines__game_session
-    foreign key (game_session_id) references game_sessions (game_session_id)
+    foreign key (game_session_id) references game_sessions (game_session_id),
+  constraint uq_game_timelines__game_session_id__turn_number
+    unique (game_session_id, turn_number)
 );
