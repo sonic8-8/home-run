@@ -1,91 +1,102 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { ROUTES } from './routes';
+import { PageSpinner } from '@shared/components/PageSpinner';
 import { PrivateRoute } from '@shared/components/PrivateRoute';
 import { PublicRoute } from '@shared/components/PublicRoute';
 
 const AuthPage = lazy(() =>
-  import('@features/auth').then((m) => ({ default: m.AuthPage }))
+  import('@features/auth/presentation/pages/AuthPage').then((m) => ({ default: m.AuthPage }))
 );
 
 const HomePage = lazy(() =>
-  import('@features/home').then((m) => ({ default: m.HomePage }))
+  import('@features/home/presentation/pages/HomePage').then((m) => ({ default: m.HomePage }))
 );
 
 const GameStartPage = lazy(() =>
-  import('@features/game/presentation/pages/GameStart')
+  import('@features/game/presentation/pages/GameStart').then((m) => ({ default: m.GameStartPage }))
 );
 
 const GameSaveSlotPage = lazy(() =>
-  import('@features/game/presentation/pages/GameSaveSlot/GameSaveSlotPage')
+  import('@features/game/presentation/pages/GameSaveSlot').then((m) => ({ default: m.GameSaveSlotPage }))
 );
 
 const SelectCharacterPage = lazy(() =>
-  import('@features/game/presentation/pages/SelectCharacter/SelectCharacter')
+  import('@features/game/presentation/pages/SelectCharacter').then((m) => ({ default: m.SelectCharacterPage }))
 );
 
 const SetNicknamePage = lazy(() =>
-  import('@features/game/presentation/pages/SetNickname/SetNickname')
+  import('@features/game/presentation/pages/SetNickname').then((m) => ({ default: m.SetNicknamePage }))
 );
 
 const SelectStartMethodPage = lazy(() =>
-  import('@features/game/presentation/pages/SelectStartMethod/SelectStartMethod')
+  import('@features/game/presentation/pages/SelectStartMethod').then((m) => ({ default: m.SelectStartMethodPage }))
 );
 
 const SelectJobPage = lazy(() =>
-  import('@features/game/presentation/pages/SelectJob/SelectJob')
+  import('@features/game/presentation/pages/SelectJob').then((m) => ({ default: m.SelectJobPage }))
 );
 
 const GameMainPage = lazy(() =>
-  import('@features/game/presentation/pages/GameMain/GameMainPage').then((m) => ({
-    default: m.GameMainPage,
-  }))
+  import('@features/game/presentation/pages/GameMain').then((m) => ({ default: m.GameMainPage }))
 );
 
 const RealEstatePage = lazy(() =>
-  import('@features/realEstate').then((m) => ({ default: m.RealEstatePage }))
+  import('@features/realEstate/presentation/pages/RealEstatePage').then((m) => ({ default: m.RealEstatePage }))
 );
 
-const TempPage = () => <div>준비 중</div>;
+const LoanPlaceholderPage = lazy(() =>
+  import('@features/loan/presentation/pages/LoanPlaceholderPage').then((m) => ({ default: m.LoanPlaceholderPage }))
+);
 
-const DevPreviewPage = lazy(() =>
-  import('@features/game/presentation/pages/DevPreview/DevPreview')
+const CardPlaceholderPage = lazy(() =>
+  import('@features/card/presentation/pages/CardPlaceholderPage').then((m) => ({ default: m.CardPlaceholderPage }))
+);
+
+const MyPagePlaceholderPage = lazy(() =>
+  import('@features/mypage/presentation/pages/MyPagePlaceholderPage').then((m) => ({ default: m.MyPagePlaceholderPage }))
 );
 
 const NewsPage = lazy(() =>
-  import('@features/game/presentation/pages/NewsPage/NewsPage').then((m) => ({
-    default: m.NewsPage,
-  }))
+  import('@features/game/presentation/pages/NewsPage').then((m) => ({ default: m.NewsPage }))
+);
+
+const NotFoundContent = lazy(() =>
+  import('@shared/components/NotFoundContent').then((m) => ({ default: m.NotFoundContent }))
 );
 
 const router = createBrowserRouter([
-  { path: '/dev', element: <Suspense fallback={null}><DevPreviewPage /></Suspense> },
   {
     element: <PublicRoute />,
     children: [
-      { path: ROUTES.LOGIN, element: <Suspense fallback={null}><AuthPage /></Suspense> },
+      { path: ROUTES.LOGIN, element: <AuthPage /> },
     ],
   },
   {
     element: <PrivateRoute />,
     children: [
-      { path: ROUTES.HOME,     element: <Suspense fallback={null}><HomePage /></Suspense> },
-      { path: ROUTES.GAME,       element: <Suspense fallback={null}><GameMainPage /></Suspense> },
-      { path: ROUTES.GAME_START, element: <Suspense fallback={null}><GameStartPage /></Suspense> },
-      { path: ROUTES.GAME_SAVE,  element: <Suspense fallback={null}><GameSaveSlotPage /></Suspense> },
-      { path: ROUTES.GAME_SELECT_CHARACTER, element: <Suspense fallback={null}><SelectCharacterPage /></Suspense> },
-      { path: ROUTES.GAME_SET_NICKNAME, element: <Suspense fallback={null}><SetNicknamePage /></Suspense> },
-      { path: ROUTES.GAME_SELECT_START_METHOD, element: <Suspense fallback={null}><SelectStartMethodPage /></Suspense> },
-      { path: ROUTES.GAME_SELECT_JOB, element: <Suspense fallback={null}><SelectJobPage /></Suspense> },
-      { path: ROUTES.GAME_NEWS, element: <Suspense fallback={null}><NewsPage /></Suspense> },
-      { path: ROUTES.LOAN,     element: <TempPage /> },
-      { path: ROUTES.PROPERTY, element: <Suspense fallback={null}><RealEstatePage /></Suspense> },
-      { path: ROUTES.CARD,     element: <TempPage /> },
-      { path: ROUTES.MY_PAGE,  element: <TempPage /> },
+      { path: ROUTES.HOME,     element: <HomePage /> },
+      { path: ROUTES.GAME,       element: <GameMainPage /> },
+      { path: ROUTES.GAME_START, element: <GameStartPage /> },
+      { path: ROUTES.GAME_SAVE,  element: <GameSaveSlotPage /> },
+      { path: ROUTES.GAME_SELECT_CHARACTER, element: <SelectCharacterPage /> },
+      { path: ROUTES.GAME_SET_NICKNAME, element: <SetNicknamePage /> },
+      { path: ROUTES.GAME_SELECT_START_METHOD, element: <SelectStartMethodPage /> },
+      { path: ROUTES.GAME_SELECT_JOB, element: <SelectJobPage /> },
+      { path: ROUTES.GAME_NEWS_PATTERN, element: <NewsPage /> },
+      { path: ROUTES.LOAN,     element: <LoanPlaceholderPage /> },
+      { path: ROUTES.REAL_ESTATE, element: <RealEstatePage /> },
+      { path: ROUTES.CARD,     element: <CardPlaceholderPage /> },
+      { path: ROUTES.MY_PAGE,  element: <MyPagePlaceholderPage /> },
     ],
   },
+  { path: ROUTES.NOT_FOUND, element: <NotFoundContent /> },
 ]);
 
-export default function AppRouter() {
-  return <RouterProvider router={router} />;
+export function Router() {
+  return (
+    <Suspense fallback={<PageSpinner />}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
 }

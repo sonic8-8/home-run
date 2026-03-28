@@ -1,0 +1,1 @@
+export { SetNicknamePage } from './SetNicknamePage';

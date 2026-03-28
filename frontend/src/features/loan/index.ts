@@ -4,7 +4,6 @@ export type { LoanCategory, LoanProduct, LoanProductDetail, LoanProductPage } fr
 export type { RepaymentMethod, LoanCalculateParams, LoanCalculation } from './domain/entities/LoanCalculation';
 export type { LoanStatus, ActiveLoan, LoanConfirmResult, LoanRepayResult } from './domain/entities/ActiveLoan';
 
-// Presentation
 export { LoanReviewResultModal } from './presentation/components/LoanReviewResultModal';
 export { LoanConfirmModal } from './presentation/components/LoanConfirmModal';
 export { useLoan } from './presentation/hooks/useLoan';

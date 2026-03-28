@@ -228,19 +228,27 @@ operation::stock/orders/validation-error[snippets='http-request,request-headers,
 
 === 턴 조회
 
-operation::world/turn/success[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+operation::game-turn/state/success[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+
+=== 세션 권한 없음
+
+operation::game-turn/state/forbidden[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
 
 === 세션 없음
 
-operation::world/turn/session-not-found[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+operation::game-turn/state/not-found[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
 
 === 최신 턴 뉴스 조회
 
-operation::world/news/latest/success[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+operation::game-turn/news/latest/success[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+
+=== 최신 턴 뉴스 조회 권한 없음
+
+operation::game-turn/news/latest/forbidden[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
 
 === 최신 턴 뉴스 조회 세션 없음
 
-operation::world/news/latest/session-not-found[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
+operation::game-turn/news/latest/not-found[snippets='http-request,request-headers,path-parameters,http-response,response-fields']
 
 == 부동산 API
 

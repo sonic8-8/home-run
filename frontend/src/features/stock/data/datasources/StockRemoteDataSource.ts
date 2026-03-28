@@ -1,4 +1,5 @@
 import { apiClient } from '@core/network/apiClient'
+import { unwrapApiData, type ApiEnvelope } from '@core/network/apiResponse'
 import type {
   StockMarketResponseModel,
   StockHoldingsResponseModel,
@@ -8,24 +9,24 @@ import type {
 
 export class StockRemoteDataSource {
   async getMarket(sessionId: number): Promise<StockMarketResponseModel> {
-    return apiClient.get<StockMarketResponseModel>(
-      `/api/games/sessions/${sessionId}/stocks/market`,
-    )
+    return apiClient.get<ApiEnvelope<StockMarketResponseModel>>(
+      `/games/sessions/${sessionId}/stocks/market`,
+    ).then(unwrapApiData)
   }
 
   async getHoldings(sessionId: number): Promise<StockHoldingsResponseModel> {
-    return apiClient.get<StockHoldingsResponseModel>(
-      `/api/games/sessions/${sessionId}/stocks/holdings`,
-    )
+    return apiClient.get<ApiEnvelope<StockHoldingsResponseModel>>(
+      `/games/sessions/${sessionId}/stocks/holdings`,
+    ).then(unwrapApiData)
   }
 
   async order(
     sessionId: number,
     body: StockOrderRequestModel,
   ): Promise<StockOrderResponseModel> {
-    return apiClient.post<StockOrderResponseModel>(
-      `/api/games/sessions/${sessionId}/stocks/orders`,
+    return apiClient.post<ApiEnvelope<StockOrderResponseModel>>(
+      `/games/sessions/${sessionId}/stocks/orders`,
       body,
-    )
+    ).then(unwrapApiData)
   }
 }

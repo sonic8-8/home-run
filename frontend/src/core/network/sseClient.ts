@@ -1,4 +1,5 @@
 import { useAuthStore } from '@core/store/authStore';
+import { normalizeApiBaseUrl } from '@core/network/baseUrl';
 
 export interface SseEvent {
   name: string;
@@ -20,7 +21,9 @@ export function connectSse(
 
   const connect = async () => {
     const { accessToken } = useAuthStore.getState();
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
+    const baseUrl = normalizeApiBaseUrl(
+      import.meta.env.VITE_API_BASE_URL ?? '',
+    );
 
     try {
       const response = await fetch(`${baseUrl}${url}`, {

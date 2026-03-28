@@ -1,5 +1,6 @@
 import { injectable } from 'tsyringe';
 import { apiClient } from '@core/network/apiClient';
+import { unwrapApiData, type ApiEnvelope } from '@core/network/apiResponse';
 import type {
   CharacterOptionsResponseModel,
   JobTypeOptionsResponseModel,
@@ -12,28 +13,28 @@ import type {
 @injectable()
 export class GameInitRemoteDataSource {
   getCharacters(): Promise<CharacterOptionsResponseModel> {
-    return apiClient.get<CharacterOptionsResponseModel>('/api/games/characters');
+    return apiClient.get<ApiEnvelope<CharacterOptionsResponseModel>>('/games/characters').then(unwrapApiData);
   }
 
   getJobTypes(): Promise<JobTypeOptionsResponseModel> {
-    return apiClient.get<JobTypeOptionsResponseModel>('/api/games/job-types');
+    return apiClient.get<ApiEnvelope<JobTypeOptionsResponseModel>>('/games/job-types').then(unwrapApiData);
   }
 
   getRegions(): Promise<RegionListResponseModel> {
-    return apiClient.get<RegionListResponseModel>('/api/games/regions');
+    return apiClient.get<ApiEnvelope<RegionListResponseModel>>('/games/regions').then(unwrapApiData);
   }
 
   getDistricts(regionCode: string): Promise<DistrictListResponseModel> {
-    return apiClient.get<DistrictListResponseModel>(`/api/games/regions/${regionCode}/districts`);
+    return apiClient.get<ApiEnvelope<DistrictListResponseModel>>(`/games/regions/${regionCode}/districts`).then(unwrapApiData);
   }
 
   getTargetProperties(regionCode: string, districtCode: string): Promise<TargetPropertyListResponseModel> {
-    return apiClient.get<TargetPropertyListResponseModel>(
-      `/api/games/regions/${regionCode}/districts/${districtCode}/properties`,
-    );
+    return apiClient.get<ApiEnvelope<TargetPropertyListResponseModel>>(
+      `/games/regions/${regionCode}/districts/${districtCode}/properties`,
+    ).then(unwrapApiData);
   }
 
   getProfiles(): Promise<ProfileOptionsResponseModel> {
-    return apiClient.get<ProfileOptionsResponseModel>('/api/games/profiles');
+    return apiClient.get<ApiEnvelope<ProfileOptionsResponseModel>>('/games/profiles').then(unwrapApiData);
   }
 }

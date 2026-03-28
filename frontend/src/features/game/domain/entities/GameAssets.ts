@@ -1,45 +1,54 @@
+import type { JobType } from '@features/game/domain/entities/GameSlot';
+
+export type HousingType =
+  | 'NONE'
+  | 'STUDIO'
+  | 'VILLA'
+  | 'JEONSE_APT'
+  | 'OWNED_APT';
+
 export interface RealEstate {
-  propertyName: string;
-  housingType: string;
-  currentValue: number;
+  readonly propertyName: string;
+  readonly housingType: HousingType;
+  readonly currentValue: number;
 }
 
 export interface Loan {
-  principal: number;
-  monthlyInterest: number;
+  readonly principal: number;
+  readonly monthlyInterest: number;
 }
 
 export interface StockHolding {
-  stockCode: string;
-  stockName: string;
-  quantity: number;
-  currentValue: number;
+  readonly stockCode: string;
+  readonly stockName: string;
+  readonly quantity: number;
+  readonly currentValue: number;
 }
 
 export interface Stock {
-  totalValue: number;
-  holdings: StockHolding[];
+  readonly totalValue: number;
+  readonly holdings: readonly StockHolding[];
 }
 
 export interface Career {
-  characterName: string;
-  jobType: string;
-  jobTitle: string;
-  annualSalary: number;
+  readonly characterName: string;
+  readonly jobType: JobType;
+  readonly jobTitle: string;
+  readonly annualSalary: number;
 }
 
 export interface SideJob {
-  sideJobId: number;
-  name: string;
-  cashEffect: number;
-  healthEffect: number;
+  readonly sideJobId: number;
+  readonly name: string;
+  readonly cashEffect: number;
+  readonly healthEffect: number;
 }
 
 export interface GameAssets {
-  cash: number;
-  loan: Loan | null;
-  realEstate: RealEstate | null;
-  stock: Stock | null;
-  career: Career;
-  sideJobs: SideJob[];
+  readonly cash: number;
+  readonly loan: Loan | null;
+  readonly realEstate: RealEstate | null;
+  readonly stock: Stock | null;
+  readonly career: Career;
+  readonly sideJobs: readonly SideJob[];
 }

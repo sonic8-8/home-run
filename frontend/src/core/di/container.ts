@@ -1,14 +1,20 @@
 import { container } from 'tsyringe';
 import { DI_TOKENS } from './tokens';
+import { AuthRemoteDataSource } from '@features/auth/data/datasources/AuthRemoteDataSource';
+import { AuthRepositoryImpl } from '@features/auth/data/repositories/AuthRepositoryImpl';
 import { GameInitRemoteDataSource } from '@features/game/data/datasources/GameInitRemoteDataSource';
 import { GameInitRepositoryImpl } from '@features/game/data/repositories/GameInitRepositoryImpl';
 import { GameSessionRemoteDataSource } from '@features/game/data/datasources/GameSessionRemoteDataSource';
 import { GameSessionRepositoryImpl } from '@features/game/data/repositories/GameSessionRepositoryImpl';
-import { GameWorldRemoteDataSource } from '@features/game/data/datasources/GameWorldRemoteDataSource';
-import { GameWorldRepositoryImpl } from '@features/game/data/repositories/GameWorldRepositoryImpl';
+import { GameTurnRemoteDataSource } from '@features/game/data/datasources/GameTurnRemoteDataSource';
+import { GameTurnRepositoryImpl } from '@features/game/data/repositories/GameTurnRepositoryImpl';
 import { RealEstateRemoteDataSource } from '@features/realEstate/data/datasources/RealEstateRemoteDataSource';
 import { RealEstateRepositoryImpl } from '@features/realEstate/data/repositories/RealEstateRepositoryImpl';
 
+container.registerSingleton(AuthRemoteDataSource);
+container.register(DI_TOKENS.IAuthRepository, {
+  useClass: AuthRepositoryImpl,
+});
 container.registerSingleton(GameInitRemoteDataSource);
 container.register(DI_TOKENS.IGameInitRepository, {
   useClass: GameInitRepositoryImpl,
@@ -17,9 +23,9 @@ container.registerSingleton(GameSessionRemoteDataSource);
 container.register(DI_TOKENS.IGameSessionRepository, {
   useClass: GameSessionRepositoryImpl,
 });
-container.registerSingleton(GameWorldRemoteDataSource);
-container.register(DI_TOKENS.IGameWorldRepository, {
-  useClass: GameWorldRepositoryImpl,
+container.registerSingleton(GameTurnRemoteDataSource);
+container.register(DI_TOKENS.IGameTurnRepository, {
+  useClass: GameTurnRepositoryImpl,
 });
 container.registerSingleton(RealEstateRemoteDataSource);
 container.register(DI_TOKENS.IRealEstateRepository, {

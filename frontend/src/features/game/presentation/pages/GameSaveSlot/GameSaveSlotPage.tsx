@@ -100,7 +100,7 @@ const SlotCard = ({ slot, onSelect }: SlotCardProps) => {
   );
 };
 
-export default function GameSaveSlotPage() {
+export function GameSaveSlotPage() {
   const { slots, isLoading, error, handleSelectSlot } = useGameSaveSlots();
 
   return (
