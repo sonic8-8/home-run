@@ -38,7 +38,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class PassSavingService {
 
-    private static final int DEFAULT_WEEKLY_GOAL = 50000;
+    private static final long DEFAULT_WEEKLY_GOAL = 50_000L;
 
     private final PassSubscriptionRepository passSubscriptionRepository;
     private final UserAccountRepository userAccountRepository;
@@ -69,7 +69,7 @@ public class PassSavingService {
         final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
         final String sourceAccountNo = subscription.getSourceAccountNo();
 
-        final int amount = subscription.getSavingAmount();
+        final long amount = subscription.getSavingAmount();
 
         final Map<String, Object> response = demandDepositClient.transferAccount(
                 userKey,
@@ -117,13 +117,13 @@ public class PassSavingService {
 
         final List<SeedmoneyTransaction> saveTransactions =
                 seedmoneyTransactionRepository.findByUserIdAndTransactionType(userId, "SAVE");
-        final int subscriptionTotalSaved = calculateSubscriptionTotalSaved(subscription, saveTransactions);
-        final int overallTotalSaved = calculateOverallTotalSaved(saveTransactions);
+        final long subscriptionTotalSaved = calculateSubscriptionTotalSaved(subscription, saveTransactions);
+        final long overallTotalSaved = calculateOverallTotalSaved(saveTransactions);
         userSsafyAccountSyncService.advanceSyncBaseline(mainAccount, mainTransactionUniqueNo);
         userSsafyAccountSyncService.advanceSyncBaseline(seedmoneyAccount, seedmoneyTransactionUniqueNo);
         userSsafyAccountSyncService.syncLinkedAccounts(userId);
         userFinancialSummaryService.getSummary(userId);
-        final int remainingBalance = getRequiredSeedmoneyAccount(userId).getBalanceSnapshot();
+        final long remainingBalance = getRequiredSeedmoneyAccount(userId).getBalanceSnapshot();
 
         return PassSaveResponse.of(amount, subscriptionTotalSaved, overallTotalSaved, remainingBalance);
     }
@@ -138,8 +138,8 @@ public class PassSavingService {
                 .with(DayOfWeek.MONDAY)
                 .atStartOfDay();
 
-        final int todaySaved = sumSavings(userId, todayStart);
-        final int weeklySaved = sumSavings(userId, weekStart);
+        final long todaySaved = sumSavings(userId, todayStart);
+        final long weeklySaved = sumSavings(userId, weekStart);
 
         return PassWidgetResponse.of(todaySaved, weeklySaved, DEFAULT_WEEKLY_GOAL);
     }
@@ -154,28 +154,28 @@ public class PassSavingService {
                 .map(PassHistoryResponse::from);
     }
 
-    private int sumSavings(final Long userId, final LocalDateTime after) {
+    private long sumSavings(final Long userId, final LocalDateTime after) {
         final List<SeedmoneyTransaction> transactions = seedmoneyTransactionRepository
                 .findByUserIdAndTransactionTypeAndCreatedAtAfter(userId, "SAVE", after);
 
         return transactions.stream()
-                .mapToInt(SeedmoneyTransaction::getAmount)
+                .mapToLong(SeedmoneyTransaction::getAmount)
                 .sum();
     }
 
-    private int calculateOverallTotalSaved(final List<SeedmoneyTransaction> saveTransactions) {
+    private long calculateOverallTotalSaved(final List<SeedmoneyTransaction> saveTransactions) {
         return saveTransactions.stream()
-                .mapToInt(SeedmoneyTransaction::getAmount)
+                .mapToLong(SeedmoneyTransaction::getAmount)
                 .sum();
     }
 
-    private int calculateSubscriptionTotalSaved(
+    private long calculateSubscriptionTotalSaved(
             final PassSubscription subscription,
             final List<SeedmoneyTransaction> saveTransactions
     ) {
         return saveTransactions.stream()
                 .filter(transaction -> isMatchingPassSave(subscription, transaction))
-                .mapToInt(SeedmoneyTransaction::getAmount)
+                .mapToLong(SeedmoneyTransaction::getAmount)
                 .sum();
     }
 

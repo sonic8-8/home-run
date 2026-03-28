@@ -33,10 +33,10 @@ public class CardProduct {
     private String cardDescription;
 
     @Column(name = "baseline_performance_amount")
-    private Integer baselinePerformanceAmount;
+    private Long baselinePerformanceAmount;
 
     @Column(name = "max_benefit_limit_amount")
-    private Integer maxBenefitLimitAmount;
+    private Long maxBenefitLimitAmount;
 
     @Column(name = "active_benefits", columnDefinition = "TEXT")
     private String activeBenefits;
@@ -51,8 +51,8 @@ public class CardProduct {
             final String cardName,
             final String cardIssuerName,
             final String cardDescription,
-            final Integer baselinePerformanceAmount,
-            final Integer maxBenefitLimitAmount,
+            final Long baselinePerformanceAmount,
+            final Long maxBenefitLimitAmount,
             final String activeBenefits,
             final String cardImageUrl,
             final boolean activeYn
@@ -71,8 +71,30 @@ public class CardProduct {
             final String cardName,
             final String cardIssuerName,
             final String cardDescription,
-            final Integer baselinePerformanceAmount,
-            final Integer maxBenefitLimitAmount,
+            final int baselinePerformanceAmount,
+            final int maxBenefitLimitAmount,
+            final String activeBenefits,
+            final String cardImageUrl,
+            final boolean activeYn
+    ) {
+        return create(
+                cardName,
+                cardIssuerName,
+                cardDescription,
+                Long.valueOf(baselinePerformanceAmount),
+                Long.valueOf(maxBenefitLimitAmount),
+                activeBenefits,
+                cardImageUrl,
+                activeYn
+        );
+    }
+
+    public static CardProduct create(
+            final String cardName,
+            final String cardIssuerName,
+            final String cardDescription,
+            final Long baselinePerformanceAmount,
+            final Long maxBenefitLimitAmount,
             final String activeBenefits,
             final String cardImageUrl,
             final boolean activeYn

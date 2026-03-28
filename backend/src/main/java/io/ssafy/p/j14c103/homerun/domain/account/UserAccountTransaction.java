@@ -39,7 +39,7 @@ public class UserAccountTransaction {
     private AccountTransactionType transactionType;
 
     @Column(name = "amount", nullable = false)
-    private Integer amount;
+    private Long amount;
 
     @Column(name = "counterparty_account_number", length = 50)
     private String counterpartyAccountNumber;
@@ -58,7 +58,7 @@ public class UserAccountTransaction {
             final AccountType accountType,
             final Long passSubscriptionId,
             final AccountTransactionType transactionType,
-            final Integer amount,
+            final Long amount,
             final String counterpartyAccountNumber,
             final String transactionSummary,
             final String ssafyTransactionUniqueNo,
@@ -79,7 +79,24 @@ public class UserAccountTransaction {
             final AccountType accountType,
             final Long passSubscriptionId,
             final AccountTransactionType transactionType,
-            final Integer amount,
+            final int amount,
+            final String counterpartyAccountNumber) {
+        return create(
+                userId,
+                accountType,
+                passSubscriptionId,
+                transactionType,
+                Long.valueOf(amount),
+                counterpartyAccountNumber
+        );
+    }
+
+    public static UserAccountTransaction create(
+            final Long userId,
+            final AccountType accountType,
+            final Long passSubscriptionId,
+            final AccountTransactionType transactionType,
+            final Long amount,
             final String counterpartyAccountNumber) {
         return create(
                 userId,
@@ -99,7 +116,26 @@ public class UserAccountTransaction {
             final AccountType accountType,
             final Long passSubscriptionId,
             final AccountTransactionType transactionType,
-            final Integer amount,
+            final int amount,
+            final String counterpartyAccountNumber,
+            final LocalDateTime createdAt) {
+        return create(
+                userId,
+                accountType,
+                passSubscriptionId,
+                transactionType,
+                Long.valueOf(amount),
+                counterpartyAccountNumber,
+                createdAt
+        );
+    }
+
+    public static UserAccountTransaction create(
+            final Long userId,
+            final AccountType accountType,
+            final Long passSubscriptionId,
+            final AccountTransactionType transactionType,
+            final Long amount,
             final String counterpartyAccountNumber,
             final LocalDateTime createdAt) {
         return create(
@@ -120,7 +156,7 @@ public class UserAccountTransaction {
             final AccountType accountType,
             final Long passSubscriptionId,
             final AccountTransactionType transactionType,
-            final Integer amount,
+            final Long amount,
             final String counterpartyAccountNumber,
             final String transactionSummary,
             final String ssafyTransactionUniqueNo,
@@ -157,7 +193,7 @@ public class UserAccountTransaction {
             final Long userId,
             final AccountType accountType,
             final AccountTransactionType transactionType,
-            final Integer amount,
+            final Long amount,
             final String counterpartyAccountNumber,
             final String transactionSummary,
             final String ssafyTransactionUniqueNo,

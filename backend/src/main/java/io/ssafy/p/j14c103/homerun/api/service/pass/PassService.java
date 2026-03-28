@@ -53,7 +53,7 @@ public class PassService {
 
         return subscriptions.stream()
                 .map(sub -> {
-                    final int totalSaved = calculateTotalSaved(userId, sub);
+                    final long totalSaved = calculateTotalSaved(userId, sub);
                     final List<Boolean> weeklyHistory = calculateWeeklyHistory(userId, sub);
                     return PassSubscriptionResponse.from(sub, totalSaved, weeklyHistory);
                 })
@@ -94,12 +94,12 @@ public class PassService {
         subscription.cancel();
     }
 
-    private int calculateTotalSaved(final Long userId, final PassSubscription subscription) {
+    private long calculateTotalSaved(final Long userId, final PassSubscription subscription) {
         final List<SeedmoneyTransaction> transactions =
                 seedmoneyTransactionRepository.findByUserIdAndTransactionType(userId, "SAVE");
         return transactions.stream()
                 .filter(t -> isMatchingPassSave(subscription, t))
-                .mapToInt(SeedmoneyTransaction::getAmount)
+                .mapToLong(SeedmoneyTransaction::getAmount)
                 .sum();
     }
 

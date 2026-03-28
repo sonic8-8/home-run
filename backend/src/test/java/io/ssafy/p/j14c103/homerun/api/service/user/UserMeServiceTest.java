@@ -107,6 +107,46 @@ class UserMeServiceTest {
         assertThat(response.getNetAssetAmount()).isEqualTo(10_000_000);
     }
 
+    @DisplayName("연동 완료 사용자는 21억대 자산도 Long 응답으로 반환한다.")
+    @Test
+    void getMeWithLargeLinkedUser() {
+        // given
+        final User user = userRepository.saveAndFlush(User.register(
+                Email.of("large-user@example.com"),
+                "홍길동",
+                "encoded-password"
+        ));
+        user.linkSsafy("large-user-key", LocalDateTime.now());
+        userRepository.saveAndFlush(user);
+        userAccountRepository.save(UserAccount.create(
+                user.getId(),
+                AccountType.MAIN,
+                "001",
+                "한국은행",
+                "3333333333333333",
+                5_000_000_000L
+        ));
+        userAccountRepository.save(UserAccount.create(
+                user.getId(),
+                AccountType.SEEDMONEY,
+                "001",
+                "한국은행",
+                "4444444444444444",
+                1_200_000_000L
+        ));
+        final UserFinancialSummary summary = UserFinancialSummary.create(user.getId());
+        summary.refresh(999L, 0L, 999L, 999L, 0L, 0L);
+        userFinancialSummaryRepository.save(summary);
+
+        // when
+        final UserMeResponse response = userMeService.getMe(user.getId());
+
+        // then
+        assertThat(response.isAssetLinked()).isTrue();
+        assertThat(response.getTotalAssetAmount()).isEqualTo(6_200_000_000L);
+        assertThat(response.getNetAssetAmount()).isEqualTo(6_200_000_000L);
+    }
+
     @DisplayName("SSAFY 연동이 있어도 계좌가 누락되면 미연동으로 본다.")
     @Test
     void getMeWithMissingAccounts() {

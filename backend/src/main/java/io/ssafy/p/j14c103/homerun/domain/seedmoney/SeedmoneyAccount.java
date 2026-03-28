@@ -28,7 +28,7 @@ public class SeedmoneyAccount {
     private String accountNumber;
 
     @Column(name = "잔액스냅샷")
-    private Integer balanceSnapshot;
+    private Long balanceSnapshot;
 
     @Column(name = "수정일시")
     private LocalDateTime updatedAt;
@@ -37,7 +37,7 @@ public class SeedmoneyAccount {
         this.userId = userId;
         this.bankName = bankName;
         this.accountNumber = accountNumber;
-        this.balanceSnapshot = 0;
+        this.balanceSnapshot = 0L;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -51,7 +51,7 @@ public class SeedmoneyAccount {
         return new SeedmoneyAccount(userId, bankName, accountNumber);
     }
 
-    public void updateBalance(final Integer newBalance) {
+    public void updateBalance(final Long newBalance) {
         if (newBalance == null) {
             throw new IllegalArgumentException("잔액은 null일 수 없습니다.");
         }
@@ -62,7 +62,7 @@ public class SeedmoneyAccount {
     public void syncSnapshot(
             final String bankName,
             final String accountNumber,
-            final Integer balanceSnapshot
+            final Long balanceSnapshot
     ) {
         if (accountNumber == null || accountNumber.isBlank()) {
             throw new IllegalArgumentException("계좌번호는 필수입니다.");

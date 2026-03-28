@@ -39,16 +39,16 @@ public class UserFinancialSummaryService {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
 
-        final int cashAssetAmount = userAccountRepository.findByUserIdAndActiveYnTrue(userId).stream()
-                .mapToInt(account -> account.getBalanceSnapshot().intValue())
+        final long cashAssetAmount = userAccountRepository.findByUserIdAndActiveYnTrue(userId).stream()
+                .mapToLong(account -> account.getBalanceSnapshot().longValue())
                 .sum();
 
         final List<UserFinancialProduct> products = userFinancialProductRepository.findByUserIdAndActiveYnTrue(userId);
-        final int savingAssetAmount = sumProductBalance(products, FinancialProductType.SAVING_DEPOSIT);
-        final int investmentAssetAmount = sumInvestmentAssetAmount(userId, products);
-        final int totalDebtAmount = sumProductBalance(products, FinancialProductType.LOAN);
-        final int totalAssetAmount = cashAssetAmount + savingAssetAmount + investmentAssetAmount;
-        final int netAssetAmount = totalAssetAmount - totalDebtAmount;
+        final long savingAssetAmount = sumProductBalance(products, FinancialProductType.SAVING_DEPOSIT);
+        final long investmentAssetAmount = sumInvestmentAssetAmount(userId, products);
+        final long totalDebtAmount = sumProductBalance(products, FinancialProductType.LOAN);
+        final long totalAssetAmount = cashAssetAmount + savingAssetAmount + investmentAssetAmount;
+        final long netAssetAmount = totalAssetAmount - totalDebtAmount;
 
         final UserFinancialSummary summary = userFinancialSummaryRepository.findById(userId)
                 .orElseGet(() -> UserFinancialSummary.create(userId));
@@ -64,17 +64,17 @@ public class UserFinancialSummaryService {
         return userFinancialSummaryRepository.save(summary);
     }
 
-    private int sumProductBalance(
+    private long sumProductBalance(
             final List<UserFinancialProduct> products,
             final FinancialProductType productType
     ) {
         return products.stream()
                 .filter(product -> product.getProductType() == productType)
-                .mapToInt(product -> product.getCurrentBalanceAmount().intValue())
+                .mapToLong(product -> product.getCurrentBalanceAmount().longValue())
                 .sum();
     }
 
-    private int sumInvestmentAssetAmount(
+    private long sumInvestmentAssetAmount(
             final Long userId,
             final List<UserFinancialProduct> products
     ) {
@@ -84,14 +84,14 @@ public class UserFinancialSummaryService {
         }
 
         final Map<String, StockMarket> stockMarkets = loadStockMarkets(holdings);
-        final Map<Long, Integer> amountByProductId = new HashMap<>();
-        int holdingAmount = 0;
+        final Map<Long, Long> amountByProductId = new HashMap<>();
+        long holdingAmount = 0L;
         for (UserInvestmentHolding holding : holdings) {
             final StockMarket stockMarket = stockMarkets.get(holding.getStockCode());
             final int currentPrice = refreshCurrentPriceIfNeeded(holding, stockMarket);
-            final int currentValueAmount = currentPrice * holding.getQuantity();
+            final long currentValueAmount = (long) currentPrice * holding.getQuantity();
             holdingAmount += currentValueAmount;
-            amountByProductId.merge(holding.getUserFinancialProductId(), currentValueAmount, Integer::sum);
+            amountByProductId.merge(holding.getUserFinancialProductId(), currentValueAmount, Long::sum);
         }
 
         syncInvestmentProductBalances(products, amountByProductId);
@@ -159,12 +159,12 @@ public class UserFinancialSummaryService {
 
     private void syncInvestmentProductBalances(
             final List<UserFinancialProduct> products,
-            final Map<Long, Integer> amountByProductId
+            final Map<Long, Long> amountByProductId
     ) {
         products.stream()
                 .filter(product -> product.getProductType() == FinancialProductType.INVESTMENT)
                 .forEach(product -> {
-                    final Integer amount = amountByProductId.get(product.getId());
+                    final Long amount = amountByProductId.get(product.getId());
                     if (amount != null) {
                         product.updateBalance(amount);
                     }
