@@ -24,10 +24,44 @@ interface LocationState {
   preSelectedPropertyPrice?: number;
 }
 
+type NewSessionLocationState =
+  | {
+      slotNumber: 1 | 2 | 3;
+      characterType: CharacterType;
+      characterName: string;
+      regionCode: string;
+      districtCode: string;
+      targetPropertyId: number;
+      useMyData: true;
+      jobType?: JobType;
+    }
+  | {
+      slotNumber: 1 | 2 | 3;
+      characterType: CharacterType;
+      characterName: string;
+      regionCode: string;
+      districtCode: string;
+      targetPropertyId: number;
+      useMyData: false;
+      jobType: JobType;
+    };
+
 const isValidSlotNumber = (
   slotNumber: number | undefined,
 ): slotNumber is 1 | 2 | 3 =>
   slotNumber === 1 || slotNumber === 2 || slotNumber === 3;
+
+const isCompleteNewSessionState = (
+  state: LocationState,
+): state is NewSessionLocationState =>
+  isValidSlotNumber(state.slotNumber) &&
+  state.characterType !== undefined &&
+  state.characterName !== undefined &&
+  state.regionCode !== undefined &&
+  state.districtCode !== undefined &&
+  state.targetPropertyId !== undefined &&
+  state.useMyData !== undefined &&
+  (state.useMyData || state.jobType !== undefined);
 
 export const useGameMain = () => {
   const navigate = useNavigate();
@@ -83,14 +117,7 @@ export const useGameMain = () => {
     }
 
     if (
-      !isValidSlotNumber(slotNumber) ||
-      routeCharacterType === undefined ||
-      characterName === undefined ||
-      jobType === undefined ||
-      regionCode === undefined ||
-      districtCode === undefined ||
-      targetPropertyId === undefined ||
-      useMyData === undefined
+      !isCompleteNewSessionState(state)
     ) {
       if (isMounted) {
         setError('세션 생성 정보가 부족합니다.');
@@ -112,16 +139,29 @@ export const useGameMain = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const createdSession = await createSession({
-          slotNumber,
-          characterType: routeCharacterType,
-          characterName,
-          jobType,
-          regionCode,
-          districtCode,
-          targetPropertyId,
-          useMyData,
-        });
+        const createInput =
+          state.useMyData
+            ? {
+                slotNumber: state.slotNumber,
+                characterType: state.characterType,
+                characterName: state.characterName,
+                regionCode: state.regionCode,
+                districtCode: state.districtCode,
+                targetPropertyId: state.targetPropertyId,
+                useMyData: state.useMyData,
+              }
+            : {
+                slotNumber: state.slotNumber,
+                characterType: state.characterType,
+                characterName: state.characterName,
+                jobType: state.jobType,
+                regionCode: state.regionCode,
+                districtCode: state.districtCode,
+                targetPropertyId: state.targetPropertyId,
+                useMyData: state.useMyData,
+              };
+
+        const createdSession = await createSession(createInput);
 
         if (!isMounted) {
           return;
@@ -132,7 +172,7 @@ export const useGameMain = () => {
           replace: true,
           state: {
             sessionId: createdSession.sessionId,
-            characterType: routeCharacterType,
+            characterType: state.characterType,
           },
         });
       } catch (sessionCreateError) {

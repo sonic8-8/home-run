@@ -33,7 +33,6 @@ const JOB_TYPES: ReadonlySet<NonNullable<GameSlot['jobType']>> = new Set([
 const SESSION_DATA_SOURCE_TYPES: ReadonlySet<GameSessionDataSourceType> = new Set([
   'MY_DATA',
   'PROFILE',
-  'MANUAL',
 ]);
 
 @injectable()
@@ -64,16 +63,21 @@ export class GameSessionRepositoryImpl implements IGameSessionRepository {
   private toCreateRequestModel(
     input: CreateGameSessionInput,
   ): CreateGameSessionRequestModel {
-    return {
+    const requestModel: CreateGameSessionRequestModel = {
       slotNumber: input.slotNumber,
       characterType: input.characterType,
       characterName: input.characterName,
-      jobType: input.jobType,
       regionCode: input.regionCode,
       districtCode: input.districtCode,
       targetPropertyId: input.targetPropertyId,
       useMyData: input.useMyData,
     };
+
+    if (!input.useMyData) {
+      requestModel.jobType = input.jobType;
+    }
+
+    return requestModel;
   }
 
   private toEntity(model: GameSlotModel): GameSlot {

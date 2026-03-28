@@ -1,6 +1,6 @@
 import type { SlotStatus } from './GameSlot';
 
-export type GameSessionDataSourceType = 'MY_DATA' | 'PROFILE' | 'MANUAL';
+export type GameSessionDataSourceType = 'MY_DATA' | 'PROFILE';
 
 export interface GameSessionCreation {
   readonly sessionId: number;

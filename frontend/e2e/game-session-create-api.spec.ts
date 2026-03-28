@@ -31,23 +31,17 @@ type CreatePayloadWindow = Window & {
   __testCreatePayload: Record<string, unknown> | null;
 };
 
-function seedNewGameRouteState(page: Page) {
+function seedNewGameRouteState(
+  page: Page,
+  state: Record<string, unknown>,
+) {
   return page.addInitScript((state) => {
     window.history.replaceState(
       { usr: state, key: 'game-create-test', idx: 0 },
       '',
       '/game',
     );
-  }, {
-    slotNumber: 3,
-    characterType: 'FEMALE',
-    characterName: '테스터',
-    jobType: 'STARTUP',
-    regionCode: '11',
-    districtCode: '11680',
-    targetPropertyId: 101,
-    useMyData: true,
-  });
+  }, state);
 }
 
 async function mockCreateSessionFlow(page: Page) {
@@ -67,7 +61,7 @@ async function mockCreateSessionFlow(page: Page) {
 
         return new Response(
           JSON.stringify({
-            status: 200,
+            status: 201,
             message: 'OK',
             data: {
               sessionId: 31,
@@ -78,7 +72,7 @@ async function mockCreateSessionFlow(page: Page) {
             },
           }),
           {
-            status: 200,
+            status: 201,
             headers: {
               'Content-Type': 'application/json',
             },
@@ -145,10 +139,18 @@ async function mockCreateSessionFlow(page: Page) {
 }
 
 test.describe('game session create api', () => {
-  test('creates a session from new-game route state and opens the game page', async ({ page }) => {
+  test('creates a MY_DATA session without jobType in route state', async ({ page }) => {
     await seedAuthenticatedUser(page);
     await mockExternalScripts(page);
-    await seedNewGameRouteState(page);
+    await seedNewGameRouteState(page, {
+      slotNumber: 3,
+      characterType: 'FEMALE',
+      characterName: '테스터',
+      regionCode: '11',
+      districtCode: '11680',
+      targetPropertyId: 101,
+      useMyData: true,
+    });
     await mockCreateSessionFlow(page);
 
     await page.goto('/game');
@@ -169,11 +171,49 @@ test.describe('game session create api', () => {
       slotNumber: 3,
       characterType: 'FEMALE',
       characterName: '테스터',
-      jobType: 'STARTUP',
       regionCode: '11',
       districtCode: '11680',
       targetPropertyId: 101,
       useMyData: true,
+    });
+  });
+
+  test('creates a PROFILE session with the selected jobType', async ({ page }) => {
+    await seedAuthenticatedUser(page);
+    await mockExternalScripts(page);
+    await seedNewGameRouteState(page, {
+      slotNumber: 2,
+      characterType: 'MALE',
+      characterName: '홍길동',
+      jobType: 'STARTUP',
+      regionCode: '26',
+      districtCode: '26110',
+      targetPropertyId: 202,
+      useMyData: false,
+    });
+    await mockCreateSessionFlow(page);
+
+    await page.goto('/game');
+
+    await page.waitForFunction(() => {
+      const testWindow = window as CreatePayloadWindow;
+      return testWindow.__testCreatePayload !== null;
+    });
+
+    const createPayload = await page.evaluate(() => {
+      const testWindow = window as CreatePayloadWindow;
+      return testWindow.__testCreatePayload;
+    });
+
+    expect(createPayload).toEqual({
+      slotNumber: 2,
+      characterType: 'MALE',
+      characterName: '홍길동',
+      jobType: 'STARTUP',
+      regionCode: '26',
+      districtCode: '26110',
+      targetPropertyId: 202,
+      useMyData: false,
     });
   });
 });
