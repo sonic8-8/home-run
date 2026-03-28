@@ -20,6 +20,18 @@ const defaultAssetLinkMockData: AssetLinkMockData = {
   seedmoneyBalance: 1200000,
 };
 
+async function waitForAssetLinkPageReady(page: Page) {
+  const userMeResponse = page.waitForResponse((response) => {
+    return response.url().includes('/api/users/me') && response.request().method() === 'GET';
+  });
+
+  await page.goto('/login');
+
+  await expect(page).toHaveURL(/\/$/);
+  await userMeResponse;
+  await expect(page.getByPlaceholder('예: 5000000')).toBeVisible();
+}
+
 function seedAuthenticatedUser(page: Page) {
   return page.addInitScript(() => {
     window.localStorage.setItem(
@@ -286,10 +298,7 @@ test.describe('asset link flow', () => {
     await seedAuthenticatedUser(page);
     await mockAssetLinkFlow(page);
 
-    await page.goto('/login');
-
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText('기본 재무 정보를 입력해 주세요')).toBeVisible();
+    await waitForAssetLinkPageReady(page);
 
     await page.getByPlaceholder('예: 5000000').fill('5000000');
     await page.getByPlaceholder('1 ~ 28').fill('25');
@@ -353,10 +362,7 @@ test.describe('asset link flow', () => {
       seedmoneyBalance: 1200000000,
     });
 
-    await page.goto('/login');
-
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText('기본 재무 정보를 입력해 주세요')).toBeVisible();
+    await waitForAssetLinkPageReady(page);
 
     await page.getByPlaceholder('예: 5000000').fill('5000000000');
     await page.getByPlaceholder('1 ~ 28').fill('25');
