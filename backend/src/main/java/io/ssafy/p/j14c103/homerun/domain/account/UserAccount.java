@@ -49,7 +49,7 @@ public class UserAccount {
     private String accountNumber;
 
     @Column(name = "balance_snapshot_amount", nullable = false)
-    private Integer balanceSnapshot;
+    private Long balanceSnapshot;
 
     @Column(name = "opened_at", nullable = false)
     private LocalDateTime openedAt;
@@ -72,7 +72,7 @@ public class UserAccount {
             final String bankCode,
             final String bankName,
             final String accountNumber,
-            final Integer balanceSnapshot) {
+            final Long balanceSnapshot) {
         this.userId = userId;
         this.accountType = accountType;
         this.bankCode = bankCode;
@@ -92,7 +92,17 @@ public class UserAccount {
             final String bankCode,
             final String bankName,
             final String accountNumber,
-            final Integer balanceSnapshot) {
+            final int balanceSnapshot) {
+        return create(userId, accountType, bankCode, bankName, accountNumber, Long.valueOf(balanceSnapshot));
+    }
+
+    public static UserAccount create(
+            final Long userId,
+            final AccountType accountType,
+            final String bankCode,
+            final String bankName,
+            final String accountNumber,
+            final Long balanceSnapshot) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }
@@ -115,7 +125,7 @@ public class UserAccount {
         return new UserAccount(userId, accountType, bankCode, bankName, accountNumber, balanceSnapshot);
     }
 
-    public void updateBalance(final int newBalance) {
+    public void updateBalance(final long newBalance) {
         if (newBalance < 0) {
             throw new IllegalArgumentException("잔액은 0 이상이어야 합니다.");
         }

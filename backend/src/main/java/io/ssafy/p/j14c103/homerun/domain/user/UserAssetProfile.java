@@ -23,16 +23,16 @@ public class UserAssetProfile {
     private Long userId;
 
     @Column(name = "main_account_balance_amount", nullable = false)
-    private Integer mainAccountBalanceAmount;
+    private Long mainAccountBalanceAmount;
 
     @Column(name = "salary_day_of_month", nullable = false)
     private Integer salaryDayOfMonth;
 
     @Column(name = "monthly_salary_amount", nullable = false)
-    private Integer monthlySalaryAmount;
+    private Long monthlySalaryAmount;
 
     @Column(name = "monthly_fixed_expense_amount", nullable = false)
-    private Integer monthlyFixedExpenseAmount;
+    private Long monthlyFixedExpenseAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "job_type", nullable = false, length = 30)
@@ -43,10 +43,10 @@ public class UserAssetProfile {
 
     private UserAssetProfile(
             final Long userId,
-            final Integer mainAccountBalanceAmount,
+            final Long mainAccountBalanceAmount,
             final Integer salaryDayOfMonth,
-            final Integer monthlySalaryAmount,
-            final Integer monthlyFixedExpenseAmount,
+            final Long monthlySalaryAmount,
+            final Long monthlyFixedExpenseAmount,
             final JobType jobType
     ) {
         validate(
@@ -68,10 +68,28 @@ public class UserAssetProfile {
 
     public static UserAssetProfile create(
             final Long userId,
-            final Integer mainAccountBalanceAmount,
+            final long mainAccountBalanceAmount,
             final Integer salaryDayOfMonth,
-            final Integer monthlySalaryAmount,
-            final Integer monthlyFixedExpenseAmount,
+            final long monthlySalaryAmount,
+            final long monthlyFixedExpenseAmount,
+            final JobType jobType
+    ) {
+        return create(
+                userId,
+                Long.valueOf(mainAccountBalanceAmount),
+                salaryDayOfMonth,
+                Long.valueOf(monthlySalaryAmount),
+                Long.valueOf(monthlyFixedExpenseAmount),
+                jobType
+        );
+    }
+
+    public static UserAssetProfile create(
+            final Long userId,
+            final Long mainAccountBalanceAmount,
+            final Integer salaryDayOfMonth,
+            final Long monthlySalaryAmount,
+            final Long monthlyFixedExpenseAmount,
             final JobType jobType
     ) {
         return new UserAssetProfile(
@@ -85,10 +103,26 @@ public class UserAssetProfile {
     }
 
     public void update(
-            final Integer mainAccountBalanceAmount,
+            final long mainAccountBalanceAmount,
             final Integer salaryDayOfMonth,
-            final Integer monthlySalaryAmount,
-            final Integer monthlyFixedExpenseAmount,
+            final long monthlySalaryAmount,
+            final long monthlyFixedExpenseAmount,
+            final JobType jobType
+    ) {
+        update(
+                Long.valueOf(mainAccountBalanceAmount),
+                salaryDayOfMonth,
+                Long.valueOf(monthlySalaryAmount),
+                Long.valueOf(monthlyFixedExpenseAmount),
+                jobType
+        );
+    }
+
+    public void update(
+            final Long mainAccountBalanceAmount,
+            final Integer salaryDayOfMonth,
+            final Long monthlySalaryAmount,
+            final Long monthlyFixedExpenseAmount,
             final JobType jobType
     ) {
         validate(
@@ -109,10 +143,10 @@ public class UserAssetProfile {
 
     private void validate(
             final Long userId,
-            final Integer mainAccountBalanceAmount,
+            final Long mainAccountBalanceAmount,
             final Integer salaryDayOfMonth,
-            final Integer monthlySalaryAmount,
-            final Integer monthlyFixedExpenseAmount,
+            final Long monthlySalaryAmount,
+            final Long monthlyFixedExpenseAmount,
             final JobType jobType
     ) {
         if (userId == null) {

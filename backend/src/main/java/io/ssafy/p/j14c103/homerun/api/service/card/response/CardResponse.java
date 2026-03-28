@@ -10,8 +10,8 @@ public class CardResponse {
     private final String cardName;
     private final String cardIssuerName;
     private final String cardDescription;
-    private final Integer baselinePerformanceAmount;
-    private final Integer maxBenefitLimitAmount;
+    private final Long baselinePerformanceAmount;
+    private final Long maxBenefitLimitAmount;
     private final String cardImageUrl;
     private final List<CardBenefitResponse> activeBenefits;
 
@@ -20,8 +20,8 @@ public class CardResponse {
             final String cardName,
             final String cardIssuerName,
             final String cardDescription,
-            final Integer baselinePerformanceAmount,
-            final Integer maxBenefitLimitAmount,
+            final Long baselinePerformanceAmount,
+            final Long maxBenefitLimitAmount,
             final String cardImageUrl,
             final List<CardBenefitResponse> activeBenefits
     ) {
@@ -40,8 +40,30 @@ public class CardResponse {
             final String cardName,
             final String cardIssuerName,
             final String cardDescription,
-            final Integer baselinePerformanceAmount,
-            final Integer maxBenefitLimitAmount,
+            final long baselinePerformanceAmount,
+            final long maxBenefitLimitAmount,
+            final String cardImageUrl,
+            final List<CardBenefitResponse> activeBenefits
+    ) {
+        return of(
+                cardProductId,
+                cardName,
+                cardIssuerName,
+                cardDescription,
+                Long.valueOf(baselinePerformanceAmount),
+                Long.valueOf(maxBenefitLimitAmount),
+                cardImageUrl,
+                activeBenefits
+        );
+    }
+
+    public static CardResponse of(
+            final Long cardProductId,
+            final String cardName,
+            final String cardIssuerName,
+            final String cardDescription,
+            final Long baselinePerformanceAmount,
+            final Long maxBenefitLimitAmount,
             final String cardImageUrl,
             final List<CardBenefitResponse> activeBenefits
     ) {

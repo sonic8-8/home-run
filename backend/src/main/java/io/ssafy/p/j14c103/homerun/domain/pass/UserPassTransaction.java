@@ -22,18 +22,18 @@ public class UserPassTransaction {
     private Long subscriptionId;
 
     @Column(name = "거래금액")
-    private Integer amount;
+    private Long amount;
 
     @Column(name = "거래일시")
     private String transactionDate;
 
-    private UserPassTransaction(final Long subscriptionId, final Integer amount) {
+    private UserPassTransaction(final Long subscriptionId, final Long amount) {
         this.subscriptionId = subscriptionId;
         this.amount = amount;
         this.transactionDate = LocalDateTime.now().toString();
     }
 
-    public static UserPassTransaction create(final Long subscriptionId, final Integer amount) {
+    public static UserPassTransaction create(final Long subscriptionId, final Long amount) {
         if (subscriptionId == null) {
             throw new IllegalArgumentException("구독 ID는 필수입니다.");
         }

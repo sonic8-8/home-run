@@ -2,17 +2,17 @@ package io.ssafy.p.j14c103.homerun.api.service.pass.response;
 
 public class PassSaveResponse {
 
-    private final int savedAmount;
-    private final int totalSaved;
-    private final int subscriptionTotalSaved;
-    private final int overallTotalSaved;
-    private final int remainingBalance;
+    private final long savedAmount;
+    private final long totalSaved;
+    private final long subscriptionTotalSaved;
+    private final long overallTotalSaved;
+    private final long remainingBalance;
 
     private PassSaveResponse(
-            final int savedAmount,
-            final int subscriptionTotalSaved,
-            final int overallTotalSaved,
-            final int remainingBalance
+            final long savedAmount,
+            final long subscriptionTotalSaved,
+            final long overallTotalSaved,
+            final long remainingBalance
     ) {
         this.savedAmount = savedAmount;
         this.totalSaved = subscriptionTotalSaved;
@@ -22,17 +22,17 @@ public class PassSaveResponse {
     }
 
     public static PassSaveResponse of(
-            final int savedAmount,
-            final int subscriptionTotalSaved,
-            final int overallTotalSaved,
-            final int remainingBalance
+            final long savedAmount,
+            final long subscriptionTotalSaved,
+            final long overallTotalSaved,
+            final long remainingBalance
     ) {
         return new PassSaveResponse(savedAmount, subscriptionTotalSaved, overallTotalSaved, remainingBalance);
     }
 
-    public int getSavedAmount() { return savedAmount; }
-    public int getTotalSaved() { return totalSaved; }
-    public int getSubscriptionTotalSaved() { return subscriptionTotalSaved; }
-    public int getOverallTotalSaved() { return overallTotalSaved; }
-    public int getRemainingBalance() { return remainingBalance; }
+    public long getSavedAmount() { return savedAmount; }
+    public long getTotalSaved() { return totalSaved; }
+    public long getSubscriptionTotalSaved() { return subscriptionTotalSaved; }
+    public long getOverallTotalSaved() { return overallTotalSaved; }
+    public long getRemainingBalance() { return remainingBalance; }
 }

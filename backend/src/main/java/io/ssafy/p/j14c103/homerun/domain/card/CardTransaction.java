@@ -43,7 +43,7 @@ public class CardTransaction {
     private String merchantName;
 
     @Column(name = "payment_amount", nullable = false)
-    private Integer paymentAmount;
+    private Long paymentAmount;
 
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
@@ -57,7 +57,7 @@ public class CardTransaction {
             final String categoryId,
             final String categoryName,
             final String merchantName,
-            final Integer paymentAmount,
+            final Long paymentAmount,
             final LocalDate paymentDate
     ) {
         this.userId = userId;
@@ -76,7 +76,27 @@ public class CardTransaction {
             final String categoryId,
             final String categoryName,
             final String merchantName,
-            final Integer paymentAmount,
+            final int paymentAmount,
+            final LocalDate paymentDate
+    ) {
+        return create(
+                userId,
+                ownedCard,
+                categoryId,
+                categoryName,
+                merchantName,
+                Long.valueOf(paymentAmount),
+                paymentDate
+        );
+    }
+
+    public static CardTransaction create(
+            final Long userId,
+            final OwnedCard ownedCard,
+            final String categoryId,
+            final String categoryName,
+            final String merchantName,
+            final Long paymentAmount,
             final LocalDate paymentDate
     ) {
         if (userId == null) {

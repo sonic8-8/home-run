@@ -20,18 +20,18 @@ public class PassProduct {
     private String name;
 
     @Column(name = "기본저축금액")
-    private Integer amountPerSave;
+    private Long amountPerSave;
 
     @Column(name = "패스설명", columnDefinition = "TEXT")
     private String description;
 
-    private PassProduct(final String name, final Integer amountPerSave, final String description) {
+    private PassProduct(final String name, final Long amountPerSave, final String description) {
         this.name = name;
         this.amountPerSave = amountPerSave;
         this.description = description;
     }
 
-    public static PassProduct create(final String name, final Integer amountPerSave, final String description) {
+    public static PassProduct create(final String name, final Long amountPerSave, final String description) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("PASS 상품명은 필수입니다.");
         }
@@ -39,5 +39,9 @@ public class PassProduct {
             throw new IllegalArgumentException("PASS 상품 설명은 필수입니다.");
         }
         return new PassProduct(name, amountPerSave, description);
+    }
+
+    public static PassProduct create(final String name, final int amountPerSave, final String description) {
+        return create(name, Long.valueOf(amountPerSave), description);
     }
 }

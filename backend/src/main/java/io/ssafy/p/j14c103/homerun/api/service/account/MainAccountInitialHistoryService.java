@@ -31,7 +31,7 @@ public class MainAccountInitialHistoryService {
         }
         final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(userId, AccountType.MAIN)
                 .orElseThrow(() -> new IllegalStateException("주계좌가 없습니다."));
-        final int currentBalance = mainAccount.getBalanceSnapshot();
+        final long currentBalance = mainAccount.getBalanceSnapshot();
         if (currentBalance < 0) {
             throw new IllegalArgumentException("현재 잔액은 0 이상이어야 합니다.");
         }
@@ -42,7 +42,7 @@ public class MainAccountInitialHistoryService {
         final List<UserAccountTransaction> transactions = new ArrayList<>();
         final Random expenseRandom = randomOf(userId, "MAIN_HISTORY_EXPENSE_V2");
         final Random ratioRandom = randomOf(userId, "MAIN_HISTORY_RATIO_V2");
-        int currentMonthDelta = 0;
+        long currentMonthDelta = 0L;
 
         for (int month = 11; month >= 1; month--) {
             final LocalDate baseDate = LocalDate.now().minusMonths(month);
@@ -67,12 +67,12 @@ public class MainAccountInitialHistoryService {
             currentMonthDelta -= fixedAmount;
         }
         if (currentMonth.getDayOfMonth() >= 25) {
-            final int salaryAmount = Math.max(0, -currentMonthDelta);
+            final long salaryAmount = Math.max(0L, -currentMonthDelta);
             transactions.add(createDeposit(userId, salaryAmount, "급여 입금", currentMonth, 25));
             currentMonthDelta += salaryAmount;
         }
 
-        final int openingBalance = currentBalance - currentMonthDelta;
+        final long openingBalance = currentBalance - currentMonthDelta;
         final LocalDate openingDate = LocalDate.now().minusMonths(12).withDayOfMonth(1);
         transactions.add(UserAccountTransaction.create(
                 userId,
@@ -92,7 +92,7 @@ public class MainAccountInitialHistoryService {
 
     private UserAccountTransaction createDeposit(
             final Long userId,
-            final int amount,
+            final long amount,
             final String summary,
             final LocalDate baseDate,
             final int dayOfMonth
@@ -112,7 +112,7 @@ public class MainAccountInitialHistoryService {
 
     private UserAccountTransaction createWithdrawal(
             final Long userId,
-            final int amount,
+            final long amount,
             final String summary,
             final LocalDate baseDate,
             final int dayOfMonth
