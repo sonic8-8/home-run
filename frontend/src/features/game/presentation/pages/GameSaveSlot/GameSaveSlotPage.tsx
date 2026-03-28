@@ -1,6 +1,14 @@
 import clsx from 'clsx';
+import { useNavigate } from 'react-router-dom';
 import type { GameSlot } from '@features/game/domain/entities/GameSlot';
+import { ROUTES } from '@app/routes';
 import { JOB_TYPE_LABELS } from '@features/game/domain/constants/jobTypeLabels';
+import {
+  getGameSaveDescription,
+  getGameSaveTitle,
+  getSlotHelperText,
+  isSlotSelectable,
+} from '@features/game/presentation/utils/saveSlotEntry';
 import { useGameSaveSlots } from '../../hooks/useGameSaveSlots';
 import styles from './GameSaveSlotPage.module.css';
 
@@ -49,21 +57,27 @@ const getSlotMeta = (slot: GameSlot): string => {
 };
 
 interface SlotCardProps {
+  entryMode: 'continue' | 'new' | null;
   slot: GameSlot;
   onSelect: (slot: GameSlot) => void;
 }
 
-const SlotCard = ({ slot, onSelect }: SlotCardProps) => {
+const SlotCard = ({ entryMode, slot, onSelect }: SlotCardProps) => {
   const isEmpty = slot.status === 'EMPTY';
   const isEnded = slot.status !== 'EMPTY' && slot.status !== 'IN_PROGRESS';
+  const helperText = getSlotHelperText(entryMode, slot);
+  const isDisabled = entryMode !== null && !isSlotSelectable(entryMode, slot);
 
   return (
     <button
+      type="button"
       className={clsx(
         styles.slot,
         isEmpty && styles.slotEmpty,
         isEnded && styles.slotEnded,
+        isDisabled && styles.slotDisabled,
       )}
+      disabled={isDisabled}
       onClick={() => onSelect(slot)}
       aria-label={
         isEmpty
@@ -77,7 +91,7 @@ const SlotCard = ({ slot, onSelect }: SlotCardProps) => {
       </div>
       <div className={styles.slotInfo}>
         {isEmpty ? (
-          <span className={styles.emptyLabel}>빈 슬롯 - 새 게임 시작</span>
+          <span className={styles.emptyLabel}>{helperText ?? '빈 슬롯 - 새 게임 시작'}</span>
         ) : (
           <>
             <div className={styles.slotRow}>
@@ -93,6 +107,9 @@ const SlotCard = ({ slot, onSelect }: SlotCardProps) => {
                   : '-'}
               </span>
             </div>
+            {helperText && (
+              <div className={styles.slotHint}>{helperText}</div>
+            )}
           </>
         )}
       </div>
@@ -101,16 +118,51 @@ const SlotCard = ({ slot, onSelect }: SlotCardProps) => {
 };
 
 export function GameSaveSlotPage() {
-  const { slots, isLoading, error, handleSelectSlot } = useGameSaveSlots();
+  const navigate = useNavigate();
+  const {
+    slots,
+    isLoading,
+    error,
+    entryMode,
+    retryFetchSlots,
+    handleSelectSlot,
+  } = useGameSaveSlots();
+  const title = getGameSaveTitle(entryMode);
+  const description = getGameSaveDescription(entryMode);
+  const hasLoadError = !isLoading && error !== null && slots.length === 0;
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <div className={styles.title}>SAVE</div>
+        <div className={styles.title}>{title}</div>
+        <p className={styles.description}>{description}</p>
         {isLoading && <p className={styles.message}>불러오는 중...</p>}
         {error && <p className={styles.message}>{error}</p>}
-        {!isLoading && !error && slots.map((slot) => (
-          <SlotCard key={slot.slotNumber} slot={slot} onSelect={handleSelectSlot} />
+        {hasLoadError && (
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => void retryFetchSlots()}
+            >
+              다시 시도
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => navigate(ROUTES.GAME_START)}
+            >
+              게임 시작 화면으로
+            </button>
+          </div>
+        )}
+        {!isLoading && slots.map((slot) => (
+          <SlotCard
+            key={slot.slotNumber}
+            entryMode={entryMode}
+            slot={slot}
+            onSelect={handleSelectSlot}
+          />
         ))}
       </div>
     </div>

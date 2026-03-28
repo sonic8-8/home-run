@@ -4,6 +4,8 @@ export const ROUTES = {
   GAME:       '/game',
   GAME_START: '/game/start',
   GAME_SAVE:  '/game/save',
+  GAME_SAVE_WITH_MODE: (mode: 'continue' | 'new') => `/game/save?mode=${mode}`,
+  GAME_GUIDE: '/game/guide',
   GAME_SELECT_CHARACTER: '/game/select-character',
   GAME_SET_NICKNAME: '/game/set-nickname',
   GAME_SELECT_START_METHOD: '/game/select-start-method',
