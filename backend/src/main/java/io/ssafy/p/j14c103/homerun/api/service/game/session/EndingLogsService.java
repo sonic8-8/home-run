@@ -33,7 +33,7 @@ public class EndingLogsService {
         }
 
         return GameTimelineResponse.from(
-            gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAscGameTimelineIdAsc(sessionId)
+            gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(sessionId)
         );
     }
 }
