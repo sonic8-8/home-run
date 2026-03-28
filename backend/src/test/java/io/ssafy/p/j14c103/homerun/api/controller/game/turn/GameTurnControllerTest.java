@@ -1,18 +1,26 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.turn;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.get;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.ssafy.p.j14c103.homerun.api.controller.game.turn.request.SubmitTurnSlotsRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnActionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnStateService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.SubmitTurnSlotsService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.AvailableActionsResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnPreviewResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
@@ -39,11 +47,17 @@ class GameTurnControllerTest extends RestDocsTestSupport {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockitoBean
     private GameTurnStateService gameTurnStateService;
 
     @MockitoBean
     private GameTurnActionService gameTurnActionService;
+
+    @MockitoBean
+    private SubmitTurnSlotsService submitTurnSlotsService;
 
     @DisplayName("현재 턴 상태 조회는 게임 코어 응답 계약으로 현재 턴 정보를 반환한다.")
     @Test
@@ -262,6 +276,108 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                     parameterWithName("sessionId").description("게임 세션 ID")
                 ),
                 basicErrorResponseFields()
+            ));
+    }
+
+    @DisplayName("턴 슬롯 제출은 preview와 draft 저장 결과를 반환한다.")
+    @Test
+    void submitTurnSlots() throws Exception {
+        // given
+        final SubmitTurnSlotsRequest request = SubmitTurnSlotsRequest.of(
+            List.of(
+                SubmitTurnSlotsRequest.TurnSlotRequest.of(0, "STUDY"),
+                SubmitTurnSlotsRequest.TurnSlotRequest.of(1, "REST"),
+                SubmitTurnSlotsRequest.TurnSlotRequest.of(2, "SIDE_JOB")
+            )
+        );
+        final TurnPreviewResponse response = TurnPreviewResponse.of(
+            List.of(
+                TurnPreviewResponse.PreviewSlotResponse.of(0, "STUDY", false),
+                TurnPreviewResponse.PreviewSlotResponse.of(1, "REST", false),
+                TurnPreviewResponse.PreviewSlotResponse.of(2, "SIDE_JOB", false)
+            ),
+            430_000L,
+            TurnPreviewResponse.PreviewStatChangesResponse.of(3, -14, -8, 4, 8)
+        );
+        given(submitTurnSlotsService.submitTurnSlots(eq(1L), eq(1001L), any()))
+            .willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", 1001L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.message").value("OK"))
+            .andExpect(jsonPath("$.data.slots.length()").value(3))
+            .andExpect(jsonPath("$.data.slots[0].slotIndex").value(0))
+            .andExpect(jsonPath("$.data.slots[0].actionType").value("STUDY"))
+            .andExpect(jsonPath("$.data.previewCashChange").value(430000))
+            .andExpect(jsonPath("$.data.previewStatChanges.health").value(3))
+            .andExpect(jsonPath("$.data.previewStatChanges.knowledge").value(8))
+            .andDo(document("game-turn/slots/success",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                requestFields(
+                    fieldWithPath("slots").description("제출할 턴 슬롯 3개"),
+                    fieldWithPath("slots[].slotIndex").description("슬롯 인덱스"),
+                    fieldWithPath("slots[].actionType").description("선택한 행동 타입")
+                ),
+                apiResponseFields(
+                    "턴 슬롯 preview",
+                    fieldWithPath("slots").type(JsonFieldType.ARRAY).description("preview 기준 슬롯 목록"),
+                    fieldWithPath("slots[].slotIndex").type(JsonFieldType.NUMBER).description("슬롯 인덱스"),
+                    fieldWithPath("slots[].actionType").type(JsonFieldType.STRING).description("preview 행동 타입"),
+                    fieldWithPath("slots[].forcedAction").type(JsonFieldType.BOOLEAN).description("강제 행동 여부"),
+                    fieldWithPath("previewCashChange").type(JsonFieldType.NUMBER).description("예상 현금 변화량"),
+                    fieldWithPath("previewStatChanges").type(JsonFieldType.OBJECT).description("예상 스탯 변화량"),
+                    fieldWithPath("previewStatChanges.health").type(JsonFieldType.NUMBER).description("체력 변화량"),
+                    fieldWithPath("previewStatChanges.fatigue").type(JsonFieldType.NUMBER).description("피로 변화량"),
+                    fieldWithPath("previewStatChanges.stress").type(JsonFieldType.NUMBER).description("스트레스 변화량"),
+                    fieldWithPath("previewStatChanges.happiness").type(JsonFieldType.NUMBER).description("행복 변화량"),
+                    fieldWithPath("previewStatChanges.knowledge").type(JsonFieldType.NUMBER).description("지식 변화량")
+                )
+            ));
+        then(submitTurnSlotsService).should()
+            .submitTurnSlots(eq(1L), eq(1001L), any());
+    }
+
+    @DisplayName("턴 슬롯이 3개보다 적으면 400과 validation error를 반환한다.")
+    @Test
+    void submitTurnSlotsWithInvalidSlotCount() throws Exception {
+        // given
+        final SubmitTurnSlotsRequest request = SubmitTurnSlotsRequest.of(
+            List.of(
+                SubmitTurnSlotsRequest.TurnSlotRequest.of(0, "STUDY"),
+                SubmitTurnSlotsRequest.TurnSlotRequest.of(1, "REST")
+            )
+        );
+
+        // when & then
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", 1001L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+            .andExpect(jsonPath("$.errors").isArray())
+            .andExpect(jsonPath("$.errors[0].field").value("slots"))
+            .andDo(document("game-turn/slots/invalid-slot-count",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                requestFields(
+                    fieldWithPath("slots").description("제출할 턴 슬롯 목록"),
+                    fieldWithPath("slots[].slotIndex").description("슬롯 인덱스"),
+                    fieldWithPath("slots[].actionType").description("선택한 행동 타입")
+                ),
+                validationErrorResponseFields()
             ));
     }
 }

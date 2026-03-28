@@ -8,11 +8,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(properties = {
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
         "spring.datasource.url=jdbc:h2:mem:actuator-management-test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
@@ -36,6 +42,9 @@ class ActuatorManagementConfigTest {
     @Autowired
     private WebEndpointsSupplier webEndpointsSupplier;
 
+    @Autowired
+    private TestRestTemplate testRestTemplate;
+
     @DisplayName("prod 프로필에서 health와 prometheus actuator endpoint를 노출한다")
     @Test
     void exposesHealthAndPrometheusEndpoints() {
@@ -48,6 +57,10 @@ class ActuatorManagementConfigTest {
                 .isEqualTo("health,prometheus");
         assertThat(environment.getProperty("management.metrics.tags.application"))
                 .isEqualTo("homerun");
+        assertThat(environment.getProperty(
+                "management.metrics.distribution.percentiles-histogram.http.server.requests",
+                Boolean.class
+        )).isTrue();
     }
 
     @DisplayName("prod 프로필에서 health probes를 활성화한다")
@@ -57,5 +70,23 @@ class ActuatorManagementConfigTest {
                 "management.endpoint.health.probes.enabled",
                 Boolean.class
         )).isTrue();
+    }
+
+    @DisplayName("prod 프로필에서 HTTP 요청 histogram bucket을 prometheus endpoint로 노출한다")
+    @Test
+    void exposesHttpServerRequestHistogramBuckets() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        testRestTemplate.postForEntity(
+                "/api/auth/login",
+                new HttpEntity<>("{\"email\":\"invalid\",\"password\":\"invalid\"}", headers),
+                String.class
+        );
+
+        String prometheusMetrics = testRestTemplate.getForObject("/actuator/prometheus", String.class);
+
+        assertThat(prometheusMetrics).contains("http_server_requests_seconds_bucket");
+        assertThat(prometheusMetrics).contains("uri=\"/api/auth/login\"");
     }
 }
