@@ -13,8 +13,8 @@ public class UserMeResponse {
     private String name;
     @Getter(AccessLevel.NONE)
     private boolean assetLinked;
-    private Integer totalAssetAmount;
-    private Integer netAssetAmount;
+    private Long totalAssetAmount;
+    private Long netAssetAmount;
 
     @Builder
     private UserMeResponse(
@@ -22,8 +22,8 @@ public class UserMeResponse {
             final String email,
             final String name,
             final boolean isAssetLinked,
-            final Integer totalAssetAmount,
-            final Integer netAssetAmount
+            final Long totalAssetAmount,
+            final Long netAssetAmount
     ) {
         this.userId = userId;
         this.email = email;
@@ -38,8 +38,26 @@ public class UserMeResponse {
             final String email,
             final String name,
             final boolean isAssetLinked,
-            final Integer totalAssetAmount,
-            final Integer netAssetAmount
+            final long totalAssetAmount,
+            final long netAssetAmount
+    ) {
+        return of(
+                userId,
+                email,
+                name,
+                isAssetLinked,
+                Long.valueOf(totalAssetAmount),
+                Long.valueOf(netAssetAmount)
+        );
+    }
+
+    public static UserMeResponse of(
+            final Long userId,
+            final String email,
+            final String name,
+            final boolean isAssetLinked,
+            final Long totalAssetAmount,
+            final Long netAssetAmount
     ) {
         return UserMeResponse.builder()
                 .userId(userId)

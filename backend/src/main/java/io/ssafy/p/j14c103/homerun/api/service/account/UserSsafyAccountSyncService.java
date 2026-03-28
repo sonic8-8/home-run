@@ -231,12 +231,12 @@ public class UserSsafyAccountSyncService {
         return LocalDateTime.of(localDate, localTime);
     }
 
-    private Integer toAmount(final Object value) {
+    private Long toAmount(final Object value) {
         final String text = toText(value);
         if (text == null) {
-            return 0;
+            return 0L;
         }
-        return Integer.parseInt(text);
+        return Long.parseLong(text);
     }
 
     private String toText(final Object value) {

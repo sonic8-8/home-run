@@ -20,34 +20,34 @@ public class UserFinancialSummary {
     private Long userId;
 
     @Column(name = "total_asset_amount", nullable = false)
-    private Integer totalAssetAmount;
+    private Long totalAssetAmount;
 
     @Column(name = "total_debt_amount", nullable = false)
-    private Integer totalDebtAmount;
+    private Long totalDebtAmount;
 
     @Column(name = "net_asset_amount", nullable = false)
-    private Integer netAssetAmount;
+    private Long netAssetAmount;
 
     @Column(name = "cash_asset_amount", nullable = false)
-    private Integer cashAssetAmount;
+    private Long cashAssetAmount;
 
     @Column(name = "saving_asset_amount", nullable = false)
-    private Integer savingAssetAmount;
+    private Long savingAssetAmount;
 
     @Column(name = "investment_asset_amount", nullable = false)
-    private Integer investmentAssetAmount;
+    private Long investmentAssetAmount;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     private UserFinancialSummary(final Long userId) {
         this.userId = userId;
-        this.totalAssetAmount = 0;
-        this.totalDebtAmount = 0;
-        this.netAssetAmount = 0;
-        this.cashAssetAmount = 0;
-        this.savingAssetAmount = 0;
-        this.investmentAssetAmount = 0;
+        this.totalAssetAmount = 0L;
+        this.totalDebtAmount = 0L;
+        this.netAssetAmount = 0L;
+        this.cashAssetAmount = 0L;
+        this.savingAssetAmount = 0L;
+        this.investmentAssetAmount = 0L;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -59,12 +59,12 @@ public class UserFinancialSummary {
     }
 
     public void refresh(
-            final int totalAssetAmount,
-            final int totalDebtAmount,
-            final int netAssetAmount,
-            final int cashAssetAmount,
-            final int savingAssetAmount,
-            final int investmentAssetAmount
+            final long totalAssetAmount,
+            final long totalDebtAmount,
+            final long netAssetAmount,
+            final long cashAssetAmount,
+            final long savingAssetAmount,
+            final long investmentAssetAmount
     ) {
         this.totalAssetAmount = totalAssetAmount;
         this.totalDebtAmount = totalDebtAmount;

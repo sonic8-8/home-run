@@ -369,7 +369,7 @@ public class UserFinancialMockDataService {
     private void createLoanProduct(
             final Long userId,
             final String loanName,
-            final int loanAmount
+            final long loanAmount
     ) {
         if (loanAmount <= 0) {
             return;
@@ -385,7 +385,7 @@ public class UserFinancialMockDataService {
                 FinancialProductSourceType.ASSET_LINK
         ));
 
-        final int repaymentAmount = Math.max(10_000, loanAmount / 60);
+        final long repaymentAmount = Math.max(10_000L, loanAmount / 60L);
         userFinancialTransactionRepository.save(UserFinancialTransaction.create(
                 userId,
                 product.getId(),
@@ -426,7 +426,7 @@ public class UserFinancialMockDataService {
     private void createSavingProduct(
             final Long userId,
             final String depositName,
-            final int depositAmount
+            final long depositAmount
     ) {
         if (depositAmount <= 0) {
             return;

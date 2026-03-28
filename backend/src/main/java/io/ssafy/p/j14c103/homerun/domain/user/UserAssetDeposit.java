@@ -29,12 +29,12 @@ public class UserAssetDeposit {
     private String name;
 
     @Column(name = "amount", nullable = false)
-    private Integer amount;
+    private Long amount;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    private UserAssetDeposit(final Long userId, final String name, final Integer amount) {
+    private UserAssetDeposit(final Long userId, final String name, final Long amount) {
         validate(userId, name, amount);
         this.userId = userId;
         this.name = name;
@@ -42,11 +42,15 @@ public class UserAssetDeposit {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static UserAssetDeposit create(final Long userId, final String name, final Integer amount) {
+    public static UserAssetDeposit create(final Long userId, final String name, final Long amount) {
         return new UserAssetDeposit(userId, name, amount);
     }
 
-    private void validate(final Long userId, final String name, final Integer amount) {
+    public static UserAssetDeposit create(final Long userId, final String name, final long amount) {
+        return create(userId, name, Long.valueOf(amount));
+    }
+
+    private void validate(final Long userId, final String name, final Long amount) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }

@@ -13,7 +13,7 @@ public class CardTransactionDetailResponse {
     private final String categoryId;
     private final String categoryName;
     private final String merchantName;
-    private final Integer paymentAmount;
+    private final Long paymentAmount;
     private final LocalDate paymentDate;
 
     private CardTransactionDetailResponse(
@@ -23,7 +23,7 @@ public class CardTransactionDetailResponse {
             final String categoryId,
             final String categoryName,
             final String merchantName,
-            final Integer paymentAmount,
+            final Long paymentAmount,
             final LocalDate paymentDate
     ) {
         this.cardTransactionId = cardTransactionId;

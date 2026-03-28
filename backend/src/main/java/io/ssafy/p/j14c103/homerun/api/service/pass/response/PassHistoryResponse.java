@@ -8,12 +8,12 @@ public class PassHistoryResponse {
 
     private final Long id;
     private final String transactionType;
-    private final Integer amount;
+    private final Long amount;
     private final String counterpartyAccountMasked;
     private final LocalDateTime createdAt;
 
     private PassHistoryResponse(
-            final Long id, final String transactionType, final Integer amount,
+            final Long id, final String transactionType, final Long amount,
             final String counterpartyAccountMasked, final LocalDateTime createdAt) {
         this.id = id;
         this.transactionType = transactionType;
@@ -36,7 +36,7 @@ public class PassHistoryResponse {
 
     public Long getId() { return id; }
     public String getTransactionType() { return transactionType; }
-    public Integer getAmount() { return amount; }
+    public Long getAmount() { return amount; }
     public String getCounterpartyAccountMasked() { return counterpartyAccountMasked; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

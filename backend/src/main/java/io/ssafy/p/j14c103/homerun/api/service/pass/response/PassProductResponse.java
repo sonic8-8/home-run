@@ -6,11 +6,11 @@ public class PassProductResponse {
 
     private final Long passId;
     private final String name;
-    private final Integer amountPerSave;
+    private final Long amountPerSave;
     private final String description;
 
     private PassProductResponse(final Long passId, final String name,
-                                final Integer amountPerSave, final String description) {
+                                final Long amountPerSave, final String description) {
         this.passId = passId;
         this.name = name;
         this.amountPerSave = amountPerSave;
@@ -28,6 +28,6 @@ public class PassProductResponse {
 
     public Long getPassId() { return passId; }
     public String getName() { return name; }
-    public Integer getAmountPerSave() { return amountPerSave; }
+    public Long getAmountPerSave() { return amountPerSave; }
     public String getDescription() { return description; }
 }

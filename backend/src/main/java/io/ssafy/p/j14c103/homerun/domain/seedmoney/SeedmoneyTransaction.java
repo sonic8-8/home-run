@@ -28,7 +28,7 @@ public class SeedmoneyTransaction {
     private String transactionType;
 
     @Column(name = "거래금액")
-    private Integer amount;
+    private Long amount;
 
     @Column(name = "상대계좌마스킹")
     private String counterpartyAccountMasked;
@@ -40,7 +40,7 @@ public class SeedmoneyTransaction {
             final Long userId,
             final Long passId,
             final String transactionType,
-            final Integer amount,
+            final Long amount,
             final String counterpartyAccountMasked) {
         this.userId = userId;
         this.passId = passId;
@@ -53,14 +53,28 @@ public class SeedmoneyTransaction {
     public static SeedmoneyTransaction createSave(
             final Long userId,
             final Long passId,
-            final Integer amount) {
+            final long amount) {
+        return createSave(userId, passId, Long.valueOf(amount));
+    }
+
+    public static SeedmoneyTransaction createSave(
+            final Long userId,
+            final Long passId,
+            final Long amount) {
         validateCommonFields(userId, amount);
         return new SeedmoneyTransaction(userId, passId, "SAVE", amount, null);
     }
 
     public static SeedmoneyTransaction createDeposit(
             final Long userId,
-            final Integer amount,
+            final long amount,
+            final String fromAccountMasked) {
+        return createDeposit(userId, Long.valueOf(amount), fromAccountMasked);
+    }
+
+    public static SeedmoneyTransaction createDeposit(
+            final Long userId,
+            final Long amount,
             final String fromAccountMasked) {
         validateCommonFields(userId, amount);
         return new SeedmoneyTransaction(userId, null, "DEPOSIT", amount, fromAccountMasked);
@@ -68,13 +82,20 @@ public class SeedmoneyTransaction {
 
     public static SeedmoneyTransaction createTransfer(
             final Long userId,
-            final Integer amount,
+            final long amount,
+            final String toAccountMasked) {
+        return createTransfer(userId, Long.valueOf(amount), toAccountMasked);
+    }
+
+    public static SeedmoneyTransaction createTransfer(
+            final Long userId,
+            final Long amount,
             final String toAccountMasked) {
         validateCommonFields(userId, amount);
         return new SeedmoneyTransaction(userId, null, "TRANSFER", amount, toAccountMasked);
     }
 
-    private static void validateCommonFields(final Long userId, final Integer amount) {
+    private static void validateCommonFields(final Long userId, final Long amount) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }

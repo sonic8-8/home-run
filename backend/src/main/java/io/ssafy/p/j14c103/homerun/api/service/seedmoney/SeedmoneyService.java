@@ -61,14 +61,14 @@ public class SeedmoneyService {
                 ssafyAccountProperties.getBankCode(),
                 bankName,
                 accountNo,
-                0
+                0L
         );
         account.initializeSsafySync(null);
         userAccountRepository.save(account);
         seedmoneyAccountProjectionService.syncFromUserAccount(account);
         userFinancialSummaryService.getSummary(userId);
 
-        return SeedmoneyAccountResponse.of(bankName, accountNo, 0);
+        return SeedmoneyAccountResponse.of(bankName, accountNo, 0L);
     }
 
     @Transactional
@@ -104,7 +104,7 @@ public class SeedmoneyService {
 
         final SeedmoneyTransaction transaction = SeedmoneyTransaction.createTransfer(
                 userId,
-                request.getAmount().intValue(),
+                request.getAmount(),
                 request.getToAccountNumber()
         );
         seedmoneyTransactionRepository.save(transaction);
@@ -113,7 +113,7 @@ public class SeedmoneyService {
                 AccountType.SEEDMONEY,
                 null,
                 AccountTransactionType.WITHDRAW,
-                request.getAmount().intValue(),
+                request.getAmount(),
                 request.getToAccountNumber(),
                 "시드머니 송금",
                 seedmoneyTransactionUniqueNo,
@@ -145,7 +145,7 @@ public class SeedmoneyService {
 
         final SeedmoneyTransaction transaction = SeedmoneyTransaction.createDeposit(
                 userId,
-                request.getAmount().intValue(),
+                request.getAmount(),
                 request.getFromAccountNumber()
         );
         seedmoneyTransactionRepository.save(transaction);
@@ -154,7 +154,7 @@ public class SeedmoneyService {
                 AccountType.SEEDMONEY,
                 null,
                 AccountTransactionType.DEPOSIT,
-                request.getAmount().intValue(),
+                request.getAmount(),
                 request.getFromAccountNumber(),
                 "시드머니 입금",
                 seedmoneyTransactionUniqueNo,
@@ -168,7 +168,7 @@ public class SeedmoneyService {
                     AccountType.MAIN,
                     null,
                     AccountTransactionType.INTERNAL_TRANSFER,
-                    request.getAmount().intValue(),
+                    request.getAmount(),
                     account.getAccountNumber(),
                     "시드머니 입금",
                     mainTransactionUniqueNo,

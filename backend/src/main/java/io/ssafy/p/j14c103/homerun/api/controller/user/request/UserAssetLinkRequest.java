@@ -22,7 +22,7 @@ public class UserAssetLinkRequest {
 
     @NotNull(message = "{validation.user.assetLink.mainAccountBalanceAmount.notNull}")
     @Min(value = 0, message = "{validation.user.assetLink.mainAccountBalanceAmount.min}")
-    private Integer mainAccountBalanceAmount;
+    private Long mainAccountBalanceAmount;
 
     @NotNull(message = "{validation.user.assetLink.salaryDayOfMonth.notNull}")
     @Min(value = 1, message = "{validation.user.assetLink.salaryDayOfMonth.min}")
@@ -31,11 +31,11 @@ public class UserAssetLinkRequest {
 
     @NotNull(message = "{validation.user.assetLink.monthlySalaryAmount.notNull}")
     @Min(value = 0, message = "{validation.user.assetLink.monthlySalaryAmount.min}")
-    private Integer monthlySalaryAmount;
+    private Long monthlySalaryAmount;
 
     @NotNull(message = "{validation.user.assetLink.monthlyFixedExpenseAmount.notNull}")
     @Min(value = 0, message = "{validation.user.assetLink.monthlyFixedExpenseAmount.min}")
-    private Integer monthlyFixedExpenseAmount;
+    private Long monthlyFixedExpenseAmount;
 
     @NotNull(message = "{validation.user.assetLink.jobType.notNull}")
     private JobType jobType;
@@ -58,10 +58,10 @@ public class UserAssetLinkRequest {
 
     @Builder
     private UserAssetLinkRequest(
-            final Integer mainAccountBalanceAmount,
+            final Long mainAccountBalanceAmount,
             final Integer salaryDayOfMonth,
-            final Integer monthlySalaryAmount,
-            final Integer monthlyFixedExpenseAmount,
+            final Long monthlySalaryAmount,
+            final Long monthlyFixedExpenseAmount,
             final JobType jobType,
             final List<NamedAmountItemRequest> depositItems,
             final List<NamedAmountItemRequest> loanItems,
@@ -79,6 +79,39 @@ public class UserAssetLinkRequest {
         this.otherIncomeItems = otherIncomeItems;
         this.cardSpendItems = cardSpendItems;
         this.paymentTypes = paymentTypes;
+    }
+
+    public static class UserAssetLinkRequestBuilder {
+
+        public UserAssetLinkRequestBuilder mainAccountBalanceAmount(final Long mainAccountBalanceAmount) {
+            this.mainAccountBalanceAmount = mainAccountBalanceAmount;
+            return this;
+        }
+
+        public UserAssetLinkRequestBuilder mainAccountBalanceAmount(final int mainAccountBalanceAmount) {
+            this.mainAccountBalanceAmount = Long.valueOf(mainAccountBalanceAmount);
+            return this;
+        }
+
+        public UserAssetLinkRequestBuilder monthlySalaryAmount(final Long monthlySalaryAmount) {
+            this.monthlySalaryAmount = monthlySalaryAmount;
+            return this;
+        }
+
+        public UserAssetLinkRequestBuilder monthlySalaryAmount(final int monthlySalaryAmount) {
+            this.monthlySalaryAmount = Long.valueOf(monthlySalaryAmount);
+            return this;
+        }
+
+        public UserAssetLinkRequestBuilder monthlyFixedExpenseAmount(final Long monthlyFixedExpenseAmount) {
+            this.monthlyFixedExpenseAmount = monthlyFixedExpenseAmount;
+            return this;
+        }
+
+        public UserAssetLinkRequestBuilder monthlyFixedExpenseAmount(final int monthlyFixedExpenseAmount) {
+            this.monthlyFixedExpenseAmount = Long.valueOf(monthlyFixedExpenseAmount);
+            return this;
+        }
     }
 
     public UserAssetLinkServiceRequest toServiceRequest() {
@@ -206,12 +239,25 @@ public class UserAssetLinkRequest {
 
         @NotNull(message = "{validation.user.assetLink.item.amount.notNull}")
         @Min(value = 0, message = "{validation.user.assetLink.item.amount.min}")
-        private Integer amount;
+        private Long amount;
 
         @Builder
-        private NamedAmountItemRequest(final String name, final Integer amount) {
+        private NamedAmountItemRequest(final String name, final Long amount) {
             this.name = name;
             this.amount = amount;
+        }
+
+        public static class NamedAmountItemRequestBuilder {
+
+            public NamedAmountItemRequestBuilder amount(final Long amount) {
+                this.amount = amount;
+                return this;
+            }
+
+            public NamedAmountItemRequestBuilder amount(final int amount) {
+                this.amount = Long.valueOf(amount);
+                return this;
+            }
         }
     }
 
@@ -224,12 +270,25 @@ public class UserAssetLinkRequest {
 
         @NotNull(message = "{validation.user.assetLink.cardSpendItems.amount.notNull}")
         @Min(value = 0, message = "{validation.user.assetLink.cardSpendItems.amount.min}")
-        private Integer amount;
+        private Long amount;
 
         @Builder
-        private CardSpendItemRequest(final String category, final Integer amount) {
+        private CardSpendItemRequest(final String category, final Long amount) {
             this.category = category;
             this.amount = amount;
+        }
+
+        public static class CardSpendItemRequestBuilder {
+
+            public CardSpendItemRequestBuilder amount(final Long amount) {
+                this.amount = amount;
+                return this;
+            }
+
+            public CardSpendItemRequestBuilder amount(final int amount) {
+                this.amount = Long.valueOf(amount);
+                return this;
+            }
         }
     }
 }

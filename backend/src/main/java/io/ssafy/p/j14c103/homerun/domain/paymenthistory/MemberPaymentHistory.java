@@ -39,7 +39,7 @@ public class MemberPaymentHistory {
     private String merchantName;
 
     @Column(name = "payment_amount", nullable = false)
-    private Integer paymentAmount;
+    private Long paymentAmount;
 
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
@@ -52,7 +52,7 @@ public class MemberPaymentHistory {
             final String categoryId,
             final String categoryName,
             final String merchantName,
-            final Integer paymentAmount,
+            final Long paymentAmount,
             final LocalDate paymentDate
     ) {
         this.userId = userId;
@@ -69,7 +69,25 @@ public class MemberPaymentHistory {
             final String categoryId,
             final String categoryName,
             final String merchantName,
-            final Integer paymentAmount,
+            final long paymentAmount,
+            final LocalDate paymentDate
+    ) {
+        return create(
+                userId,
+                categoryId,
+                categoryName,
+                merchantName,
+                Long.valueOf(paymentAmount),
+                paymentDate
+        );
+    }
+
+    public static MemberPaymentHistory create(
+            final Long userId,
+            final String categoryId,
+            final String categoryName,
+            final String merchantName,
+            final Long paymentAmount,
             final LocalDate paymentDate
     ) {
         return new MemberPaymentHistory(
