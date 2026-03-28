@@ -35,6 +35,8 @@ export class AuthRepositoryImpl implements IAuthRepository {
       name: credentials.name,
       email: credentials.email,
       password: credentials.password,
+      passwordConfirm: credentials.passwordConfirm,
+      termsAgreed: credentials.termsAgreed,
     });
   }
 }
