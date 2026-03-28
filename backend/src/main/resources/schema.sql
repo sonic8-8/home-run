@@ -260,6 +260,7 @@ create table if not exists game_sessions (
   cycle_type varchar(50),
   cycle_remaining_turns integer,
   cash_balance_amount numeric(19,0) not null,
+  total_assets_amount numeric(19,0) not null,
   net_worth_amount numeric(19,0) not null,
   session_status varchar(20) not null,
   created_at timestamp not null default current_timestamp,

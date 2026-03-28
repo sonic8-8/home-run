@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
+@ValidCreateGameSessionRequest
 public class CreateGameSessionRequest {
 
     @NotNull(message = "{validation.game.session.create.slotNumber.notNull}")
@@ -30,7 +31,6 @@ public class CreateGameSessionRequest {
     @Size(max = 100, message = "{validation.game.session.create.characterName.size}")
     private String characterName;
 
-    @NotNull(message = "{validation.game.session.create.jobType.notNull}")
     private JobType jobType;
 
     @NotBlank(message = "{validation.game.session.create.regionCode.notBlank}")

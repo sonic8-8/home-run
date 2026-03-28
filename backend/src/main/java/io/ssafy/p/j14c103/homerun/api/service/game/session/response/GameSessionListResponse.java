@@ -119,7 +119,7 @@ public class GameSessionListResponse {
                 gameSession.getCharacterType(),
                 gameSession.getJobType(),
                 gameSession.getCurrentTurn(),
-                gameSession.getNetWorth().getAmount().longValue(),
+                gameSession.getTotalAssets().getAmount().longValue(),
                 gameSession.getCreatedAt()
             );
         }
