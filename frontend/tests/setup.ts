@@ -1,6 +1,5 @@
 import 'reflect-metadata';
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
 Object.defineProperty(window, 'matchMedia', {
@@ -23,7 +22,7 @@ Object.defineProperty(window, 'scrollTo', {
 });
 
 afterEach(() => {
-  cleanup();
   localStorage.clear();
   sessionStorage.clear();
+  document.body.innerHTML = '';
 });

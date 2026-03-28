@@ -10,6 +10,20 @@ export interface PropertiesResponseModel {
   properties: PropertySummaryModel[];
 }
 
+export type PropertyListRequestModel =
+  | {
+      sessionId: number;
+      bounds?: string;
+      regionCode?: never;
+      districtCode?: never;
+    }
+  | {
+      regionCode: string;
+      districtCode: string;
+      sessionId?: never;
+      bounds?: never;
+    };
+
 export interface PropertySpecsModel {
   area: number;
   floor: string;

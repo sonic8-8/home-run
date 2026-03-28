@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
-import SelectStartMethod from '@features/game/presentation/pages/SelectStartMethod/SelectStartMethod';
+import { SelectStartMethodPage } from '@features/game/presentation/pages/SelectStartMethod';
 
 function StatePreview() {
   const location = useLocation();
@@ -24,7 +24,7 @@ function renderPage() {
       ]}
     >
       <Routes>
-        <Route path={ROUTES.GAME_SELECT_START_METHOD} element={<SelectStartMethod />} />
+        <Route path={ROUTES.GAME_SELECT_START_METHOD} element={<SelectStartMethodPage />} />
         <Route
           path={ROUTES.GAME_SELECT_JOB}
           element={
@@ -35,7 +35,7 @@ function renderPage() {
           }
         />
         <Route
-          path={ROUTES.PROPERTY}
+          path={ROUTES.REAL_ESTATE}
           element={
             <div>
               <span>property-page</span>

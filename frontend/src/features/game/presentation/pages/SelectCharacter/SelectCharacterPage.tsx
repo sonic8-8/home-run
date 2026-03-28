@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { Fragment, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
@@ -15,7 +16,7 @@ interface LocationState {
   isNew?: boolean;
 }
 
-export default function SelectCharacter() {
+export function SelectCharacterPage() {
   const [selected, setSelected] = useState<CharacterType | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,7 +46,10 @@ export default function SelectCharacter() {
         {characters.map((character, i) => (
           <Fragment key={character.characterType}>
             <button
-              className={`${styles.charBtn} ${selected === character.characterType ? styles.selected : ''}`}
+              className={clsx(
+                styles.charBtn,
+                selected === character.characterType && styles.selected,
+              )}
               onClick={() => setSelected(character.characterType)}
               aria-label={
                 character.characterType === 'FEMALE'

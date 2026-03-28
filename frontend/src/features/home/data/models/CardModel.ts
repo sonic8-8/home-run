@@ -17,6 +17,10 @@ export interface CardResponseModel {
   activeBenefits: CardBenefitModel[];
 }
 
+export interface CardListResponseModel {
+  cards: CardResponseModel[];
+}
+
 export interface CardRecommendationsResponseModel {
   recommendations: CardResponseModel[];
 }

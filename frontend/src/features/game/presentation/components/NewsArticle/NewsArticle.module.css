@@ -1,0 +1,106 @@
+.card {
+  --news-card-surface: #fff;
+  --news-card-border: #d4c9b0;
+  --news-card-shadow: rgba(0, 0, 0, 0.1);
+  --news-divider: #ede7d8;
+  --news-text-primary: #1a1a1a;
+  --news-text-body: #333;
+  --news-text-muted: #888;
+  --news-text-subtle: #aaa;
+  --news-positive-bg: #d4edda;
+  --news-positive-border: #a3d4b0;
+  --news-positive-text: #1a5c2e;
+  --news-negative-bg: #f8d7da;
+  --news-negative-border: #f1aeb5;
+  --news-negative-text: #721c24;
+  --news-space-xs: 8px;
+  --news-space-sm: 10px;
+  --news-space-md: 12px;
+  --news-space-lg: 20px;
+  --news-space-xl: 22px;
+  --news-radius-sm: 2px;
+  --news-radius-md: 4px;
+  --news-transition-fast: 0.15s;
+  background: var(--news-card-surface);
+  border: 1px solid var(--news-card-border);
+  border-radius: var(--news-radius-md);
+  padding: var(--news-space-lg) var(--news-space-xl);
+  cursor: pointer;
+  transition: box-shadow var(--news-transition-fast);
+}
+
+.card:hover {
+  box-shadow: 0 2px 12px var(--news-card-shadow);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--news-space-xs);
+  flex-wrap: wrap;
+  margin-bottom: var(--news-space-sm);
+}
+
+.cycleBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px var(--news-space-sm);
+  border-radius: var(--news-radius-sm);
+  letter-spacing: 0.5px;
+}
+
+.cyclePos {
+  background: var(--news-positive-bg);
+  color: var(--news-positive-text);
+  border: 1px solid var(--news-positive-border);
+}
+
+.cycleNeg {
+  background: var(--news-negative-bg);
+  color: var(--news-negative-text);
+  border: 1px solid var(--news-negative-border);
+}
+
+.source {
+  font-size: 11px;
+  color: var(--news-text-muted);
+  margin-left: auto;
+}
+
+.date {
+  font-size: 11px;
+  color: var(--news-text-subtle);
+}
+
+.headline {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--news-text-primary);
+  line-height: 1.45;
+  margin: 0 0 var(--news-space-sm);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.content {
+  font-size: 13px;
+  color: var(--news-text-body);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  margin: 0 0 var(--news-space-md);
+  border-top: 1px solid var(--news-divider);
+  padding-top: var(--news-space-md);
+}
+
+.toggleBtn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: var(--news-text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.toggleBtn:hover {
+  color: var(--news-text-body);
+}

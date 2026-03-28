@@ -10,6 +10,7 @@ import type {
   LoanRepayResponseModel,
 } from '../models/LoanModel';
 import { apiClient } from '@core/network/apiClient';
+import { unwrapApiData, type ApiEnvelope } from '@core/network/apiResponse';
 
 export class LoanRemoteDataSource {
   async getProducts(
@@ -18,42 +19,43 @@ export class LoanRemoteDataSource {
     page: number,
     size: number,
   ): Promise<LoanProductPageModel> {
-    return apiClient.get<LoanProductPageModel>(
-      `/api/games/sessions/${sessionId}/loans/products?category=${category}&page=${page}&size=${size}`,
-    );
+    return apiClient.get<ApiEnvelope<LoanProductPageModel>>(
+      `/games/sessions/${sessionId}/loans/products`,
+      { params: { category, page, size } },
+    ).then(unwrapApiData);
   }
 
   async getProductDetail(sessionId: number, productId: string): Promise<LoanProductDetailModel> {
-    return apiClient.get<LoanProductDetailModel>(
-      `/api/games/sessions/${sessionId}/loans/products/${productId}`,
-    );
+    return apiClient.get<ApiEnvelope<LoanProductDetailModel>>(
+      `/games/sessions/${sessionId}/loans/products/${productId}`,
+    ).then(unwrapApiData);
   }
 
   async calculate(sessionId: number, body: LoanCalculateRequestModel): Promise<LoanCalculateResponseModel> {
-    return apiClient.post<LoanCalculateResponseModel>(
-      `/api/games/sessions/${sessionId}/loans/calculate`,
+    return apiClient.post<ApiEnvelope<LoanCalculateResponseModel>>(
+      `/games/sessions/${sessionId}/loans/calculate`,
       body,
-    );
+    ).then(unwrapApiData);
   }
 
   async apply(sessionId: number, productId: string, propertyId: string): Promise<LoanApplyResponseModel> {
-    return apiClient.post<LoanApplyResponseModel>(
-      `/api/games/sessions/${sessionId}/loans/apply`,
+    return apiClient.post<ApiEnvelope<LoanApplyResponseModel>>(
+      `/games/sessions/${sessionId}/loans/apply`,
       { productId, propertyId },
-    );
+    ).then(unwrapApiData);
   }
 
   async confirm(sessionId: number, body: LoanConfirmRequestModel): Promise<LoanConfirmResponseModel> {
-    return apiClient.post<LoanConfirmResponseModel>(
-      `/api/games/sessions/${sessionId}/loans/confirm`,
+    return apiClient.post<ApiEnvelope<LoanConfirmResponseModel>>(
+      `/games/sessions/${sessionId}/loans/confirm`,
       body,
-    );
+    ).then(unwrapApiData);
   }
 
   async repay(sessionId: number, body: LoanRepayRequestModel): Promise<LoanRepayResponseModel> {
-    return apiClient.post<LoanRepayResponseModel>(
-      `/api/games/sessions/${sessionId}/loans/repay`,
+    return apiClient.post<ApiEnvelope<LoanRepayResponseModel>>(
+      `/games/sessions/${sessionId}/loans/repay`,
       body,
-    );
+    ).then(unwrapApiData);
   }
 }

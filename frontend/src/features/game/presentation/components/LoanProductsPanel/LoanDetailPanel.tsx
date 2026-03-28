@@ -143,7 +143,7 @@ export function LoanDetailPanel({ product, sessionId, onBack, preSelectedPropert
             onApplyDirect(preSelectedPropertyId, preSelectedPropertyName, preSelectedPropertyPrice);
           } else {
             // 일반 흐름 → 부동산 화면에서 매물 선택 후 심사
-            navigate(ROUTES.PROPERTY, {
+            navigate(ROUTES.REAL_ESTATE, {
               state: { mode: 'loan-apply', productId: String(product.productId), sessionId },
             });
           }

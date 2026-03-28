@@ -1,19 +1,15 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { container } from '@core/di/container';
 import { useAuthStore } from '@core/store/authStore';
-import { apiClient } from '@core/network/apiClient';
 import { ROUTES } from '@app/routes';
+import { LoginUseCase } from '@features/auth/domain/usecases/LoginUseCase';
+import { SignUpUseCase } from '@features/auth/domain/usecases/SignUpUseCase';
 import type { LoginCredentials } from '../../domain/entities/LoginCredentials';
 import type { SignUpCredentials } from '../../domain/entities/SignUpCredentials';
 
 type AuthView = 'onboarding' | 'emailLogin' | 'signUp';
 
-interface LoginResponseData {
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresIn: number;
-  name: string;
-}
 export const useAuth = () => {
   const [view, setView] = useState<AuthView>('emailLogin');
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +22,8 @@ export const useAuth = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await apiClient.post<LoginResponseData>('/api/auth/login', credentials);
+        const loginUseCase = container.resolve(LoginUseCase);
+        const data = await loginUseCase.execute(credentials);
         setAuth(data.accessToken, data.refreshToken, data.name);
         navigate(ROUTES.HOME, { replace: true });
       } catch (e) {
@@ -43,7 +40,8 @@ export const useAuth = () => {
       setIsLoading(true);
       setError(null);
       try {
-        await apiClient.post('/api/auth/signup', credentials);
+        const signUpUseCase = container.resolve(SignUpUseCase);
+        await signUpUseCase.execute(credentials);
         setView('emailLogin');
       } catch (e) {
         setError(e instanceof Error ? e.message : '회원가입에 실패했습니다.');

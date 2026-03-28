@@ -4,7 +4,7 @@ import logoImg from '@assets/images/logo.png';
 import { ROUTES } from '@app/routes';
 import styles from './GameStart.module.css';
 
-export default function GameStart() {
+export function GameStartPage() {
   const navigate = useNavigate();
 
   const handleContinue = () => {

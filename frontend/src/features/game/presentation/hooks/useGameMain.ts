@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
-import type { GameAssets } from '@features/game/domain/entities/GameAssets';
-import type { GameStats } from '@features/game/domain/entities/GameStats';
 import type { JobType } from '@features/game/domain/entities/GameSlot';
-import { useGameWorld } from '@features/game/presentation/hooks/useGameWorld';
+import { useGameTurn } from '@features/game/presentation/hooks/useGameTurn';
+import { formatIsoDate } from '@shared/utils/formatter';
+import { readSessionStorage, writeSessionStorage } from '@shared/utils/sessionStorage';
+import {
+  getNewsSeenDateStorageKey,
+  getNewsSeenDateValue,
+} from '@features/game/utils/newsSeenStorage';
 import { useCreateGameSession } from './useCreateGameSession';
 
 interface LocationState {
@@ -82,22 +86,29 @@ export const useGameMain = () => {
     preSelectedPropertyName,
     preSelectedPropertyPrice,
   } = state;
-
-  const [assets, setAssets] = useState<GameAssets | null>(null);
-  const [stats, setStats] = useState<GameStats | null>(null);
   const [sessionId, setSessionId] = useState<number | null>(locationSessionId ?? null);
   const [characterType, setCharacterType] = useState<CharacterType>(
     routeCharacterType ?? 'MALE',
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNewsOpen, setIsNewsOpen] = useState(false);
   const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card'>(openLoan ? 'loan' : 'scene');
   const creationRequestedRef = useRef(false);
 
   const { createSession, isSubmitting, error: createError } = useCreateGameSession();
-  const { turn, fetchTurn, error: worldError } = useGameWorld(sessionId);
+  const {
+    turn,
+    news,
+    isTurnLoading,
+    turnError,
+    isNewsLoading,
+    newsError,
+    fetchTurn,
+    fetchLatestNews,
+  } = useGameTurn(sessionId);
   const currentDate = turn?.currentDate ?? null;
+  const currentDateKey = currentDate === null ? null : formatIsoDate(currentDate);
 
   useEffect(() => {
     if (locationSessionId === undefined || locationSessionId === sessionId) {
@@ -228,41 +239,6 @@ export const useGameMain = () => {
         if (!isMounted) {
           return;
         }
-        // TODO: GET /games/sessions/{sessionId}/assets
-        setAssets({
-          cash: 1_000_000,
-          loan: { principal: 1_000_000, monthlyInterest: 30_000 },
-          realEstate: {
-            propertyName: '강남 힐스테이트 에코',
-            housingType: 'JEONSE_APT',
-            currentValue: 720_000_000,
-          },
-          stock: {
-            totalValue: 100_000,
-            holdings: [
-              { stockCode: 'BIO', stockName: '바이오주', quantity: 11, currentValue: 100_000 },
-            ],
-          },
-          career: {
-            characterName: '김싸피',
-            jobType: 'SMALL_BIZ',
-            jobTitle: '스타트업 직장인',
-            annualSalary: 36_000_000,
-          },
-          sideJobs: [
-            { sideJobId: 1, name: '인형 눈 붙이기', cashEffect: 100_000, healthEffect: -5 },
-            { sideJobId: 2, name: '배달 아르바이트', cashEffect: 300_000, healthEffect: -10 },
-            { sideJobId: 3, name: '인형 눈 붙이기', cashEffect: 100_000, healthEffect: -5 },
-          ],
-        });
-        // TODO: GET /games/sessions/{sessionId} (for stats & characterType)
-        setStats({
-          health: 30,
-          fatigue: 45,
-          stress: 15,
-          knowledge: 70,
-          happiness: 90,
-        });
         setCharacterType(routeCharacterType ?? 'MALE');
       } finally {
         if (isMounted) {
@@ -277,27 +253,43 @@ export const useGameMain = () => {
     };
   }, [fetchTurn, routeCharacterType, sessionId]);
 
-  const totalAssets =
-    assets !== null
-      ? assets.cash +
-        (assets.realEstate?.currentValue ?? 0) +
-        (assets.stock?.totalValue ?? 0) -
-        (assets.loan?.principal ?? 0)
-      : null;
+  useEffect(() => {
+    if (currentDateKey === null) {
+      return;
+    }
+
+    if (readSessionStorage(getNewsSeenDateStorageKey(sessionId)) !== currentDateKey) {
+      setIsNewsOpen(true);
+    }
+  }, [currentDateKey, sessionId]);
+
+  useEffect(() => {
+    if (!isNewsOpen) {
+      return;
+    }
+
+    void fetchLatestNews();
+  }, [fetchLatestNews, isNewsOpen]);
 
   return {
     sessionId,
-    assets,
-    stats,
     turn,
+    news,
     currentDate,
     characterType,
-    totalAssets,
-    isLoading: isLoading || isSubmitting,
-    error: error ?? createError ?? worldError,
-    isModalOpen,
-    openModal: () => setIsModalOpen(true),
-    closeModal: () => setIsModalOpen(false),
+    isNewsOpen,
+    isLoading: isLoading || isSubmitting || isTurnLoading,
+    isNewsLoading,
+    newsError,
+    openNews: () => setIsNewsOpen(true),
+    closeNews: () => {
+      writeSessionStorage(
+        getNewsSeenDateStorageKey(sessionId),
+        getNewsSeenDateValue(currentDate),
+      );
+      setIsNewsOpen(false);
+    },
+    error: error ?? createError ?? turnError,
     leftView,
     setLeftView,
     preSelectedPropertyId,

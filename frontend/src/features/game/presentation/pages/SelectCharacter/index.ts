@@ -1,0 +1,1 @@
+export { SelectCharacterPage } from './SelectCharacterPage';

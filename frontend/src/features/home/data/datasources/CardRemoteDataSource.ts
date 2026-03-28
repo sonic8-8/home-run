@@ -1,16 +1,13 @@
 import { apiClient } from '@core/network/apiClient';
-import type { CardResponseModel, CardRecommendationsResponseModel } from '../models/CardModel';
-
-export interface CardListResponseModel {
-  cards: CardResponseModel[];
-}
+import { unwrapApiData, type ApiEnvelope } from '@core/network/apiResponse';
+import type { CardListResponseModel, CardRecommendationsResponseModel } from '../models/CardModel';
 
 export class CardRemoteDataSource {
   getAll(): Promise<CardListResponseModel> {
-    return apiClient.get<CardListResponseModel>('/api/cards');
+    return apiClient.get<ApiEnvelope<CardListResponseModel>>('/cards').then(unwrapApiData);
   }
 
   getRecommendations(): Promise<CardRecommendationsResponseModel> {
-    return apiClient.get<CardRecommendationsResponseModel>('/api/cards/recommendations');
+    return apiClient.get<ApiEnvelope<CardRecommendationsResponseModel>>('/cards/recommendations').then(unwrapApiData);
   }
 }
