@@ -27,10 +27,6 @@ async function mockExternalScripts(page: Page) {
   });
 }
 
-type CreatePayloadWindow = Window & {
-  __testCreatePayload: Record<string, unknown> | null;
-};
-
 function seedNewGameRouteState(
   page: Page,
   state: Record<string, unknown>,
@@ -44,98 +40,95 @@ function seedNewGameRouteState(
   }, state);
 }
 
-async function mockCreateSessionFlow(page: Page) {
-  await page.addInitScript(() => {
-    const testWindow = window as CreatePayloadWindow;
-    testWindow.__testCreatePayload = null;
-
-    const originalFetch = window.fetch.bind(window);
-
-    window.fetch = async (input, init) => {
-      const request = input instanceof Request ? input : null;
-      const url = typeof input === 'string' ? input : request?.url ?? String(input);
-      const method = init?.method ?? request?.method ?? 'GET';
-
-      if (url.endsWith('/api/games/sessions') && method === 'POST') {
-        testWindow.__testCreatePayload = JSON.parse(String(init?.body ?? '{}'));
-
-        return new Response(
-          JSON.stringify({
-            status: 201,
-            message: 'OK',
-            data: {
-              sessionId: 31,
-              slotNumber: 3,
-              sessionStatus: 'IN_PROGRESS',
-              currentTurn: 1,
-              dataSourceType: 'MY_DATA',
-            },
-          }),
-          {
-            status: 201,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-      }
-
-      if (/\/api\/games\/sessions\/\d+\/turn$/.test(url)) {
-        return new Response(
-          JSON.stringify({
-            status: 200,
-            message: 'OK',
-            data: {
-              turnNumber: 1,
-              currentDate: '2026-03-27',
-              month: 3,
-              economicCycle: {
-                phase: 'RECOVERY',
-                description: '회복 국면',
-              },
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-      }
-
-      if (/\/api\/games\/sessions\/\d+\/news\/latest$/.test(url)) {
-        return new Response(
-          JSON.stringify({
-            status: 200,
-            message: 'OK',
-            data: {
-              turnNumber: 1,
-              currentDate: '2026-03-27',
-              news: [
-                {
-                  newsId: 'news-1',
-                  headline: '경제 회복 시작',
-                  content: '신규 세션 생성 이후 첫 뉴스입니다.',
-                  sourceName: '홈런경제',
-                  publishedDate: '2026-03-27',
-                  economicCycleType: 'RECOVERY',
-                },
-              ],
-            },
-          }),
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-      }
-
-      return originalFetch(input, init);
-    };
+async function waitForRouteHydration(page: Page) {
+  await expect(
+    page.getByText('불러오는 중...', { exact: true }),
+  ).toHaveCount(0, {
+    timeout: 15_000,
   });
+}
+
+async function mockCreateSessionFlow(page: Page) {
+  let createPayload: Record<string, unknown> | null = null;
+  let turnRequestCount = 0;
+  let latestNewsRequestCount = 0;
+
+  await page.route(/\/api\/games\/sessions$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+
+    createPayload = route.request().postDataJSON() as Record<string, unknown>;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 200,
+        message: 'OK',
+        data: {
+          sessionId: 31,
+          slotNumber: 3,
+          sessionStatus: 'IN_PROGRESS',
+          currentTurn: 1,
+          dataSourceType: 'MY_DATA',
+        },
+      }),
+    });
+  });
+
+  await page.route(/\/api\/games\/sessions\/\d+\/turn$/, async (route) => {
+    turnRequestCount += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 200,
+        message: 'OK',
+        data: {
+          turnNumber: 1,
+          currentDate: '2026-03-27',
+          month: 3,
+          economicCycle: {
+            phase: 'RECOVERY',
+            description: '회복 국면',
+          },
+        },
+      }),
+    });
+  });
+
+  await page.route(/\/api\/games\/sessions\/\d+\/news\/latest$/, async (route) => {
+    latestNewsRequestCount += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 200,
+        message: 'OK',
+        data: {
+          turnNumber: 1,
+          currentDate: '2026-03-27',
+          news: [
+            {
+              newsId: 'news-1',
+              headline: '경제 회복 시작',
+              content: '신규 세션 생성 이후 첫 뉴스입니다.',
+              sourceName: '홈런경제',
+              publishedDate: '2026-03-27',
+              economicCycleType: 'RECOVERY',
+            },
+          ],
+        },
+      }),
+    });
+  });
+
+  return {
+    getCreatePayload: () => createPayload,
+    getTurnRequestCount: () => turnRequestCount,
+    getLatestNewsRequestCount: () => latestNewsRequestCount,
+  };
 }
 
 test.describe('game session create api', () => {
@@ -151,23 +144,22 @@ test.describe('game session create api', () => {
       targetPropertyId: 101,
       useMyData: true,
     });
-    await mockCreateSessionFlow(page);
+    const {
+      getCreatePayload,
+      getTurnRequestCount,
+      getLatestNewsRequestCount,
+    } = await mockCreateSessionFlow(page);
 
     await page.goto('/game');
-
-    await page.waitForFunction(() => {
-      const testWindow = window as CreatePayloadWindow;
-      return testWindow.__testCreatePayload !== null;
-    });
     await expect(page).toHaveURL(/\/game$/);
-    await expect(page.getByText('게임 정보를 불러오는 중입니다.')).toBeVisible();
+    await waitForRouteHydration(page);
+    await expect.poll(getCreatePayload, { timeout: 15_000 }).not.toBeNull();
+    await expect.poll(getTurnRequestCount, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect.poll(getLatestNewsRequestCount, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect(page.getByRole('heading', { name: '메뉴' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('경제 회복 시작')).toBeVisible({ timeout: 15_000 });
 
-    const createPayload = await page.evaluate(() => {
-      const testWindow = window as CreatePayloadWindow;
-      return testWindow.__testCreatePayload;
-    });
-
-    expect(createPayload).toEqual({
+    expect(getCreatePayload()).toEqual({
       slotNumber: 3,
       characterType: 'FEMALE',
       characterName: '테스터',
@@ -191,21 +183,21 @@ test.describe('game session create api', () => {
       targetPropertyId: 202,
       useMyData: false,
     });
-    await mockCreateSessionFlow(page);
+    const {
+      getCreatePayload,
+      getTurnRequestCount,
+      getLatestNewsRequestCount,
+    } = await mockCreateSessionFlow(page);
 
     await page.goto('/game');
+    await waitForRouteHydration(page);
+    await expect.poll(getCreatePayload, { timeout: 15_000 }).not.toBeNull();
+    await expect.poll(getTurnRequestCount, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect.poll(getLatestNewsRequestCount, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect(page.getByRole('heading', { name: '메뉴' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('경제 회복 시작')).toBeVisible({ timeout: 15_000 });
 
-    await page.waitForFunction(() => {
-      const testWindow = window as CreatePayloadWindow;
-      return testWindow.__testCreatePayload !== null;
-    });
-
-    const createPayload = await page.evaluate(() => {
-      const testWindow = window as CreatePayloadWindow;
-      return testWindow.__testCreatePayload;
-    });
-
-    expect(createPayload).toEqual({
+    expect(getCreatePayload()).toEqual({
       slotNumber: 2,
       characterType: 'MALE',
       characterName: '홍길동',

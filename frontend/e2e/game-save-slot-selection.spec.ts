@@ -149,8 +149,9 @@ test.describe('game save slot selection', () => {
     await page.getByRole('button', { name: '슬롯 1 불러오기' }).click();
 
     await expect(page).toHaveURL(/\/game$/);
-    await expect(page.getByRole('heading', { name: '내 자산' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'USER' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '메뉴' })).toBeVisible();
+    await expect(page.getByText('2026년 03월 06일')).toBeVisible();
+    await expect(page.getByText('회복 국면 뉴스')).toBeVisible();
   });
 
   test('opens the character selection page when clicking an empty slot', async ({ page }) => {

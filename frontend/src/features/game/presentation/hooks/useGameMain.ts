@@ -10,6 +10,7 @@ import {
   getNewsSeenDateStorageKey,
   getNewsSeenDateValue,
 } from '@features/game/utils/newsSeenStorage';
+import type { GameSessionCreation } from '@features/game/domain/entities/GameSessionCreation';
 import { useCreateGameSession } from './useCreateGameSession';
 
 interface LocationState {
@@ -94,7 +95,7 @@ export const useGameMain = () => {
   const [error, setError] = useState<string | null>(null);
   const [isNewsOpen, setIsNewsOpen] = useState(false);
   const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card'>(openLoan ? 'loan' : 'scene');
-  const creationRequestedRef = useRef(false);
+  const createSessionPromiseRef = useRef<Promise<GameSessionCreation> | null>(null);
 
   const { createSession, isSubmitting, error: createError } = useCreateGameSession();
   const {
@@ -118,63 +119,67 @@ export const useGameMain = () => {
   }, [locationSessionId, sessionId]);
 
   useEffect(() => {
-    let isMounted = true;
+    let isCancelled = false;
 
     if (sessionId !== null) {
-      creationRequestedRef.current = true;
       return () => {
-        isMounted = false;
+        isCancelled = true;
       };
     }
 
-    if (
-      !isCompleteNewSessionState(state)
-    ) {
-      if (isMounted) {
+    const createState: LocationState = {
+      slotNumber,
+      characterType: routeCharacterType,
+      characterName,
+      jobType,
+      regionCode,
+      districtCode,
+      targetPropertyId,
+      useMyData,
+    };
+
+    if (!isCompleteNewSessionState(createState)) {
+      if (!isCancelled) {
         setError('세션 생성 정보가 부족합니다.');
       }
       return () => {
-        isMounted = false;
+        isCancelled = true;
       };
     }
 
-    if (creationRequestedRef.current) {
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    creationRequestedRef.current = true;
+    const createPromise =
+      createSessionPromiseRef.current ??
+      createSession(
+        createState.useMyData
+          ? {
+              slotNumber: createState.slotNumber,
+              characterType: createState.characterType,
+              characterName: createState.characterName,
+              regionCode: createState.regionCode,
+              districtCode: createState.districtCode,
+              targetPropertyId: createState.targetPropertyId,
+              useMyData: createState.useMyData,
+            }
+          : {
+              slotNumber: createState.slotNumber,
+              characterType: createState.characterType,
+              characterName: createState.characterName,
+              jobType: createState.jobType,
+              regionCode: createState.regionCode,
+              districtCode: createState.districtCode,
+              targetPropertyId: createState.targetPropertyId,
+              useMyData: createState.useMyData,
+            },
+      );
+    createSessionPromiseRef.current = createPromise;
 
     const createNewSession = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const createInput =
-          state.useMyData
-            ? {
-                slotNumber: state.slotNumber,
-                characterType: state.characterType,
-                characterName: state.characterName,
-                regionCode: state.regionCode,
-                districtCode: state.districtCode,
-                targetPropertyId: state.targetPropertyId,
-                useMyData: state.useMyData,
-              }
-            : {
-                slotNumber: state.slotNumber,
-                characterType: state.characterType,
-                characterName: state.characterName,
-                jobType: state.jobType,
-                regionCode: state.regionCode,
-                districtCode: state.districtCode,
-                targetPropertyId: state.targetPropertyId,
-                useMyData: state.useMyData,
-              };
+        const createdSession = await createPromise;
 
-        const createdSession = await createSession(createInput);
-
-        if (!isMounted) {
+        if (isCancelled) {
           return;
         }
 
@@ -183,21 +188,24 @@ export const useGameMain = () => {
           replace: true,
           state: {
             sessionId: createdSession.sessionId,
-            characterType: state.characterType,
+            characterType: createState.characterType,
           },
         });
       } catch (sessionCreateError) {
-        if (!isMounted) {
+        if (isCancelled) {
           return;
         }
-        creationRequestedRef.current = false;
         setError(
           sessionCreateError instanceof Error
             ? sessionCreateError.message
             : '새 게임을 시작하지 못했습니다.',
         );
       } finally {
-        if (isMounted) {
+        if (createSessionPromiseRef.current === createPromise) {
+          createSessionPromiseRef.current = null;
+        }
+
+        if (!isCancelled) {
           setIsLoading(false);
         }
       }
@@ -206,7 +214,7 @@ export const useGameMain = () => {
     void createNewSession();
 
     return () => {
-      isMounted = false;
+      isCancelled = true;
     };
   }, [
     characterName,
