@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.turn;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnActionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnStateService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.AvailableActionsResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class GameTurnController {
 
     private final GameTurnStateService gameTurnStateService;
+    private final GameTurnActionService gameTurnActionService;
 
     @GetMapping
     public ApiResponse<TurnStateResponse> getTurnState(
@@ -24,6 +27,18 @@ public class GameTurnController {
         @PathVariable final Long sessionId
     ) {
         final TurnStateResponse response = gameTurnStateService.getTurnState(
+            authenticatedUser.getUserId(),
+            sessionId
+        );
+        return ApiResponse.ok(response);
+    }
+
+    @GetMapping("/actions")
+    public ApiResponse<AvailableActionsResponse> getAvailableActions(
+        @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
+        @PathVariable final Long sessionId
+    ) {
+        final AvailableActionsResponse response = gameTurnActionService.getAvailableActions(
             authenticatedUser.getUserId(),
             sessionId
         );
