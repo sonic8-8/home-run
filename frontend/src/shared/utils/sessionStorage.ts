@@ -21,3 +21,11 @@ export function writeSessionStorage(key: string | null, value: string | null): v
 
   getSessionStorage()?.setItem(key, value);
 }
+
+export function removeSessionStorage(key: string | null): void {
+  if (key === null) {
+    return;
+  }
+
+  getSessionStorage()?.removeItem(key);
+}

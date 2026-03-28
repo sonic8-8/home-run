@@ -4,10 +4,11 @@ import { setupInterceptors } from '@core/network/interceptors';
 
 const {
   axiosCreate,
-  axiosPost,
   client,
   requestUse,
   responseUse,
+  refreshSession,
+  expireSession,
   getState,
 } = vi.hoisted(() => ({
   client: {
@@ -18,9 +19,10 @@ const {
     },
   },
   axiosCreate: vi.fn(),
-  axiosPost: vi.fn(),
   requestUse: vi.fn(),
   responseUse: vi.fn(),
+  refreshSession: vi.fn(),
+  expireSession: vi.fn(),
   getState: vi.fn(),
 }));
 
@@ -40,8 +42,16 @@ vi.mock('axios', () => ({
       }
       return client;
     },
-    post: axiosPost,
   },
+}));
+
+vi.mock('@core/network/authSession', () => ({
+  refreshSession,
+}));
+
+vi.mock('@core/network/sessionExpiry', () => ({
+  expireSession,
+  AUTH_SESSION_EXPIRED_KEY: 'auth/session-expired',
 }));
 
 vi.mock('@core/store/authStore', () => ({
@@ -56,9 +66,11 @@ describe('apiClient', () => {
   beforeEach(() => {
     requestUse.mockReset();
     responseUse.mockReset();
-    axiosPost.mockReset();
+    refreshSession.mockReset();
+    expireSession.mockReset();
     getState.mockReset();
     getState.mockReturnValue({
+      isAuthenticated: false,
       accessToken: null,
       refreshToken: null,
       setAccessToken: vi.fn(),
@@ -89,5 +101,34 @@ describe('apiClient', () => {
         config: {},
       }),
     ).rejects.toEqual(new ForbiddenError('권한이 없습니다.'));
+  });
+
+  it('expires the session when token refresh fails on a 401 response', async () => {
+    const onRejected = responseUse.mock.calls[0]?.[1];
+
+    getState.mockReturnValue({
+      isAuthenticated: true,
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      setAccessToken: vi.fn(),
+      clearAuth: vi.fn(),
+    });
+    refreshSession.mockRejectedValue(new Error('refresh failed'));
+
+    await expect(
+      onRejected({
+        response: {
+          status: 401,
+          data: {
+            message: '인증이 필요합니다.',
+          },
+        },
+        config: {
+          headers: {},
+        },
+      }),
+    ).rejects.toThrow('refresh failed');
+
+    expect(expireSession).toHaveBeenCalledTimes(1);
   });
 });

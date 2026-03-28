@@ -51,7 +51,7 @@ describe('route guards', () => {
   });
 
   it('allows authenticated users through private routes', () => {
-    useAuthStore.getState().setAuth('access-token', 'refresh-token', '테스터');
+    useAuthStore.getState().setAuth('access-token', 'refresh-token', 1800, '테스터');
 
     renderPrivateRoute('/loan');
 
@@ -67,7 +67,7 @@ describe('route guards', () => {
   });
 
   it('redirects authenticated users away from public routes', () => {
-    useAuthStore.getState().setAuth('access-token', 'refresh-token', '테스터');
+    useAuthStore.getState().setAuth('access-token', 'refresh-token', 1800, '테스터');
 
     renderPublicRoute('/login');
 
