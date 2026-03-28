@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PassSubscription } from '../../../domain/entities/PassSubscription';
 import type { Pass } from '../../../domain/entities/Pass';
 import { PassModal } from '../PassModal/PassModal';
+import { formatWon } from '../../utils/money';
 import styles from './PassWidget.module.css';
 
 interface PassWidgetProps {
@@ -38,7 +39,7 @@ export function PassWidget({ subscriptions, allPasses, onSave, onUnsubscribe, on
           <>
             <div className={styles.totalRow}>
               <span className={styles.totalLabel}>총 저축 금액</span>
-              <span className={styles.totalAmount}>₩ {totalSaved.toLocaleString()}</span>
+              <span className={styles.totalAmount}>{formatWon(totalSaved)}</span>
             </div>
             <button className={styles.saveButton} onClick={() => setModalOpen(true)}>
               저축하기

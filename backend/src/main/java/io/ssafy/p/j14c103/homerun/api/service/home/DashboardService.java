@@ -40,7 +40,7 @@ public class DashboardService {
         userSsafyAccountSyncService.syncLinkedAccounts(userId);
         final UserFinancialSummary summary = userFinancialSummaryService.getSummary(userId);
         final Optional<UserAssetProfile> assetProfile = userAssetProfileRepository.findById(userId);
-        final Money totalAssets = Money.of(summary.getTotalAssetAmount().longValue());
+        final Money totalAssets = Money.of(summary.getTotalAssetAmount());
         final Money monthlyIncome = assetProfile
                 .map(profile -> Money.of(profile.getMonthlySalaryAmount() + getOtherIncomeAmount(userId)))
                 .orElseGet(() -> calculateMonthlyIncome(userId));
@@ -76,11 +76,11 @@ public class DashboardService {
 
     private Money calculateMonthlyIncome(final Long userId) {
         final LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
-        final int amount = userAccountTransactionRepository
+        final long amount = userAccountTransactionRepository
                 .findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(userId, monthStart.atStartOfDay())
                 .stream()
                 .filter(transaction -> transaction.getTransactionType() == AccountTransactionType.DEPOSIT)
-                .mapToInt(transaction -> transaction.getAmount().intValue())
+                .mapToLong(transaction -> transaction.getAmount().longValue())
                 .sum();
 
         return Money.of(amount);
@@ -88,36 +88,36 @@ public class DashboardService {
 
     private Money calculateMonthlyExpense(final Long userId) {
         final LocalDate monthStart = LocalDate.now().withDayOfMonth(1);
-        final int accountExpense = userAccountTransactionRepository
+        final long accountExpense = userAccountTransactionRepository
                 .findByUserIdAndCreatedAtAfterOrderByCreatedAtDesc(userId, monthStart.atStartOfDay())
                 .stream()
                 .filter(transaction -> transaction.getTransactionType() == AccountTransactionType.WITHDRAW)
-                .mapToInt(transaction -> transaction.getAmount().intValue())
+                .mapToLong(transaction -> transaction.getAmount().longValue())
                 .sum();
-        final int cardExpense = cardTransactionRepository
+        final long cardExpense = cardTransactionRepository
                 .findAllByUserIdAndPaymentDateBetweenOrderByPaymentDateDescCreatedAtDesc(userId, monthStart, LocalDate.now())
                 .stream()
-                .mapToInt(transaction -> transaction.getPaymentAmount().intValue())
+                .mapToLong(transaction -> transaction.getPaymentAmount().longValue())
                 .sum();
 
         return Money.of(accountExpense + cardExpense);
     }
 
-    private int getOtherIncomeAmount(final Long userId) {
+    private long getOtherIncomeAmount(final Long userId) {
         return userAssetOtherIncomeRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .mapToInt(item -> item.getAmount().intValue())
+                .mapToLong(item -> item.getAmount().longValue())
                 .sum();
     }
 
-    private int getCardSpendAmount(final Long userId) {
+    private long getCardSpendAmount(final Long userId) {
         return userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .mapToInt(item -> item.getAmount().intValue())
+                .mapToLong(item -> item.getAmount().longValue())
                 .sum();
     }
 
     private long findAccountBalance(final Long userId, final AccountType accountType) {
         return userAccountRepository.findByUserIdAndAccountType(userId, accountType)
-                .map(account -> account.getBalanceSnapshot().longValue())
+                .map(account -> account.getBalanceSnapshot())
                 .orElse(0L);
     }
 }

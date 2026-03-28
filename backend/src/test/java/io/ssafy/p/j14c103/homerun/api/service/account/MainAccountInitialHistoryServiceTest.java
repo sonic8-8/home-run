@@ -62,9 +62,9 @@ class MainAccountInitialHistoryServiceTest {
         final UserAccount mainAccount = userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN)
                 .orElseThrow();
         assertThat(mainAccount.getMainInitialHistorySeeded()).isTrue();
-        final int currentBalanceFromHistory = userAccountTransactionRepository.findAll().stream()
+        final long currentBalanceFromHistory = userAccountTransactionRepository.findAll().stream()
                 .filter(transaction -> transaction.getAccountType() == AccountType.MAIN)
-                .mapToInt(transaction -> transaction.getTransactionType() == AccountTransactionType.WITHDRAW
+                .mapToLong(transaction -> transaction.getTransactionType() == AccountTransactionType.WITHDRAW
                         ? -transaction.getAmount()
                         : transaction.getAmount())
                 .sum();

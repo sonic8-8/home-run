@@ -18,12 +18,69 @@ create table if not exists users (
 alter table if exists user_financial_products
   add column if not exists source_type varchar(20) default 'SYSTEM';
 
+alter table if exists user_asset_profiles
+  alter column main_account_balance_amount set data type bigint;
+alter table if exists user_asset_profiles
+  alter column monthly_salary_amount set data type bigint;
+alter table if exists user_asset_profiles
+  alter column monthly_fixed_expense_amount set data type bigint;
+alter table if exists user_asset_deposits
+  alter column amount set data type bigint;
+alter table if exists user_asset_loans
+  alter column amount set data type bigint;
+alter table if exists user_asset_other_incomes
+  alter column amount set data type bigint;
+alter table if exists user_asset_card_spends
+  alter column amount set data type bigint;
+alter table if exists pass_products
+  alter column default_saving_amount set data type bigint;
+alter table if exists pass_savings
+  alter column monthly_saved_amount set data type bigint;
+alter table if exists pass_savings
+  alter column total_saved_amount set data type bigint;
+alter table if exists pass_subscriptions
+  alter column amount_per_save set data type bigint;
+alter table if exists user_pass_transactions
+  alter column transaction_amount set data type bigint;
+alter table if exists seedmoney_accounts
+  alter column balance_snapshot_amount set data type bigint;
+alter table if exists seedmoney_transactions
+  alter column amount set data type bigint;
+alter table if exists member_payment_histories
+  alter column payment_amount set data type bigint;
+alter table if exists card_products
+  alter column baseline_performance_amount set data type bigint;
+alter table if exists card_products
+  alter column max_benefit_limit_amount set data type bigint;
+alter table if exists user_accounts
+  alter column balance_snapshot_amount set data type bigint;
+alter table if exists user_account_transactions
+  alter column amount set data type bigint;
+alter table if exists user_financial_products
+  alter column current_balance_amount set data type bigint;
+alter table if exists user_financial_transactions
+  alter column amount set data type bigint;
+alter table if exists user_financial_summaries
+  alter column total_asset_amount set data type bigint;
+alter table if exists user_financial_summaries
+  alter column total_debt_amount set data type bigint;
+alter table if exists user_financial_summaries
+  alter column net_asset_amount set data type bigint;
+alter table if exists user_financial_summaries
+  alter column cash_asset_amount set data type bigint;
+alter table if exists user_financial_summaries
+  alter column saving_asset_amount set data type bigint;
+alter table if exists user_financial_summaries
+  alter column investment_asset_amount set data type bigint;
+alter table if exists card_transactions
+  alter column payment_amount set data type bigint;
+
 create table if not exists user_asset_profiles (
   user_id integer primary key,
-  main_account_balance_amount integer not null,
+  main_account_balance_amount bigint not null,
   salary_day_of_month integer not null,
-  monthly_salary_amount integer not null,
-  monthly_fixed_expense_amount integer not null,
+  monthly_salary_amount bigint not null,
+  monthly_fixed_expense_amount bigint not null,
   job_type varchar(30) not null,
   updated_at timestamp not null default current_timestamp,
   constraint fk_user_asset_profiles__user
@@ -34,7 +91,7 @@ create table if not exists user_asset_deposits (
   user_asset_deposit_id integer generated always as identity primary key,
   user_id integer not null,
   name varchar(100) not null,
-  amount integer not null,
+  amount bigint not null,
   created_at timestamp not null default current_timestamp,
   constraint fk_user_asset_deposits__user
     foreign key (user_id) references users (user_id)
@@ -44,7 +101,7 @@ create table if not exists user_asset_loans (
   user_asset_loan_id integer generated always as identity primary key,
   user_id integer not null,
   name varchar(100) not null,
-  amount integer not null,
+  amount bigint not null,
   created_at timestamp not null default current_timestamp,
   constraint fk_user_asset_loans__user
     foreign key (user_id) references users (user_id)
@@ -54,7 +111,7 @@ create table if not exists user_asset_other_incomes (
   user_asset_other_income_id integer generated always as identity primary key,
   user_id integer not null,
   name varchar(100) not null,
-  amount integer not null,
+  amount bigint not null,
   created_at timestamp not null default current_timestamp,
   constraint fk_user_asset_other_incomes__user
     foreign key (user_id) references users (user_id)
@@ -64,7 +121,7 @@ create table if not exists user_asset_card_spends (
   user_asset_card_spend_id integer generated always as identity primary key,
   user_id integer not null,
   category varchar(30) not null,
-  amount integer not null,
+  amount bigint not null,
   created_at timestamp not null default current_timestamp,
   constraint fk_user_asset_card_spends__user
     foreign key (user_id) references users (user_id)
@@ -91,14 +148,14 @@ create table if not exists pass_products (
   pass_product_id integer generated always as identity primary key,
   pass_product_name varchar(100) not null,
   pass_product_description text,
-  default_saving_amount integer
+  default_saving_amount bigint
 );
 
 -- Per-user aggregated PASS savings summary.
 create table if not exists pass_savings (
   user_id integer primary key,
-  monthly_saved_amount integer,
-  total_saved_amount integer,
+  monthly_saved_amount bigint,
+  total_saved_amount bigint,
   updated_at timestamp not null default current_timestamp,
   constraint fk_pass_savings__user
     foreign key (user_id) references users (user_id)
@@ -110,7 +167,7 @@ create table if not exists pass_subscriptions (
   user_id integer not null,
   pass_product_id integer not null,
   pass_product_name varchar(100),
-  amount_per_save integer,
+  amount_per_save bigint,
   source_account_reference varchar(100),
   active_yn boolean not null default true,
   subscribed_at timestamp,
@@ -126,7 +183,7 @@ create table if not exists user_pass_transactions (
   user_pass_transaction_id integer generated always as identity primary key,
   pass_subscription_id integer not null,
   transaction_type varchar(30),
-  transaction_amount integer,
+  transaction_amount bigint,
   transaction_at timestamp,
   constraint fk_user_pass_transactions__pass_subscription
     foreign key (pass_subscription_id) references pass_subscriptions (pass_subscription_id)
@@ -138,7 +195,7 @@ create table if not exists seedmoney_accounts (
   user_id integer not null,
   bank_name varchar(100),
   account_number_masked varchar(50),
-  balance_snapshot_amount integer,
+  balance_snapshot_amount bigint,
   updated_at timestamp not null default current_timestamp,
   constraint fk_seedmoney_accounts__user
     foreign key (user_id) references users (user_id)
@@ -150,7 +207,7 @@ create table if not exists seedmoney_transactions (
   user_id integer not null,
   pass_subscription_id integer,
   transaction_type varchar(30),
-  amount integer,
+  amount bigint,
   counterparty_account_masked varchar(50),
   created_at timestamp not null default current_timestamp,
   constraint fk_seedmoney_transactions__user
@@ -166,7 +223,7 @@ create table if not exists member_payment_histories (
   category_id varchar(50) not null,
   category_name varchar(50) not null,
   merchant_name varchar(100) not null,
-  payment_amount integer not null,
+  payment_amount bigint not null,
   payment_date date not null,
   created_at timestamp not null default current_timestamp,
   constraint fk_member_payment_histories__user
@@ -500,8 +557,8 @@ create table if not exists card_products (
   card_name varchar(100) not null,
   card_issuer_name varchar(100),
   card_description text,
-  baseline_performance_amount integer,
-  max_benefit_limit_amount integer,
+  baseline_performance_amount bigint,
+  max_benefit_limit_amount bigint,
   active_benefits jsonb,
   card_image_url varchar(255),
   active_yn boolean not null default true

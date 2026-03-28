@@ -45,7 +45,9 @@ describe('AuthRemoteDataSource', () => {
     await dataSource.signUp({
       email: 'tester@example.com',
       password: 'Password123!',
+      passwordConfirm: 'Password123!',
       name: '테스터',
+      termsAgreed: true,
     });
 
     expect(post).toHaveBeenCalledWith(
@@ -53,7 +55,9 @@ describe('AuthRemoteDataSource', () => {
       {
         email: 'tester@example.com',
         password: 'Password123!',
+        passwordConfirm: 'Password123!',
         name: '테스터',
+        termsAgreed: true,
       },
       {
         headers: { Authorization: undefined },

@@ -35,7 +35,7 @@ public class UserFinancialTransaction {
     private FinancialTransactionType transactionType;
 
     @Column(name = "amount", nullable = false)
-    private Integer amount;
+    private Long amount;
 
     @Column(name = "occurred_at", nullable = false)
     private LocalDateTime occurredAt;
@@ -47,7 +47,7 @@ public class UserFinancialTransaction {
             final Long userId,
             final Long userFinancialProductId,
             final FinancialTransactionType transactionType,
-            final Integer amount,
+            final Long amount,
             final LocalDateTime occurredAt
     ) {
         this.userId = userId;
@@ -62,7 +62,17 @@ public class UserFinancialTransaction {
             final Long userId,
             final Long userFinancialProductId,
             final FinancialTransactionType transactionType,
-            final Integer amount,
+            final int amount,
+            final LocalDateTime occurredAt
+    ) {
+        return create(userId, userFinancialProductId, transactionType, Long.valueOf(amount), occurredAt);
+    }
+
+    public static UserFinancialTransaction create(
+            final Long userId,
+            final Long userFinancialProductId,
+            final FinancialTransactionType transactionType,
+            final Long amount,
             final LocalDateTime occurredAt
     ) {
         if (userId == null) {

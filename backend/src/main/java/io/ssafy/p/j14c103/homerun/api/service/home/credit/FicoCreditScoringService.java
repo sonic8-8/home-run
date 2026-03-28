@@ -168,13 +168,13 @@ public class FicoCreditScoringService implements CreditScoreProvider {
 
     private CreditScore calculateLive(
             final Long userId,
-            final LocalDateTime referenceDateTime
+        final LocalDateTime referenceDateTime
     ) {
         final UserAssetProfile assetProfile = userAssetProfileRepository.findById(userId).orElse(null);
-        final int totalDepositAmount = totalDepositAmount(userId);
-        final int totalLoanAmount = totalLoanAmount(userId);
-        final int totalOtherIncomeAmount = totalOtherIncomeAmount(userId);
-        final int totalCardSpendAmount = totalCardSpendAmount(userId);
+        final long totalDepositAmount = totalDepositAmount(userId);
+        final long totalLoanAmount = totalLoanAmount(userId);
+        final long totalOtherIncomeAmount = totalOtherIncomeAmount(userId);
+        final long totalCardSpendAmount = totalCardSpendAmount(userId);
         final boolean hasCardSignal = hasCardSignal(userId, referenceDateTime);
         final boolean hasCreditHistory = hasCreditHistory(userId, referenceDateTime);
 
@@ -229,9 +229,9 @@ public class FicoCreditScoringService implements CreditScoreProvider {
             final LocalDateTime referenceDateTime,
             final boolean hasCreditHistory,
             final UserAssetProfile assetProfile,
-            final int totalDepositAmount,
-            final int totalOtherIncomeAmount,
-            final int totalCardSpendAmount
+            final long totalDepositAmount,
+            final long totalOtherIncomeAmount,
+            final long totalCardSpendAmount
     ) {
         if (!hasCreditHistory) {
             if (assetProfile == null) {
@@ -282,13 +282,13 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     private int calcPaymentHistoryFromAssetProfile(
             final Long userId,
             final UserAssetProfile profile,
-            final int totalDepositAmount,
-            final int totalOtherIncomeAmount,
-            final int totalCardSpendAmount
+            final long totalDepositAmount,
+            final long totalOtherIncomeAmount,
+            final long totalCardSpendAmount
     ) {
-        final int totalMonthlyIncomeAmount = profile.getMonthlySalaryAmount() + totalOtherIncomeAmount;
-        final int totalMonthlyExpenseAmount = profile.getMonthlyFixedExpenseAmount() + totalCardSpendAmount;
-        final int reserveAmount = resolveMainBalance(userId, profile)
+        final long totalMonthlyIncomeAmount = profile.getMonthlySalaryAmount() + totalOtherIncomeAmount;
+        final long totalMonthlyExpenseAmount = profile.getMonthlyFixedExpenseAmount() + totalCardSpendAmount;
+        final long reserveAmount = resolveMainBalance(userId, profile)
                 + resolveSeedmoneyBalance(userId)
                 + totalDepositAmount;
         final double jobStability = stabilityWeight(profile.getJobType());
@@ -396,14 +396,14 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     private int calcAmountsOwedFromAssetProfile(
             final Long userId,
             final UserAssetProfile profile,
-            final int totalDepositAmount,
-            final int totalLoanAmount,
-            final int totalOtherIncomeAmount,
-            final int totalCardSpendAmount
+            final long totalDepositAmount,
+            final long totalLoanAmount,
+            final long totalOtherIncomeAmount,
+            final long totalCardSpendAmount
     ) {
-        final int totalMonthlyIncomeAmount = profile.getMonthlySalaryAmount() + totalOtherIncomeAmount;
-        final int totalMonthlyExpenseAmount = profile.getMonthlyFixedExpenseAmount() + totalCardSpendAmount;
-        final int totalAssetAmount = resolveMainBalance(userId, profile)
+        final long totalMonthlyIncomeAmount = profile.getMonthlySalaryAmount() + totalOtherIncomeAmount;
+        final long totalMonthlyExpenseAmount = profile.getMonthlyFixedExpenseAmount() + totalCardSpendAmount;
+        final long totalAssetAmount = resolveMainBalance(userId, profile)
                 + resolveSeedmoneyBalance(userId)
                 + totalDepositAmount;
         final double debtToIncome = normalizeDebtBurden(totalLoanAmount, totalMonthlyIncomeAmount);
@@ -444,8 +444,8 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     private int calcCreditMix(
             final Long userId,
             final LocalDateTime referenceDateTime,
-            final int totalDepositAmount,
-            final int totalLoanAmount,
+            final long totalDepositAmount,
+            final long totalLoanAmount,
             final boolean hasCardSignal
     ) {
         final LocalDateTime inclusiveReference = toInclusiveReference(referenceDateTime);
@@ -671,7 +671,7 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         return hasCardSpendInput(userId) || getCardCount(userId, referenceDateTime) > 0;
     }
 
-    private int resolveMainBalance(
+    private long resolveMainBalance(
             final Long userId,
             final UserAssetProfile profile
     ) {
@@ -680,10 +680,10 @@ public class FicoCreditScoringService implements CreditScoreProvider {
                 .orElse(profile.getMainAccountBalanceAmount());
     }
 
-    private int resolveSeedmoneyBalance(final Long userId) {
+    private long resolveSeedmoneyBalance(final Long userId) {
         return userAccountRepository.findByUserIdAndAccountType(userId, AccountType.SEEDMONEY)
                 .map(UserAccount::getBalanceSnapshot)
-                .orElse(0);
+                .orElse(0L);
     }
 
     private double stabilityWeight(final JobType jobType) {
@@ -700,8 +700,8 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     }
 
     private double normalizeSavingsCushion(
-            final int reserveAmount,
-            final int monthlyExpenseAmount
+            final long reserveAmount,
+            final long monthlyExpenseAmount
     ) {
         if (reserveAmount <= 0) {
             return 0.0;
@@ -713,8 +713,8 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     }
 
     private double normalizeCashflowHealth(
-            final int monthlyIncomeAmount,
-            final int monthlyExpenseAmount
+            final long monthlyIncomeAmount,
+            final long monthlyExpenseAmount
     ) {
         if (monthlyIncomeAmount <= 0) {
             return 0.0;
@@ -723,8 +723,8 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     }
 
     private double normalizeCashflowBurden(
-            final int monthlyIncomeAmount,
-            final int monthlyExpenseAmount
+            final long monthlyIncomeAmount,
+            final long monthlyExpenseAmount
     ) {
         if (monthlyIncomeAmount <= 0) {
             return monthlyExpenseAmount > 0 ? 1.0 : 0.0;
@@ -733,8 +733,8 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     }
 
     private double normalizeDebtBurden(
-            final int loanAmount,
-            final int monthlyIncomeAmount
+            final long loanAmount,
+            final long monthlyIncomeAmount
     ) {
         if (loanAmount <= 0) {
             return 0.0;
@@ -746,8 +746,8 @@ public class FicoCreditScoringService implements CreditScoreProvider {
     }
 
     private double normalizeAssetDebtBurden(
-            final int loanAmount,
-            final int totalAssetAmount
+            final long loanAmount,
+            final long totalAssetAmount
     ) {
         if (loanAmount <= 0) {
             return 0.0;
@@ -766,27 +766,27 @@ public class FicoCreditScoringService implements CreditScoreProvider {
         return value != null && !value.isBefore(start) && !value.isAfter(inclusiveEnd);
     }
 
-    private int totalDepositAmount(final Long userId) {
+    private long totalDepositAmount(final Long userId) {
         return userAssetDepositRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .mapToInt(item -> item.getAmount().intValue())
+                .mapToLong(item -> item.getAmount().longValue())
                 .sum();
     }
 
-    private int totalLoanAmount(final Long userId) {
+    private long totalLoanAmount(final Long userId) {
         return userAssetLoanRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .mapToInt(item -> item.getAmount().intValue())
+                .mapToLong(item -> item.getAmount().longValue())
                 .sum();
     }
 
-    private int totalOtherIncomeAmount(final Long userId) {
+    private long totalOtherIncomeAmount(final Long userId) {
         return userAssetOtherIncomeRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .mapToInt(item -> item.getAmount().intValue())
+                .mapToLong(item -> item.getAmount().longValue())
                 .sum();
     }
 
-    private int totalCardSpendAmount(final Long userId) {
+    private long totalCardSpendAmount(final Long userId) {
         return userAssetCardSpendRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .mapToInt(item -> item.getAmount().intValue())
+                .mapToLong(item -> item.getAmount().longValue())
                 .sum();
     }
 

@@ -75,7 +75,7 @@ public class SpendingService {
     private SpendingResponse createProfileBasedResponse(
             final Long userId,
             final String resolvedMonth,
-            final int monthlyFixedExpenseAmount
+            final long monthlyFixedExpenseAmount
     ) {
         final Map<SpendingCategory, Money> categoryMap = new EnumMap<>(SpendingCategory.class);
         if (monthlyFixedExpenseAmount > 0) {

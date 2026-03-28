@@ -261,7 +261,7 @@ public class CardService {
     private SavingAmounts calculateSaving(
             final List<CardBenefitResponse> benefits,
             final Map<String, BigDecimal> spendByCategoryId,
-            final Integer maxBenefitLimitAmount
+            final Long maxBenefitLimitAmount
     ) {
         BigDecimal rawSaving = BigDecimal.ZERO;
         for (final CardBenefitResponse benefit : benefits) {

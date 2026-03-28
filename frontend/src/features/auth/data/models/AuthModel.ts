@@ -7,6 +7,8 @@ export interface SignUpRequestModel {
   name: string;
   email: string;
   password: string;
+  passwordConfirm: string;
+  termsAgreed: boolean;
 }
 
 export interface LoginResponseModel {
