@@ -10,7 +10,7 @@ import static org.springframework.restdocs.request.RequestDocumentation.pathPara
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.ssafy.p.j14c103.homerun.api.service.game.turn.GetTurnStateService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnStateService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
@@ -38,7 +38,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private GetTurnStateService getTurnStateService;
+    private GameTurnStateService gameTurnStateService;
 
     @DisplayName("현재 턴 상태 조회는 게임 코어 응답 계약으로 현재 턴 정보를 반환한다.")
     @Test
@@ -50,7 +50,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             TurnStateResponse.EconomicCycleResponse.of(CyclePhase.BOOM, "경기 호황기"),
             List.of()
         );
-        given(getTurnStateService.getTurnState(1L, 1001L)).willReturn(response);
+        given(gameTurnStateService.getTurnState(1L, 1001L)).willReturn(response);
 
         // when & then
         mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", 1001L)
@@ -82,14 +82,14 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                     fieldWithPath("news").type(JsonFieldType.ARRAY).description("턴 뉴스 목록")
                 )
             ));
-        then(getTurnStateService).should().getTurnState(1L, 1001L);
+        then(gameTurnStateService).should().getTurnState(1L, 1001L);
     }
 
     @DisplayName("다른 사용자의 세션 턴 상태 조회는 403을 반환한다.")
     @Test
     void getOtherUsersTurnState() throws Exception {
         // given
-        given(getTurnStateService.getTurnState(1L, 88L))
+        given(gameTurnStateService.getTurnState(1L, 88L))
             .willThrow(new HomerunException(ErrorCode.GAME_SESSION_FORBIDDEN));
 
         // when & then
@@ -112,7 +112,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
     @Test
     void getUnknownTurnState() throws Exception {
         // given
-        given(getTurnStateService.getTurnState(1L, 9999L))
+        given(gameTurnStateService.getTurnState(1L, 9999L))
             .willThrow(new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
 
         // when & then

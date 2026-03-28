@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class GetTurnStateService {
+public class GameTurnStateService {
 
     private final GameSessionRepository gameSessionRepository;
     private final UserAuthContextService userAuthContextService;

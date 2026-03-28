@@ -33,10 +33,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class GetTurnStateServiceTest {
+class GameTurnStateServiceTest {
 
     @Autowired
-    private GetTurnStateService getTurnStateService;
+    private GameTurnStateService gameTurnStateService;
 
     @Autowired
     private GameSessionRepository gameSessionRepository;
@@ -65,7 +65,7 @@ class GetTurnStateServiceTest {
             .willReturn(GameTurnWorldStateResponse.of(CyclePhase.BOOM, "경기 호황기"));
 
         // when
-        final TurnStateResponse response = getTurnStateService.getTurnState(
+        final TurnStateResponse response = gameTurnStateService.getTurnState(
             user.getId(),
             gameSession.getGameSessionId()
         );
@@ -91,7 +91,7 @@ class GetTurnStateServiceTest {
         );
 
         // when & then
-        assertThatThrownBy(() -> getTurnStateService.getTurnState(
+        assertThatThrownBy(() -> gameTurnStateService.getTurnState(
             requester.getId(),
             gameSession.getGameSessionId()
         ))
@@ -108,7 +108,7 @@ class GetTurnStateServiceTest {
         final User requester = saveUser("turn-state-not-found@example.com");
 
         // when & then
-        assertThatThrownBy(() -> getTurnStateService.getTurnState(requester.getId(), 9999L))
+        assertThatThrownBy(() -> gameTurnStateService.getTurnState(requester.getId(), 9999L))
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
             .isEqualTo(ErrorCode.GAME_SESSION_NOT_FOUND);
