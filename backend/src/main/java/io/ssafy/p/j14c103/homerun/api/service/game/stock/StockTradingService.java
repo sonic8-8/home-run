@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.stock;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.game.stock.request.StockOrderServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.stock.response.StockHoldingsServiceResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.stock.response.StockMarketServiceResponse;
@@ -36,10 +38,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class StockTradingService {
 
+    private static final String SETTLEMENT_PHASE_DURATION = "homerun.settlement.phase.duration";
+    private static final String PHASE_TAG = "phase";
+    private static final String STOCK_ORDER_SETTLEMENT_PHASE = "stock_order_settlement";
+
     private final StockMarketRepository stockMarketRepository;
     private final GameStockMarketStateRepository gameStockMarketStateRepository;
     private final StockHoldingRepository stockHoldingRepository;
     private final StockOrderRepository stockOrderRepository;
+    private final MeterRegistry meterRegistry;
 
     /**
      * 게임 시작 시 stock_markets의 base_price를 복사하여 세션 초기 상태를 생성한다.
@@ -187,36 +194,48 @@ public class StockTradingService {
      */
     @Transactional
     public int settleOrders(final Long gameSessionId, final Integer currentTurn) {
-        final List<StockOrder> pendingOrders = stockOrderRepository
-                .findAllByGameSessionIdAndExecuteTurnAndOrderStatus(
-                        gameSessionId, currentTurn, OrderStatus.PENDING);
+        final Timer.Sample sample = Timer.start(meterRegistry);
 
-        int cashChange = 0;
+        try {
+            final List<StockOrder> pendingOrders = stockOrderRepository
+                    .findAllByGameSessionIdAndExecuteTurnAndOrderStatus(
+                            gameSessionId, currentTurn, OrderStatus.PENDING);
 
-        for (final StockOrder order : pendingOrders) {
-            final GameStockMarketState state = gameStockMarketStateRepository
-                    .findById(new GameStockMarketStateId(gameSessionId, order.getStockCode()))
-                    .orElse(null);
+            int cashChange = 0;
 
-            if (state == null) {
-                order.cancel();
-                continue;
+            for (final StockOrder order : pendingOrders) {
+                final GameStockMarketState state = gameStockMarketStateRepository
+                        .findById(new GameStockMarketStateId(gameSessionId, order.getStockCode()))
+                        .orElse(null);
+
+                if (state == null) {
+                    order.cancel();
+                    continue;
+                }
+
+                final int executionPrice = state.getCurrentPriceAmount();
+
+                if (order.getOrderType() == io.ssafy.p.j14c103.homerun.domain.gamesession.stock.OrderType.BUY) {
+                    cashChange -= executeBuyOrder(order, gameSessionId, executionPrice);
+                } else {
+                    cashChange += executeSellOrder(order, gameSessionId, executionPrice);
+                }
+
+                order.execute();
             }
 
-            final int executionPrice = state.getCurrentPriceAmount();
-
-            if (order.getOrderType() == io.ssafy.p.j14c103.homerun.domain.gamesession.stock.OrderType.BUY) {
-                cashChange -= executeBuyOrder(order, gameSessionId, executionPrice);
-            } else {
-                cashChange += executeSellOrder(order, gameSessionId, executionPrice);
-            }
-
-            order.execute();
+            log.info("게임 세션 {} 턴 {} 주식 정산 완료: {}건, 현금 변동: {}",
+                    gameSessionId, currentTurn, pendingOrders.size(), cashChange);
+            return cashChange;
+        } finally {
+            sample.stop(settlementPhaseTimer());
         }
+    }
 
-        log.info("게임 세션 {} 턴 {} 주식 정산 완료: {}건, 현금 변동: {}",
-                gameSessionId, currentTurn, pendingOrders.size(), cashChange);
-        return cashChange;
+    private Timer settlementPhaseTimer() {
+        return Timer.builder(SETTLEMENT_PHASE_DURATION)
+                .tag(PHASE_TAG, STOCK_ORDER_SETTLEMENT_PHASE)
+                .register(meterRegistry);
     }
 
     private int executeBuyOrder(final StockOrder order, final Long gameSessionId, final int price) {
