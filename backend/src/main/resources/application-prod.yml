@@ -24,3 +24,6 @@ management:
   metrics:
     tags:
       application: homerun
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
