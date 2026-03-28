@@ -380,7 +380,7 @@ create table if not exists action_masters (
 
 -- Actual action selections for each session, turn, and slot.
 create table if not exists game_turn_slots (
-  game_turn_slot_id integer generated always as identity primary key,
+  game_turn_slot_id bigint generated always as identity primary key,
   game_session_id bigint not null,
   turn_number integer not null,
   slot_index integer not null,
@@ -397,7 +397,7 @@ create table if not exists game_turn_slots (
 
 -- Turn settlement logs describing what changed and why.
 create table if not exists settlement_logs (
-  settlement_log_id integer generated always as identity primary key,
+  settlement_log_id bigint generated always as identity primary key,
   game_session_id bigint not null,
   turn_number integer not null,
   settlement_phase_type varchar(50),
@@ -883,8 +883,8 @@ create table if not exists game_reports (
 
 -- Per-turn timeline snapshots for charts and ending summaries.
 create table if not exists game_timelines (
-  game_timeline_id integer generated always as identity primary key,
-  game_session_id integer not null,
+  game_timeline_id bigint generated always as identity primary key,
+  game_session_id bigint not null,
   turn_number integer not null,
   logged_date date,
   cash integer,

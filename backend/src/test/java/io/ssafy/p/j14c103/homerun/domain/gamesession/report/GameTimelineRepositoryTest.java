@@ -36,9 +36,9 @@ class GameTimelineRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    @DisplayName("game_timelines는 turn asc, id asc 기준으로 조회된다")
+    @DisplayName("game_timelines는 턴 종료 스냅샷을 turn 오름차순으로 조회한다")
     @Test
-    void findAllByGameSessionIdOrderByTurnNumberAscGameTimelineIdAsc() {
+    void findAllByGameSessionIdOrderByTurnNumberAsc() {
         final User user = userRepository.save(
             User.register(Email.of("game-timeline@example.com"), "tester", "hashed")
         );
@@ -77,7 +77,7 @@ class GameTimelineRepositoryTest {
             2_000_000
         ));
 
-        assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAscGameTimelineIdAsc(
+        assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
                 gameSession.getGameSessionId()
             ))
             .extracting(GameTimeline::getTurnNumber, GameTimeline::getCash, GameTimeline::getTotalAssets)
