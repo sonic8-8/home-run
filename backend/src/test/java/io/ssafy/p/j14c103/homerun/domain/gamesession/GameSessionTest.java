@@ -88,6 +88,7 @@ class GameSessionTest {
         // when
         gameSession.initializeCapital(
             Money.of(13_000_000L),
+            Money.of(15_000_000L),
             Money.of(13_000_000L),
             LocalDate.of(2026, 1, 1),
             CyclePhase.RECOVERY
@@ -95,6 +96,7 @@ class GameSessionTest {
 
         // then
         assertThat(gameSession.getCashBalance()).isEqualTo(Money.of(13_000_000L));
+        assertThat(gameSession.getTotalAssets()).isEqualTo(Money.of(15_000_000L));
         assertThat(gameSession.getNetWorth()).isEqualTo(Money.of(13_000_000L));
         assertThat(gameSession.getCurrentDate()).isEqualTo(LocalDate.of(2026, 1, 1));
         assertThat(gameSession.getCyclePhase()).isEqualTo(CyclePhase.RECOVERY);

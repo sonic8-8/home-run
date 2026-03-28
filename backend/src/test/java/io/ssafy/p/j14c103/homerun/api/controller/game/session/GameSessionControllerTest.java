@@ -118,7 +118,6 @@ class GameSessionControllerTest extends RestDocsTestSupport {
                       "slotNumber": 1,
                       "characterType": "FEMALE",
                       "characterName": "승환",
-                      "jobType": "SMALL_BIZ",
                       "regionCode": "11",
                       "districtCode": "11680",
                       "targetPropertyId": 1201,
@@ -137,7 +136,7 @@ class GameSessionControllerTest extends RestDocsTestSupport {
                     fieldWithPath("slotNumber").type(JsonFieldType.NUMBER).description("저장 슬롯 번호"),
                     fieldWithPath("characterType").type(JsonFieldType.STRING).description("캐릭터 타입"),
                     fieldWithPath("characterName").type(JsonFieldType.STRING).description("캐릭터 이름"),
-                    fieldWithPath("jobType").type(JsonFieldType.STRING).description("직업 타입"),
+                    fieldWithPath("jobType").type(JsonFieldType.STRING).optional().description("직업 타입. PROFILE 시작일 때만 필수"),
                     fieldWithPath("regionCode").type(JsonFieldType.STRING).description("목표 지역 코드"),
                     fieldWithPath("districtCode").type(JsonFieldType.STRING).description("목표 구 코드"),
                     fieldWithPath("targetPropertyId").type(JsonFieldType.NUMBER).description("목표 부동산 매물 ID"),
@@ -151,6 +150,44 @@ class GameSessionControllerTest extends RestDocsTestSupport {
                     fieldWithPath("currentTurn").type(JsonFieldType.NUMBER).description("현재 턴"),
                     fieldWithPath("dataSourceType").type(JsonFieldType.STRING).description("초기 데이터 소스 타입")
                 )
+            ));
+    }
+
+    @DisplayName("PROFILE 세션 생성 요청에서 jobType이 없으면 400과 필드 에러를 반환한다.")
+    @Test
+    void createSessionWithoutJobTypeForProfile() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/games/sessions")
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                    {
+                      "slotNumber": 1,
+                      "characterType": "FEMALE",
+                      "characterName": "승환",
+                      "regionCode": "11",
+                      "districtCode": "11680",
+                      "targetPropertyId": 1201,
+                      "useMyData": false
+                    }
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
+            .andExpect(jsonPath("$.errors[*].field", hasItem("jobType")))
+            .andDo(document("game-session/create/profile-jobtype-required",
+                requestHeaders(authorizationHeader()),
+                requestFields(
+                    fieldWithPath("slotNumber").type(JsonFieldType.NUMBER).description("저장 슬롯 번호"),
+                    fieldWithPath("characterType").type(JsonFieldType.STRING).description("캐릭터 타입"),
+                    fieldWithPath("characterName").type(JsonFieldType.STRING).description("캐릭터 이름"),
+                    fieldWithPath("jobType").type(JsonFieldType.STRING).optional().description("직업 타입. PROFILE 시작일 때만 필수"),
+                    fieldWithPath("regionCode").type(JsonFieldType.STRING).description("목표 지역 코드"),
+                    fieldWithPath("districtCode").type(JsonFieldType.STRING).description("목표 구 코드"),
+                    fieldWithPath("targetPropertyId").type(JsonFieldType.NUMBER).description("목표 부동산 매물 ID"),
+                    fieldWithPath("useMyData").type(JsonFieldType.BOOLEAN).description("내 자산 연동 사용 여부")
+                ),
+                validationErrorResponseFields()
             ));
     }
 

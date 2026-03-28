@@ -24,7 +24,7 @@ export interface CreateGameSessionRequestModel {
   slotNumber: number;
   characterType: string;
   characterName: string;
-  jobType: string;
+  jobType?: string;
   regionCode: string;
   districtCode: string;
   targetPropertyId: number;
@@ -41,5 +41,5 @@ export interface CreateGameSessionResponseModel {
     | 'TIMEOUT'
     | 'FORECLOSURE';
   currentTurn: number;
-  dataSourceType: 'MY_DATA' | 'PROFILE' | 'MANUAL';
+  dataSourceType: 'MY_DATA' | 'PROFILE';
 }

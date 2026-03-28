@@ -26,8 +26,15 @@ export default function SelectStartMethod() {
 
   const handleNext = () => {
     if (!method) return;
+    if (method === 'mydata') {
+      navigate(ROUTES.PROPERTY, {
+        state: { ...state, useMyData: true, mode: 'new-game' },
+      });
+      return;
+    }
+
     navigate(ROUTES.GAME_SELECT_JOB, {
-      state: { ...state, useMyData: method === 'mydata' },
+      state: { ...state, useMyData: false },
     });
   };
 

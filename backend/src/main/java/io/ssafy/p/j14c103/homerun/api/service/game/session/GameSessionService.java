@@ -7,6 +7,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionL
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.api.service.world.TargetPropertyValidationService;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.TargetPropertyValidationResponse;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -24,6 +25,7 @@ public class GameSessionService {
     private final UserAuthContextService userAuthContextService;
     private final TargetPropertyValidationService targetPropertyValidationService;
     private final GameSessionCleanupService gameSessionCleanupService;
+    private final GameSessionInitialSnapshotService gameSessionInitialSnapshotService;
 
     @Transactional(readOnly = true)
     public GameSessionListResponse getSessions(final Long userId) {
@@ -40,6 +42,7 @@ public class GameSessionService {
     ) {
         validateUser(userId);
         validateSlotConflict(userId, request.getSlotNumber());
+        final DataSourceType dataSourceType = request.toDataSourceType();
 
         final TargetPropertyValidationResponse validationResponse =
             targetPropertyValidationService.validateTargetProperty(
@@ -47,21 +50,34 @@ public class GameSessionService {
                 request.getDistrictCode(),
                 request.getTargetPropertyId()
             );
+        final GameSessionInitialSnapshot initialSnapshot = gameSessionInitialSnapshotService.read(
+            userId,
+            request.getCharacterType(),
+            request.getJobType(),
+            dataSourceType
+        );
 
         final GameSession gameSession = GameSession.create(
             userId,
             request.getSlotNumber(),
             request.getCharacterName(),
             request.getCharacterType(),
-            request.getJobType(),
+            initialSnapshot.getJobType(),
             validationResponse.getHousingType(),
             request.getRegionCode(),
             request.getDistrictCode(),
             validationResponse.getPropertyId(),
-            request.toDataSourceType()
+            dataSourceType
         );
 
         final GameSession saved = gameSessionRepository.saveAndFlush(gameSession);
+        saved.initializeCapital(
+            initialSnapshot.getCashBalance(),
+            initialSnapshot.getTotalAssets(),
+            initialSnapshot.getNetWorth(),
+            initialSnapshot.getCurrentDate(),
+            initialSnapshot.getCycleState()
+        );
         return CreateGameSessionResponse.from(saved);
     }
 

@@ -98,6 +98,10 @@ public class GameSession {
     private Money cashBalance;
 
     @Convert(converter = Money.MoneyConverter.class)
+    @Column(name = "total_assets_amount", nullable = false)
+    private Money totalAssets;
+
+    @Convert(converter = Money.MoneyConverter.class)
     @Column(name = "net_worth_amount", nullable = false)
     private Money netWorth;
 
@@ -129,6 +133,7 @@ public class GameSession {
         final CycleType cycleType,
         final Integer cycleRemainingTurns,
         final Money cashBalance,
+        final Money totalAssets,
         final Money netWorth,
         final SessionStatus sessionStatus,
         final LocalDateTime createdAt,
@@ -151,6 +156,7 @@ public class GameSession {
         this.cycleType = cycleType;
         this.cycleRemainingTurns = cycleRemainingTurns;
         this.cashBalance = cashBalance;
+        this.totalAssets = totalAssets;
         this.netWorth = netWorth;
         this.sessionStatus = sessionStatus;
         this.createdAt = createdAt;
@@ -188,6 +194,7 @@ public class GameSession {
             null,
             Money.zero(),
             Money.zero(),
+            Money.zero(),
             SessionStatus.IN_PROGRESS,
             LocalDateTime.now(),
             null
@@ -200,7 +207,18 @@ public class GameSession {
         final LocalDate startDate,
         final CyclePhase cyclePhase
     ) {
+        initializeCapital(cashBalance, netWorth, netWorth, startDate, cyclePhase);
+    }
+
+    public void initializeCapital(
+        final Money cashBalance,
+        final Money totalAssets,
+        final Money netWorth,
+        final LocalDate startDate,
+        final CyclePhase cyclePhase
+    ) {
         this.cashBalance = cashBalance;
+        this.totalAssets = totalAssets;
         this.netWorth = netWorth;
         this.currentDate = startDate;
         updateCyclePhase(cyclePhase);
@@ -212,7 +230,18 @@ public class GameSession {
         final LocalDate startDate,
         final CycleState cycleState
     ) {
+        initializeCapital(cashBalance, netWorth, netWorth, startDate, cycleState);
+    }
+
+    public void initializeCapital(
+        final Money cashBalance,
+        final Money totalAssets,
+        final Money netWorth,
+        final LocalDate startDate,
+        final CycleState cycleState
+    ) {
         this.cashBalance = cashBalance;
+        this.totalAssets = totalAssets;
         this.netWorth = netWorth;
         this.currentDate = startDate;
         updateCycleState(cycleState);
@@ -239,9 +268,21 @@ public class GameSession {
         final Money nextNetWorth,
         final CyclePhase nextPhase
     ) {
+        advanceTurn(nextTurn, nextDate, nextCash, nextNetWorth, nextNetWorth, nextPhase);
+    }
+
+    public void advanceTurn(
+        final Integer nextTurn,
+        final LocalDate nextDate,
+        final Money nextCash,
+        final Money nextTotalAssets,
+        final Money nextNetWorth,
+        final CyclePhase nextPhase
+    ) {
         this.currentTurn = nextTurn;
         this.currentDate = nextDate;
         this.cashBalance = nextCash;
+        this.totalAssets = nextTotalAssets;
         this.netWorth = nextNetWorth;
         updateCyclePhase(nextPhase);
     }
@@ -253,9 +294,21 @@ public class GameSession {
         final Money nextNetWorth,
         final CycleState nextCycleState
     ) {
+        advanceTurn(nextTurn, nextDate, nextCash, nextNetWorth, nextNetWorth, nextCycleState);
+    }
+
+    public void advanceTurn(
+        final Integer nextTurn,
+        final LocalDate nextDate,
+        final Money nextCash,
+        final Money nextTotalAssets,
+        final Money nextNetWorth,
+        final CycleState nextCycleState
+    ) {
         this.currentTurn = nextTurn;
         this.currentDate = nextDate;
         this.cashBalance = nextCash;
+        this.totalAssets = nextTotalAssets;
         this.netWorth = nextNetWorth;
         updateCycleState(nextCycleState);
     }

@@ -9,14 +9,29 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.request.CreateGameSes
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.CreateGameSessionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionDetailResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionListResponse;
+import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
+import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductSourceType;
+import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductType;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProduct;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialProductRepository;
+import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummaryRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpend;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncome;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetOtherIncomeRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrict;
@@ -30,6 +45,7 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,11 +77,35 @@ class GameSessionServiceTest {
     @Autowired
     private RealEstatePropertyRepository realEstatePropertyRepository;
 
+    @Autowired
+    private UserAssetProfileRepository userAssetProfileRepository;
+
+    @Autowired
+    private UserAssetOtherIncomeRepository userAssetOtherIncomeRepository;
+
+    @Autowired
+    private UserAssetCardSpendRepository userAssetCardSpendRepository;
+
+    @Autowired
+    private UserAccountRepository userAccountRepository;
+
+    @Autowired
+    private UserFinancialProductRepository userFinancialProductRepository;
+
+    @Autowired
+    private UserFinancialSummaryRepository userFinancialSummaryRepository;
+
     @MockitoBean
     private GameSessionCleanupService gameSessionCleanupService;
 
     @AfterEach
     void tearDown() {
+        userFinancialSummaryRepository.deleteAllInBatch();
+        userFinancialProductRepository.deleteAllInBatch();
+        userAccountRepository.deleteAllInBatch();
+        userAssetCardSpendRepository.deleteAllInBatch();
+        userAssetOtherIncomeRepository.deleteAllInBatch();
+        userAssetProfileRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
         housingDistrictRepository.deleteAllInBatch();
@@ -119,18 +159,19 @@ class GameSessionServiceTest {
             .isEqualTo(ErrorCode.USER_NOT_FOUND);
     }
 
-    @DisplayName("세션 생성은 슬롯, 목표 매물, 데이터 소스 정보를 저장한다.")
+    @DisplayName("MY_DATA 세션 생성은 온보딩 자산연동의 직업과 자본 상태로 초기화한다.")
     @Test
-    void create() {
+    void createWithMyDataUsesOnboardingProfile() {
         // given
         final User user = saveUser("create-user@example.com");
         final RealEstateProperty property = saveTargetProperty("11", "11680");
+        seedOnboardingAssetLink(user.getId(), JobType.STARTUP);
 
         final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
             1,
             CharacterType.FEMALE,
             "승환",
-            JobType.SMALL_BIZ,
+            null,
             "11",
             "11680",
             property.getPropertyId(),
@@ -149,12 +190,42 @@ class GameSessionServiceTest {
         assertThat(found.getUserId()).isEqualTo(user.getId());
         assertThat(found.getCharacterName()).isEqualTo("승환");
         assertThat(found.getCharacterType()).isEqualTo(CharacterType.FEMALE);
-        assertThat(found.getJobType()).isEqualTo(JobType.SMALL_BIZ);
+        assertThat(found.getJobType()).isEqualTo(JobType.STARTUP);
         assertThat(found.getHousingType()).isEqualTo(HousingType.STUDIO);
         assertThat(found.getRegionCode()).isEqualTo("11");
         assertThat(found.getDistrictCode()).isEqualTo("11680");
         assertThat(found.getTargetPropertyId()).isEqualTo(property.getPropertyId());
         assertThat(found.getDataSourceType()).isEqualTo(DataSourceType.MY_DATA);
+        assertThat(found.getCashBalance()).isEqualTo(Money.of(3_000_000L));
+        assertThat(found.getTotalAssets()).isEqualTo(Money.of(10_000_000L));
+        assertThat(found.getNetWorth()).isEqualTo(Money.of(5_500_000L));
+        assertThat(found.getCurrentDate()).isEqualTo(LocalDate.now());
+        assertThat(found.getCyclePhase()).isEqualTo(CyclePhase.RECOVERY);
+    }
+
+    @DisplayName("MY_DATA 세션 생성 시 자산연동 정보가 없으면 USER_ASSET_LINK_REQUIRED가 발생한다.")
+    @Test
+    void createWithMyDataWithoutAssetLink() {
+        // given
+        final User user = saveUser("create-without-asset-link@example.com");
+        final RealEstateProperty property = saveTargetProperty("11", "11680");
+
+        final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
+            1,
+            CharacterType.FEMALE,
+            "승환",
+            null,
+            "11",
+            "11680",
+            property.getPropertyId(),
+            true
+        );
+
+        // when & then
+        assertThatThrownBy(() -> gameSessionService.create(user.getId(), request))
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.USER_ASSET_LINK_REQUIRED);
     }
 
     @DisplayName("이미 사용 중인 슬롯으로 세션 생성 시 GAME_SLOT_CONFLICT가 발생한다.")
@@ -377,6 +448,55 @@ class GameSessionServiceTest {
             BigDecimal.valueOf(127.0473),
             HousingType.STUDIO,
             List.of()
+        ));
+    }
+
+    private void seedOnboardingAssetLink(final Long userId, final JobType jobType) {
+        userAssetProfileRepository.save(UserAssetProfile.create(
+            userId,
+            3_000_000,
+            25,
+            2_500_000,
+            1_200_000,
+            jobType
+        ));
+        userAssetOtherIncomeRepository.save(UserAssetOtherIncome.create(userId, "부업", 200_000));
+        userAssetOtherIncomeRepository.save(UserAssetOtherIncome.create(userId, "용돈", 100_000));
+        userAssetCardSpendRepository.save(UserAssetCardSpend.create(userId, SpendingCategory.LIVING, 300_000));
+        userAssetCardSpendRepository.save(UserAssetCardSpend.create(userId, SpendingCategory.TRANSPORT, 50_000));
+        userAccountRepository.save(UserAccount.create(
+            userId,
+            AccountType.MAIN,
+            "001",
+            "한국은행",
+            "1111111111111111",
+            3_000_000
+        ));
+        userAccountRepository.save(UserAccount.create(
+            userId,
+            AccountType.SEEDMONEY,
+            "001",
+            "한국은행",
+            "2222222222222222",
+            0
+        ));
+        userFinancialProductRepository.save(UserFinancialProduct.create(
+            userId,
+            FinancialProductType.SAVING_DEPOSIT,
+            "사용자 입력",
+            "청약저축",
+            7_000_000,
+            LocalDateTime.now().minusMonths(6),
+            FinancialProductSourceType.ASSET_LINK
+        ));
+        userFinancialProductRepository.save(UserFinancialProduct.create(
+            userId,
+            FinancialProductType.LOAN,
+            "사용자 입력",
+            "신용대출",
+            4_500_000,
+            LocalDateTime.now().minusMonths(3),
+            FinancialProductSourceType.ASSET_LINK
         ));
     }
 
