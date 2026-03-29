@@ -8,9 +8,10 @@ import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class MvpEndingRuleEvaluatorTest {
+class MvpEndingRuleEvaluatorServiceTest {
 
-    private final MvpEndingRuleEvaluator mvpEndingRuleEvaluator = new MvpEndingRuleEvaluator();
+    private final MvpEndingRuleEvaluatorService mvpEndingRuleEvaluator =
+        new MvpEndingRuleEvaluatorService();
 
     @DisplayName("MVP 엔딩 규칙은 현금과 주식에서 대출을 차감해 순자산을 계산한다.")
     @Test

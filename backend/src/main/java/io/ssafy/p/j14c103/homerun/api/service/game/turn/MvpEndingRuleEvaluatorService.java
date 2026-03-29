@@ -6,7 +6,7 @@ import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MvpEndingRuleEvaluator implements EndingRuleEvaluator {
+public class MvpEndingRuleEvaluatorService implements EndingRuleEvaluator {
 
     private static final int TIMEOUT_TURN = 360;
 
