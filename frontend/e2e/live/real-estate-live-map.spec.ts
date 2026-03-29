@@ -86,6 +86,14 @@ test.describe('real estate live map smoke', () => {
       await expect(liveMapRoot).toHaveAttribute('data-map-ready', 'true', {
         timeout: 15000,
       });
+      const boundingBox = await liveMapRoot.boundingBox();
+      expect(boundingBox?.width ?? 0).toBeGreaterThan(400);
+      expect(boundingBox?.height ?? 0).toBeGreaterThan(300);
+      await expect
+        .poll(() => liveMapRoot.evaluate((node) => node.childElementCount), {
+          timeout: 15000,
+        })
+        .toBeGreaterThan(0);
       await expect(page.getByText('Map Fallback')).toHaveCount(0);
       return;
     }

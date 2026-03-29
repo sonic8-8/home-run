@@ -171,7 +171,7 @@ export function KoreaMap({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0"
+              className="absolute inset-0 h-full"
             >
               <CountryMap onRegionClick={handleRegionClick} />
             </motion.div>
@@ -184,7 +184,7 @@ export function KoreaMap({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0"
+              className="absolute inset-0 h-full"
             >
               <CityMap region={view.region} data={view.data} onGuClick={handleGuClick} />
             </motion.div>
@@ -197,7 +197,7 @@ export function KoreaMap({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0"
+              className="absolute inset-0 h-full"
             >
               <DistrictMap
                 regionCode={view.data.code}

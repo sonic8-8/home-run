@@ -217,12 +217,19 @@ export function DistrictMap({
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: 'max(560px, calc(100vh - 40px))',
+      }}
+    >
       <div
         ref={mapRef}
         data-testid="naver-live-map"
         data-map-ready={naverAvailable === true ? 'true' : 'false'}
-        style={{ width: '100%', height: '100%', overflow: 'hidden' }}
+        style={{ width: '100%', height: '100%', minHeight: '100%', overflow: 'hidden' }}
       />
       <div
         style={{
