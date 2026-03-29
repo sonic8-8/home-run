@@ -8,3 +8,5 @@
 .DS_Store
 Thumbs.db
 *.log
+/performance/k6/results/*
+!/performance/k6/results/.gitkeep
