@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useRef, useEffect, useState } from 'react';
+import { loadNaverMapScript } from '../utils/naverMapScript';
+
+const NAVER_MAP_CLIENT_ID = import.meta.env.VITE_NAVER_MAP_CLIENT_ID?.trim() ?? '';
 
 /**
  * 네이버 지도 초기화 커스텀 훅.
@@ -10,6 +13,10 @@ import { useRef, useEffect, useState } from 'react';
 export function useNaverMap(center: [number, number]) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
+  const [sdkReady, setSdkReady] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.naver?.maps !== undefined;
+  });
 
   // localhost는 Naver Maps 도메인 인증 불가 → 즉시 폴백
   // 프로덕션 도메인에서 SDK 없으면 → 즉시 폴백
@@ -17,13 +24,55 @@ export function useNaverMap(center: [number, number]) {
     if (typeof window === 'undefined') return false;
     const isLocalhost =
       window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    if (isLocalhost) return false;
-    return window.naver?.maps ? null : false;
+    if (isLocalhost || NAVER_MAP_CLIENT_ID.length === 0) return false;
+    return null;
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const isLocalhost =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isLocalhost || NAVER_MAP_CLIENT_ID.length === 0) {
+      setSdkReady(false);
+      setNaverAvailable(false);
+      return;
+    }
+
+    if (window.naver?.maps !== undefined) {
+      setSdkReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    loadNaverMapScript(NAVER_MAP_CLIENT_ID)
+      .then(() => {
+        if (!cancelled) {
+          setSdkReady(true);
+          setNaverAvailable(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSdkReady(false);
+          setNaverAvailable(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     // SDK 없음 → 이미 false, 스킵
     if (naverAvailable === false) return;
+    if (!sdkReady) return;
+    if (window.naver?.maps === undefined) return;
     if (!mapRef.current) return;
 
     let map: any = null;
@@ -71,7 +120,7 @@ export function useNaverMap(center: [number, number]) {
       setMapInstance(null);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center[0], center[1]]);
+  }, [center[0], center[1], sdkReady]);
 
   return { mapRef, mapInstance, naverAvailable };
 }

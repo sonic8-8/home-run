@@ -9,12 +9,6 @@ export interface RegionData {
   label: string;
 }
 
-declare global {
-  interface Window {
-    naver: any;
-  }
-}
-
 export const GEO_PROVINCES =
   'https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2018/json/skorea-provinces-2018-topo-simple.json';
 export const GEO_MUNICIPALITIES =
