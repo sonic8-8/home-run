@@ -9,6 +9,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.request.CreateGameSes
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.CreateGameSessionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionDetailResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.stock.StockTradingService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.CommitTurnService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.SubmitTurnSlotsService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SubmitTurnSlotsServiceRequest;
@@ -33,6 +34,9 @@ import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummaryRepositor
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarket;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarketRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraft;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftRepository;
@@ -91,6 +95,9 @@ class GameSessionServiceTest extends IntegrationTestSupport {
     private CommitTurnService commitTurnService;
 
     @Autowired
+    private StockTradingService stockTradingService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @MockitoSpyBean
@@ -133,6 +140,12 @@ class GameSessionServiceTest extends IntegrationTestSupport {
     private UserFinancialSummaryRepository userFinancialSummaryRepository;
 
     @Autowired
+    private GameStockMarketStateRepository gameStockMarketStateRepository;
+
+    @Autowired
+    private StockMarketRepository stockMarketRepository;
+
+    @Autowired
     private TurnDraftRepositoryTestSupport turnDraftRepositoryTestSupport;
 
     @MockitoBean
@@ -147,9 +160,11 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         userAssetCardSpendRepository.deleteAllInBatch();
         userAssetOtherIncomeRepository.deleteAllInBatch();
         userAssetProfileRepository.deleteAllInBatch();
+        gameStockMarketStateRepository.deleteAllInBatch();
         gameCareerRepository.deleteAllInBatch();
         gameStatRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
+        stockMarketRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
         housingDistrictRepository.deleteAllInBatch();
         housingRegionRepository.deleteAllInBatch();
@@ -251,6 +266,7 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         // given
         final User user = saveUser("create-profile@example.com");
         final RealEstateProperty property = saveTargetProperty("11", "11680");
+        seedStockMarkets();
         final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
             1,
             CharacterType.FEMALE,
@@ -273,6 +289,10 @@ class GameSessionServiceTest extends IntegrationTestSupport {
             JobType.MID_BIZ,
             SeedType.PROFILE
         );
+        assertThat(gameStockMarketStateRepository.findAllByGameSessionId(response.getSessionId()))
+            .isNotEmpty();
+        assertThat(stockTradingService.getMarket(response.getSessionId()).getStocks())
+            .isNotEmpty();
     }
 
     @DisplayName("PROFILE 세션 생성 직후 턴 슬롯 제출과 턴 커밋이 가능하다.")
@@ -281,6 +301,7 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         // given
         final User user = saveUser("create-profile-turn-flow@example.com");
         final RealEstateProperty property = saveTargetProperty("11", "11680");
+        seedStockMarkets();
         final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
             1,
             CharacterType.FEMALE,
@@ -682,6 +703,25 @@ class GameSessionServiceTest extends IntegrationTestSupport {
             4_500_000,
             LocalDateTime.now().minusMonths(3),
             FinancialProductSourceType.ASSET_LINK
+        ));
+    }
+
+    private void seedStockMarkets() {
+        stockMarketRepository.save(StockMarket.create(
+            "BIO",
+            "바이오주",
+            "068270",
+            "바이오",
+            100_000,
+            new BigDecimal("0.15")
+        ));
+        stockMarketRepository.save(StockMarket.create(
+            "SEMI",
+            "반도체주",
+            "005930",
+            "반도체",
+            72_000,
+            new BigDecimal("0.10")
         ));
     }
 

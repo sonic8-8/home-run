@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.request.CreateGameSes
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.CreateGameSessionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionDetailResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.stock.StockTradingService;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
@@ -32,6 +33,7 @@ public class GameSessionService {
     private final GameSessionInitialSnapshotService gameSessionInitialSnapshotService;
     private final GameStatRepository gameStatRepository;
     private final GameCareerRepository gameCareerRepository;
+    private final StockTradingService stockTradingService;
 
     @Transactional(readOnly = true)
     public GameSessionListResponse getSessions(final Long userId) {
@@ -85,6 +87,7 @@ public class GameSessionService {
             initialSnapshot.getCycleState()
         );
         initializeCharacterState(saved, initialSnapshot);
+        stockTradingService.initializeStockStates(saved.getGameSessionId());
         return CreateGameSessionResponse.from(saved);
     }
 
