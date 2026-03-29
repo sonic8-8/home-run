@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface GameSessionTurnSlotRepository extends JpaRepository<GameTurnSlot, Long> {
 
     List<GameTurnSlot> findAllByGameSessionIdAndTurnNumberOrderBySlotIndex(Long gameSessionId, Integer turnNumber);
+
+    boolean existsByGameSessionIdAndTurnNumber(Long gameSessionId, Integer turnNumber);
 }

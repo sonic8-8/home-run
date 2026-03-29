@@ -107,6 +107,35 @@ class GameTurnSlotRepositoryTest {
             .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @DisplayName("같은 세션의 같은 턴에 확정 슬롯이 있으면 중복 커밋 방어 조회가 가능하다")
+    @Test
+    void existsByGameSessionIdAndTurnNumber() {
+        // given
+        final GameSession gameSession = saveGameSession(13L, 1);
+        gameTurnSlotRepository.saveAndFlush(GameTurnSlot.create(
+            gameSession.getGameSessionId(),
+            4,
+            0,
+            ActionType.STUDY,
+            ActionCategory.ACTIVITY,
+            false
+        ));
+
+        // when
+        final boolean exists = gameTurnSlotRepository.existsByGameSessionIdAndTurnNumber(
+            gameSession.getGameSessionId(),
+            4
+        );
+        final boolean notExists = gameTurnSlotRepository.existsByGameSessionIdAndTurnNumber(
+            gameSession.getGameSessionId(),
+            5
+        );
+
+        // then
+        assertThat(exists).isTrue();
+        assertThat(notExists).isFalse();
+    }
+
     private GameSession saveGameSession(
         final Long userId,
         final Integer slotNumber
