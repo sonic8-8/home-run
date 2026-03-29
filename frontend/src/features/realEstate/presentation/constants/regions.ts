@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export interface RegionData {
   color: string;
   sideColor: string;
@@ -7,12 +5,6 @@ export interface RegionData {
   center: [number, number];
   scale: number;
   label: string;
-}
-
-declare global {
-  interface Window {
-    naver: any;
-  }
 }
 
 export const GEO_PROVINCES =

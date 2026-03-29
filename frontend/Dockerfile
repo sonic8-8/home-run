@@ -10,6 +10,8 @@ COPY . .
 RUN npm run lint
 
 FROM deps AS builder
+ARG VITE_NAVER_MAP_CLIENT_ID
+ENV VITE_NAVER_MAP_CLIENT_ID=${VITE_NAVER_MAP_CLIENT_ID}
 COPY . .
 RUN npm run build
 

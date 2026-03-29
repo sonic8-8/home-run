@@ -42,7 +42,7 @@ export function DistrictMap({
 }) {
   const { mapRef, mapInstance, naverAvailable } = useNaverMap(guCenter);
   const { properties, selectedProperty, selectedPropertyDetail, selectProperty, clearSelection } =
-    useProperties(mapInstance, {
+    useProperties({
       mode,
       sessionId,
       regionCode,
