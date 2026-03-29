@@ -14,6 +14,8 @@ GRAFANA_USER="${GRAFANA_USER:-admin}"
 GRAFANA_PASSWORD="${GRAFANA_PASSWORD:-admin}"
 DEFAULT_PASSWORD="${DEFAULT_PASSWORD:-Password123!}"
 SCRAPE_WAIT_SECONDS="${SCRAPE_WAIT_SECONDS:-20}"
+BACKEND_DASHBOARD_UID="${BACKEND_DASHBOARD_UID:-backend-overview}"
+JVM_DASHBOARD_UID="${JVM_DASHBOARD_UID:-jvm-overview}"
 
 declare -a FAILURES=()
 
@@ -221,6 +223,7 @@ create_synthetic_session() {
   local signup_json
   local login_json
   local access_token
+  local authorization_header
   local region_code
   local district_code
   local property_id
@@ -244,8 +247,12 @@ create_synthetic_session() {
     record_failure "access token extraction failed"
     return 1
   fi
+  authorization_header="Authorization: Bearer ${access_token}"
 
-  if ! http_get "${ARTIFACT_DIR}/regions.json" "${BACKEND_SERVICE_URL}/api/games/regions"; then
+  if ! http_get_with_header \
+    "${ARTIFACT_DIR}/regions.json" \
+    "${authorization_header}" \
+    "${BACKEND_SERVICE_URL}/api/games/regions"; then
     record_failure "region list collection failed"
     return 1
   fi
@@ -256,7 +263,10 @@ create_synthetic_session() {
     return 1
   fi
 
-  if ! http_get "${ARTIFACT_DIR}/districts.json" "${BACKEND_SERVICE_URL}/api/games/regions/${region_code}/districts"; then
+  if ! http_get_with_header \
+    "${ARTIFACT_DIR}/districts.json" \
+    "${authorization_header}" \
+    "${BACKEND_SERVICE_URL}/api/games/regions/${region_code}/districts"; then
     record_failure "district list collection failed"
     return 1
   fi
@@ -267,7 +277,10 @@ create_synthetic_session() {
     return 1
   fi
 
-  if ! http_get "${ARTIFACT_DIR}/properties.json" "${BACKEND_SERVICE_URL}/api/games/regions/${region_code}/districts/${district_code}/properties"; then
+  if ! http_get_with_header \
+    "${ARTIFACT_DIR}/properties.json" \
+    "${authorization_header}" \
+    "${BACKEND_SERVICE_URL}/api/games/regions/${region_code}/districts/${district_code}/properties"; then
     record_failure "target property list collection failed"
     return 1
   fi
@@ -280,7 +293,7 @@ create_synthetic_session() {
 
   if ! http_post_json_with_header \
     "${ARTIFACT_DIR}/create-session.json" \
-    "Authorization: Bearer ${access_token}" \
+    "${authorization_header}" \
     "${BACKEND_SERVICE_URL}/api/games/sessions" \
     "{\"slotNumber\":1,\"characterType\":\"FEMALE\",\"characterName\":\"RR Gate 3\",\"jobType\":\"STARTUP\",\"regionCode\":\"${region_code}\",\"districtCode\":\"${district_code}\",\"targetPropertyId\":${property_id},\"useMyData\":false}"; then
     record_failure "game session creation failed"
@@ -295,7 +308,7 @@ create_synthetic_session() {
 
   if ! http_post_json_with_header \
     "${ARTIFACT_DIR}/turn-slots.json" \
-    "Authorization: Bearer ${access_token}" \
+    "${authorization_header}" \
     "${BACKEND_SERVICE_URL}/api/games/sessions/${session_id}/turn/slots" \
     '{"slots":[{"slotIndex":0,"actionType":"REST"},{"slotIndex":1,"actionType":"REST"},{"slotIndex":2,"actionType":"REST"}]}'; then
     record_failure "turn slot submission failed"
@@ -304,7 +317,7 @@ create_synthetic_session() {
 
   if ! http_post_json_with_header \
     "${ARTIFACT_DIR}/turn-commit.json" \
-    "Authorization: Bearer ${access_token}" \
+    "${authorization_header}" \
     "${BACKEND_SERVICE_URL}/api/games/sessions/${session_id}/turn/commit" \
     '{}'; then
     record_failure "turn commit failed"
@@ -338,44 +351,13 @@ collect_business_metric_evidence() {
 
 collect_grafana_exports() {
   local basic_auth
-  local backend_uid
-  local jvm_uid
 
   basic_auth="$(printf '%s:%s' "$GRAFANA_USER" "$GRAFANA_PASSWORD" | base64 | tr -d '\n')"
-
-  if ! http_get_with_header \
-    "${ARTIFACT_DIR}/grafana-search-backend.json" \
-    "Authorization: Basic ${basic_auth}" \
-    "${GRAFANA_SERVICE_URL}/api/search?query=backend-overview"; then
-    record_failure "grafana backend search failed"
-    return 1
-  fi
-
-  if ! http_get_with_header \
-    "${ARTIFACT_DIR}/grafana-search-jvm.json" \
-    "Authorization: Basic ${basic_auth}" \
-    "${GRAFANA_SERVICE_URL}/api/search?query=jvm-overview"; then
-    record_failure "grafana jvm search failed"
-    return 1
-  fi
-
-  backend_uid="$(extract_first_string uid "${ARTIFACT_DIR}/grafana-search-backend.json")"
-  jvm_uid="$(extract_first_string uid "${ARTIFACT_DIR}/grafana-search-jvm.json")"
-
-  if [ -z "$backend_uid" ]; then
-    record_failure "backend dashboard uid extraction failed"
-    return 1
-  fi
-
-  if [ -z "$jvm_uid" ]; then
-    record_failure "jvm dashboard uid extraction failed"
-    return 1
-  fi
 
   if http_get_with_header \
     "${ARTIFACT_DIR}/backend-overview-export.json" \
     "Authorization: Basic ${basic_auth}" \
-    "${GRAFANA_SERVICE_URL}/api/dashboards/uid/${backend_uid}"; then
+    "${GRAFANA_SERVICE_URL}/api/dashboards/uid/${BACKEND_DASHBOARD_UID}"; then
     record_success "backend dashboard export collected"
   else
     record_failure "backend dashboard export failed"
@@ -384,7 +366,7 @@ collect_grafana_exports() {
   if http_get_with_header \
     "${ARTIFACT_DIR}/jvm-overview-export.json" \
     "Authorization: Basic ${basic_auth}" \
-    "${GRAFANA_SERVICE_URL}/api/dashboards/uid/${jvm_uid}"; then
+    "${GRAFANA_SERVICE_URL}/api/dashboards/uid/${JVM_DASHBOARD_UID}"; then
     record_success "jvm dashboard export collected"
   else
     record_failure "jvm dashboard export failed"
