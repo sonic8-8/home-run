@@ -275,7 +275,7 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
 
                       if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null" && \
                          docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/ >/dev/null" && \
-                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/grafana/login >/dev/null"; then
+                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/grafana >/dev/null"; then
                         exit 0
                       fi
 
