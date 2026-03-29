@@ -78,9 +78,9 @@ pipeline {
         PUBLIC_DATA_SERVICE_KEY = credentials('public-data-service-key')
         NAVER_GEOCODING_CLIENT_ID = credentials('naver-geocoding-client-id')
         NAVER_GEOCODING_CLIENT_SECRET = credentials('naver-geocoding-client-secret')
-        // Disable this after the one-time December 2025 Seoul bootstrap import succeeds.
-        REAL_ESTATE_IMPORT_ENABLED = 'true'
-        REAL_ESTATE_IMPORT_REGIONS = 'SEOUL'
+        // Keep automatic real-estate import disabled in CI/CD. Manual imports can reuse these defaults.
+        REAL_ESTATE_IMPORT_ENABLED = 'false'
+        REAL_ESTATE_IMPORT_REGIONS = 'SEOUL,GWANGJU'
         REAL_ESTATE_IMPORT_FROM_YEAR_MONTH = '2025-12'
         REAL_ESTATE_IMPORT_TO_YEAR_MONTH = '2025-12'
         REAL_ESTATE_IMPORT_DATASET_TYPES = 'APT_SALE'
