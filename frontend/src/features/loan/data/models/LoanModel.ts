@@ -13,13 +13,7 @@ export interface LoanProductDetailModel extends LoanProductModel {
   features: string[];
 }
 
-export interface LoanProductPageModel {
-  content: LoanProductModel[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
+export type LoanProductListModel = LoanProductModel[];
 
 // ---- Calculate ----
 export interface LoanCalculateRequestModel {
@@ -42,8 +36,6 @@ export interface LoanApplyRequestModel {
 }
 
 export interface LoanApplyRequestInfoModel {
-  propertyName: string;
-  propertyPrice: number;
   applicationDate: string;
 }
 
@@ -53,7 +45,7 @@ export interface LoanApplyResultModel {
 }
 
 export interface LoanApplyResponseModel {
-  applicationId: string;
+  applicationId: number;
   status: string;
   requestInfo: LoanApplyRequestInfoModel;
   result: LoanApplyResultModel;
@@ -61,7 +53,7 @@ export interface LoanApplyResponseModel {
 
 // ---- Confirm ----
 export interface LoanConfirmRequestModel {
-  applicationId: string;
+  applicationId: number;
   requestedAmount: number;
   agreed: boolean;
 }

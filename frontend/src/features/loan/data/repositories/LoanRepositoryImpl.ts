@@ -1,3 +1,5 @@
+import { inject, injectable } from 'tsyringe';
+import { ResponseMappingError } from '@core/error/AppError';
 import type { ILoanRepository } from '../../domain/repositories/ILoanRepository';
 import type { LoanCategory, LoanProduct, LoanProductDetail, LoanProductPage } from '../../domain/entities/LoanProduct';
 import type { LoanCalculateParams, LoanCalculation } from '../../domain/entities/LoanCalculation';
@@ -5,26 +7,70 @@ import type { LoanApplication, LoanApplicationStatus } from '../../domain/entiti
 import type { LoanConfirmResult, LoanRepayResult, LoanStatus } from '../../domain/entities/ActiveLoan';
 import { LoanRemoteDataSource } from '../datasources/LoanRemoteDataSource';
 
+function toLoanCategory(value: string): LoanCategory {
+  if (value === 'ALL' || value === 'CREDIT' || value === 'JEONSE' || value === 'MORTGAGE') {
+    return value;
+  }
+
+  if (value === '개인신용대출') {
+    return 'CREDIT';
+  }
+
+  if (value === '전세자금대출') {
+    return 'JEONSE';
+  }
+
+  if (value === '주택담보대출') {
+    return 'MORTGAGE';
+  }
+
+  throw new ResponseMappingError(`지원하지 않는 대출 상품 유형입니다: ${value}`);
+}
+
+function toLoanApplicationStatus(value: string): LoanApplicationStatus {
+  if (value === 'APPROVED' || value === 'REJECTED') {
+    return value;
+  }
+
+  throw new ResponseMappingError(`지원하지 않는 대출 심사 상태입니다: ${value}`);
+}
+
+function toLoanStatus(value: string): LoanStatus {
+  if (value === 'ACTIVE' || value === 'OVERDUE' || value === 'CLOSED') {
+    return value;
+  }
+
+  throw new ResponseMappingError(`지원하지 않는 대출 상태입니다: ${value}`);
+}
+
+@injectable()
 export class LoanRepositoryImpl implements ILoanRepository {
   private readonly dataSource: LoanRemoteDataSource;
-  constructor(dataSource: LoanRemoteDataSource) { this.dataSource = dataSource; }
+  constructor(
+    @inject(LoanRemoteDataSource)
+    dataSource: LoanRemoteDataSource,
+  ) {
+    this.dataSource = dataSource;
+  }
 
   async getProducts(sessionId: number, category: LoanCategory, page: number, size: number): Promise<LoanProductPage> {
     const m = await this.dataSource.getProducts(sessionId, category, page, size);
+    const content = m.map((p): LoanProduct => ({
+      productId: p.productId,
+      bankName: p.bankName,
+      bankLogoUrl: p.bankLogoUrl,
+      productName: p.productName,
+      productType: toLoanCategory(p.productType),
+      minRate: p.minRate,
+      maxRate: p.maxRate,
+    }));
+
     return {
-      content: m.content.map((p): LoanProduct => ({
-        productId: p.productId,
-        bankName: p.bankName,
-        bankLogoUrl: p.bankLogoUrl,
-        productName: p.productName,
-        productType: p.productType as LoanCategory,
-        minRate: p.minRate,
-        maxRate: p.maxRate,
-      })),
-      page: m.page,
-      size: m.size,
-      totalElements: m.totalElements,
-      totalPages: m.totalPages,
+      content,
+      page,
+      size,
+      totalElements: content.length,
+      totalPages: content.length === 0 ? 0 : 1,
     };
   }
 
@@ -35,7 +81,7 @@ export class LoanRepositoryImpl implements ILoanRepository {
       bankName: m.bankName,
       bankLogoUrl: m.bankLogoUrl,
       productName: m.productName,
-      productType: m.productType as LoanCategory,
+      productType: toLoanCategory(m.productType),
       minRate: m.minRate,
       maxRate: m.maxRate,
       features: m.features,
@@ -60,10 +106,8 @@ export class LoanRepositoryImpl implements ILoanRepository {
     const m = await this.dataSource.apply(sessionId, productId, propertyId);
     return {
       applicationId: m.applicationId,
-      status: m.status as LoanApplicationStatus,
+      status: toLoanApplicationStatus(m.status),
       requestInfo: {
-        propertyName: m.requestInfo.propertyName,
-        propertyPrice: m.requestInfo.propertyPrice,
         applicationDate: m.requestInfo.applicationDate,
       },
       result: {
@@ -73,7 +117,7 @@ export class LoanRepositoryImpl implements ILoanRepository {
     };
   }
 
-  async confirm(sessionId: number, applicationId: string, requestedAmount: number, agreed: boolean): Promise<LoanConfirmResult> {
+  async confirm(sessionId: number, applicationId: number, requestedAmount: number, agreed: boolean): Promise<LoanConfirmResult> {
     const m = await this.dataSource.confirm(sessionId, { applicationId, requestedAmount, agreed });
     return {
       loanId: m.loanId,
@@ -81,7 +125,7 @@ export class LoanRepositoryImpl implements ILoanRepository {
       annualRate: m.annualRate,
       monthlyPayment: m.monthlyPayment,
       contractDate: m.contractDate,
-      status: m.status as LoanStatus,
+      status: toLoanStatus(m.status),
     };
   }
 

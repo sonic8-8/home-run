@@ -24,7 +24,7 @@ const MOCK_ACTIVITIES: TurnAction[] = [
 ];
 
 const MOCK_LOAN_APPLICATION: LoanApplication = {
-  applicationId: 'APP-001',
+  applicationId: 1,
   status: 'APPROVED',
   requestInfo: {
     propertyName: '하남3지구 모아엘가 더 퍼스트',

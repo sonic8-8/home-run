@@ -1,5 +1,6 @@
+import { injectable } from 'tsyringe';
 import type {
-  LoanProductPageModel,
+  LoanProductListModel,
   LoanProductDetailModel,
   LoanCalculateRequestModel,
   LoanCalculateResponseModel,
@@ -12,14 +13,15 @@ import type {
 import { apiClient } from '@core/network/apiClient';
 import { unwrapApiData, type ApiEnvelope } from '@core/network/apiResponse';
 
+@injectable()
 export class LoanRemoteDataSource {
   async getProducts(
     sessionId: number,
     category: string,
     page: number,
     size: number,
-  ): Promise<LoanProductPageModel> {
-    return apiClient.get<ApiEnvelope<LoanProductPageModel>>(
+  ): Promise<LoanProductListModel> {
+    return apiClient.get<ApiEnvelope<LoanProductListModel>>(
       `/games/sessions/${sessionId}/loans/products`,
       { params: { category, page, size } },
     ).then(unwrapApiData);

@@ -6,9 +6,11 @@ interface LoanConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (requestedAmount: number) => void;
-  applicationId: string;
+  applicationId?: number;
   contractorName: string;
   maxLoanAmount: number;
+  isSubmitting?: boolean;
+  error?: string | null;
 }
 
 const STEPS = ['매물 선택', '심사 완료', '신청 완료'] as const;
@@ -24,6 +26,8 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
   onConfirm,
   contractorName,
   maxLoanAmount,
+  isSubmitting = false,
+  error = null,
 }) => {
   const [rawInput, setRawInput] = useState('');
 
@@ -95,6 +99,7 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
             최대 대출 가능 금액({maxLoanAmount.toLocaleString('ko-KR')}원) 이하로 입력해주세요.
           </p>
         )}
+        {error && <p className={styles.apiErrorText}>{error}</p>}
 
         {/* 계약서 */}
         <div className={styles.contractBox}>
@@ -112,9 +117,9 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
           <button
             className={styles.primaryButton}
             onClick={handleConfirm}
-            disabled={!isValid}
+            disabled={!isValid || isSubmitting}
           >
-            부동산 계약하러 가기
+            {isSubmitting ? '신청 중...' : '부동산 계약하러 가기'}
           </button>
           <button className={styles.secondaryButton} onClick={onClose}>
             확인 (닫기)

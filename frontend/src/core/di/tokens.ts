@@ -4,5 +4,6 @@ export const DI_TOKENS = {
   IGameInitRepository: 'IGameInitRepository',
   IGameSessionRepository: 'IGameSessionRepository',
   IGameTurnRepository: 'IGameTurnRepository',
+  ILoanRepository: 'ILoanRepository',
   IRealEstateRepository: 'IRealEstateRepository',
 } as const;
