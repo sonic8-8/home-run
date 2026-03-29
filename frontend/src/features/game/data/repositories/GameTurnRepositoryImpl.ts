@@ -1,5 +1,13 @@
 import { inject, injectable } from 'tsyringe'
 import { ResponseMappingError } from '@core/error/AppError'
+import exerciseActionIconUrl from '@assets/images/monthly/exercise-Photoroom.png'
+import hobbyActionIconUrl from '@assets/images/monthly/hobby.png'
+import meetFriendActionIconUrl from '@assets/images/monthly/meet_friend-Photoroom.png'
+import networkingActionIconUrl from '@assets/images/monthly/networking-Photoroom.png'
+import restActionIconUrl from '@assets/images/monthly/rest-Photoroom.png'
+import sideJobActionIconUrl from '@assets/images/monthly/sidejob-Photoroom.png'
+import studyActionIconUrl from '@assets/images/monthly/study-Photoroom.png'
+import type { TurnActionModel } from '@features/game/data/models/GameTurnModel'
 import type { IGameTurnRepository } from '@features/game/domain/repositories/IGameTurnRepository'
 import type {
   GameTurn,
@@ -17,6 +25,16 @@ import type {
 } from '@features/game/domain/entities/GameTurn'
 import type { TurnAction, TurnActions } from '@features/game/domain/entities/TurnAction'
 import { GameTurnRemoteDataSource } from '@features/game/data/datasources/GameTurnRemoteDataSource'
+
+const ACTION_ICON_URL_BY_TYPE: Record<string, string> = {
+  STUDY: studyActionIconUrl,
+  EXERCISE: exerciseActionIconUrl,
+  REST: restActionIconUrl,
+  HOBBY: hobbyActionIconUrl,
+  MEET_FRIEND: meetFriendActionIconUrl,
+  NETWORKING: networkingActionIconUrl,
+  SIDE_JOB: sideJobActionIconUrl,
+}
 
 @injectable()
 export class GameTurnRepositoryImpl implements IGameTurnRepository {
@@ -183,11 +201,11 @@ export class GameTurnRepositoryImpl implements IGameTurnRepository {
     }
   }
 
-  private toTurnAction(action: TurnAction): TurnAction {
+  private toTurnAction(action: TurnActionModel): TurnAction {
     return {
       actionType: action.actionType,
       label: action.label,
-      iconUrl: action.iconUrl,
+      iconUrl: ACTION_ICON_URL_BY_TYPE[action.actionType] ?? action.iconUrl,
       effects: {
         cash: action.effects.cash,
         health: action.effects.health,
