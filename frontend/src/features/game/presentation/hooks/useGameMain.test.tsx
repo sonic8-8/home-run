@@ -1,11 +1,18 @@
-import { render, waitFor } from '@testing-library/react';
+import { render, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '@app/routes';
 import { useGameMain } from './useGameMain';
 
 const mockNavigate = vi.fn();
 const mockResolve = vi.fn();
-const mockLocation = {
+
+interface MockLocationState {
+  sessionId?: number;
+  characterType?: string;
+  openLoan?: boolean;
+}
+
+const mockLocation: { key: string; state: MockLocationState } = {
   key: 'game-main',
   state: {
     sessionId: 7,
@@ -95,17 +102,10 @@ describe('useGameMain', () => {
       openLoan: true,
     };
 
-    let result: ReturnType<typeof useGameMain> | null = null;
-
-    function LoanHookHarness() {
-      result = useGameMain();
-      return null;
-    }
-
-    render(<LoanHookHarness />);
+    const { result } = renderHook(() => useGameMain());
 
     await waitFor(() => {
-      expect(result?.leftView).toBe('loan');
+      expect(result.current.leftView).toBe('loan');
     });
   });
 
