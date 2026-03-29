@@ -352,6 +352,23 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
             }
         }
 
+        stage('k6 Core Write Gate') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'k6 Core Write Gate'
+                }
+                sh '''
+                    rm -rf ${K6_ARTIFACT_ROOT}/core-write
+                    mkdir -p ${K6_ARTIFACT_ROOT}/core-write
+
+                    K6_BASE_URL=http://backend:8080 \
+                    K6_DOCKER_NETWORK=homerun-runtime_web_net \
+                    K6_SUMMARY_DIR=${K6_ARTIFACT_ROOT}/core-write \
+                    bash performance/k6/run.sh performance/k6/core-write.js
+                '''
+            }
+        }
+
         stage('Collect Monitoring Evidence') {
             steps {
                 script {
