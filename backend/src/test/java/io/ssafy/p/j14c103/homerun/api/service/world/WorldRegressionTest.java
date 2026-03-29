@@ -35,6 +35,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLog;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLogRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
@@ -54,6 +56,8 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyReposit
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryQuizSample;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryRow;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistrySection;
+import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMaster;
+import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMasterRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -139,6 +143,12 @@ class WorldRegressionTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private NewsMasterRepository newsMasterRepository;
+
+    @Autowired
+    private GameNewsLogRepository gameNewsLogRepository;
+
     @DisplayName("목표 매물 검증부터 turn, pending resolve, ending history까지 대표 성공 흐름을 한 번에 검증한다")
     @Test
     void worldSuccessFlow() {
@@ -209,6 +219,30 @@ class WorldRegressionTest {
             11,
             "빌라로 이사했다."
         );
+        final NewsMaster turnNews = newsMasterRepository.saveAndFlush(
+            NewsMaster.createAiNews(
+                "NEWS-REG-001",
+                "호황기 대표 뉴스",
+                "positive",
+                "테스트 언론",
+                "대표 흐름 검증용 기사",
+                "BOOM_TO_CRISIS",
+                "회귀 테스트용 뉴스",
+                null,
+                null,
+                null,
+                null
+            )
+        );
+        gameNewsLogRepository.saveAndFlush(
+            GameNewsLog.create(
+                gameSession.getGameSessionId(),
+                12,
+                turnNews.getNewsId(),
+                turnNews.getTitle(),
+                LocalDate.of(2026, 12, 1)
+            )
+        );
 
         // when
         final TurnStateResponse turnResponse = gameTurnStateService.getTurnState(
@@ -230,6 +264,8 @@ class WorldRegressionTest {
         assertThat(targetPropertyResponse.getPropertyId()).isEqualTo(targetProperty.getPropertyId());
         assertThat(targetPropertyResponse.getHousingType()).isEqualTo(HousingType.OWNED_APT);
         assertThat(turnResponse.getTurnNumber()).isEqualTo(12);
+        assertThat(turnResponse.getNews()).hasSize(1);
+        assertThat(turnResponse.getNews().get(0).getNewsId()).isEqualTo("NEWS-REG-001");
         assertThat(turnWorldState.getPhase()).isEqualTo(CyclePhase.BOOM);
         assertThat(familyEvent.getType()).isEqualTo(EventPresentationType.CHOICE);
         assertThat(endingHistory.getEventHistories()).hasSize(1);
