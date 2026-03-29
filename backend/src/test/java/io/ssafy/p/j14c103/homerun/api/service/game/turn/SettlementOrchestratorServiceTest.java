@@ -21,10 +21,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class SettlementOrchestratorTest {
+class SettlementOrchestratorServiceTest {
 
     @Autowired
-    private SettlementOrchestrator settlementOrchestrator;
+    private SettlementOrchestratorService settlementOrchestratorService;
 
     @MockitoBean
     private SettlementStepExecutor settlementStepExecutor;
@@ -56,7 +56,7 @@ class SettlementOrchestratorTest {
         stubStep(SettlementStepType.STATUS_ENDING_CHECKPOINT, "엔딩 체크포인트를 기록한다", 0L, 0L, 0L, Map.of());
 
         // when
-        final SettlementOrchestratorResult result = settlementOrchestrator.orchestrate(request);
+        final SettlementOrchestratorResult result = settlementOrchestratorService.orchestrate(request);
 
         // then
         assertThat(result.getStepResults()).hasSize(13);

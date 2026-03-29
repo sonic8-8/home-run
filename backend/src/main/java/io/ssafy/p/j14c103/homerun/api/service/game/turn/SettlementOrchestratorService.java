@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class SettlementOrchestrator {
+public class SettlementOrchestratorService {
 
     private final SettlementStepExecutor settlementStepExecutor;
     private final EndingRuleEvaluator endingRuleEvaluator;
