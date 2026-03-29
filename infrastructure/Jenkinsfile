@@ -55,6 +55,8 @@ pipeline {
     environment {
         FRONTEND_IMAGE = 'homerun-frontend:develop'
         BACKEND_IMAGE = 'homerun-backend:develop'
+        PROMETHEUS_IMAGE = 'homerun-prometheus:develop'
+        GRAFANA_IMAGE = 'homerun-grafana:develop'
         BACKEND_DOCS_IMAGE = 'homerun-backend-docs:develop'
         BACKEND_BUILDKIT_DOCKERFILE = 'backend/Dockerfile.buildkit-cache'
         COMPOSE_FILE = 'infrastructure/docker/docker-compose.runtime.yml'
@@ -178,6 +180,22 @@ pipeline {
                                   -f ${BACKEND_BUILDKIT_DOCKERFILE} \
                                   backend
                             '''
+                        },
+                        'Prometheus Runtime Image': {
+                            sh '''
+                                docker build \
+                                  -t ${PROMETHEUS_IMAGE} \
+                                  -f infrastructure/monitoring/prometheus/Dockerfile \
+                                  infrastructure/monitoring/prometheus
+                            '''
+                        },
+                        'Grafana Runtime Image': {
+                            sh '''
+                                docker build \
+                                  -t ${GRAFANA_IMAGE} \
+                                  -f infrastructure/monitoring/grafana/Dockerfile \
+                                  infrastructure/monitoring/grafana
+                            '''
                         }
                     )
                 }
@@ -194,6 +212,8 @@ FRONTEND_HOST_PORT=${env.FRONTEND_HOST_PORT}
 BACKEND_HOST_PORT=${env.BACKEND_HOST_PORT}
 POSTGRES_HOST_PORT=${env.POSTGRES_HOST_PORT}
 REDIS_HOST_PORT=${env.REDIS_HOST_PORT}
+PROMETHEUS_IMAGE=${env.PROMETHEUS_IMAGE}
+GRAFANA_IMAGE=${env.GRAFANA_IMAGE}
 PUBLIC_BASE_URL=${env.PUBLIC_BASE_URL ?: ''}
 POSTGRES_DB=${env.POSTGRES_DB}
 POSTGRES_USER=${env.POSTGRES_USER}
@@ -275,7 +295,7 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
 
                       if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null" && \
                          docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/ >/dev/null" && \
-                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/grafana/login >/dev/null"; then
+                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/grafana >/dev/null"; then
                         exit 0
                       fi
 
