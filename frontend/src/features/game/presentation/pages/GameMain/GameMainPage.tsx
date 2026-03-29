@@ -189,6 +189,12 @@ function GameMainPageContent() {
                 >
                   게임 가이드
                 </button>
+                <button
+                  className={styles.menuButton}
+                  onClick={() => navigate(ROUTES.HOME)}
+                >
+                  금융 홈으로
+                </button>
               </div>
             </section>
           </div>

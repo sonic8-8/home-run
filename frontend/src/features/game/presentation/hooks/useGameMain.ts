@@ -17,6 +17,21 @@ import {
 import type { GameSessionCreation } from '@features/game/domain/entities/GameSessionCreation';
 import { useCreateGameSession } from './useCreateGameSession';
 
+const SESSION_ID_KEY = 'game:sessionId';
+const CHARACTER_TYPE_KEY = 'game:characterType';
+
+function readStoredSessionId(): number | null {
+  const raw = readSessionStorage(SESSION_ID_KEY);
+  if (raw === null) return null;
+  const parsed = parseInt(raw, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function readStoredCharacterType(): CharacterType | null {
+  const raw = readSessionStorage(CHARACTER_TYPE_KEY);
+  return raw === 'MALE' || raw === 'FEMALE' ? raw : null;
+}
+
 interface LocationState {
   sessionId?: number;
   slotNumber?: number;
@@ -93,9 +108,11 @@ export const useGameMain = () => {
     preSelectedPropertyPrice,
     confirmedLoan,
   } = state;
-  const [sessionId, setSessionId] = useState<number | null>(locationSessionId ?? null);
+  const [sessionId, setSessionId] = useState<number | null>(
+    locationSessionId ?? readStoredSessionId(),
+  );
   const [characterType, setCharacterType] = useState<CharacterType>(
-    routeCharacterType ?? 'MALE',
+    routeCharacterType ?? readStoredCharacterType() ?? 'MALE',
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,6 +159,12 @@ export const useGameMain = () => {
   const currentDate = turn?.currentDate ?? null;
   const currentDateKey = currentDate === null ? null : formatIsoDate(currentDate);
   const currentPendingEvent: PendingGameEvent | null = pendingEvents.at(0) ?? null;
+
+  useEffect(() => {
+    if (sessionId !== null) {
+      writeSessionStorage(SESSION_ID_KEY, String(sessionId));
+    }
+  }, [sessionId]);
 
   useEffect(() => {
     if (locationSessionId === undefined || locationSessionId === sessionId) {
@@ -279,7 +302,9 @@ export const useGameMain = () => {
         if (!isMounted) {
           return;
         }
-        setCharacterType(routeCharacterType ?? 'MALE');
+        const resolvedCharacterType = routeCharacterType ?? readStoredCharacterType() ?? 'MALE';
+        writeSessionStorage(CHARACTER_TYPE_KEY, resolvedCharacterType);
+        setCharacterType(resolvedCharacterType);
       } finally {
         if (isMounted) {
           setIsLoading(false);
