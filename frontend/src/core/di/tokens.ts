@@ -1,5 +1,6 @@
 export const DI_TOKENS = {
   IAuthRepository: 'IAuthRepository',
+  ICardRepository: 'ICardRepository',
   IEndingRepository: 'IEndingRepository',
   IGameInitRepository: 'IGameInitRepository',
   IGameSessionRepository: 'IGameSessionRepository',

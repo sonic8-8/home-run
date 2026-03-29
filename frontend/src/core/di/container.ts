@@ -4,20 +4,26 @@ import { EndingRemoteDataSource } from '@features/ending/data/datasources/Ending
 import { EndingRepositoryImpl } from '@features/ending/data/repositories/EndingRepositoryImpl';
 import { AuthRemoteDataSource } from '@features/auth/data/datasources/AuthRemoteDataSource';
 import { AuthRepositoryImpl } from '@features/auth/data/repositories/AuthRepositoryImpl';
-import { LoanRemoteDataSource } from '@features/loan/data/datasources/LoanRemoteDataSource';
-import { LoanRepositoryImpl } from '@features/loan/data/repositories/LoanRepositoryImpl';
+import { CardRemoteDataSource } from '@features/card/data/datasources/CardRemoteDataSource';
+import { CardRepositoryImpl } from '@features/card/data/repositories/CardRepositoryImpl';
 import { GameInitRemoteDataSource } from '@features/game/data/datasources/GameInitRemoteDataSource';
 import { GameInitRepositoryImpl } from '@features/game/data/repositories/GameInitRepositoryImpl';
 import { GameSessionRemoteDataSource } from '@features/game/data/datasources/GameSessionRemoteDataSource';
 import { GameSessionRepositoryImpl } from '@features/game/data/repositories/GameSessionRepositoryImpl';
 import { GameTurnRemoteDataSource } from '@features/game/data/datasources/GameTurnRemoteDataSource';
 import { GameTurnRepositoryImpl } from '@features/game/data/repositories/GameTurnRepositoryImpl';
+import { LoanRemoteDataSource } from '@features/loan/data/datasources/LoanRemoteDataSource';
+import { LoanRepositoryImpl } from '@features/loan/data/repositories/LoanRepositoryImpl';
 import { RealEstateRemoteDataSource } from '@features/realEstate/data/datasources/RealEstateRemoteDataSource';
 import { RealEstateRepositoryImpl } from '@features/realEstate/data/repositories/RealEstateRepositoryImpl';
 
 container.registerSingleton(AuthRemoteDataSource);
 container.register(DI_TOKENS.IAuthRepository, {
   useClass: AuthRepositoryImpl,
+});
+container.registerSingleton(CardRemoteDataSource);
+container.register(DI_TOKENS.ICardRepository, {
+  useClass: CardRepositoryImpl,
 });
 container.registerSingleton(EndingRemoteDataSource);
 container.register(DI_TOKENS.IEndingRepository, {

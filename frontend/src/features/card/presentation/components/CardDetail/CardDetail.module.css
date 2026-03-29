@@ -1,0 +1,269 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f6f7fb;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
+}
+
+.panelLayout {
+  margin: 20px;
+}
+
+.pageLayout {
+  width: min(1120px, 100%);
+}
+
+.hero {
+  padding: 28px 28px 24px;
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.18), transparent 42%),
+    linear-gradient(135deg, #eff6ff 0%, #ffffff 54%, #f8fafc 100%);
+}
+
+.backButton {
+  width: fit-content;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.heroBody {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-top: 18px;
+}
+
+.visualFrame {
+  position: relative;
+  width: 180px;
+  aspect-ratio: 5 / 8;
+  flex-shrink: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 22px 42px rgba(15, 23, 42, 0.2);
+}
+
+.visualFallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+}
+
+.visualFallbackText {
+  color: #f8fafc;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.visualImage {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.issuer {
+  color: #0f766e;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.description {
+  margin: 0;
+  color: #334155;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid #dbe5f4;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.metricLabel {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.metricValue {
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+  background: #ffffff;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.emptyText {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.benefitList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benefitItem {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid #dbe5f4;
+  border-radius: 18px;
+  background: #f8fbff;
+}
+
+.benefitHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.benefitName {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.benefitRate {
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.benefitDescription {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.merchantChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.merchantChip {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e2f3ec;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.noticeBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.noticeText {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.applyButton {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: #cbd5e1;
+  color: #475569;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+  .heroBody {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .visualFrame {
+    width: 160px;
+  }
+
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .benefitList {
+    grid-template-columns: 1fr;
+  }
+}

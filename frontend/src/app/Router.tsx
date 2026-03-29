@@ -53,8 +53,8 @@ const LoanPlaceholderPage = lazy(() =>
   import('@features/loan/presentation/pages/LoanPlaceholderPage').then((m) => ({ default: m.LoanPlaceholderPage }))
 );
 
-const CardPlaceholderPage = lazy(() =>
-  import('@features/card/presentation/pages/CardPlaceholderPage').then((m) => ({ default: m.CardPlaceholderPage }))
+const CardPage = lazy(() =>
+  import('@features/card/presentation/pages/CardPage').then((m) => ({ default: m.CardPage }))
 );
 
 const MyPagePlaceholderPage = lazy(() =>
@@ -103,7 +103,7 @@ const router = createBrowserRouter([
       { path: ROUTES.GAME_ENDING_PATTERN, element: <EndingPage /> },
       { path: ROUTES.LOAN, element: <LoanPlaceholderPage /> },
       { path: ROUTES.REAL_ESTATE, element: <RealEstatePage /> },
-      { path: ROUTES.CARD, element: <CardPlaceholderPage /> },
+      { path: ROUTES.CARD, element: <CardPage /> },
       { path: ROUTES.MY_PAGE, element: <MyPagePlaceholderPage /> },
     ],
   },
