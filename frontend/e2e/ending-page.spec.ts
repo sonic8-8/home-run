@@ -3,8 +3,23 @@ import type { EndingType } from '@features/ending/domain/entities/EndingReport';
 
 test.describe.configure({ mode: 'serial' });
 
-function seedAuthenticatedUser(page: Page) {
-  return page.addInitScript(() => {
+async function seedAuthenticatedUser(page: Page) {
+  await page.route('**/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 200,
+        message: 'OK',
+        data: {
+          accessToken: 'refreshed-access-token',
+          accessTokenExpiresIn: 1800,
+        },
+      }),
+    });
+  });
+
+  await page.addInitScript(() => {
     try {
       window.localStorage.setItem(
         'auth',

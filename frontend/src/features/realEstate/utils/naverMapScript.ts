@@ -22,7 +22,7 @@ export function loadNaverMapScript(clientId: string): Promise<void> {
   const trimmedClientId = clientId.trim();
 
   if (trimmedClientId.length === 0) {
-    return Promise.reject(new Error('네이버 지도 Client ID가 설정되지 않았습니다.'));
+    return Promise.reject(new Error('네이버 지도 설정이 누락되었습니다.'));
   }
 
   if (typeof window === 'undefined' || typeof document === 'undefined') {

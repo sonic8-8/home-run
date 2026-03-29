@@ -239,7 +239,7 @@ export function EndingPage() {
     isNotReady,
     hasValidSessionId,
   } = useEndingPage();
-  const [isReportVisible, setIsReportVisible] = useState(false);
+  const [revealedReportTitle, setRevealedReportTitle] = useState<string | null>(null);
   const reportRef = useRef<HTMLElement | null>(null);
 
   if (!hasValidSessionId) {
@@ -294,6 +294,7 @@ export function EndingPage() {
   const verdictText = getVerdictText(report.endingType);
   const currentHousingLabel = toHousingTypeLabel(report.housingSnapshot?.currentHousingType ?? null);
   const gradeClassName = getGradeClassName(report.grade);
+  const isReportVisible = revealedReportTitle === report.title;
   const chartWidth = 640;
   const chartHeight = 220;
   const chartPadding = 24;
@@ -309,7 +310,7 @@ export function EndingPage() {
     report.housingSnapshot.currentPropertyId === report.housingSnapshot.targetPropertyId;
 
   const handleRevealReport = () => {
-    setIsReportVisible(true);
+    setRevealedReportTitle(report.title);
   };
 
   if (!isReportVisible) {
@@ -372,7 +373,7 @@ export function EndingPage() {
         data-testid="ending-report"
       >
         <header className={styles.reportTopBar}>
-          <button type="button" className={styles.reportBack} onClick={() => setIsReportVisible(false)}>
+          <button type="button" className={styles.reportBack} onClick={() => setRevealedReportTitle(null)}>
             엔딩 화면으로
           </button>
           <img src={homerunLogo} alt="홈런" className={styles.reportLogo} />

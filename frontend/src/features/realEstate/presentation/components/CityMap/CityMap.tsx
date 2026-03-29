@@ -60,6 +60,7 @@ export function CityMap({
                     onMouseEnter={() => setHoveredKey(geo.rsmKey)}
                     onMouseLeave={() => setHoveredKey(null)}
                     onClick={() => onGuClick(code, name, computeCenter(geo))}
+                    data-testid={`city-gu-${code}`}
                     style={{ cursor: 'pointer' }}
                   >
                     <Geography geography={geo} style={{ default: baseStyle, hover: baseStyle, pressed: baseStyle }} />
