@@ -72,7 +72,16 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             12,
             LocalDate.of(2026, 1, 1),
             TurnStateResponse.EconomicCycleResponse.of(CyclePhase.BOOM, "경기 호황기"),
-            List.of()
+            List.of(
+                TurnStateResponse.NewsResponse.of(
+                    "01500801.20200519071906001",
+                    "부동산 시장 과열 경고",
+                    "시장 과열 신호가 확인됐다.",
+                    "영남일보",
+                    LocalDate.of(2026, 1, 1),
+                    "BOOM_TO_CRISIS"
+                )
+            )
         );
         given(gameTurnStateService.getTurnState(1L, 1001L)).willReturn(response);
 
@@ -89,7 +98,13 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.data.economicCycle.phase").value("BOOM"))
             .andExpect(jsonPath("$.data.economicCycle.description").value("경기 호황기"))
             .andExpect(jsonPath("$.data.news").isArray())
-            .andExpect(jsonPath("$.data.news.length()").value(0))
+            .andExpect(jsonPath("$.data.news.length()").value(1))
+            .andExpect(jsonPath("$.data.news[0].newsId").value("01500801.20200519071906001"))
+            .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 과열 경고"))
+            .andExpect(jsonPath("$.data.news[0].content").value("시장 과열 신호가 확인됐다."))
+            .andExpect(jsonPath("$.data.news[0].sourceName").value("영남일보"))
+            .andExpect(jsonPath("$.data.news[0].publishedDate").value("2026-01-01"))
+            .andExpect(jsonPath("$.data.news[0].economicCycleType").value("BOOM_TO_CRISIS"))
             .andDo(document("game-turn/state/success",
                 requestHeaders(authorizationHeader()),
                 pathParameters(
@@ -103,7 +118,13 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                     fieldWithPath("economicCycle").type(JsonFieldType.OBJECT).description("경제 사이클 정보"),
                     fieldWithPath("economicCycle.phase").type(JsonFieldType.STRING).description("경제 사이클 단계"),
                     fieldWithPath("economicCycle.description").type(JsonFieldType.STRING).description("경제 사이클 설명"),
-                    fieldWithPath("news").type(JsonFieldType.ARRAY).description("턴 뉴스 목록")
+                    fieldWithPath("news").type(JsonFieldType.ARRAY).description("턴 뉴스 목록"),
+                    fieldWithPath("news[].newsId").type(JsonFieldType.STRING).description("뉴스 식별자"),
+                    fieldWithPath("news[].headline").type(JsonFieldType.STRING).description("뉴스 제목"),
+                    fieldWithPath("news[].content").type(JsonFieldType.STRING).description("뉴스 본문"),
+                    fieldWithPath("news[].sourceName").type(JsonFieldType.STRING).description("뉴스 출처"),
+                    fieldWithPath("news[].publishedDate").type(JsonFieldType.STRING).description("뉴스 발행일"),
+                    fieldWithPath("news[].economicCycleType").type(JsonFieldType.STRING).description("경제 사이클 전환 유형")
                 )
             ));
         then(gameTurnStateService).should().getTurnState(1L, 1001L);

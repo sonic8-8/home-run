@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.turn.response;
 
+import io.ssafy.p.j14c103.homerun.api.service.world.response.LatestTurnNewsResponse;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import java.time.LocalDate;
 import java.util.List;
@@ -70,6 +71,67 @@ public class TurnStateResponse {
 
     @Getter
     public static class NewsResponse {
+
+        private final String newsId;
+        private final String headline;
+        private final String content;
+        private final String sourceName;
+        private final LocalDate publishedDate;
+        private final String economicCycleType;
+
+        @Builder(access = AccessLevel.PRIVATE)
+        private NewsResponse(
+            final String newsId,
+            final String headline,
+            final String content,
+            final String sourceName,
+            final LocalDate publishedDate,
+            final String economicCycleType
+        ) {
+            this.newsId = newsId;
+            this.headline = headline;
+            this.content = content;
+            this.sourceName = sourceName;
+            this.publishedDate = publishedDate;
+            this.economicCycleType = economicCycleType;
+        }
+
+        public static NewsResponse of(
+            final String newsId,
+            final String headline,
+            final String content,
+            final String sourceName,
+            final LocalDate publishedDate,
+            final String economicCycleType
+        ) {
+            return NewsResponse.builder()
+                .newsId(newsId)
+                .headline(headline)
+                .content(content)
+                .sourceName(sourceName)
+                .publishedDate(publishedDate)
+                .economicCycleType(economicCycleType)
+                .build();
+        }
+
+        public static NewsResponse from(final LatestTurnNewsResponse.NewsItemResponse item) {
+            return NewsResponse.of(
+                item.getNewsId(),
+                item.getHeadline(),
+                item.getContent(),
+                item.getSourceName(),
+                item.getPublishedDate(),
+                item.getEconomicCycleType()
+            );
+        }
+
+        public static List<NewsResponse> from(
+            final List<LatestTurnNewsResponse.NewsItemResponse> items
+        ) {
+            return items.stream()
+                .map(NewsResponse::from)
+                .toList();
+        }
 
         public static List<NewsResponse> emptyList() {
             return List.of();
