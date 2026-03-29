@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
+import { container } from '@core/di/container';
 import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
 import type { JobType } from '@features/game/domain/entities/GameSlot';
+import { GetGameSessionDetailUseCase } from '@features/game/domain/usecases/GetGameSessionDetailUseCase';
 import { useGameTurn } from '@features/game/presentation/hooks/useGameTurn';
 import { formatIsoDate } from '@shared/utils/formatter';
 import { readSessionStorage, writeSessionStorage } from '@shared/utils/sessionStorage';
@@ -96,6 +98,7 @@ export const useGameMain = () => {
   const [isNewsOpen, setIsNewsOpen] = useState(false);
   const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card'>(openLoan ? 'loan' : 'scene');
   const createSessionPromiseRef = useRef<Promise<GameSessionCreation> | null>(null);
+  const endingRedirectedRef = useRef(false);
 
   const { createSession, isSubmitting, error: createError } = useCreateGameSession();
   const {
@@ -260,6 +263,36 @@ export const useGameMain = () => {
       isMounted = false;
     };
   }, [fetchTurn, routeCharacterType, sessionId]);
+
+  useEffect(() => {
+    if (sessionId === null || endingRedirectedRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const checkEndingStatus = async () => {
+      try {
+        const getGameSessionDetailUseCase = container.resolve(GetGameSessionDetailUseCase);
+        const detail = await getGameSessionDetailUseCase.execute(sessionId);
+
+        if (!isMounted || detail.status === 'IN_PROGRESS') {
+          return;
+        }
+
+        endingRedirectedRef.current = true;
+        navigate(ROUTES.GAME_ENDING(sessionId), { replace: true });
+      } catch {
+        // Ignore transient detail fetch errors and keep the player on the main screen.
+      }
+    };
+
+    void checkEndingStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentDateKey, navigate, sessionId]);
 
   useEffect(() => {
     if (currentDateKey === null) {

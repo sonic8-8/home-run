@@ -20,6 +20,16 @@ export interface GameSessionsResponseModel {
   sessions: GameSlotModel[];
 }
 
+export interface GameSessionDetailResponseModel {
+  sessionId: number;
+  sessionStatus:
+    | 'IN_PROGRESS'
+    | 'CLEAR'
+    | 'BANKRUPT'
+    | 'TIMEOUT'
+    | 'FORECLOSURE';
+}
+
 export interface CreateGameSessionRequestModel {
   slotNumber: number;
   characterType: string;

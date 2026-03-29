@@ -23,3 +23,8 @@ export interface GameSlot {
   readonly createdAt?: string;
   readonly currentTurn?: number;
 }
+
+export interface GameSessionDetail {
+  readonly sessionId: number;
+  readonly status: Exclude<SlotStatus, 'EMPTY'>;
+}
