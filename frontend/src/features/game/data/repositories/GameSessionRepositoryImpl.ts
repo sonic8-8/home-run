@@ -5,10 +5,11 @@ import type {
   GameSessionDataSourceType,
 } from '../../domain/entities/GameSessionCreation';
 import type { IGameSessionRepository } from '../../domain/repositories/IGameSessionRepository';
-import type { GameSlot } from '../../domain/entities/GameSlot';
+import type { GameSessionDetail, GameSlot } from '../../domain/entities/GameSlot';
 import type {
   CreateGameSessionRequestModel,
   CreateGameSessionResponseModel,
+  GameSessionDetailResponseModel,
   GameSlotModel,
 } from '../models/GameSessionModel';
 import { GameSessionRemoteDataSource } from '../datasources/GameSessionRemoteDataSource';
@@ -60,6 +61,11 @@ export class GameSessionRepositoryImpl implements IGameSessionRepository {
     return response.sessions.map((model) => this.toEntity(model));
   }
 
+  async getSessionDetail(sessionId: number): Promise<GameSessionDetail> {
+    const response = await this.dataSource.getSessionDetail(sessionId);
+    return this.toSessionDetail(response);
+  }
+
   private toCreateRequestModel(
     input: CreateGameSessionInput,
   ): CreateGameSessionRequestModel {
@@ -102,6 +108,15 @@ export class GameSessionRepositoryImpl implements IGameSessionRepository {
       status: this.toCreatedSessionStatus(model.sessionStatus),
       currentTurn: model.currentTurn,
       dataSourceType: this.toDataSourceType(model.dataSourceType),
+    };
+  }
+
+  private toSessionDetail(
+    model: GameSessionDetailResponseModel,
+  ): GameSessionDetail {
+    return {
+      sessionId: model.sessionId,
+      status: this.toCreatedSessionStatus(model.sessionStatus),
     };
   }
 

@@ -25,6 +25,10 @@ export function GameStartPage() {
     });
   };
 
+  const handleEndingArchive = () => {
+    navigate(ROUTES.GAME_ENDING_ARCHIVE);
+  };
+
   return (
     <div
       className={styles.page}
@@ -39,6 +43,9 @@ export function GameStartPage() {
           </button>
           <button className={`${styles.button} ${styles.newGame}`} onClick={handleNewGame}>
             새로하기
+          </button>
+          <button className={`${styles.button} ${styles.archive}`} onClick={handleEndingArchive}>
+            엔딩 저장소
           </button>
           <button className={`${styles.button} ${styles.guide}`} onClick={handleGuide}>
             게임 가이드

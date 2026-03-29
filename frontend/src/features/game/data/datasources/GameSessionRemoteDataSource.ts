@@ -2,6 +2,7 @@ import { injectable } from 'tsyringe';
 import type {
   CreateGameSessionRequestModel,
   CreateGameSessionResponseModel,
+  GameSessionDetailResponseModel,
   GameSessionsResponseModel,
 } from '../models/GameSessionModel';
 import { apiClient } from '@core/network/apiClient';
@@ -20,5 +21,11 @@ export class GameSessionRemoteDataSource {
 
   async getSlots(): Promise<GameSessionsResponseModel> {
     return apiClient.get<ApiEnvelope<GameSessionsResponseModel>>('/games/sessions').then(unwrapApiData);
+  }
+
+  async getSessionDetail(sessionId: number): Promise<GameSessionDetailResponseModel> {
+    return apiClient.get<ApiEnvelope<GameSessionDetailResponseModel>>(
+      `/games/sessions/${sessionId}`,
+    ).then(unwrapApiData);
   }
 }
