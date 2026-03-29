@@ -20,6 +20,18 @@ vi.mock('@features/game/presentation/components/NewsEventModal/NewsEventModal', 
   ),
 }));
 
+vi.mock('@features/game/presentation/components/MonthlyActivityModal/MonthlyActivityModal', () => ({
+  MonthlyActivityModal: ({
+    isOpen,
+    onClose,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+  }) => (
+    isOpen ? <button onClick={onClose}>월 활동 닫기</button> : null
+  ),
+}));
+
 vi.mock('@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel', () => ({
   LoanProductsPanel: () => <div>대출 패널</div>,
 }));
@@ -32,19 +44,42 @@ describe('GameMainPage', () => {
   it('delegates news open and close actions to useGameMain', () => {
     const openNews = vi.fn();
     const closeNews = vi.fn();
+    const openMonthlyActivity = vi.fn();
+    const closeMonthlyActivity = vi.fn();
 
     vi.mocked(useGameMain).mockReturnValue({
       sessionId: 7,
-      turn: null,
+      turn: {
+        turnNumber: 7,
+        month: 3,
+        currentDate: new Date('2026-03-01T00:00:00'),
+        economicCycle: {
+          phase: 'BOOM',
+          description: '경기 호황기',
+        },
+      },
       news: null,
+      turnActions: null,
+      turnPreview: null,
+      turnCommitResult: null,
       currentDate: new Date('2026-03-01T00:00:00'),
       characterType: 'MALE',
       isNewsOpen: true,
+      isMonthlyActivityOpen: true,
       isLoading: false,
       isNewsLoading: false,
       newsError: null,
+      isActionsLoading: false,
+      isSlotSubmitting: false,
+      isTurnCommitting: false,
+      scheduleError: null,
       openNews,
       closeNews,
+      openMonthlyActivity,
+      closeMonthlyActivity,
+      submitTurnSlots: vi.fn(),
+      commitTurn: vi.fn(),
+      resetScheduleFlow: vi.fn(),
       error: null,
       leftView: 'scene',
       setLeftView: vi.fn(),
@@ -61,8 +96,12 @@ describe('GameMainPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '이달의 뉴스' }));
     fireEvent.click(screen.getByRole('button', { name: '뉴스 닫기' }));
+    fireEvent.click(screen.getByRole('button', { name: '이번 달 활동 진행' }));
+    fireEvent.click(screen.getByRole('button', { name: '월 활동 닫기' }));
 
     expect(openNews).toHaveBeenCalledTimes(1);
     expect(closeNews).toHaveBeenCalledTimes(1);
+    expect(openMonthlyActivity).toHaveBeenCalledTimes(1);
+    expect(closeMonthlyActivity).toHaveBeenCalledTimes(1);
   });
 });

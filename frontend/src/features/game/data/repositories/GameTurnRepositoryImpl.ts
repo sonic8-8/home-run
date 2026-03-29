@@ -3,10 +3,15 @@ import { ResponseMappingError } from '@core/error/AppError'
 import type { IGameTurnRepository } from '@features/game/domain/repositories/IGameTurnRepository'
 import type {
   GameTurn,
-  TurnNews,
   EconomicCyclePhase,
   EconomicCycleType,
+  TurnCommitResult,
+  TurnNews,
+  TurnPreview,
+  TurnSlotSelection,
+  TurnStatChanges,
 } from '@features/game/domain/entities/GameTurn'
+import type { TurnAction, TurnActions } from '@features/game/domain/entities/TurnAction'
 import { GameTurnRemoteDataSource } from '@features/game/data/datasources/GameTurnRemoteDataSource'
 
 @injectable()
@@ -33,6 +38,14 @@ export class GameTurnRepositoryImpl implements IGameTurnRepository {
     }
   }
 
+  async getAvailableActions(sessionId: number): Promise<TurnActions> {
+    const model = await this.dataSource.getAvailableActions(sessionId)
+    return {
+      shopping: model.shopping.map((action) => this.toTurnAction(action)),
+      activities: model.activities.map((action) => this.toTurnAction(action)),
+    }
+  }
+
   async getLatestNews(sessionId: number): Promise<TurnNews> {
     const model = await this.dataSource.getLatestNews(sessionId)
     return {
@@ -46,6 +59,82 @@ export class GameTurnRepositoryImpl implements IGameTurnRepository {
         publishedDate: this.toDate(newsItem.publishedDate),
         economicCycleType: this.toEconomicCycleType(newsItem.economicCycleType),
       })),
+    }
+  }
+
+  async submitTurnSlots(
+    sessionId: number,
+    slots: readonly TurnSlotSelection[],
+  ): Promise<TurnPreview> {
+    const model = await this.dataSource.submitTurnSlots(sessionId, {
+      slots: slots.map((slot) => ({
+        slotIndex: slot.slotIndex,
+        actionType: slot.actionType,
+      })),
+    })
+
+    return {
+      slots: model.slots.map((slot) => ({
+        slotIndex: slot.slotIndex,
+        actionType: slot.actionType,
+        forcedAction: slot.forcedAction,
+      })),
+      previewCashChange: model.previewCashChange,
+      previewStatChanges: this.toTurnStatChanges(model.previewStatChanges),
+    }
+  }
+
+  async commitTurn(sessionId: number): Promise<TurnCommitResult> {
+    const model = await this.dataSource.commitTurn(sessionId)
+
+    return {
+      turnNumber: model.turnNumber,
+      settlementLog: model.settlementLog.map((item) => ({
+        phase: item.phase,
+        description: item.description,
+        cashChange: item.cashChange,
+        statChanges: this.toTurnStatChanges(item.statChanges),
+      })),
+      updatedAssets: {
+        cash: model.updatedAssets.cash,
+        loan: model.updatedAssets.loan,
+        realEstateValue: model.updatedAssets.realEstateValue,
+        netAssets: model.updatedAssets.netAssets,
+      },
+      statChanges: this.toTurnStatChanges(model.statChanges),
+      flags: {
+        isBankrupt: model.flags.isBankrupt,
+        isCleared: model.flags.isCleared,
+        isBurnout: model.flags.isBurnout,
+        isForcedResignation: model.flags.isForcedResignation,
+        hasEvent: model.flags.hasEvent,
+      },
+    }
+  }
+
+  private toTurnAction(action: TurnAction): TurnAction {
+    return {
+      actionType: action.actionType,
+      label: action.label,
+      iconUrl: action.iconUrl,
+      effects: {
+        cash: action.effects.cash,
+        health: action.effects.health,
+        fatigue: action.effects.fatigue,
+        stress: action.effects.stress,
+        happiness: action.effects.happiness,
+        knowledge: action.effects.knowledge,
+      },
+    }
+  }
+
+  private toTurnStatChanges(statChanges: TurnStatChanges): TurnStatChanges {
+    return {
+      health: statChanges.health,
+      fatigue: statChanges.fatigue,
+      stress: statChanges.stress,
+      happiness: statChanges.happiness,
+      knowledge: statChanges.knowledge,
     }
   }
 

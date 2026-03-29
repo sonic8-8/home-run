@@ -8,6 +8,8 @@ interface LoanReviewResultModalProps {
   onClose: () => void;
   onGoToProperty: () => void;
   application: LoanApplication;
+  propertyName?: string;
+  propertyPrice?: number;
 }
 
 function formatPrice(amount: number): string {
@@ -25,11 +27,15 @@ export const LoanReviewResultModal: React.FC<LoanReviewResultModalProps> = ({
   onClose,
   onGoToProperty,
   application,
+  propertyName,
+  propertyPrice,
 }) => {
   if (!isOpen) return null;
 
   const { requestInfo, result, status } = application;
   const isApproved = status === 'APPROVED';
+  const displayPropertyName = propertyName ?? '선택한 매물';
+  const displayPropertyPrice = propertyPrice ?? 0;
 
   // 심사 완료 = step index 1 (0-based)
   const currentStep = 1;
@@ -72,10 +78,10 @@ export const LoanReviewResultModal: React.FC<LoanReviewResultModalProps> = ({
         <h3 className={styles.sectionTitle}>심사 요청 정보</h3>
         <div className={styles.infoList}>
           <div className={styles.infoRow}>
-            심사요청 매물: {requestInfo.propertyName}
+            심사요청 매물: {displayPropertyName}
           </div>
           <div className={styles.infoRow}>
-            매물 가격 : {formatPrice(requestInfo.propertyPrice)}
+            매물 가격 : {formatPrice(displayPropertyPrice)}
           </div>
           <div className={styles.infoRow}>
             신청 일시: {requestInfo.applicationDate}

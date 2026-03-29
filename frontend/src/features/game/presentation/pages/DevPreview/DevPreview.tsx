@@ -24,7 +24,7 @@ const MOCK_ACTIVITIES: TurnAction[] = [
 ];
 
 const MOCK_LOAN_APPLICATION: LoanApplication = {
-  applicationId: 'APP-001',
+  applicationId: 1,
   status: 'APPROVED',
   requestInfo: {
     propertyName: '하남3지구 모아엘가 더 퍼스트',
@@ -95,7 +95,16 @@ export default function DevPreview() {
         month={3}
         shopping={MOCK_SHOPPING}
         activities={MOCK_ACTIVITIES}
-        onStart={(slots) => { alert(`선택: ${slots.join(', ')}`); setShowMonthly(false); }}
+        preview={null}
+        commitResult={null}
+        isActionsLoading={false}
+        isSubmitting={false}
+        isCommitting={false}
+        error={null}
+        onClose={() => setShowMonthly(false)}
+        onSubmitSlots={(slots) => { alert(`선택: ${slots.join(', ')}`); }}
+        onBackToSelection={() => {}}
+        onCommit={() => { alert('턴 진행 확정'); setShowMonthly(false); }}
       />
 
       <LoanReviewResultModal

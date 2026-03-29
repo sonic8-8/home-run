@@ -12,6 +12,8 @@ import { GameSessionRemoteDataSource } from '@features/game/data/datasources/Gam
 import { GameSessionRepositoryImpl } from '@features/game/data/repositories/GameSessionRepositoryImpl';
 import { GameTurnRemoteDataSource } from '@features/game/data/datasources/GameTurnRemoteDataSource';
 import { GameTurnRepositoryImpl } from '@features/game/data/repositories/GameTurnRepositoryImpl';
+import { LoanRemoteDataSource } from '@features/loan/data/datasources/LoanRemoteDataSource';
+import { LoanRepositoryImpl } from '@features/loan/data/repositories/LoanRepositoryImpl';
 import { RealEstateRemoteDataSource } from '@features/realEstate/data/datasources/RealEstateRemoteDataSource';
 import { RealEstateRepositoryImpl } from '@features/realEstate/data/repositories/RealEstateRepositoryImpl';
 
@@ -26,6 +28,10 @@ container.register(DI_TOKENS.ICardRepository, {
 container.registerSingleton(EndingRemoteDataSource);
 container.register(DI_TOKENS.IEndingRepository, {
   useClass: EndingRepositoryImpl,
+});
+container.registerSingleton(LoanRemoteDataSource);
+container.register(DI_TOKENS.ILoanRepository, {
+  useClass: LoanRepositoryImpl,
 });
 container.registerSingleton(GameInitRemoteDataSource);
 container.register(DI_TOKENS.IGameInitRepository, {

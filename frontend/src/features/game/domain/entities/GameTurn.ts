@@ -28,6 +28,61 @@ export interface GameTurn {
   readonly economicCycle: EconomicCycle
 }
 
+export interface TurnStatChanges {
+  readonly health: number
+  readonly fatigue: number
+  readonly stress: number
+  readonly happiness: number
+  readonly knowledge: number
+}
+
+export interface TurnSlotSelection {
+  readonly slotIndex: number
+  readonly actionType: string
+}
+
+export interface TurnPreviewSlot {
+  readonly slotIndex: number
+  readonly actionType: string
+  readonly forcedAction: boolean
+}
+
+export interface TurnPreview {
+  readonly slots: readonly TurnPreviewSlot[]
+  readonly previewCashChange: number
+  readonly previewStatChanges: TurnStatChanges
+}
+
+export interface TurnSettlementLogItem {
+  readonly phase: string
+  readonly description: string
+  readonly cashChange: number
+  readonly statChanges: TurnStatChanges
+}
+
+export interface TurnUpdatedAssets {
+  readonly cash: number
+  readonly loan: number
+  readonly realEstateValue: number
+  readonly netAssets: number
+}
+
+export interface TurnCommitFlags {
+  readonly isBankrupt: boolean
+  readonly isCleared: boolean
+  readonly isBurnout: boolean
+  readonly isForcedResignation: boolean
+  readonly hasEvent: boolean
+}
+
+export interface TurnCommitResult {
+  readonly turnNumber: number
+  readonly settlementLog: readonly TurnSettlementLogItem[]
+  readonly updatedAssets: TurnUpdatedAssets
+  readonly statChanges: TurnStatChanges
+  readonly flags: TurnCommitFlags
+}
+
 export interface NewsItem {
   readonly newsId: string
   readonly headline: string

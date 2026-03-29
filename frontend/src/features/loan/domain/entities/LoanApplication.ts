@@ -1,8 +1,8 @@
 export type LoanApplicationStatus = 'APPROVED' | 'REJECTED';
 
 export interface LoanApplicationRequestInfo {
-  readonly propertyName: string;
-  readonly propertyPrice: number;
+  readonly propertyName?: string;
+  readonly propertyPrice?: number;
   readonly applicationDate: string;
 }
 
@@ -12,7 +12,7 @@ export interface LoanApplicationResult {
 }
 
 export interface LoanApplication {
-  readonly applicationId: string;
+  readonly applicationId: number;
   readonly status: LoanApplicationStatus;
   readonly requestInfo: LoanApplicationRequestInfo;
   readonly result: LoanApplicationResult;
