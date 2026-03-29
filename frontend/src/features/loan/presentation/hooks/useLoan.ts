@@ -1,25 +1,16 @@
 import { useState, useCallback } from 'react';
+import { container } from '@core/di/container';
+import { toErrorMessage } from '@core/error/AppError';
 import type { LoanCategory, LoanProductDetail, LoanProductPage } from '../../domain/entities/LoanProduct';
 import type { LoanCalculateParams, LoanCalculation } from '../../domain/entities/LoanCalculation';
 import type { LoanApplication } from '../../domain/entities/LoanApplication';
 import type { LoanConfirmResult, LoanRepayResult } from '../../domain/entities/ActiveLoan';
-import { LoanRemoteDataSource } from '../../data/datasources/LoanRemoteDataSource';
-import { LoanRepositoryImpl } from '../../data/repositories/LoanRepositoryImpl';
 import { GetLoanProductsUseCase } from '../../domain/usecases/GetLoanProductsUseCase';
 import { GetLoanProductDetailUseCase } from '../../domain/usecases/GetLoanProductDetailUseCase';
 import { CalculateLoanUseCase } from '../../domain/usecases/CalculateLoanUseCase';
 import { ApplyLoanUseCase } from '../../domain/usecases/ApplyLoanUseCase';
 import { ConfirmLoanUseCase } from '../../domain/usecases/ConfirmLoanUseCase';
 import { RepayLoanUseCase } from '../../domain/usecases/RepayLoanUseCase';
-
-const dataSource = new LoanRemoteDataSource();
-const repository = new LoanRepositoryImpl(dataSource);
-const getProductsUseCase = new GetLoanProductsUseCase(repository);
-const getProductDetailUseCase = new GetLoanProductDetailUseCase(repository);
-const calculateUseCase = new CalculateLoanUseCase(repository);
-const applyUseCase = new ApplyLoanUseCase(repository);
-const confirmUseCase = new ConfirmLoanUseCase(repository);
-const repayUseCase = new RepayLoanUseCase(repository);
 
 export function useLoan(sessionId: number) {
   const [productsPage, setProductsPage] = useState<LoanProductPage | null>(null);
@@ -35,10 +26,11 @@ export function useLoan(sessionId: number) {
       setLoading(true);
       setError(null);
       try {
+        const getProductsUseCase = container.resolve(GetLoanProductsUseCase);
         const result = await getProductsUseCase.execute(sessionId, category, page, size);
         setProductsPage(result);
-      } catch {
-        setError('대출 상품 목록을 불러오지 못했습니다.');
+      } catch (error) {
+        setError(toErrorMessage(error));
       } finally {
         setLoading(false);
       }
@@ -51,11 +43,12 @@ export function useLoan(sessionId: number) {
       setLoading(true);
       setError(null);
       try {
+        const getProductDetailUseCase = container.resolve(GetLoanProductDetailUseCase);
         const result = await getProductDetailUseCase.execute(sessionId, productId);
         setSelectedProduct(result);
         return result;
-      } catch {
-        setError('상품 상세 정보를 불러오지 못했습니다.');
+      } catch (error) {
+        setError(toErrorMessage(error));
         return null;
       } finally {
         setLoading(false);
@@ -69,11 +62,12 @@ export function useLoan(sessionId: number) {
       setLoading(true);
       setError(null);
       try {
+        const calculateUseCase = container.resolve(CalculateLoanUseCase);
         const result = await calculateUseCase.execute(sessionId, params);
         setCalculation(result);
         return result;
-      } catch {
-        setError('이자 계산에 실패했습니다.');
+      } catch (error) {
+        setError(toErrorMessage(error));
         return null;
       } finally {
         setLoading(false);
@@ -87,11 +81,12 @@ export function useLoan(sessionId: number) {
       setLoading(true);
       setError(null);
       try {
+        const applyUseCase = container.resolve(ApplyLoanUseCase);
         const result = await applyUseCase.execute(sessionId, productId, propertyId);
         setApplication(result);
         return result;
-      } catch {
-        setError('대출 심사 신청에 실패했습니다.');
+      } catch (error) {
+        setError(toErrorMessage(error));
         return null;
       } finally {
         setLoading(false);
@@ -101,15 +96,16 @@ export function useLoan(sessionId: number) {
   );
 
   const confirm = useCallback(
-    async (applicationId: string, requestedAmount: number): Promise<LoanConfirmResult | null> => {
+    async (applicationId: number, requestedAmount: number): Promise<LoanConfirmResult | null> => {
       setLoading(true);
       setError(null);
       try {
+        const confirmUseCase = container.resolve(ConfirmLoanUseCase);
         const result = await confirmUseCase.execute(sessionId, applicationId, requestedAmount);
         setConfirmedLoan(result);
         return result;
-      } catch {
-        setError('대출 최종 신청에 실패했습니다.');
+      } catch (error) {
+        setError(toErrorMessage(error));
         return null;
       } finally {
         setLoading(false);
@@ -123,9 +119,10 @@ export function useLoan(sessionId: number) {
       setLoading(true);
       setError(null);
       try {
+        const repayUseCase = container.resolve(RepayLoanUseCase);
         return await repayUseCase.execute(sessionId, loanId, amount);
-      } catch {
-        setError('중도 상환에 실패했습니다.');
+      } catch (error) {
+        setError(toErrorMessage(error));
         return null;
       } finally {
         setLoading(false);

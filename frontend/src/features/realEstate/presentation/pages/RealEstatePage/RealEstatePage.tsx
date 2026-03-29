@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import { KoreaMap } from '../../components/KoreaMap/KoreaMap';
 import { LoanReviewResultModal } from '@features/loan/presentation/components/LoanReviewResultModal';
 import { LoanConfirmModal } from '@features/loan/presentation/components/LoanConfirmModal';
 import type { LoanApplication } from '@features/loan/domain/entities/LoanApplication';
+import { useLoan } from '@features/loan/presentation/hooks/useLoan';
 import type { MapMode } from '../../constants/mapMode';
 
 type CharacterType = 'MALE' | 'FEMALE';
@@ -32,17 +33,10 @@ interface LocationState {
   preSelectedPropertyPrice?: number;
 }
 
-function buildMockApp(propertyName: string, propertyPrice: number): LoanApplication {
-  return {
-    applicationId: 'APP-001',
-    status: 'APPROVED',
-    requestInfo: {
-      propertyName,
-      propertyPrice,
-      applicationDate: new Date().toISOString().slice(0, 10),
-    },
-    result: { maxLoanAmount: Math.round(propertyPrice * 0.7) },
-  };
+interface SelectedProperty {
+  propertyId: string;
+  propertyName: string;
+  propertyPrice: number;
 }
 
 export function RealEstatePage() {
@@ -51,6 +45,8 @@ export function RealEstatePage() {
   const state = (location.state ?? {}) as LocationState;
   const mode = state.mode ?? 'browse';
   const sessionId = state.sessionId;
+  const { apply, confirm, loading, error } = useLoan(sessionId ?? 0);
+  const autoApplyRequestedRef = useRef(false);
 
   // loan-apply 모드이고 매물이 이미 선택된 경우 → 지도 스킵, 즉시 심사 모달
   const hasPreSelected =
@@ -59,17 +55,53 @@ export function RealEstatePage() {
     !!state.preSelectedPropertyName &&
     !!state.preSelectedPropertyPrice;
 
-  const [reviewOpen, setReviewOpen] = useState(hasPreSelected);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [loanApplication, setLoanApplication] = useState<LoanApplication | null>(
+  const [loanApplication, setLoanApplication] = useState<LoanApplication | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<SelectedProperty | null>(
     hasPreSelected
-      ? buildMockApp(state.preSelectedPropertyName!, state.preSelectedPropertyPrice!)
+      ? {
+          propertyId: state.preSelectedPropertyId!,
+          propertyName: state.preSelectedPropertyName!,
+          propertyPrice: state.preSelectedPropertyPrice!,
+        }
       : null,
   );
 
   if (mode !== 'new-game' && sessionId === undefined) {
     return <div>세션 정보를 확인하지 못했습니다.</div>;
   }
+
+  if (mode === 'loan-apply' && state.productId === undefined) {
+    return <div>대출 상품 정보를 확인하지 못했습니다.</div>;
+  }
+
+  const requestLoanReview = useCallback(async (selection: SelectedProperty) => {
+    if (sessionId === undefined || state.productId === undefined) {
+      return;
+    }
+
+    setSelectedProperty(selection);
+    setReviewOpen(false);
+    setConfirmOpen(false);
+
+    const application = await apply(state.productId, selection.propertyId);
+    if (application === null) {
+      return;
+    }
+
+    setLoanApplication(application);
+    setReviewOpen(true);
+  }, [apply, sessionId, state.productId]);
+
+  useEffect(() => {
+    if (!hasPreSelected || autoApplyRequestedRef.current || selectedProperty === null) {
+      return;
+    }
+
+    autoApplyRequestedRef.current = true;
+    void requestLoanReview(selectedProperty);
+  }, [hasPreSelected, requestLoanReview, selectedProperty]);
 
   const handlePropertySelected = (selection: {
     propertyId: string;
@@ -90,11 +122,11 @@ export function RealEstatePage() {
       return;
     }
 
-    // TODO: POST /games/sessions/{sessionId}/loans/apply { productId, propertyId }
-    setLoanApplication(
-      buildMockApp(selection.propertyName, selection.propertyPrice),
-    );
-    setReviewOpen(true);
+    void requestLoanReview({
+      propertyId: selection.propertyId,
+      propertyName: selection.propertyName,
+      propertyPrice: selection.propertyPrice,
+    });
   };
 
   const handleLoanRequest = (propertyId: string, propertyName: string, propertyPrice: number) => {
@@ -110,8 +142,27 @@ export function RealEstatePage() {
     });
   };
 
+  if (hasPreSelected && loanApplication === null) {
+    if (loading) {
+      return <div>대출 심사를 요청하는 중입니다.</div>;
+    }
+
+    if (error) {
+      return (
+        <div>
+          <div>{error}</div>
+          <button type="button" onClick={() => navigate(-1)}>뒤로 가기</button>
+        </div>
+      );
+    }
+  }
+
   return (
     <>
+      {!confirmOpen && error && !hasPreSelected && (
+        <div role="alert">{error}</div>
+      )}
+
       {/* 매물이 이미 선택된 경우 지도 없이 바로 심사 모달 표시 */}
       {!hasPreSelected && (
         <KoreaMap
@@ -132,17 +183,24 @@ export function RealEstatePage() {
               setConfirmOpen(true);
             }}
             application={loanApplication}
+            propertyName={selectedProperty?.propertyName ?? ''}
+            propertyPrice={selectedProperty?.propertyPrice ?? 0}
           />
           <LoanConfirmModal
             isOpen={confirmOpen}
             onClose={() => navigate(-1)}
-            onConfirm={(_amount) => {
-              // TODO: POST /games/sessions/{sessionId}/loans/confirm
-              navigate(ROUTES.GAME, { state });
+            onConfirm={(amount) => {
+              void (async () => {
+                const confirmedLoan = await confirm(loanApplication.applicationId, amount);
+                if (confirmedLoan !== null) {
+                  navigate(ROUTES.GAME, { state });
+                }
+              })();
             }}
-            applicationId={loanApplication.applicationId}
             contractorName="플레이어"
             maxLoanAmount={loanApplication.result.maxLoanAmount ?? 0}
+            isSubmitting={loading}
+            error={confirmOpen ? error : null}
           />
         </>
       )}

@@ -8,6 +8,6 @@ export interface ILoanRepository {
   getProductDetail(sessionId: number, productId: string): Promise<LoanProductDetail>;
   calculate(sessionId: number, params: LoanCalculateParams): Promise<LoanCalculation>;
   apply(sessionId: number, productId: string, propertyId: string): Promise<LoanApplication>;
-  confirm(sessionId: number, applicationId: string, requestedAmount: number, agreed: boolean): Promise<LoanConfirmResult>;
+  confirm(sessionId: number, applicationId: number, requestedAmount: number, agreed: boolean): Promise<LoanConfirmResult>;
   repay(sessionId: number, loanId: number, amount: number): Promise<LoanRepayResult>;
 }
