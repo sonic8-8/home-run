@@ -35,6 +35,6 @@ public class EndingReportService {
         final WorldEndingHistoryProviderResponse history =
             worldEndingHistoryProviderService.getEndingHistory(sessionId);
 
-        return EndingReportResponse.of(gameReport, history);
+        return EndingReportResponse.of(gameSession.getCharacterType(), gameReport, history);
     }
 }

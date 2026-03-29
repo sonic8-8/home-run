@@ -142,6 +142,7 @@ class EndingReportServiceTest {
             gameSession.getGameSessionId()
         );
 
+        assertThat(response.getCharacterType()).isEqualTo(CharacterType.FEMALE);
         assertThat(response.getEndingType()).isEqualTo(SessionStatus.CLEAR);
         assertThat(response.getTitle()).isEqualTo("부동산 갑부");
         assertThat(response.getTotalAssets()).isEqualTo(500_000_000L);

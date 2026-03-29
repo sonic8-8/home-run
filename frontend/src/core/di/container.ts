@@ -1,5 +1,7 @@
 import { container } from 'tsyringe';
 import { DI_TOKENS } from './tokens';
+import { EndingRemoteDataSource } from '@features/ending/data/datasources/EndingRemoteDataSource';
+import { EndingRepositoryImpl } from '@features/ending/data/repositories/EndingRepositoryImpl';
 import { AuthRemoteDataSource } from '@features/auth/data/datasources/AuthRemoteDataSource';
 import { AuthRepositoryImpl } from '@features/auth/data/repositories/AuthRepositoryImpl';
 import { GameInitRemoteDataSource } from '@features/game/data/datasources/GameInitRemoteDataSource';
@@ -14,6 +16,10 @@ import { RealEstateRepositoryImpl } from '@features/realEstate/data/repositories
 container.registerSingleton(AuthRemoteDataSource);
 container.register(DI_TOKENS.IAuthRepository, {
   useClass: AuthRepositoryImpl,
+});
+container.registerSingleton(EndingRemoteDataSource);
+container.register(DI_TOKENS.IEndingRepository, {
+  useClass: EndingRepositoryImpl,
 });
 container.registerSingleton(GameInitRemoteDataSource);
 container.register(DI_TOKENS.IGameInitRepository, {

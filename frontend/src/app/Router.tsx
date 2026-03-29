@@ -65,6 +65,10 @@ const NewsPage = lazy(() =>
   import('@features/game/presentation/pages/NewsPage').then((m) => ({ default: m.NewsPage }))
 );
 
+const EndingPage = lazy(() =>
+  import('@features/ending/presentation/pages/EndingPage').then((m) => ({ default: m.EndingPage }))
+);
+
 const NotFoundContent = lazy(() =>
   import('@shared/components/NotFoundContent').then((m) => ({ default: m.NotFoundContent }))
 );
@@ -79,20 +83,21 @@ const router = createBrowserRouter([
   {
     element: <PrivateRoute />,
     children: [
-      { path: ROUTES.HOME,     element: <HomePage /> },
-      { path: ROUTES.GAME,       element: <GameMainPage /> },
+      { path: ROUTES.HOME, element: <HomePage /> },
+      { path: ROUTES.GAME, element: <GameMainPage /> },
       { path: ROUTES.GAME_START, element: <GameStartPage /> },
       { path: ROUTES.GAME_GUIDE, element: <GameGuidePage /> },
-      { path: ROUTES.GAME_SAVE,  element: <GameSaveSlotPage /> },
+      { path: ROUTES.GAME_SAVE, element: <GameSaveSlotPage /> },
       { path: ROUTES.GAME_SELECT_CHARACTER, element: <SelectCharacterPage /> },
       { path: ROUTES.GAME_SET_NICKNAME, element: <SetNicknamePage /> },
       { path: ROUTES.GAME_SELECT_START_METHOD, element: <SelectStartMethodPage /> },
       { path: ROUTES.GAME_SELECT_JOB, element: <SelectJobPage /> },
       { path: ROUTES.GAME_NEWS_PATTERN, element: <NewsPage /> },
-      { path: ROUTES.LOAN,     element: <LoanPlaceholderPage /> },
+      { path: ROUTES.GAME_ENDING_PATTERN, element: <EndingPage /> },
+      { path: ROUTES.LOAN, element: <LoanPlaceholderPage /> },
       { path: ROUTES.REAL_ESTATE, element: <RealEstatePage /> },
-      { path: ROUTES.CARD,     element: <CardPlaceholderPage /> },
-      { path: ROUTES.MY_PAGE,  element: <MyPagePlaceholderPage /> },
+      { path: ROUTES.CARD, element: <CardPlaceholderPage /> },
+      { path: ROUTES.MY_PAGE, element: <MyPagePlaceholderPage /> },
     ],
   },
   { path: ROUTES.NOT_FOUND, element: <NotFoundContent /> },
