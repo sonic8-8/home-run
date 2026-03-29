@@ -84,4 +84,32 @@ describe('EndingArchivePage', () => {
 
     expect(screen.getByText('아직 저장된 엔딩이 없습니다.')).toBeInTheDocument();
   });
+
+  it('navigates back to the game start page', () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: '게임 시작 화면으로' }));
+
+    expect(mockNavigate).toHaveBeenCalledWith(ROUTES.GAME_START);
+  });
+
+  it('shows the error state and allows retry', () => {
+    const retryFetch = vi.fn();
+
+    vi.mocked(useEndingArchivePage).mockReturnValue({
+      endings: [],
+      isLoading: false,
+      error: '엔딩 기록을 불러오지 못했습니다.',
+      isEmpty: false,
+      retryFetch,
+    });
+
+    renderPage();
+
+    expect(screen.getByText('엔딩 기록을 불러오지 못했습니다.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+
+    expect(retryFetch).toHaveBeenCalledTimes(1);
+  });
 });

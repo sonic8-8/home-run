@@ -69,4 +69,23 @@ describe('useGameMain', () => {
       expect(mockNavigate).toHaveBeenCalledWith(ROUTES.GAME_ENDING(7), { replace: true });
     });
   });
+
+  it('does not redirect when the session is still in progress', async () => {
+    mockNavigate.mockReset();
+    mockResolve.mockReset();
+    mockResolve.mockReturnValue({
+      execute: vi.fn().mockResolvedValue({
+        sessionId: 7,
+        status: 'IN_PROGRESS',
+      }),
+    });
+
+    render(<HookHarness />);
+
+    await waitFor(() => {
+      expect(mockResolve).toHaveBeenCalled();
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalledWith(ROUTES.GAME_ENDING(7), { replace: true });
+  });
 });
