@@ -5,6 +5,9 @@ services:
     image: prom/prometheus:v2.54.1
     container_name: homerun-prometheus
     restart: unless-stopped
+    environment:
+      GF_SERVER_ROOT_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
