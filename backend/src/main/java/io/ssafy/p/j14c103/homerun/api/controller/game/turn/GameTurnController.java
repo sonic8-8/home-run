@@ -1,10 +1,13 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.turn;
 
+import io.ssafy.p.j14c103.homerun.api.controller.game.turn.request.CommitTurnRequest;
 import io.ssafy.p.j14c103.homerun.api.controller.game.turn.request.SubmitTurnSlotsRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.CommitTurnService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnActionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnStateService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.SubmitTurnSlotsService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.AvailableActionsResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnPreviewResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
@@ -27,6 +30,7 @@ public class GameTurnController {
     private final GameTurnStateService gameTurnStateService;
     private final GameTurnActionService gameTurnActionService;
     private final SubmitTurnSlotsService submitTurnSlotsService;
+    private final CommitTurnService commitTurnService;
 
     @GetMapping
     public ApiResponse<TurnStateResponse> getTurnState(
@@ -62,6 +66,19 @@ public class GameTurnController {
             authenticatedUser.getUserId(),
             sessionId,
             request.toServiceRequest()
+        );
+        return ApiResponse.ok(response);
+    }
+
+    @PostMapping("/commit")
+    public ApiResponse<CommitTurnResponse> commitTurn(
+        @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
+        @PathVariable final Long sessionId,
+        @RequestBody(required = false) final CommitTurnRequest request
+    ) {
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            authenticatedUser.getUserId(),
+            sessionId
         );
         return ApiResponse.ok(response);
     }
