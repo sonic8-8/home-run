@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import maleClearCharacterImage from '@assets/images/result/bcharac_clear.png';
 import maleBankruptCharacterImage from '@assets/images/result/bcharac_bankrupt.png';
 import maleTimeoutCharacterImage from '@assets/images/result/bcharac_timeout.png';
@@ -216,12 +216,8 @@ export function EndingPage() {
     isNotReady,
     hasValidSessionId,
   } = useEndingPage();
-  const [isReportVisible, setIsReportVisible] = useState(false);
+  const [revealedReportTitle, setRevealedReportTitle] = useState<string | null>(null);
   const reportRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    setIsReportVisible(false);
-  }, [report?.title]);
 
   if (!hasValidSessionId) {
     return null;
@@ -272,6 +268,7 @@ export function EndingPage() {
   const verdictText = getVerdictText(report.endingType);
   const currentHousingLabel = toHousingTypeLabel(report.housingSnapshot?.currentHousingType ?? null);
   const gradeClassName = getGradeClassName(report.grade);
+  const isReportVisible = revealedReportTitle === report.title;
   const chartWidth = 640;
   const chartHeight = 220;
   const chartPadding = 24;
@@ -309,7 +306,7 @@ export function EndingPage() {
   ];
 
   const handleRevealReport = () => {
-    setIsReportVisible(true);
+    setRevealedReportTitle(report.title);
   };
 
   if (!isReportVisible) {
@@ -367,7 +364,7 @@ export function EndingPage() {
     >
       <section ref={reportRef} className={styles.reportPage} data-testid="ending-report">
         <header className={styles.reportTopBar}>
-          <button type="button" className={styles.reportBack} onClick={() => setIsReportVisible(false)}>
+          <button type="button" className={styles.reportBack} onClick={() => setRevealedReportTitle(null)}>
             엔딩 화면으로
           </button>
           <img src={homerunLogo} alt="홈런" className={styles.reportLogo} />
