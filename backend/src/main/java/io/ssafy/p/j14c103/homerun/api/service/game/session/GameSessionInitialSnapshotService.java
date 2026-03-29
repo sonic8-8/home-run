@@ -1,6 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.session;
 
 import io.ssafy.p.j14c103.homerun.api.service.financial.UserFinancialSummaryService;
+import io.ssafy.p.j14c103.homerun.domain.character.CharacterSeedPolicy.CharacterSeedPlan;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterSeedPolicy;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.SeedType;
@@ -44,15 +45,23 @@ public class GameSessionInitialSnapshotService {
         final DataSourceType dataSourceType
     ) {
         if (dataSourceType == DataSourceType.MY_DATA) {
-            return readMyData(userId);
+            return readMyData(userId, characterType);
         }
         return readProfile(characterType, jobType);
     }
 
-    private GameSessionInitialSnapshot readMyData(final Long userId) {
+    private GameSessionInitialSnapshot readMyData(
+        final Long userId,
+        final CharacterType characterType
+    ) {
         final UserAssetProfile profile = userAssetProfileRepository.findById(userId)
             .orElseThrow(() -> new HomerunException(ErrorCode.USER_ASSET_LINK_REQUIRED));
         final UserFinancialSummary summary = userFinancialSummaryService.getSummary(userId);
+        final CharacterSeedPlan seedPlan = characterSeedPolicy.calculate(
+            characterType,
+            profile.getJobType(),
+            SeedType.MY_DATA
+        );
 
         return GameSessionInitialSnapshot.of(
             profile.getJobType(),
@@ -62,7 +71,9 @@ public class GameSessionInitialSnapshotService {
             Money.of(profile.getMonthlySalaryAmount() + getOtherIncomeAmount(userId)),
             Money.of(profile.getMonthlyFixedExpenseAmount() + getCardSpendAmount(userId)),
             LocalDate.now(clock),
-            INITIAL_CYCLE_STATE
+            INITIAL_CYCLE_STATE,
+            seedPlan.stat(),
+            seedPlan.career()
         );
     }
 
@@ -70,7 +81,7 @@ public class GameSessionInitialSnapshotService {
         final CharacterType characterType,
         final JobType jobType
     ) {
-        final CharacterSeedPolicy.CharacterSeedPlan seedPlan =
+        final CharacterSeedPlan seedPlan =
             characterSeedPolicy.calculate(characterType, jobType, SeedType.PROFILE);
         final Money initialCash = Money.of(seedPlan.session().initialCash());
         final Money initialNetWorth = Money.of(seedPlan.session().initialNetAssets());
@@ -84,7 +95,9 @@ public class GameSessionInitialSnapshotService {
             monthlyIncome,
             profileMonthlyExpensePolicy.calculate(monthlyIncome),
             LocalDate.now(clock),
-            INITIAL_CYCLE_STATE
+            INITIAL_CYCLE_STATE,
+            seedPlan.stat(),
+            seedPlan.career()
         );
     }
 

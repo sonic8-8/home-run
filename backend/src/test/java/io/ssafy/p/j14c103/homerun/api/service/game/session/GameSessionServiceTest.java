@@ -9,10 +9,21 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.request.CreateGameSes
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.CreateGameSessionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionDetailResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.CommitTurnService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.SubmitTurnSlotsService;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SubmitTurnSlotsServiceRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnPreviewResponse;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountType;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccount;
 import io.ssafy.p.j14c103.homerun.domain.account.UserAccountRepository;
+import io.ssafy.p.j14c103.homerun.domain.character.CharacterSeedPolicy;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
+import io.ssafy.p.j14c103.homerun.domain.character.SeedType;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductSourceType;
 import io.ssafy.p.j14c103.homerun.domain.financial.FinancialProductType;
@@ -22,6 +33,7 @@ import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummaryRepositor
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
@@ -64,8 +76,20 @@ class GameSessionServiceTest {
     @Autowired
     private GameSessionService gameSessionService;
 
+    @Autowired
+    private SubmitTurnSlotsService submitTurnSlotsService;
+
+    @Autowired
+    private CommitTurnService commitTurnService;
+
     @MockitoSpyBean
     private GameSessionRepository gameSessionRepository;
+
+    @Autowired
+    private GameStatRepository gameStatRepository;
+
+    @Autowired
+    private GameCareerRepository gameCareerRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -108,6 +132,8 @@ class GameSessionServiceTest {
         userAssetCardSpendRepository.deleteAllInBatch();
         userAssetOtherIncomeRepository.deleteAllInBatch();
         userAssetProfileRepository.deleteAllInBatch();
+        gameCareerRepository.deleteAllInBatch();
+        gameStatRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
         housingDistrictRepository.deleteAllInBatch();
@@ -161,6 +187,71 @@ class GameSessionServiceTest {
             .isEqualTo(ErrorCode.USER_NOT_FOUND);
     }
 
+    @DisplayName("PROFILE 세션 생성은 게임 스탯과 커리어 초기 상태를 함께 생성한다.")
+    @Test
+    void createWithProfileBootstrapsCharacterState() {
+        // given
+        final User user = saveUser("create-profile@example.com");
+        final RealEstateProperty property = saveTargetProperty("11", "11680");
+        final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
+            1,
+            CharacterType.FEMALE,
+            "하린",
+            JobType.MID_BIZ,
+            "11",
+            "11680",
+            property.getPropertyId(),
+            false
+        );
+
+        // when
+        final CreateGameSessionResponse response = gameSessionService.create(user.getId(), request);
+
+        // then
+        assertThat(response.getSessionId()).isNotNull();
+        assertCharacterBootstrap(
+            response.getSessionId(),
+            CharacterType.FEMALE,
+            JobType.MID_BIZ,
+            SeedType.PROFILE
+        );
+    }
+
+    @DisplayName("PROFILE 세션 생성 직후 턴 슬롯 제출과 턴 커밋이 가능하다.")
+    @Test
+    void createWithProfileSupportsImmediateTurnFlow() {
+        // given
+        final User user = saveUser("create-profile-turn-flow@example.com");
+        final RealEstateProperty property = saveTargetProperty("11", "11680");
+        final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
+            1,
+            CharacterType.FEMALE,
+            "하린",
+            JobType.MID_BIZ,
+            "11",
+            "11680",
+            property.getPropertyId(),
+            false
+        );
+        final CreateGameSessionResponse response = gameSessionService.create(user.getId(), request);
+
+        // when
+        final TurnPreviewResponse previewResponse = submitTurnSlotsService.submitTurnSlots(
+            user.getId(),
+            response.getSessionId(),
+            createRestTurnSlotsRequest()
+        );
+        final CommitTurnResponse commitTurnResponse = commitTurnService.commitTurn(
+            user.getId(),
+            response.getSessionId()
+        );
+
+        // then
+        assertThat(previewResponse.getSlots()).hasSize(3);
+        assertThat(commitTurnResponse.getTurnNumber()).isEqualTo(0);
+        assertThat(commitTurnResponse.getSettlementLog()).isNotEmpty();
+    }
+
     @DisplayName("MY_DATA 세션 생성은 온보딩 자산연동의 직업과 자본 상태로 초기화한다.")
     @Test
     void createWithMyDataUsesOnboardingProfile() {
@@ -203,6 +294,12 @@ class GameSessionServiceTest {
         assertThat(found.getNetWorth()).isEqualTo(Money.of(5_500_000L));
         assertThat(found.getCurrentDate()).isEqualTo(LocalDate.now());
         assertThat(found.getCyclePhase()).isEqualTo(CyclePhase.RECOVERY);
+        assertCharacterBootstrap(
+            response.getSessionId(),
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            SeedType.MY_DATA
+        );
     }
 
     @DisplayName("MY_DATA 세션 생성 시 자산연동 정보가 없으면 USER_ASSET_LINK_REQUIRED가 발생한다.")
@@ -519,6 +616,53 @@ class GameSessionServiceTest {
             LocalDateTime.now().minusMonths(3),
             FinancialProductSourceType.ASSET_LINK
         ));
+    }
+
+    private void assertCharacterBootstrap(
+        final Long sessionId,
+        final CharacterType characterType,
+        final JobType jobType,
+        final SeedType seedType
+    ) {
+        final CharacterSeedPolicy.CharacterSeedPlan seedPlan =
+            new CharacterSeedPolicy().calculate(characterType, jobType, seedType);
+
+        final GameStat gameStat = gameStatRepository.findById(sessionId.intValue()).orElseThrow();
+        assertThat(gameStat.getHealth()).isEqualTo(seedPlan.stat().health());
+        assertThat(gameStat.getFatigue()).isEqualTo(seedPlan.stat().fatigue());
+        assertThat(gameStat.getStress()).isEqualTo(seedPlan.stat().stress());
+        assertThat(gameStat.getKnowledge()).isEqualTo(seedPlan.stat().knowledge());
+        assertThat(gameStat.getHappiness()).isEqualTo(seedPlan.stat().happiness());
+
+        final GameCareer gameCareer = gameCareerRepository.findById(sessionId.intValue()).orElseThrow();
+        assertThat(gameCareer.getJobType()).isEqualTo(seedPlan.career().jobType());
+        assertThat(gameCareer.getJobTitle()).isEqualTo(seedPlan.career().jobTitle());
+        assertThat(gameCareer.getSalary()).isEqualTo(seedPlan.career().annualSalary());
+        assertThat(gameCareer.getTenureTurns()).isEqualTo(seedPlan.career().tenureTurns());
+        assertThat(gameCareer.getRecentStudyCount()).isEqualTo(seedPlan.career().recentStudyCount());
+        assertThat(gameCareer.getRecentNetworkingCount())
+            .isEqualTo(seedPlan.career().recentNetworkingCount());
+        assertThat(gameCareer.getNegotiationPreparationScore())
+            .isEqualTo(seedPlan.career().negotiationPreparationScore());
+        assertThat(gameCareer.getLastNegotiatedTurn())
+            .isEqualTo(seedPlan.career().lastNegotiatedTurn());
+        assertThat(gameCareer.getEmploymentStatus()).isEqualTo(seedPlan.career().employmentStatus());
+        assertThat(gameCareer.getProbationEndTurn()).isEqualTo(seedPlan.career().probationEndTurn());
+        assertThat(gameCareer.getRehireAvailableTurn()).isEqualTo(seedPlan.career().rehireAvailableTurn());
+        assertThat(gameCareer.getRemainingUnemploymentBenefitTurns())
+            .isEqualTo(seedPlan.career().remainingUnemploymentBenefitTurns());
+        assertThat(gameCareer.getSalaryBeforeResignation())
+            .isEqualTo(seedPlan.career().salaryBeforeResignation());
+    }
+
+    private SubmitTurnSlotsServiceRequest createRestTurnSlotsRequest() {
+        return SubmitTurnSlotsServiceRequest.of(
+            List.of(
+                SubmitTurnSlotsServiceRequest.TurnSlotRequest.of(0, ActionType.REST),
+                SubmitTurnSlotsServiceRequest.TurnSlotRequest.of(1, ActionType.REST),
+                SubmitTurnSlotsServiceRequest.TurnSlotRequest.of(2, ActionType.REST)
+            )
+        );
     }
 
     private GameSession createGameSession(
