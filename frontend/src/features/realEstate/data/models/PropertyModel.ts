@@ -59,6 +59,11 @@ export interface SectionSolutionModel {
   feedbackWrong: string;
 }
 
+export interface ContractChecklistItemModel {
+  trapId: string;
+  label: string;
+}
+
 export interface RegistryDocumentResponseModel {
   propertyId: number;
   propertyName: string;
@@ -69,6 +74,7 @@ export interface RegistryDocumentResponseModel {
   documentType: string;
   gapguRows: RegistryRowModel[];
   eulguRows: RegistryRowModel[];
+  checklistItems: ContractChecklistItemModel[];
   solution: {
     verdict: string;
     gapgu: SectionSolutionModel;

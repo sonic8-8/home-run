@@ -17,6 +17,7 @@ import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentChecklistItem;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateMoneyRenderingRule;
@@ -91,6 +92,12 @@ class RealEstateDocumentServiceTest {
         assertThat(response.getEulguRows()).hasSize(1);
         assertThat(response.getEulguRows().get(0).getDetails())
             .isEqualTo("채권최고액 금195,000,000원 채무자 김도윤 근저당권자 주식회사 한울저축은행");
+        assertThat(response.getChecklistItems())
+            .extracting(RealEstateDocumentResponse.ChecklistItemResponse::getTrapId)
+            .containsExactly("TRAP-HN-001", "CHECK-HN-001");
+        assertThat(response.getChecklistItems())
+            .extracting(RealEstateDocumentResponse.ChecklistItemResponse::getLabel)
+            .containsExactly("소유권 변동 이력 확인", "가등기 말소 여부 확인");
         assertThat(response.getSolution().getGapgu().getVerdict()).isEqualTo("위험");
         assertThat(response.getSolution().getEulgu().getVerdict()).isEqualTo("정상");
         assertThat(response.getSolution().getVerdict()).isEqualTo("위험");
@@ -242,6 +249,14 @@ class RealEstateDocumentServiceTest {
             propertyId,
             RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.GAPGU,
+            null,
+            List.of(
+                RealEstateDocumentChecklistItem.create(
+                    "TRAP-HN-001",
+                    "소유권 변동 이력 확인",
+                    false
+                )
+            ),
             RealEstateRegistryQuizSample.create(
                 verdict,
                 List.of(
@@ -270,6 +285,14 @@ class RealEstateDocumentServiceTest {
             propertyId,
             RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
+            null,
+            List.of(
+                RealEstateDocumentChecklistItem.create(
+                    "CHECK-HN-001",
+                    "가등기 말소 여부 확인",
+                    true
+                )
+            ),
             RealEstateRegistryQuizSample.create(
                 verdict,
                 List.of(
@@ -298,6 +321,14 @@ class RealEstateDocumentServiceTest {
             propertyId,
             RealEstateDocumentType.REGISTRY,
             RealEstateRegistrySection.EULGU,
+            null,
+            List.of(
+                RealEstateDocumentChecklistItem.create(
+                    "CHECK-HN-001",
+                    "가등기 말소 여부 확인",
+                    true
+                )
+            ),
             RealEstateRegistryQuizSample.create(
                 verdict,
                 List.of(),

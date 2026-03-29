@@ -18,6 +18,7 @@ import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,6 +62,9 @@ public class RealEstateDocumentService {
 
         final RealEstateDocumentResponse.SectionSolutionResponse gapguSolution = toSectionSolution(gapguSample);
         final RealEstateDocumentResponse.SectionSolutionResponse eulguSolution = toSectionSolution(eulguSample);
+        final List<RealEstateDocumentResponse.ChecklistItemResponse> checklistItems = loadChecklistItems(
+            property.getPropertyId()
+        );
 
         return RealEstateDocumentResponse.of(
             property.getPropertyId(),
@@ -72,6 +76,7 @@ public class RealEstateDocumentService {
             REGISTRY_DOCUMENT_LABEL,
             renderRows(gapguSample.getRows(), property.getRecentPrice()),
             renderRows(eulguSample.getRows(), property.getRecentPrice()),
+            checklistItems,
             RealEstateDocumentResponse.SolutionResponse.of(
                 toOverallVerdict(gapguSolution.verdict(), eulguSolution.verdict()),
                 gapguSolution,
@@ -187,6 +192,28 @@ public class RealEstateDocumentService {
             renderedText = renderedText.replace("{" + entry.getKey() + "}", formatWon(amount));
         }
         return renderedText;
+    }
+
+    private List<RealEstateDocumentResponse.ChecklistItemResponse> loadChecklistItems(final Long propertyId) {
+        final LinkedHashMap<String, String> checklistItems = new LinkedHashMap<>();
+
+        realEstateDocumentRepository.findAllByPropertyIdOrderByRealEstateDocumentIdAsc(propertyId)
+            .stream()
+            .map(RealEstateDocument::getChecklist)
+            .filter(checklist -> checklist != null && !checklist.isEmpty())
+            .flatMap(List::stream)
+            .forEach(item -> checklistItems.putIfAbsent(item.getTrapId(), item.getLabel()));
+
+        if (checklistItems.isEmpty()) {
+            throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        }
+
+        return checklistItems.entrySet().stream()
+            .map(entry -> RealEstateDocumentResponse.ChecklistItemResponse.of(
+                entry.getKey(),
+                entry.getValue()
+            ))
+            .toList();
     }
 
     private long calculateRenderedAmount(final long salePrice, final RealEstateMoneyRenderingRule rule) {

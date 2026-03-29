@@ -6,6 +6,11 @@ export interface RegistryRow {
   readonly details: string;
 }
 
+export interface ContractChecklistItem {
+  readonly trapId: string;
+  readonly label: string;
+}
+
 export interface SectionSolution {
   readonly verdict: '위험' | '정상';
   readonly issueSummary: string;
@@ -22,6 +27,7 @@ export interface RegistryDocument {
   readonly documentType: string;
   readonly gapguRows: readonly RegistryRow[];
   readonly eulguRows: readonly RegistryRow[];
+  readonly checklistItems: readonly ContractChecklistItem[];
   readonly solution: {
     readonly verdict: '위험' | '정상';
     readonly gapgu: SectionSolution;
