@@ -26,19 +26,52 @@ export function useProperties(
     regionCode,
     districtCode,
   } = options;
-  const [properties, setProperties] = useState<PropertySummary[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<PropertySummary | null>(null);
-  const [selectedPropertyDetail, setSelectedPropertyDetail] = useState<Property | null>(null);
+  const [propertyState, setPropertyState] = useState<{
+    requestKey: string | null;
+    properties: PropertySummary[];
+    loaded: boolean;
+  }>({
+    requestKey: null,
+    properties: [],
+    loaded: false,
+  });
+  const [selectionState, setSelectionState] = useState<{
+    requestKey: string | null;
+    selectedProperty: PropertySummary | null;
+    selectedPropertyDetail: Property | null;
+  }>({
+    requestKey: null,
+    selectedProperty: null,
+    selectedPropertyDetail: null,
+  });
 
   const hasQuery =
     mode === 'new-game'
       ? regionCode !== undefined && districtCode !== undefined
       : sessionId !== undefined;
-  const loading = hasQuery && !loaded;
+  const requestKey = hasQuery
+    ? mode === 'new-game'
+      ? `${mode}:${regionCode}:${districtCode}`
+      : `${mode}:${sessionId}`
+    : null;
+  const properties =
+    requestKey !== null && propertyState.requestKey === requestKey
+      ? propertyState.properties
+      : [];
+  const loading =
+    requestKey !== null
+      && (propertyState.requestKey !== requestKey || propertyState.loaded === false);
+  const selectedProperty =
+    requestKey !== null && selectionState.requestKey === requestKey
+      ? selectionState.selectedProperty
+      : null;
+  const selectedPropertyDetail =
+    requestKey !== null && selectionState.requestKey === requestKey
+      ? selectionState.selectedPropertyDetail
+      : null;
 
   useEffect(() => {
-    if (!hasQuery) {
+    if (!hasQuery || requestKey === null) {
       return;
     }
 
@@ -49,29 +82,39 @@ export function useProperties(
         ? { regionCode, districtCode }
         : { sessionId };
 
-    setLoaded(false);
-    setSelectedProperty(null);
-    setSelectedPropertyDetail(null);
-
     getPropertiesUseCase.execute(query)
       .then((list) => {
         if (!cancelled) {
-          setProperties(list);
-          setLoaded(true);
+          setPropertyState({
+            requestKey,
+            properties: list,
+            loaded: true,
+          });
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setLoaded(true);
+          setPropertyState({
+            requestKey,
+            properties: [],
+            loaded: true,
+          });
         }
       });
 
     return () => { cancelled = true; };
-  }, [districtCode, hasQuery, mode, regionCode, sessionId]);
+  }, [districtCode, hasQuery, mode, regionCode, requestKey, sessionId]);
 
   const selectProperty = useCallback(async (property: PropertySummary) => {
-    setSelectedProperty(property);
-    setSelectedPropertyDetail(null);
+    if (requestKey === null) {
+      return;
+    }
+
+    setSelectionState({
+      requestKey,
+      selectedProperty: property,
+      selectedPropertyDetail: null,
+    });
 
     if (mode === 'new-game' || sessionId === undefined) {
       return;
@@ -80,16 +123,30 @@ export function useProperties(
     try {
       const getPropertyDetailUseCase = container.resolve(GetPropertyDetailUseCase);
       const detail = await getPropertyDetailUseCase.execute(sessionId, property.propertyId);
-      setSelectedPropertyDetail(detail);
+
+      setSelectionState((current) => {
+        if (current.requestKey !== requestKey || current.selectedProperty?.propertyId !== property.propertyId) {
+          return current;
+        }
+
+        return {
+          requestKey,
+          selectedProperty: property,
+          selectedPropertyDetail: detail,
+        };
+      });
     } catch {
       // 상세 조회 실패 시 summary 데이터만 표시
     }
-  }, [mode, sessionId]);
+  }, [mode, requestKey, sessionId]);
 
   const clearSelection = useCallback(() => {
-    setSelectedProperty(null);
-    setSelectedPropertyDetail(null);
-  }, []);
+    setSelectionState((current) => ({
+      requestKey: requestKey ?? current.requestKey,
+      selectedProperty: null,
+      selectedPropertyDetail: null,
+    }));
+  }, [requestKey]);
 
   return {
     properties,

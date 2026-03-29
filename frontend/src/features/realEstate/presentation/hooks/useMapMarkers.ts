@@ -38,36 +38,42 @@ export function useMapMarkers(mapInstance: any) {
       selectedPropertyId: string | null,
       onPropertyClick: (property: PropertySummary) => void,
     ) => {
+      const maps = window.naver?.maps;
+      if (maps === undefined) {
+        clearMarkers();
+        return;
+      }
+
       clearMarkers();
 
       properties.forEach((property) => {
-        const pos = new window.naver.maps.LatLng(property.latitude, property.longitude);
+        const pos = new maps.LatLng(property.latitude, property.longitude);
         const isSelected = selectedPropertyId === property.propertyId;
 
-        const marker = new window.naver.maps.Marker({
+        const marker = new maps.Marker({
           position: pos,
           map: mapInstance,
           zIndex: isSelected ? 999 : 1,
           icon: {
             content: buildPropertyMarkerIcon(property, isSelected),
-            anchor: new window.naver.maps.Point(40, 60),
+            anchor: new maps.Point(40, 60),
           },
         });
 
-        window.naver.maps.Event.addListener(marker, 'click', () => {
+        maps.Event.addListener(marker, 'click', () => {
           if (selectedMarkerRef.current) {
             const prev = selectedMarkerRef.current;
             prev.marker.setZIndex(1);
             prev.marker.setIcon({
               content: buildPropertyMarkerIcon(prev.property, false),
-              anchor: new window.naver.maps.Point(40, 60),
+              anchor: new maps.Point(40, 60),
             });
           }
 
           marker.setZIndex(999);
           marker.setIcon({
             content: buildPropertyMarkerIcon(property, true),
-            anchor: new window.naver.maps.Point(40, 60),
+            anchor: new maps.Point(40, 60),
           });
           selectedMarkerRef.current = { marker, property };
 

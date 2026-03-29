@@ -72,25 +72,26 @@ export function useNaverMap(center: [number, number]) {
     // SDK 없음 → 이미 false, 스킵
     if (naverAvailable === false) return;
     if (!sdkReady) return;
-    if (window.naver?.maps === undefined) return;
+    const maps = window.naver?.maps;
+    if (maps === undefined) return;
     if (!mapRef.current) return;
 
     let map: any = null;
     try {
-      const naverCenter = new window.naver.maps.LatLng(center[1], center[0]);
-      map = new window.naver.maps.Map(mapRef.current, {
+      const naverCenter = new maps.LatLng(center[1], center[0]);
+      map = new maps.Map(mapRef.current, {
         center: naverCenter,
         zoom: 14,
         zoomControl: true,
         zoomControlOptions: {
-          position: window.naver.maps.Position.TOP_RIGHT,
-          style: window.naver.maps.ZoomControlStyle.SMALL,
+          position: maps.Position.TOP_RIGHT,
+          style: maps.ZoomControlStyle.SMALL,
         },
         mapTypeControl: false,
         scaleControl: true,
         logoControl: true,
         logoControlOptions: {
-          position: window.naver.maps.Position.BOTTOM_LEFT,
+          position: maps.Position.BOTTOM_LEFT,
         },
       });
     } catch {
@@ -101,7 +102,7 @@ export function useNaverMap(center: [number, number]) {
     // 타일 로드 이벤트로 도메인 인증 성공 여부 확인
     // 인증 실패 시 tilesloaded가 오지 않으므로 1.5초 후 폴백
     let tilesLoaded = false;
-    const tilesListener = window.naver.maps.Event.addListener(map, 'tilesloaded', () => {
+    const tilesListener = maps.Event.addListener(map, 'tilesloaded', () => {
       if (tilesLoaded) return;
       tilesLoaded = true;
       setNaverAvailable(true);
@@ -116,7 +117,7 @@ export function useNaverMap(center: [number, number]) {
 
     return () => {
       clearTimeout(fallbackTimer);
-      window.naver.maps.Event.removeListener(tilesListener);
+      maps.Event.removeListener(tilesListener);
       setMapInstance(null);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
