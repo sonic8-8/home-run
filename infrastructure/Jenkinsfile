@@ -78,8 +78,10 @@ pipeline {
         PUBLIC_DATA_SERVICE_KEY = credentials('public-data-service-key')
         NAVER_GEOCODING_CLIENT_ID = credentials('naver-geocoding-client-id')
         NAVER_GEOCODING_CLIENT_SECRET = credentials('naver-geocoding-client-secret')
-        // Keep automatic real-estate import disabled in CI/CD. Manual imports can reuse these defaults.
-        REAL_ESTATE_IMPORT_ENABLED = 'false'
+        // Keep DDL changes disabled during automatic real-estate import to avoid production schema drift failures.
+        SPRING_JPA_HIBERNATE_DDL_AUTO = 'none'
+        // Enable automatic real-estate import during runtime deployment with the configured default window.
+        REAL_ESTATE_IMPORT_ENABLED = 'true'
         REAL_ESTATE_IMPORT_REGIONS = 'SEOUL,GWANGJU'
         REAL_ESTATE_IMPORT_FROM_YEAR_MONTH = '2025-04'
         REAL_ESTATE_IMPORT_TO_YEAR_MONTH = '2026-03'
@@ -226,6 +228,7 @@ KIS_APP_SECRET=${env.KIS_APP_SECRET}
 PUBLIC_DATA_SERVICE_KEY=${env.PUBLIC_DATA_SERVICE_KEY}
 NAVER_GEOCODING_CLIENT_ID=${env.NAVER_GEOCODING_CLIENT_ID}
 NAVER_GEOCODING_CLIENT_SECRET=${env.NAVER_GEOCODING_CLIENT_SECRET}
+SPRING_JPA_HIBERNATE_DDL_AUTO=${env.SPRING_JPA_HIBERNATE_DDL_AUTO}
 REAL_ESTATE_IMPORT_ENABLED=${env.REAL_ESTATE_IMPORT_ENABLED}
 REAL_ESTATE_IMPORT_REGIONS=${env.REAL_ESTATE_IMPORT_REGIONS}
 REAL_ESTATE_IMPORT_FROM_YEAR_MONTH=${env.REAL_ESTATE_IMPORT_FROM_YEAR_MONTH}

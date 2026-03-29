@@ -72,6 +72,50 @@ public class GameCareer {
     @Column(name = "퇴사전연봉")
     private Integer salaryBeforeResignation;
 
+    public static GameCareer create(
+        final Integer gameId,
+        final JobType jobType,
+        final String jobTitle,
+        final int salary,
+        final int tenureTurns,
+        final int recentStudyCount,
+        final int recentNetworkingCount,
+        final int negotiationPreparationScore,
+        final int lastNegotiatedTurn,
+        final EmploymentStatus employmentStatus,
+        final Integer probationEndTurn,
+        final Integer rehireAvailableTurn,
+        final int remainingUnemploymentBenefitTurns,
+        final Integer salaryBeforeResignation
+    ) {
+        validateGameId(gameId);
+        validateJobType(jobType);
+        validateJobTitle(jobTitle);
+        validateEmploymentStatus(employmentStatus);
+        validateNullableNonNegative(probationEndTurn);
+        validateNullableNonNegative(rehireAvailableTurn);
+        validateBootstrapState(employmentStatus, probationEndTurn);
+
+        return GameCareer.builder()
+            .gameId(gameId)
+            .jobType(jobType)
+            .jobTitle(jobTitle)
+            .salary(validateNonNegative(salary))
+            .tenureTurns(validateNonNegative(tenureTurns))
+            .recentStudyCount(validateNonNegative(recentStudyCount))
+            .recentNetworkingCount(validateNonNegative(recentNetworkingCount))
+            .negotiationPreparationScore(validateNonNegative(negotiationPreparationScore))
+            .lastNegotiatedTurn(validateNonNegative(lastNegotiatedTurn))
+            .employmentStatus(employmentStatus)
+            .probationEndTurn(probationEndTurn)
+            .rehireAvailableTurn(rehireAvailableTurn)
+            .remainingUnemploymentBenefitTurns(
+                validateNonNegative(remainingUnemploymentBenefitTurns)
+            )
+            .salaryBeforeResignation(salaryBeforeResignation)
+            .build();
+    }
+
     public void acceptTransfer(
         final JobTransferPolicy.JobOffer offer,
         final JobTitlePolicy jobTitlePolicy,
@@ -169,6 +213,56 @@ public class GameCareer {
         validateCurrentTurn(probationEndTurn);
         this.employmentStatus = EmploymentStatus.PROBATION;
         this.probationEndTurn = probationEndTurn;
+    }
+
+    private static void validateGameId(final Integer gameId) {
+        if (gameId == null || gameId <= 0) {
+            throw new HomerunException(ErrorCode.CHARACTER_GAME_ID_INVALID);
+        }
+    }
+
+    private static void validateJobType(final JobType jobType) {
+        if (jobType == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+    }
+
+    private static void validateJobTitle(final String jobTitle) {
+        if (jobTitle == null || jobTitle.isBlank()) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+    }
+
+    private static void validateEmploymentStatus(final EmploymentStatus employmentStatus) {
+        if (employmentStatus == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+    }
+
+    private static int validateNonNegative(final int value) {
+        if (value < 0) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+        return value;
+    }
+
+    private static void validateNullableNonNegative(final Integer value) {
+        if (value == null) {
+            return;
+        }
+        validateNonNegative(value);
+    }
+
+    private static void validateBootstrapState(
+        final EmploymentStatus employmentStatus,
+        final Integer probationEndTurn
+    ) {
+        if (employmentStatus == EmploymentStatus.PROBATION && probationEndTurn == null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
+        if (employmentStatus != EmploymentStatus.PROBATION && probationEndTurn != null) {
+            throw new HomerunException(ErrorCode.CHARACTER_POLICY_INVALID);
+        }
     }
 
     private void validateForcedResignationResult(

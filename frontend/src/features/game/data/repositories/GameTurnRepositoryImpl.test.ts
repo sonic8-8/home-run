@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResponseMappingError } from '@core/error/AppError';
+import hobbyActionIconUrl from '@assets/images/monthly/hobby.png';
+import meetFriendActionIconUrl from '@assets/images/monthly/meet_friend-Photoroom.png';
+import sideJobActionIconUrl from '@assets/images/monthly/sidejob-Photoroom.png';
+import studyActionIconUrl from '@assets/images/monthly/study-Photoroom.png';
 import type {
   GameNewsHistoryResponseModel,
   GameTurnResponseModel,
@@ -202,20 +206,33 @@ describe('GameTurnRepositoryImpl', () => {
     expect(result.resultEffects[0]?.note).toBe('연봉이 올랐습니다.');
   });
 
-  it('maps the available turn actions response', async () => {
+  it('maps known action icons to bundled monthly images and preserves unknown icon urls', async () => {
     vi.mocked(dataSource.getAvailableActions).mockResolvedValue({
       shopping: [
         {
-          actionType: 'GROCERY',
-          label: '장보기',
-          iconUrl: '/images/actions/grocery.png',
+          actionType: 'HOBBY',
+          label: '취미',
+          iconUrl: '/images/actions/hobby.png',
           effects: {
-            cash: -30000,
+            cash: -100000,
             health: 0,
-            fatigue: 0,
-            stress: 0,
-            happiness: 5,
+            fatigue: -2,
+            stress: -6,
+            happiness: 6,
             knowledge: 0,
+          },
+        },
+        {
+          actionType: 'MEET_FRIEND',
+          label: '친구 만나기',
+          iconUrl: '/images/actions/meet-friend.png',
+          effects: {
+            cash: -150000,
+            health: -3,
+            fatigue: 4,
+            stress: -5,
+            happiness: 10,
+            knowledge: 2,
           },
         },
       ],
@@ -233,14 +250,45 @@ describe('GameTurnRepositoryImpl', () => {
             knowledge: 15,
           },
         },
+        {
+          actionType: 'SIDE_JOB',
+          label: '부업',
+          iconUrl: '/images/actions/side-job.png',
+          effects: {
+            cash: 0,
+            health: -3,
+            fatigue: 10,
+            stress: 8,
+            happiness: 0,
+            knowledge: 0,
+          },
+        },
+        {
+          actionType: 'CUSTOM',
+          label: '커스텀',
+          iconUrl: '/images/actions/custom.png',
+          effects: {
+            cash: 1,
+            health: 2,
+            fatigue: 3,
+            stress: 4,
+            happiness: 5,
+            knowledge: 6,
+          },
+        },
       ],
     });
 
     const result = await repository.getAvailableActions(303);
 
     expect(dataSource.getAvailableActions).toHaveBeenCalledWith(303);
-    expect(result.shopping[0]?.actionType).toBe('GROCERY');
+    expect(result.shopping[0]?.actionType).toBe('HOBBY');
+    expect(result.shopping[0]?.iconUrl).toBe(hobbyActionIconUrl);
+    expect(result.shopping[1]?.iconUrl).toBe(meetFriendActionIconUrl);
     expect(result.activities[0]?.label).toBe('공부');
+    expect(result.activities[0]?.iconUrl).toBe(studyActionIconUrl);
+    expect(result.activities[1]?.iconUrl).toBe(sideJobActionIconUrl);
+    expect(result.activities[2]?.iconUrl).toBe('/images/actions/custom.png');
   });
 
   it('maps the turn preview response', async () => {
