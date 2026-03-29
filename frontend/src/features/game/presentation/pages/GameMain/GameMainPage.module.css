@@ -100,6 +100,58 @@
   margin: 0 0 10px 0;
 }
 
+.turnCard {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eff6ff 0%, #ecfeff 100%);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.turnCardLabel {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.turnCardValue {
+  margin-top: 4px;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.turnCardMeta {
+  margin-top: 6px;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.actionButton {
+  width: 100%;
+  padding: 12px 0;
+  background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+}
+
+.actionButton:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.inlineError {
+  margin-top: 10px;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .sectionHeader .sectionTitle {
   margin: 0;
 }

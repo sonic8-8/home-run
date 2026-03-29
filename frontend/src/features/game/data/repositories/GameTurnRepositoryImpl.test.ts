@@ -3,6 +3,9 @@ import { ResponseMappingError } from '@core/error/AppError';
 import type {
   GameTurnResponseModel,
   LatestTurnNewsResponseModel,
+  TurnActionsResponseModel,
+  TurnCommitResponseModel,
+  TurnPreviewResponseModel,
 } from '@features/game/data/models/GameTurnModel';
 import { GameTurnRemoteDataSource } from '@features/game/data/datasources/GameTurnRemoteDataSource';
 import { GameTurnRepositoryImpl } from '@features/game/data/repositories/GameTurnRepositoryImpl';
@@ -14,7 +17,12 @@ describe('GameTurnRepositoryImpl', () => {
   beforeEach(() => {
     dataSource = {
       getTurn: vi.fn<(_: number) => Promise<GameTurnResponseModel>>(),
+      getAvailableActions: vi.fn<(_: number) => Promise<TurnActionsResponseModel>>(),
       getLatestNews: vi.fn<(_: number) => Promise<LatestTurnNewsResponseModel>>(),
+      submitTurnSlots: vi.fn<
+        (_: number, request: { slots: { slotIndex: number; actionType: string }[] }) => Promise<TurnPreviewResponseModel>
+      >(),
+      commitTurn: vi.fn<(_: number) => Promise<TurnCommitResponseModel>>(),
     } as unknown as GameTurnRemoteDataSource;
     repository = new GameTurnRepositoryImpl(dataSource);
   });
@@ -77,6 +85,127 @@ describe('GameTurnRepositoryImpl', () => {
         },
       ],
     });
+  });
+
+  it('maps the available turn actions response', async () => {
+    vi.mocked(dataSource.getAvailableActions).mockResolvedValue({
+      shopping: [
+        {
+          actionType: 'GROCERY',
+          label: '장보기',
+          iconUrl: '/images/actions/grocery.png',
+          effects: {
+            cash: -30000,
+            health: 0,
+            fatigue: 0,
+            stress: 0,
+            happiness: 5,
+            knowledge: 0,
+          },
+        },
+      ],
+      activities: [
+        {
+          actionType: 'STUDY',
+          label: '공부',
+          iconUrl: '/images/actions/study.png',
+          effects: {
+            cash: 0,
+            health: 0,
+            fatigue: 15,
+            stress: 10,
+            happiness: 0,
+            knowledge: 15,
+          },
+        },
+      ],
+    });
+
+    const result = await repository.getAvailableActions(303);
+
+    expect(dataSource.getAvailableActions).toHaveBeenCalledWith(303);
+    expect(result.shopping[0]?.actionType).toBe('GROCERY');
+    expect(result.activities[0]?.label).toBe('공부');
+  });
+
+  it('maps the turn preview response', async () => {
+    vi.mocked(dataSource.submitTurnSlots).mockResolvedValue({
+      slots: [
+        { slotIndex: 0, actionType: 'STUDY', forcedAction: false },
+        { slotIndex: 1, actionType: 'REST', forcedAction: false },
+        { slotIndex: 2, actionType: 'SIDE_JOB', forcedAction: true },
+      ],
+      previewCashChange: 430000,
+      previewStatChanges: {
+        health: 3,
+        fatigue: -14,
+        stress: -8,
+        happiness: 4,
+        knowledge: 8,
+      },
+    });
+
+    const result = await repository.submitTurnSlots(404, [
+      { slotIndex: 0, actionType: 'STUDY' },
+      { slotIndex: 1, actionType: 'REST' },
+      { slotIndex: 2, actionType: 'SIDE_JOB' },
+    ]);
+
+    expect(dataSource.submitTurnSlots).toHaveBeenCalledWith(404, {
+      slots: [
+        { slotIndex: 0, actionType: 'STUDY' },
+        { slotIndex: 1, actionType: 'REST' },
+        { slotIndex: 2, actionType: 'SIDE_JOB' },
+      ],
+    });
+    expect(result.previewStatChanges.knowledge).toBe(8);
+    expect(result.slots[2]?.forcedAction).toBe(true);
+  });
+
+  it('maps the turn commit response', async () => {
+    vi.mocked(dataSource.commitTurn).mockResolvedValue({
+      turnNumber: 12,
+      settlementLog: [
+        {
+          phase: 'ACTION_RESULT',
+          description: '턴 행동 결과를 반영한다',
+          cashChange: 430000,
+          statChanges: {
+            health: 3,
+            fatigue: -14,
+            stress: -8,
+            happiness: 4,
+            knowledge: 8,
+          },
+        },
+      ],
+      updatedAssets: {
+        cash: 2820000,
+        loan: 0,
+        realEstateValue: 0,
+        netAssets: 1820000,
+      },
+      statChanges: {
+        health: 3,
+        fatigue: -14,
+        stress: -8,
+        happiness: 4,
+        knowledge: 8,
+      },
+      flags: {
+        isBankrupt: false,
+        isCleared: false,
+        isBurnout: false,
+        isForcedResignation: false,
+        hasEvent: true,
+      },
+    });
+
+    const result = await repository.commitTurn(505);
+
+    expect(dataSource.commitTurn).toHaveBeenCalledWith(505);
+    expect(result.updatedAssets.netAssets).toBe(1820000);
+    expect(result.flags.hasEvent).toBe(true);
   });
 
   it('throws when the turn state contains an unknown economic cycle phase', async () => {
