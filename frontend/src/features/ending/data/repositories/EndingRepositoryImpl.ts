@@ -154,10 +154,14 @@ function toEndingReport(model: EndingReportResponseModel): EndingReport {
 
 @injectable()
 export class EndingRepositoryImpl implements IEndingRepository {
+  private readonly dataSource: EndingRemoteDataSource;
+
   constructor(
     @inject(EndingRemoteDataSource)
-    private readonly dataSource: EndingRemoteDataSource,
-  ) {}
+    dataSource: EndingRemoteDataSource,
+  ) {
+    this.dataSource = dataSource;
+  }
 
   async getEndingReport(sessionId: number): Promise<EndingReport> {
     const response = await this.dataSource.getEndingReport(sessionId);

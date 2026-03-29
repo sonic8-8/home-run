@@ -5,10 +5,14 @@ import type { EndingTimelinePoint } from '../entities/EndingTimeline';
 
 @injectable()
 export class GetEndingLogsUseCase {
+  private readonly repository: IEndingRepository;
+
   constructor(
     @inject(DI_TOKENS.IEndingRepository)
-    private readonly repository: IEndingRepository,
-  ) {}
+    repository: IEndingRepository,
+  ) {
+    this.repository = repository;
+  }
 
   async execute(sessionId: number): Promise<EndingTimelinePoint[]> {
     return this.repository.getEndingLogs(sessionId);

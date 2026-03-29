@@ -5,10 +5,14 @@ import type { EndingReport } from '../entities/EndingReport';
 
 @injectable()
 export class GetEndingReportUseCase {
+  private readonly repository: IEndingRepository;
+
   constructor(
     @inject(DI_TOKENS.IEndingRepository)
-    private readonly repository: IEndingRepository,
-  ) {}
+    repository: IEndingRepository,
+  ) {
+    this.repository = repository;
+  }
 
   async execute(sessionId: number): Promise<EndingReport> {
     return this.repository.getEndingReport(sessionId);

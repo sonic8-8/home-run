@@ -202,7 +202,6 @@ function buildAreaPath(values: readonly number[], width: number, height: number,
   const pointEntries = points.split(' ');
   const first = pointEntries[0];
   const last = pointEntries[pointEntries.length - 1];
-  const [, firstY] = first.split(',');
   const [lastX] = last.split(',');
 
   return `M ${first} L ${pointEntries.slice(1).join(' L ')} L ${lastX},${height - padding} L ${first.split(',')[0]},${height - padding} Z`;
