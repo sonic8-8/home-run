@@ -5,18 +5,20 @@ import { useGameMain } from './useGameMain';
 
 const mockNavigate = vi.fn();
 const mockResolve = vi.fn();
+const mockLocation = {
+  key: 'game-main',
+  state: {
+    sessionId: 7,
+    characterType: 'MALE',
+  },
+};
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useLocation: () => ({
-      state: {
-        sessionId: 7,
-        characterType: 'MALE',
-      },
-    }),
+    useLocation: () => mockLocation,
   };
 });
 
@@ -85,7 +87,34 @@ function HookHarness() {
 }
 
 describe('useGameMain', () => {
+  it('opens the loan panel immediately when the route requests openLoan', async () => {
+    mockLocation.key = 'game-main-loan';
+    mockLocation.state = {
+      sessionId: 7,
+      characterType: 'MALE',
+      openLoan: true,
+    };
+
+    let result: ReturnType<typeof useGameMain> | null = null;
+
+    function LoanHookHarness() {
+      result = useGameMain();
+      return null;
+    }
+
+    render(<LoanHookHarness />);
+
+    await waitFor(() => {
+      expect(result?.leftView).toBe('loan');
+    });
+  });
+
   it('redirects terminal sessions to the ending page', async () => {
+    mockLocation.key = 'game-main';
+    mockLocation.state = {
+      sessionId: 7,
+      characterType: 'MALE',
+    };
     mockNavigate.mockReset();
     mockResolve.mockReset();
     mockResolve.mockReturnValue({
@@ -103,6 +132,11 @@ describe('useGameMain', () => {
   });
 
   it('does not redirect when the session is still in progress', async () => {
+    mockLocation.key = 'game-main';
+    mockLocation.state = {
+      sessionId: 7,
+      characterType: 'MALE',
+    };
     mockNavigate.mockReset();
     mockResolve.mockReset();
     mockResolve.mockReturnValue({

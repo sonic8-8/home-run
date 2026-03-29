@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
 import { useGameMain } from '@features/game/presentation/hooks/useGameMain';
@@ -17,7 +17,7 @@ const CHARACTER_IMAGE: Record<CharacterType, string> = {
   FEMALE: '/assets/images/gcharac.png',
 };
 
-export function GameMainPage() {
+function GameMainPageContent() {
   const navigate = useNavigate();
   const {
     sessionId,
@@ -58,6 +58,7 @@ export function GameMainPage() {
     isLoading,
     leftView,
     setLeftView,
+    confirmedLoan,
     preSelectedPropertyId,
     preSelectedPropertyName,
     preSelectedPropertyPrice,
@@ -101,7 +102,9 @@ export function GameMainPage() {
               {leftView === 'loan' && (
                 sessionId !== null ? (
                   <LoanProductsPanel
+                    key={`loan-panel-${sessionId}-${confirmedLoan?.loanId ?? 'stored'}`}
                     sessionId={sessionId}
+                    confirmedLoan={confirmedLoan}
                     preSelectedPropertyId={preSelectedPropertyId}
                     preSelectedPropertyName={preSelectedPropertyName}
                     preSelectedPropertyPrice={preSelectedPropertyPrice}
@@ -146,7 +149,7 @@ export function GameMainPage() {
                   className={leftView === 'loan' ? styles.menuButtonActive : styles.menuButton}
                   onClick={() => setLeftView(leftView === 'loan' ? 'scene' : 'loan')}
                 >
-                  대출 알아보기
+                  대출/상환
                 </button>
                 <button
                   className={styles.menuButton}
@@ -251,4 +254,10 @@ export function GameMainPage() {
       />
     </>
   );
+}
+
+export function GameMainPage() {
+  const location = useLocation();
+
+  return <GameMainPageContent key={location.key} />;
 }

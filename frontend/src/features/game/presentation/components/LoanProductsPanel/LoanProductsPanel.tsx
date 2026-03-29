@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
+import type { LoanConfirmResult } from '@features/loan/domain/entities/ActiveLoan';
 import type { LoanCategory, LoanProduct } from '@features/loan/domain/entities/LoanProduct';
 import { useLoan } from '@features/loan/presentation/hooks/useLoan';
+import {
+  readActiveLoan,
+  type StoredActiveLoan,
+  toStoredActiveLoan,
+  writeActiveLoan,
+} from '@features/loan/presentation/activeLoanStorage';
+import { AuthImage } from '@shared/components/AuthImage/AuthImage';
 import { LoanDetailPanel } from './LoanDetailPanel';
 import styles from './LoanProductsPanel.module.css';
 
@@ -48,6 +56,7 @@ function filterProducts(products: LoanProduct[], filter: FilterType): LoanProduc
 
 interface LoanProductsPanelProps {
   sessionId: number;
+  confirmedLoan?: LoanConfirmResult;
   preSelectedPropertyId?: string;
   preSelectedPropertyName?: string;
   preSelectedPropertyPrice?: number;
@@ -55,18 +64,33 @@ interface LoanProductsPanelProps {
 
 export function LoanProductsPanel({
   sessionId,
+  confirmedLoan,
   preSelectedPropertyId,
   preSelectedPropertyName,
   preSelectedPropertyPrice,
 }: LoanProductsPanelProps) {
-  const { productsPage, loading, error, fetchProducts } = useLoan(sessionId);
+  const { productsPage, loading, error, fetchProducts, repay } = useLoan(sessionId);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<LoanProduct | null>(null);
+  const [activeLoan, setActiveLoan] = useState<StoredActiveLoan | null>(() =>
+    confirmedLoan !== undefined ? toStoredActiveLoan(confirmedLoan) : readActiveLoan(sessionId),
+  );
+  const [repayAmount, setRepayAmount] = useState('');
+  const [repayError, setRepayError] = useState<string | null>(null);
+  const [isRepaying, setIsRepaying] = useState(false);
 
   useEffect(() => {
     void fetchProducts(FILTER_TO_CATEGORY[activeFilter], 0, PRODUCT_FETCH_SIZE);
   }, [activeFilter, fetchProducts]);
+
+  useEffect(() => {
+    if (confirmedLoan === undefined) {
+      return;
+    }
+
+    writeActiveLoan(sessionId, toStoredActiveLoan(confirmedLoan));
+  }, [confirmedLoan, sessionId]);
 
   // 상세 화면
   if (selected) {
@@ -91,9 +115,113 @@ export function LoanProductsPanel({
     setPage(1);
   };
 
+  const handleRepay = async () => {
+    if (activeLoan === null || activeLoan.status === 'CLOSED') {
+      return;
+    }
+
+    const amount = Number(repayAmount.replace(/,/g, ''));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setRepayError('상환 금액을 올바르게 입력해 주세요.');
+      return;
+    }
+
+    if (amount > activeLoan.remainingPrincipal) {
+      setRepayError('남은 원금 이하로 입력해 주세요.');
+      return;
+    }
+
+    setRepayError(null);
+    setIsRepaying(true);
+
+    try {
+      const result = await repay(activeLoan.loanId, amount);
+      if (result === null) {
+        return;
+      }
+
+      const nextLoan: StoredActiveLoan =
+        result.remainingPrincipal <= 0
+          ? {
+              ...activeLoan,
+              remainingPrincipal: 0,
+              monthlyPayment: result.updatedMonthlyPayment,
+              status: 'CLOSED',
+            }
+          : {
+              ...activeLoan,
+              remainingPrincipal: result.remainingPrincipal,
+              monthlyPayment: result.updatedMonthlyPayment,
+            };
+
+      const nextActiveLoan = nextLoan.status === 'CLOSED' ? null : nextLoan;
+      setActiveLoan(nextActiveLoan);
+      writeActiveLoan(sessionId, nextActiveLoan);
+      setRepayAmount('');
+    } catch {
+      setRepayError('대출 상환 처리에 실패했습니다.');
+    } finally {
+      setIsRepaying(false);
+    }
+  };
+
   return (
     <div className={styles.panel}>
-      <h2 className={styles.title}>대출 상품</h2>
+      <h2 className={styles.title}>대출/상환</h2>
+
+      {activeLoan !== null && (
+        <section className={styles.activeLoanCard} data-testid="active-loan-card">
+          <div className={styles.activeLoanHeader}>
+            <div>
+              <div className={styles.activeLoanTitle}>확정된 대출</div>
+              <div className={styles.activeLoanMeta}>
+                부동산 계약에 사용한 대출입니다. 원할 때 중도 상환할 수 있습니다.
+              </div>
+            </div>
+            <div className={styles.activeLoanRate}>{activeLoan.annualRate.toFixed(2)}%</div>
+          </div>
+          <div className={styles.activeLoanStats}>
+            <div>
+              <span className={styles.activeLoanLabel}>남은 원금</span>
+              <strong className={styles.activeLoanValue}>
+                {activeLoan.remainingPrincipal.toLocaleString('ko-KR')}원
+              </strong>
+            </div>
+            <div>
+              <span className={styles.activeLoanLabel}>월 납입금</span>
+              <strong className={styles.activeLoanValue}>
+                {activeLoan.monthlyPayment.toLocaleString('ko-KR')}원
+              </strong>
+            </div>
+          </div>
+          <div className={styles.repayRow}>
+            <input
+              className={styles.repayInput}
+              type="text"
+              inputMode="numeric"
+              placeholder="상환할 금액 입력"
+              value={repayAmount}
+              onChange={(event) => {
+                const digits = event.target.value.replace(/[^0-9]/g, '');
+                setRepayAmount(digits ? Number(digits).toLocaleString('ko-KR') : '');
+              }}
+            />
+            <button
+              type="button"
+              className={styles.repayButton}
+              onClick={() => {
+                void handleRepay();
+              }}
+              disabled={isRepaying}
+            >
+              {isRepaying ? '상환 중...' : '상환하기'}
+            </button>
+          </div>
+          {repayError !== null && (
+            <div className={styles.repayError} role="alert">{repayError}</div>
+          )}
+        </section>
+      )}
 
       {/* 필터 탭 */}
       <div className={styles.filters}>
@@ -124,7 +252,14 @@ export function LoanProductsPanel({
               className={styles.item}
               onClick={() => setSelected(product)}
             >
-              <span className={styles.icon}>{product.bankName.charAt(0)}</span>
+              <div className={styles.icon}>
+                <AuthImage
+                  src={product.bankLogoUrl}
+                  alt={product.bankName}
+                  className={styles.logoImage}
+                  fallback={<span className={styles.logoFallback}>{product.bankName.charAt(0)}</span>}
+                />
+              </div>
               <div className={styles.info}>
                 <span className={styles.productName}>{product.productName}</span>
                 <span className={styles.loanType}>{LOAN_TYPE_LABEL[product.productType]}</span>
