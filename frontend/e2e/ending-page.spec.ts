@@ -1,26 +1,47 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { EndingType } from '@features/ending/domain/entities/EndingReport';
 
 test.describe.configure({ mode: 'serial' });
 
 function seedAuthenticatedUser(page: Page) {
   return page.addInitScript(() => {
-    window.localStorage.setItem(
-      'auth',
-      JSON.stringify({
-        state: {
-          isAuthenticated: true,
-          accessToken: 'access-token',
-          refreshToken: 'refresh-token',
-          nickname: '엔딩테스터',
-        },
-        version: 0,
-      }),
-    );
+    try {
+      window.localStorage.setItem(
+        'auth',
+        JSON.stringify({
+          state: {
+            isAuthenticated: true,
+            accessToken: 'access-token',
+            refreshToken: 'refresh-token',
+            nickname: '엔딩테스터',
+            accessTokenExpiresAt: Date.now() + 60 * 60 * 1000,
+          },
+          version: 0,
+        }),
+      );
+    } catch {
+      // Playwright init scripts also run on documents like about:blank where localStorage is unavailable.
+    }
   });
 }
 
-async function mockEndingApis(page: Page) {
-  await page.route('**/api/games/sessions/10/ending', async (route) => {
+async function mockEndingApis(
+  page: Page,
+  options: {
+    sessionId?: number;
+    endingType?: EndingType;
+    title?: string;
+    characterType?: 'FEMALE' | 'MALE';
+  } = {},
+) {
+  const {
+    sessionId = 10,
+    endingType = 'CLEAR',
+    title = '내 집 마련 성공',
+    characterType = 'FEMALE',
+  } = options;
+
+  await page.route(`**/api/games/sessions/${sessionId}/ending`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -28,10 +49,10 @@ async function mockEndingApis(page: Page) {
         status: 200,
         message: 'OK',
         data: {
-          characterType: 'FEMALE',
-          endingType: 'CLEAR',
+          characterType,
+          endingType,
           grade: 'S',
-          title: '내 집 마련 성공',
+          title,
           totalAssets: 350000000,
           totalIncome: 220000000,
           totalExpense: 90000000,
@@ -48,6 +69,12 @@ async function mockEndingApis(page: Page) {
               headline: '금리 인하',
               publishedDate: '2026-03-01',
             },
+            {
+              turnNumber: 7,
+              newsId: 'NEWS-2',
+              headline: '부동산 규제 완화',
+              publishedDate: '2026-06-01',
+            },
           ],
           eventHistories: [
             {
@@ -56,6 +83,13 @@ async function mockEndingApis(page: Page) {
               selectedChoiceCode: 'A',
               resultSummary: '연봉 협상 성공',
               resolvedAt: '2026-05-01T00:00:00',
+            },
+            {
+              turnNumber: 9,
+              gameEventId: 17,
+              selectedChoiceCode: 'B',
+              resultSummary: '이직 제안을 거절했다',
+              resolvedAt: '2026-08-01T00:00:00',
             },
           ],
           housingHistories: [
@@ -71,6 +105,18 @@ async function mockEndingApis(page: Page) {
                 propertyId: 30,
               },
             },
+            {
+              turnNumber: 5,
+              summary: '전세 입주',
+              beforeState: {
+                housingType: 'VILLA',
+                propertyId: 10,
+              },
+              afterState: {
+                housingType: 'JEONSE_APT',
+                propertyId: 20,
+              },
+            },
           ],
           housingSnapshot: {
             currentHousingType: 'OWNED_APT',
@@ -82,7 +128,7 @@ async function mockEndingApis(page: Page) {
     });
   });
 
-  await page.route('**/api/games/sessions/10/logs', async (route) => {
+  await page.route(`**/api/games/sessions/${sessionId}/logs`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -98,6 +144,16 @@ async function mockEndingApis(page: Page) {
               netAssets: 2000000,
               totalAssets: 3000000,
               stockValue: 0,
+              loanBalance: 0,
+              salary: 2500000,
+            },
+            {
+              turnNumber: 2,
+              date: '2026-02-01',
+              cash: 2000000,
+              netAssets: 2400000,
+              totalAssets: 3400000,
+              stockValue: 100000,
               loanBalance: 0,
               salary: 2500000,
             },
@@ -123,11 +179,35 @@ test.describe('ending page', () => {
 
     await expect(page.getByTestId('ending-summary')).toContainText('내 집 마련 성공', { timeout: 15_000 });
     await expect(page.getByTestId('ending-summary')).toContainText('목표 달성', { timeout: 15_000 });
-    await expect(page.getByTestId('ending-timeline')).toContainText('총 1개의 월별 로그가 준비되었습니다.', { timeout: 15_000 });
-    await expect(page.getByTestId('ending-histories')).toContainText('뉴스 · 1건', { timeout: 15_000 });
-    await expect(page.getByTestId('ending-histories')).toContainText('주거 이동 · 1건', { timeout: 15_000 });
-    await expect(page.getByTestId('ending-histories')).toContainText('자가', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-timeline')).toContainText('총 2개의 월별 로그가 준비되었습니다.', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-news-history')).toContainText('금리 인하', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-news-history')).toContainText('부동산 규제 완화', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-event-history')).toContainText('연봉 협상 성공', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-event-history')).toContainText('이직 제안을 거절했다', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-housing-history')).toContainText('자가 구매', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-housing-history')).toContainText('전세 입주', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-housing-history')).toContainText('현재 주거', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-housing-history')).toContainText('자가', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-housing-history')).toContainText('목표 주거 달성', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-housing-history')).toContainText('달성', { timeout: 15_000 });
   });
+
+  for (const [endingType, title] of [
+    ['CLEAR', '내 집 마련 성공'],
+    ['BANKRUPT', '파산'],
+    ['TIMEOUT', '기한 초과'],
+    ['FORECLOSURE', '차압'],
+  ] satisfies [EndingType, string][]) {
+    test(`renders ${endingType} scene`, async ({ page }) => {
+      await seedAuthenticatedUser(page);
+      await mockEndingApis(page, { sessionId: 20, endingType, title });
+
+      await page.goto('/game/20/ending');
+
+      await expect(page.getByTestId('ending-scene')).toContainText(title, { timeout: 15_000 });
+      await expect(page.getByTestId('ending-reveal-report')).toContainText('>> 결과 보기', { timeout: 15_000 });
+    });
+  }
 
   test('shows the not-ready state when ending report APIs return 409', async ({ page }) => {
     await seedAuthenticatedUser(page);
