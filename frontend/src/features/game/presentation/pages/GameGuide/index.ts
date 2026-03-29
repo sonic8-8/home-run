@@ -1,0 +1,1 @@
+export { GameGuidePage } from './GameGuidePage';

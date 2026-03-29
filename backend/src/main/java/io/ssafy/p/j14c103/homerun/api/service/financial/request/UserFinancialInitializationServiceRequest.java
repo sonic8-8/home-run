@@ -33,12 +33,25 @@ public class UserFinancialInitializationServiceRequest {
     public static class NamedAmountItem {
 
         private String name;
-        private Integer amount;
+        private Long amount;
 
         @Builder
-        private NamedAmountItem(final String name, final Integer amount) {
+        private NamedAmountItem(final String name, final Long amount) {
             this.name = name;
             this.amount = amount;
+        }
+
+        public static class NamedAmountItemBuilder {
+
+            public NamedAmountItemBuilder amount(final Long amount) {
+                this.amount = amount;
+                return this;
+            }
+
+            public NamedAmountItemBuilder amount(final int amount) {
+                this.amount = Long.valueOf(amount);
+                return this;
+            }
         }
     }
 }

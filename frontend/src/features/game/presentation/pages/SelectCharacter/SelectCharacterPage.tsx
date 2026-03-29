@@ -18,6 +18,7 @@ interface LocationState {
 
 export function SelectCharacterPage() {
   const [selected, setSelected] = useState<CharacterType | null>(null);
+  const [brokenThumbnails, setBrokenThumbnails] = useState<Partial<Record<CharacterType, boolean>>>({});
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
@@ -43,34 +44,54 @@ export function SelectCharacterPage() {
       </div>
 
       <div className={styles.selectArea}>
-        {characters.map((character, i) => (
-          <Fragment key={character.characterType}>
-            <button
-              className={clsx(
-                styles.charBtn,
-                selected === character.characterType && styles.selected,
-              )}
-              onClick={() => setSelected(character.characterType)}
-              aria-label={
-                character.characterType === 'FEMALE'
-                  ? '여자 캐릭터 선택'
-                  : '남자 캐릭터 선택'
-              }
-            >
-              <img
-                src={character.thumbnailUrl || CHARACTER_IMAGES[character.characterType]}
-                alt={character.characterType}
-                className={styles.charImg}
-              />
-              {selected === character.characterType && <span className={styles.selectedIndicator} />}
-            </button>
-            {i === 0 && (
-              <button className={styles.nextBtn} onClick={handleNext} disabled={!selected}>
-                NEXT
+        {characters.map((character, i) => {
+          const fallbackImage = CHARACTER_IMAGES[character.characterType];
+          const imageSrc =
+            brokenThumbnails[character.characterType] === true
+              ? fallbackImage
+              : character.thumbnailUrl || fallbackImage;
+
+          return (
+            <Fragment key={character.characterType}>
+              <button
+                className={clsx(
+                  styles.charBtn,
+                  selected === character.characterType && styles.selected,
+                )}
+                onClick={() => setSelected(character.characterType)}
+                aria-label={
+                  character.characterType === 'FEMALE'
+                    ? '여자 캐릭터 선택'
+                    : '남자 캐릭터 선택'
+                }
+              >
+                <img
+                  src={imageSrc}
+                  alt={character.characterType}
+                  className={styles.charImg}
+                  onError={() => {
+                    setBrokenThumbnails((current) => {
+                      if (current[character.characterType] === true) {
+                        return current;
+                      }
+
+                      return {
+                        ...current,
+                        [character.characterType]: true,
+                      };
+                    });
+                  }}
+                />
+                {selected === character.characterType && <span className={styles.selectedIndicator} />}
               </button>
-            )}
-          </Fragment>
-        ))}
+              {i === 0 && (
+                <button className={styles.nextBtn} onClick={handleNext} disabled={!selected}>
+                  NEXT
+                </button>
+              )}
+            </Fragment>
+          );
+        })}
       </div>
     </div>
   );

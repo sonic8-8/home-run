@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UserAssetLinkServiceRequest {
 
-    private Integer mainAccountBalanceAmount;
+    private Long mainAccountBalanceAmount;
     private Integer salaryDayOfMonth;
-    private Integer monthlySalaryAmount;
-    private Integer monthlyFixedExpenseAmount;
+    private Long monthlySalaryAmount;
+    private Long monthlyFixedExpenseAmount;
     private JobType jobType;
     private List<NamedAmountItem> depositItems;
     private List<NamedAmountItem> loanItems;
@@ -24,10 +24,10 @@ public class UserAssetLinkServiceRequest {
 
     @Builder
     private UserAssetLinkServiceRequest(
-            final Integer mainAccountBalanceAmount,
+            final Long mainAccountBalanceAmount,
             final Integer salaryDayOfMonth,
-            final Integer monthlySalaryAmount,
-            final Integer monthlyFixedExpenseAmount,
+            final Long monthlySalaryAmount,
+            final Long monthlyFixedExpenseAmount,
             final JobType jobType,
             final List<NamedAmountItem> depositItems,
             final List<NamedAmountItem> loanItems,
@@ -47,27 +47,60 @@ public class UserAssetLinkServiceRequest {
         this.paymentTypes = normalizePaymentTypes(paymentTypes);
     }
 
-    public int totalDepositAmount() {
+    public static class UserAssetLinkServiceRequestBuilder {
+
+        public UserAssetLinkServiceRequestBuilder mainAccountBalanceAmount(final Long mainAccountBalanceAmount) {
+            this.mainAccountBalanceAmount = mainAccountBalanceAmount;
+            return this;
+        }
+
+        public UserAssetLinkServiceRequestBuilder mainAccountBalanceAmount(final int mainAccountBalanceAmount) {
+            this.mainAccountBalanceAmount = Long.valueOf(mainAccountBalanceAmount);
+            return this;
+        }
+
+        public UserAssetLinkServiceRequestBuilder monthlySalaryAmount(final Long monthlySalaryAmount) {
+            this.monthlySalaryAmount = monthlySalaryAmount;
+            return this;
+        }
+
+        public UserAssetLinkServiceRequestBuilder monthlySalaryAmount(final int monthlySalaryAmount) {
+            this.monthlySalaryAmount = Long.valueOf(monthlySalaryAmount);
+            return this;
+        }
+
+        public UserAssetLinkServiceRequestBuilder monthlyFixedExpenseAmount(final Long monthlyFixedExpenseAmount) {
+            this.monthlyFixedExpenseAmount = monthlyFixedExpenseAmount;
+            return this;
+        }
+
+        public UserAssetLinkServiceRequestBuilder monthlyFixedExpenseAmount(final int monthlyFixedExpenseAmount) {
+            this.monthlyFixedExpenseAmount = Long.valueOf(monthlyFixedExpenseAmount);
+            return this;
+        }
+    }
+
+    public long totalDepositAmount() {
         return depositItems.stream()
-                .mapToInt(NamedAmountItem::getAmount)
+                .mapToLong(NamedAmountItem::getAmount)
                 .sum();
     }
 
-    public int totalLoanAmount() {
+    public long totalLoanAmount() {
         return loanItems.stream()
-                .mapToInt(NamedAmountItem::getAmount)
+                .mapToLong(NamedAmountItem::getAmount)
                 .sum();
     }
 
-    public int totalOtherIncomeAmount() {
+    public long totalOtherIncomeAmount() {
         return otherIncomeItems.stream()
-                .mapToInt(NamedAmountItem::getAmount)
+                .mapToLong(NamedAmountItem::getAmount)
                 .sum();
     }
 
-    public int totalCardSpendAmount() {
+    public long totalCardSpendAmount() {
         return cardSpendItems.stream()
-                .mapToInt(CardSpendItem::getAmount)
+                .mapToLong(CardSpendItem::getAmount)
                 .sum();
     }
 
@@ -101,12 +134,25 @@ public class UserAssetLinkServiceRequest {
     public static class NamedAmountItem {
 
         private String name;
-        private Integer amount;
+        private Long amount;
 
         @Builder
-        private NamedAmountItem(final String name, final Integer amount) {
+        private NamedAmountItem(final String name, final Long amount) {
             this.name = name;
             this.amount = amount;
+        }
+
+        public static class NamedAmountItemBuilder {
+
+            public NamedAmountItemBuilder amount(final Long amount) {
+                this.amount = amount;
+                return this;
+            }
+
+            public NamedAmountItemBuilder amount(final int amount) {
+                this.amount = Long.valueOf(amount);
+                return this;
+            }
         }
     }
 
@@ -115,12 +161,25 @@ public class UserAssetLinkServiceRequest {
     public static class CardSpendItem {
 
         private SpendingCategory category;
-        private Integer amount;
+        private Long amount;
 
         @Builder
-        private CardSpendItem(final SpendingCategory category, final Integer amount) {
+        private CardSpendItem(final SpendingCategory category, final Long amount) {
             this.category = category;
             this.amount = amount;
+        }
+
+        public static class CardSpendItemBuilder {
+
+            public CardSpendItemBuilder amount(final Long amount) {
+                this.amount = amount;
+                return this;
+            }
+
+            public CardSpendItemBuilder amount(final int amount) {
+                this.amount = Long.valueOf(amount);
+                return this;
+            }
         }
     }
 }

@@ -29,7 +29,7 @@ public class PassSubscription {
     private String subscriptionName;
 
     @Column(name = "회당저축금액")
-    private Integer savingAmount;
+    private Long savingAmount;
 
     @Column(name = "출금계좌참조")
     private String sourceAccountNo;
@@ -46,7 +46,7 @@ public class PassSubscription {
     private PassSubscription(
             final Long userId,
             final PassProduct passProduct,
-            final Integer savingAmount,
+            final Long savingAmount,
             final String sourceAccountNo) {
         this.userId = userId;
         this.passProduct = passProduct;
@@ -60,7 +60,15 @@ public class PassSubscription {
     public static PassSubscription create(
             final Long userId,
             final PassProduct passProduct,
-            final Integer savingAmount,
+            final long savingAmount,
+            final String sourceAccountNo) {
+        return create(userId, passProduct, Long.valueOf(savingAmount), sourceAccountNo);
+    }
+
+    public static PassSubscription create(
+            final Long userId,
+            final PassProduct passProduct,
+            final Long savingAmount,
             final String sourceAccountNo) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");

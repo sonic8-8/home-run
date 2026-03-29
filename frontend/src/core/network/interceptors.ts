@@ -1,4 +1,4 @@
-import axios, {
+import {
   type AxiosError,
   type AxiosInstance,
   type InternalAxiosRequestConfig,
@@ -9,13 +9,9 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '@core/error/AppError';
+import { refreshSession } from '@core/network/authSession';
+import { expireSession } from '@core/network/sessionExpiry';
 import { useAuthStore } from '@core/store/authStore';
-
-interface ApiResponse<T> {
-  status: number;
-  message: string;
-  data: T;
-}
 
 interface ApiErrorResponse {
   message?: string;
@@ -26,48 +22,11 @@ interface RetryableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
 
-let refreshPromise: Promise<string> | null = null;
-
 function toErrorMessage(
   error: AxiosError<ApiErrorResponse>,
   fallbackMessage: string,
 ): string {
   return error.response?.data?.message ?? fallbackMessage;
-}
-
-async function refreshAccessToken(baseUrl: string): Promise<string> {
-  const { refreshToken, setAccessToken, clearAuth } = useAuthStore.getState();
-  const refreshClient = axios.create({
-    baseURL: baseUrl,
-    timeout: 10_000,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (refreshToken === null) {
-    clearAuth();
-    throw new UnauthorizedError();
-  }
-
-  try {
-    const response = await refreshClient.post<ApiResponse<{ accessToken: string }>>(
-      '/auth/refresh',
-      undefined,
-      {
-        headers: {
-          Authorization: `Bearer ${refreshToken}`,
-        },
-      },
-    );
-
-    const accessToken = response.data.data.accessToken;
-    setAccessToken(accessToken);
-    return accessToken;
-  } catch {
-    clearAuth();
-    throw new UnauthorizedError('세션이 만료되었습니다. 다시 로그인해주세요.');
-  }
 }
 
 export function setupInterceptors(client: AxiosInstance): void {
@@ -88,7 +47,12 @@ export function setupInterceptors(client: AxiosInstance): void {
     async (error: AxiosError<ApiErrorResponse>) => {
       const status = error.response?.status;
       const originalConfig = error.config as RetryableConfig | undefined;
-      const { clearAuth, refreshToken } = useAuthStore.getState();
+      const {
+        clearAuth,
+        isAuthenticated,
+        refreshToken,
+        setAccessToken,
+      } = useAuthStore.getState();
 
       if (
         status === 401 &&
@@ -99,27 +63,26 @@ export function setupInterceptors(client: AxiosInstance): void {
         originalConfig._retry = true;
 
         try {
-          if (refreshPromise === null) {
-            refreshPromise = refreshAccessToken(client.defaults.baseURL ?? '').finally(() => {
-              refreshPromise = null;
-            });
-          }
-
-          const nextAccessToken = await refreshPromise;
+          const nextSession = await refreshSession(client.defaults.baseURL ?? '');
+          setAccessToken(nextSession.accessToken, nextSession.accessTokenExpiresIn);
           originalConfig.headers = {
             ...(originalConfig.headers ?? {}),
-            Authorization: `Bearer ${nextAccessToken}`,
+            Authorization: `Bearer ${nextSession.accessToken}`,
           } as InternalAxiosRequestConfig['headers'];
 
           return client.request(originalConfig);
         } catch (refreshError) {
-          clearAuth();
+          expireSession();
           return Promise.reject(refreshError);
         }
       }
 
       if (status === 401) {
-        clearAuth();
+        if (isAuthenticated) {
+          expireSession();
+        } else {
+          clearAuth();
+        }
         return Promise.reject(
           new UnauthorizedError(toErrorMessage(error, '인증이 필요합니다.')),
         );

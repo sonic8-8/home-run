@@ -38,7 +38,7 @@ public class UserFinancialProduct {
     private String productName;
 
     @Column(name = "current_balance_amount", nullable = false)
-    private Integer currentBalanceAmount;
+    private Long currentBalanceAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "source_type", nullable = false, length = 20)
@@ -55,7 +55,7 @@ public class UserFinancialProduct {
             final FinancialProductType productType,
             final String institutionName,
             final String productName,
-            final Integer currentBalanceAmount,
+            final Long currentBalanceAmount,
             final FinancialProductSourceType sourceType,
             final LocalDateTime openedAt
     ) {
@@ -74,7 +74,18 @@ public class UserFinancialProduct {
             final FinancialProductType productType,
             final String institutionName,
             final String productName,
-            final Integer currentBalanceAmount,
+            final int currentBalanceAmount,
+            final LocalDateTime openedAt
+    ) {
+        return create(userId, productType, institutionName, productName, Long.valueOf(currentBalanceAmount), openedAt);
+    }
+
+    public static UserFinancialProduct create(
+            final Long userId,
+            final FinancialProductType productType,
+            final String institutionName,
+            final String productName,
+            final Long currentBalanceAmount,
             final LocalDateTime openedAt
     ) {
         return create(
@@ -93,7 +104,27 @@ public class UserFinancialProduct {
             final FinancialProductType productType,
             final String institutionName,
             final String productName,
-            final Integer currentBalanceAmount,
+            final int currentBalanceAmount,
+            final LocalDateTime openedAt,
+            final FinancialProductSourceType sourceType
+    ) {
+        return create(
+                userId,
+                productType,
+                institutionName,
+                productName,
+                Long.valueOf(currentBalanceAmount),
+                openedAt,
+                sourceType
+        );
+    }
+
+    public static UserFinancialProduct create(
+            final Long userId,
+            final FinancialProductType productType,
+            final String institutionName,
+            final String productName,
+            final Long currentBalanceAmount,
             final LocalDateTime openedAt,
             final FinancialProductSourceType sourceType
     ) {
@@ -130,7 +161,7 @@ public class UserFinancialProduct {
         );
     }
 
-    public void updateBalance(final Integer currentBalanceAmount) {
+    public void updateBalance(final Long currentBalanceAmount) {
         if (currentBalanceAmount == null || currentBalanceAmount < 0) {
             throw new IllegalArgumentException("잔액은 0 이상이어야 합니다.");
         }

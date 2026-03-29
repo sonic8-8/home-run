@@ -16,10 +16,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ssafy.p.j14c103.homerun.api.controller.game.turn.request.SubmitTurnSlotsRequest;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.CommitTurnService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnActionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.GameTurnStateService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.SubmitTurnSlotsService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.AvailableActionsResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnPreviewResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
@@ -58,6 +60,9 @@ class GameTurnControllerTest extends RestDocsTestSupport {
 
     @MockitoBean
     private SubmitTurnSlotsService submitTurnSlotsService;
+
+    @MockitoBean
+    private CommitTurnService commitTurnService;
 
     @DisplayName("현재 턴 상태 조회는 게임 코어 응답 계약으로 현재 턴 정보를 반환한다.")
     @Test
@@ -378,6 +383,112 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                     fieldWithPath("slots[].actionType").description("선택한 행동 타입")
                 ),
                 validationErrorResponseFields()
+            ));
+    }
+
+    @DisplayName("턴 커밋은 확정 결과와 자산 스냅샷, 스탯 변화량을 반환한다.")
+    @Test
+    void commitTurn() throws Exception {
+        // given
+        final CommitTurnResponse response = CommitTurnResponse.of(
+            12,
+            List.of(
+                CommitTurnResponse.SettlementLogItemResponse.of(
+                    "MARKET_UPDATE",
+                    "경제 사이클을 다음 국면으로 갱신한다",
+                    0L,
+                    CommitTurnResponse.StatChangesResponse.of(0, 0, 0, 0, 0)
+                ),
+                CommitTurnResponse.SettlementLogItemResponse.of(
+                    "ACTION_RESULT",
+                    "턴 행동 결과를 반영한다",
+                    430_000L,
+                    CommitTurnResponse.StatChangesResponse.of(3, -14, -8, 4, 8)
+                )
+            ),
+            CommitTurnResponse.UpdatedAssetsResponse.of(2_820_000L, 0L, 0L, 1_820_000L),
+            CommitTurnResponse.StatChangesResponse.of(3, -14, -8, 4, 8),
+            CommitTurnResponse.FlagsResponse.of(false, false, false, false, true)
+        );
+        given(commitTurnService.commitTurn(1L, 1001L)).willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", 1001L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.message").value("OK"))
+            .andExpect(jsonPath("$.data.turnNumber").value(12))
+            .andExpect(jsonPath("$.data.settlementLog.length()").value(2))
+            .andExpect(jsonPath("$.data.settlementLog[0].phase").value("MARKET_UPDATE"))
+            .andExpect(jsonPath("$.data.settlementLog[1].cashChange").value(430000))
+            .andExpect(jsonPath("$.data.updatedAssets.cash").value(2820000))
+            .andExpect(jsonPath("$.data.updatedAssets.netAssets").value(1820000))
+            .andExpect(jsonPath("$.data.statChanges.health").value(3))
+            .andExpect(jsonPath("$.data.statChanges.fatigue").value(-14))
+            .andExpect(jsonPath("$.data.statChanges.knowledge").value(8))
+            .andExpect(jsonPath("$.data.flags.hasEvent").value(true))
+            .andDo(document("game-turn/commit/success",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                apiResponseFields(
+                    "턴 커밋 결과",
+                    fieldWithPath("turnNumber").type(JsonFieldType.NUMBER).description("커밋된 턴 번호"),
+                    fieldWithPath("settlementLog").type(JsonFieldType.ARRAY).description("턴 커밋 skeleton 기준 정산 로그"),
+                    fieldWithPath("settlementLog[].phase").type(JsonFieldType.STRING).description("정산 단계 식별자"),
+                    fieldWithPath("settlementLog[].description").type(JsonFieldType.STRING).description("정산 단계 설명"),
+                    fieldWithPath("settlementLog[].cashChange").type(JsonFieldType.NUMBER).description("해당 단계 현금 변화량"),
+                    fieldWithPath("settlementLog[].statChanges").type(JsonFieldType.OBJECT).description("해당 단계 스탯 변화량"),
+                    fieldWithPath("settlementLog[].statChanges.health").type(JsonFieldType.NUMBER).description("체력 변화량"),
+                    fieldWithPath("settlementLog[].statChanges.fatigue").type(JsonFieldType.NUMBER).description("피로 변화량"),
+                    fieldWithPath("settlementLog[].statChanges.stress").type(JsonFieldType.NUMBER).description("스트레스 변화량"),
+                    fieldWithPath("settlementLog[].statChanges.happiness").type(JsonFieldType.NUMBER).description("행복 변화량"),
+                    fieldWithPath("settlementLog[].statChanges.knowledge").type(JsonFieldType.NUMBER).description("지식 변화량"),
+                    fieldWithPath("updatedAssets").type(JsonFieldType.OBJECT).description("커밋 직후 자산 스냅샷"),
+                    fieldWithPath("updatedAssets.cash").type(JsonFieldType.NUMBER).description("현금"),
+                    fieldWithPath("updatedAssets.loan").type(JsonFieldType.NUMBER).description("대출 잔액"),
+                    fieldWithPath("updatedAssets.realEstateValue").type(JsonFieldType.NUMBER).description("부동산 자산 가치"),
+                    fieldWithPath("updatedAssets.netAssets").type(JsonFieldType.NUMBER).description("순자산"),
+                    fieldWithPath("statChanges").type(JsonFieldType.OBJECT).description("이번 턴 스탯 변화량"),
+                    fieldWithPath("statChanges.health").type(JsonFieldType.NUMBER).description("체력 변화량"),
+                    fieldWithPath("statChanges.fatigue").type(JsonFieldType.NUMBER).description("피로 변화량"),
+                    fieldWithPath("statChanges.stress").type(JsonFieldType.NUMBER).description("스트레스 변화량"),
+                    fieldWithPath("statChanges.happiness").type(JsonFieldType.NUMBER).description("행복 변화량"),
+                    fieldWithPath("statChanges.knowledge").type(JsonFieldType.NUMBER).description("지식 변화량"),
+                    fieldWithPath("flags").type(JsonFieldType.OBJECT).description("턴 커밋 결과 플래그"),
+                    fieldWithPath("flags.isBankrupt").type(JsonFieldType.BOOLEAN).description("파산 여부"),
+                    fieldWithPath("flags.isCleared").type(JsonFieldType.BOOLEAN).description("클리어 여부"),
+                    fieldWithPath("flags.isBurnout").type(JsonFieldType.BOOLEAN).description("번아웃 여부"),
+                    fieldWithPath("flags.isForcedResignation").type(JsonFieldType.BOOLEAN).description("강제 퇴사 여부"),
+                    fieldWithPath("flags.hasEvent").type(JsonFieldType.BOOLEAN).description("추가 이벤트 존재 여부")
+                )
+            ));
+        then(commitTurnService).should().commitTurn(1L, 1001L);
+    }
+
+    @DisplayName("이미 커밋된 턴을 다시 커밋하면 409를 반환한다.")
+    @Test
+    void commitAlreadyCommittedTurn() throws Exception {
+        // given
+        given(commitTurnService.commitTurn(1L, 1001L))
+            .willThrow(new HomerunException(ErrorCode.GAME_TURN_ALREADY_COMMITTED));
+
+        // when & then
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", 1001L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_TURN_ALREADY_COMMITTED.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_TURN_ALREADY_COMMITTED.getMessage()))
+            .andDo(document("game-turn/commit/already-committed",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                basicErrorResponseFields()
             ));
     }
 }

@@ -8,11 +8,21 @@ export function GameStartPage() {
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    navigate(ROUTES.GAME_SAVE);
+    navigate(ROUTES.GAME_SAVE_WITH_MODE('continue'), {
+      state: { entryMode: 'continue' as const },
+    });
   };
 
   const handleNewGame = () => {
-    navigate(ROUTES.GAME_SAVE);
+    navigate(ROUTES.GAME_SAVE_WITH_MODE('new'), {
+      state: { entryMode: 'new' as const },
+    });
+  };
+
+  const handleGuide = () => {
+    navigate(ROUTES.GAME_GUIDE, {
+      state: { from: 'start' as const },
+    });
   };
 
   return (
@@ -29,6 +39,9 @@ export function GameStartPage() {
           </button>
           <button className={`${styles.button} ${styles.newGame}`} onClick={handleNewGame}>
             새로하기
+          </button>
+          <button className={`${styles.button} ${styles.guide}`} onClick={handleGuide}>
+            게임 가이드
           </button>
         </div>
       </div>

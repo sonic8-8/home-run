@@ -1,6 +1,8 @@
 package io.ssafy.p.j14c103.homerun.domain.gamesession.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,9 +36,9 @@ class GameTimelineRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    @DisplayName("game_timelines는 turn asc, id asc 순으로 조회된다")
+    @DisplayName("game_timelines는 턴 종료 스냅샷을 turn 오름차순으로 조회한다")
     @Test
-    void findAllByGameSessionIdOrderByTurnNumberAscGameTimelineIdAsc() {
+    void findAllByGameSessionIdOrderByTurnNumberAsc() {
         final User user = userRepository.save(
             User.register(Email.of("game-timeline@example.com"), "tester", "hashed")
         );
@@ -53,14 +56,14 @@ class GameTimelineRepositoryTest {
         ));
         gameTimelineRepository.saveAndFlush(GameTimeline.create(
             gameSession.getGameSessionId(),
-            12,
-            LocalDate.of(2026, 12, 1),
-            5_000_000,
-            25_000_000,
-            75_000_000,
-            5_000_000,
-            50_000_000,
-            2_200_000
+            2,
+            LocalDate.of(2026, 4, 1),
+            14_500_000,
+            18_000_000,
+            20_000_000,
+            4_000_000,
+            2_000_000,
+            3_500_000
         ));
         gameTimelineRepository.saveAndFlush(GameTimeline.create(
             gameSession.getGameSessionId(),
@@ -73,26 +76,60 @@ class GameTimelineRepositoryTest {
             0,
             2_000_000
         ));
-        gameTimelineRepository.saveAndFlush(GameTimeline.create(
-            gameSession.getGameSessionId(),
-            12,
-            LocalDate.of(2026, 12, 15),
-            6_000_000,
-            26_000_000,
-            76_000_000,
-            6_000_000,
-            49_000_000,
-            2_200_000
-        ));
 
-        assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAscGameTimelineIdAsc(
+        assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
                 gameSession.getGameSessionId()
             ))
-            .extracting(GameTimeline::getTurnNumber, GameTimeline::getLoggedDate)
+            .extracting(GameTimeline::getTurnNumber, GameTimeline::getCash, GameTimeline::getTotalAssets)
             .containsExactly(
-                org.assertj.core.groups.Tuple.tuple(1, LocalDate.of(2026, 1, 1)),
-                org.assertj.core.groups.Tuple.tuple(12, LocalDate.of(2026, 12, 1)),
-                org.assertj.core.groups.Tuple.tuple(12, LocalDate.of(2026, 12, 15))
+                tuple(1, 13_000_000, 13_000_000),
+                tuple(2, 14_500_000, 20_000_000)
             );
+    }
+
+    @DisplayName("같은 세션의 같은 턴 타임라인은 중복 저장할 수 없다")
+    @Test
+    void saveDuplicateTurnTimeline() {
+        final User user = userRepository.save(
+            User.register(Email.of("game-timeline-duplicate@example.com"), "tester", "hashed")
+        );
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(GameSession.create(
+            user.getId(),
+            2,
+            "타임라인 세션",
+            CharacterType.FEMALE,
+            JobType.LARGE_BIZ,
+            HousingType.OWNED_APT,
+            "24",
+            "24110",
+            303L,
+            DataSourceType.MY_DATA
+        ));
+        gameTimelineRepository.saveAndFlush(GameTimeline.create(
+            gameSession.getGameSessionId(),
+            4,
+            LocalDate.of(2026, 6, 1),
+            19_000_000,
+            21_000_000,
+            24_000_000,
+            5_000_000,
+            3_000_000,
+            3_800_000
+        ));
+
+        final GameTimeline duplicate = GameTimeline.create(
+            gameSession.getGameSessionId(),
+            4,
+            LocalDate.of(2026, 6, 1),
+            20_000_000,
+            22_000_000,
+            25_000_000,
+            5_500_000,
+            3_000_000,
+            3_900_000
+        );
+
+        assertThatThrownBy(() -> gameTimelineRepository.saveAndFlush(duplicate))
+            .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

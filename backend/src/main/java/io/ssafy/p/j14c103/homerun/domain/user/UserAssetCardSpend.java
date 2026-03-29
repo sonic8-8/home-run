@@ -33,12 +33,12 @@ public class UserAssetCardSpend {
     private SpendingCategory category;
 
     @Column(name = "amount", nullable = false)
-    private Integer amount;
+    private Long amount;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    private UserAssetCardSpend(final Long userId, final SpendingCategory category, final Integer amount) {
+    private UserAssetCardSpend(final Long userId, final SpendingCategory category, final Long amount) {
         validate(userId, category, amount);
         this.userId = userId;
         this.category = category;
@@ -46,11 +46,15 @@ public class UserAssetCardSpend {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static UserAssetCardSpend create(final Long userId, final SpendingCategory category, final Integer amount) {
+    public static UserAssetCardSpend create(final Long userId, final SpendingCategory category, final Long amount) {
         return new UserAssetCardSpend(userId, category, amount);
     }
 
-    private void validate(final Long userId, final SpendingCategory category, final Integer amount) {
+    public static UserAssetCardSpend create(final Long userId, final SpendingCategory category, final long amount) {
+        return create(userId, category, Long.valueOf(amount));
+    }
+
+    private void validate(final Long userId, final SpendingCategory category, final Long amount) {
         if (userId == null) {
             throw new IllegalArgumentException("사용자 ID는 필수입니다.");
         }

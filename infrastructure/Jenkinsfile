@@ -159,7 +159,13 @@ pipeline {
                 script {
                     parallel(
                         'Frontend Runtime Image': {
-                            sh 'docker build -t ${FRONTEND_IMAGE} -f frontend/Dockerfile frontend'
+                            sh '''
+                                docker build \
+                                  --build-arg VITE_NAVER_MAP_CLIENT_ID=${NAVER_GEOCODING_CLIENT_ID} \
+                                  -t ${FRONTEND_IMAGE} \
+                                  -f frontend/Dockerfile \
+                                  frontend
+                            '''
                         },
                         'Backend Runtime Image': {
                             sh '''

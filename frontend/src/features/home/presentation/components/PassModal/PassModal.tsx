@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PassSubscription } from '../../../domain/entities/PassSubscription';
 import type { Pass } from '../../../domain/entities/Pass';
+import { formatWon } from '../../utils/money';
 import styles from './PassModal.module.css';
 
 const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일'];
@@ -63,13 +64,13 @@ export function PassModal({
                     <div className={styles.passInfo}>
                       <span className={styles.passName}>{sub.name}</span>
                       <span className={styles.passDesc}>
-                        저축하기 버튼 클릭시 {sub.amountPerSave.toLocaleString()}원씩 저축
+                        저축하기 버튼 클릭시 {formatWon(sub.amountPerSave)}씩 저축
                       </span>
                     </div>
                     <div className={styles.passTotalBox}>
                       <span className={styles.passTotalLabel}>총금액</span>
                       <span className={styles.passTotalAmount}>
-                        {sub.totalSaved.toLocaleString()} 원
+                        {formatWon(sub.totalSaved)}
                       </span>
                     </div>
                   </div>
@@ -116,7 +117,7 @@ export function PassModal({
                   <div key={pass.passId} className={styles.gridCard}>
                     <span className={styles.gridName}>{pass.name}</span>
                     <span className={styles.gridAmount}>
-                      {pass.amountPerSave.toLocaleString()}원 / 회
+                      {formatWon(pass.amountPerSave)} / 회
                     </span>
                     <span className={styles.gridDesc}>{pass.description}</span>
                     {isSubscribed ? (

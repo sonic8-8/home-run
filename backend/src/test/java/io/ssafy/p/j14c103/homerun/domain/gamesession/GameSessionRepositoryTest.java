@@ -233,6 +233,33 @@ class GameSessionRepositoryTest {
             );
     }
 
+    @DisplayName("게임 세션을 row lock으로 조회할 수 있다.")
+    @Test
+    void findByIdForUpdate() {
+        // given
+        final GameSession saved = gameSessionRepository.saveAndFlush(GameSession.create(
+            9L,
+            1,
+            "락세션",
+            CharacterType.MALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "11",
+            "11680",
+            101L,
+            DataSourceType.PROFILE
+        ));
+        entityManager.clear();
+
+        // when
+        final GameSession found = gameSessionRepository.findByIdForUpdate(saved.getGameSessionId())
+            .orElseThrow();
+
+        // then
+        assertThat(found.getGameSessionId()).isEqualTo(saved.getGameSessionId());
+        assertThat(found.getUserId()).isEqualTo(9L);
+    }
+
     @DisplayName("세션 진행 상태와 경제 사이클은 초기화 이후 값으로 갱신할 수 있다.")
     @Test
     void initializeCapitalAndAdvanceTurn() {

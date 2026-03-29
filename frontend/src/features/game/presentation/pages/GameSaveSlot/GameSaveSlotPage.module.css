@@ -38,6 +38,13 @@
   text-align: center;
 }
 
+.description {
+  color: #d2d8ff;
+  font-size: var(--font-size-sm);
+  margin: 0 0 4px;
+  text-align: center;
+}
+
 .slot {
   display: flex;
   align-items: stretch;
@@ -70,6 +77,11 @@
 
 .slotEnded {
   opacity: 0.8;
+}
+
+.slotDisabled {
+  cursor: default;
+  opacity: 0.68;
 }
 
 .slotNumber {
@@ -133,4 +145,26 @@
   color: #cccccc;
   font-size: var(--font-size-md);
   text-align: center;
+}
+
+.slotHint {
+  color: #d8dcff;
+  font-size: var(--font-size-sm);
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.secondaryButton {
+  background-color: transparent;
+  border: 1px solid #8888cc;
+  border-radius: 999px;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 10px 18px;
 }

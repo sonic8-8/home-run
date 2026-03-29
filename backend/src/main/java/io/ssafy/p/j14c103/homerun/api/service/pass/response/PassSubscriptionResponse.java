@@ -10,14 +10,14 @@ public class PassSubscriptionResponse {
     private final Long subscriptionId;
     private final Long passId;
     private final String name;
-    private final Integer amountPerSave;
-    private final Integer totalSaved;
+    private final Long amountPerSave;
+    private final Long totalSaved;
     private final List<Boolean> weeklyHistory;
     private final LocalDateTime subscribedAt;
 
     private PassSubscriptionResponse(
             final Long subscriptionId, final Long passId, final String name,
-            final Integer amountPerSave, final Integer totalSaved,
+            final Long amountPerSave, final Long totalSaved,
             final List<Boolean> weeklyHistory, final LocalDateTime subscribedAt) {
         this.subscriptionId = subscriptionId;
         this.passId = passId;
@@ -29,7 +29,7 @@ public class PassSubscriptionResponse {
     }
 
     public static PassSubscriptionResponse from(
-            final PassSubscription subscription, final int totalSaved, final List<Boolean> weeklyHistory) {
+            final PassSubscription subscription, final long totalSaved, final List<Boolean> weeklyHistory) {
         if (subscription == null) {
             throw new IllegalArgumentException("구독 정보는 null일 수 없습니다.");
         }
@@ -50,7 +50,7 @@ public class PassSubscriptionResponse {
                 subscription.getPassProduct().getId(),
                 subscription.getPassName(),
                 subscription.getSavingAmount(),
-                0,
+                0L,
                 List.of(false, false, false, false, false, false, false),
                 subscription.getSubscribedAt());
     }
@@ -58,8 +58,8 @@ public class PassSubscriptionResponse {
     public Long getSubscriptionId() { return subscriptionId; }
     public Long getPassId() { return passId; }
     public String getName() { return name; }
-    public Integer getAmountPerSave() { return amountPerSave; }
-    public Integer getTotalSaved() { return totalSaved; }
+    public Long getAmountPerSave() { return amountPerSave; }
+    public Long getTotalSaved() { return totalSaved; }
     public List<Boolean> getWeeklyHistory() { return weeklyHistory; }
     public LocalDateTime getSubscribedAt() { return subscribedAt; }
 }

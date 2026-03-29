@@ -279,7 +279,7 @@ public class UserAssetLinkService {
     private void createMainAccount(
             final Long userId,
             final String ssafyUserKey,
-            final int initialBalance
+            final long initialBalance
     ) {
         final Map<String, Object> response = ssafyDemandDepositClient.createDemandDepositAccount(
                 ssafyUserKey,
@@ -321,7 +321,7 @@ public class UserAssetLinkService {
                 ssafyAccountProperties.getBankCode(),
                 ssafyAccountProperties.getBankName(),
                 accountNumber,
-                0
+                0L
         );
         account.initializeSsafySync(null);
         userAccountRepository.save(account);

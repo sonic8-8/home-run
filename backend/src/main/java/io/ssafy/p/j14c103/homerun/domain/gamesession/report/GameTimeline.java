@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -13,7 +14,13 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "game_timelines")
+@Table(
+    name = "game_timelines",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_game_timelines__game_session_id__turn_number",
+        columnNames = {"game_session_id", "turn_number"}
+    )
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GameTimeline {
 

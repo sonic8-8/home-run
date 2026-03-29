@@ -83,11 +83,36 @@ class CreditScoreServiceTest {
         verifyNoInteractions(ssafyLoanClient);
     }
 
+  @DisplayName("큰 자산 요약값도 CSS 응답에 그대로 유지된다")
+  @Test
+  void getCreditScore_withLargeSummaryAmounts() {
+    // given
+    final Long userId = 2L;
+    final CreditScore creditScore = CreditScore.of(320, 260, 120, 80, 70);
+    final UserFinancialSummary summary = summary(userId, 21_474_800_000L, 3_000_000_000L, 18_474_800_000L);
+
+    given(userAuthContextService.getContext(userId)).willReturn(new UserAuthContext(userId, "large-user-key"));
+    given(creditScoreProvider.calculate(userId)).willReturn(creditScore);
+    given(userFinancialSummaryService.getSummary(userId)).willReturn(summary);
+    given(ssafyLoanClient.inquireMyCreditRating("large-user-key"))
+            .willReturn(Map.of("ratingName", "A+", "totalAssetValue", "21474800000"));
+
+    // when
+    final CreditScoreResponse response = creditScoreService.getCreditScore(userId);
+
+    // then
+    assertThat(response.getScore()).isEqualTo(850);
+    assertThat(response.getRatingName()).isEqualTo("A+");
+    assertThat(response.getTotalAsset()).isEqualTo(21_474_800_000L);
+    assertThat(response.getTotalDebt()).isEqualTo(3_000_000_000L);
+    assertThat(response.getNetAsset()).isEqualTo(18_474_800_000L);
+  }
+
     private UserFinancialSummary summary(
         final Long userId,
-        final int totalAssetAmount,
-        final int totalDebtAmount,
-        final int netAssetAmount
+        final long totalAssetAmount,
+        final long totalDebtAmount,
+        final long netAssetAmount
     ) {
         final UserFinancialSummary summary = UserFinancialSummary.create(userId);
         summary.refresh(totalAssetAmount, totalDebtAmount, netAssetAmount, totalAssetAmount, 0, 0);

@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameTimelineRepository extends JpaRepository<GameTimeline, Long> {
 
-    List<GameTimeline> findAllByGameSessionIdOrderByTurnNumberAscGameTimelineIdAsc(Long gameSessionId);
+    List<GameTimeline> findAllByGameSessionIdOrderByTurnNumberAsc(Long gameSessionId);
 }
