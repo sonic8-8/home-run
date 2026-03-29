@@ -4,6 +4,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameTimeline
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimelineRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -27,6 +28,7 @@ public class EndingLogsService {
         final GameSession gameSession = gameSessionRepository.findById(sessionId)
             .orElseThrow(() -> new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
         gameSession.assertOwner(userId);
+        assertEndingReady(gameSession);
 
         if (!gameReportRepository.existsById(sessionId)) {
             throw new HomerunException(ErrorCode.ENDING_REPORT_NOT_READY);
@@ -35,5 +37,12 @@ public class EndingLogsService {
         return GameTimelineResponse.from(
             gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(sessionId)
         );
+    }
+
+    private void assertEndingReady(final GameSession gameSession) {
+        if (gameSession.getSessionStatus() != SessionStatus.IN_PROGRESS) {
+            return;
+        }
+        throw new HomerunException(ErrorCode.ENDING_REPORT_NOT_READY);
     }
 }

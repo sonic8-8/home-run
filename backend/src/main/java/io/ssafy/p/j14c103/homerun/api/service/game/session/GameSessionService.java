@@ -91,7 +91,7 @@ public class GameSessionService {
     @Transactional
     public void delete(final Long userId, final Long sessionId) {
         validateUser(userId);
-        final GameSession gameSession = getOwnedGameSession(userId, sessionId);
+        final GameSession gameSession = getOwnedGameSessionForUpdate(userId, sessionId);
         gameSessionCleanupService.deleteAllByGameSessionId(sessionId);
         gameSessionRepository.delete(gameSession);
     }
@@ -106,8 +106,19 @@ public class GameSessionService {
         return gameSession;
     }
 
+    private GameSession getOwnedGameSessionForUpdate(final Long userId, final Long sessionId) {
+        final GameSession gameSession = getRequiredGameSessionForUpdate(sessionId);
+        gameSession.assertOwner(userId);
+        return gameSession;
+    }
+
     private GameSession getRequiredGameSession(final Long sessionId) {
         return gameSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
+    }
+
+    private GameSession getRequiredGameSessionForUpdate(final Long sessionId) {
+        return gameSessionRepository.findByIdForUpdate(sessionId)
             .orElseThrow(() -> new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
     }
 

@@ -1,13 +1,15 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.realestate;
 
+import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.WorldRealEstatePropertyProviderService;
+import io.ssafy.p.j14c103.homerun.api.service.world.housing.response.RealEstatePropertyDetailProviderResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.realestate.response.RealEstateDocumentResponse;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateMoneyRenderingRule;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
-import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryQuizSample;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryRow;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistrySection;
@@ -38,16 +40,21 @@ public class RealEstateDocumentService {
     private static final BigDecimal TEN_THOUSAND = BigDecimal.valueOf(10_000);
 
     private final GameSessionRepository gameSessionRepository;
-    private final RealEstatePropertyRepository realEstatePropertyRepository;
+    private final UserAuthContextService userAuthContextService;
+    private final WorldRealEstatePropertyProviderService worldRealEstatePropertyProviderService;
     private final RealEstateDocumentRepository realEstateDocumentRepository;
     private final RealEstateRegistryRandomService realEstateRegistryRandomService;
 
-    public RealEstateDocumentResponse getDocument(final Long sessionId, final Long propertyId) {
-        validateSession(sessionId);
+    public RealEstateDocumentResponse getDocument(
+        final Long userId,
+        final Long sessionId,
+        final Long propertyId
+    ) {
+        userAuthContextService.getContext(userId);
+        getOwnedGameSession(userId, sessionId);
 
-        final RealEstateProperty property = realEstatePropertyRepository.findById(propertyId)
-            .orElseThrow(() -> new HomerunException(ErrorCode.HOUSING_PROPERTY_NOT_FOUND));
-        final long salePrice = extractSalePrice(property);
+        final RealEstatePropertyDetailProviderResponse property =
+            worldRealEstatePropertyProviderService.getPropertyDetail(propertyId);
 
         final RealEstateRegistryQuizSample gapguSample = extractQuizSample(selectGapguDocument(propertyId));
         final RealEstateRegistryQuizSample eulguSample = extractQuizSample(selectEulguDocument(propertyId));
@@ -57,14 +64,14 @@ public class RealEstateDocumentService {
 
         return RealEstateDocumentResponse.of(
             property.getPropertyId(),
-            property.getPropertyName(),
+            property.getName(),
             property.getAddress(),
             property.getLatitude(),
             property.getLongitude(),
-            salePrice,
+            property.getRecentPrice(),
             REGISTRY_DOCUMENT_LABEL,
-            renderRows(gapguSample.getRows(), salePrice),
-            renderRows(eulguSample.getRows(), salePrice),
+            renderRows(gapguSample.getRows(), property.getRecentPrice()),
+            renderRows(eulguSample.getRows(), property.getRecentPrice()),
             RealEstateDocumentResponse.SolutionResponse.of(
                 toOverallVerdict(gapguSolution.verdict(), eulguSolution.verdict()),
                 gapguSolution,
@@ -73,20 +80,11 @@ public class RealEstateDocumentService {
         );
     }
 
-    private void validateSession(final Long sessionId) {
-        if (gameSessionRepository.existsById(sessionId)) {
-            return;
-        }
-
-        throw new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND);
-    }
-
-    private long extractSalePrice(final RealEstateProperty property) {
-        if (property.getBasePrice() != null) {
-            return property.getBasePrice().getAmount().longValue();
-        }
-
-        throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+    private GameSession getOwnedGameSession(final Long userId, final Long sessionId) {
+        final GameSession gameSession = gameSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
+        gameSession.assertOwner(userId);
+        return gameSession;
     }
 
     private RealEstateDocument selectGapguDocument(final Long propertyId) {

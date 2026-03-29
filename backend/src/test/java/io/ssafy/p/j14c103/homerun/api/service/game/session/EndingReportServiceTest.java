@@ -75,7 +75,7 @@ class EndingReportServiceTest {
             User.register(Email.of("ending-user@example.com"), "tester", "hashed")
         );
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
-            createGameSession(user.getId(), 450L)
+            createEndedSession(user.getId(), 450L)
         );
         gameReportRepository.saveAndFlush(GameReport.create(
             gameSession.getGameSessionId(),
@@ -142,6 +142,7 @@ class EndingReportServiceTest {
             gameSession.getGameSessionId()
         );
 
+        assertThat(response.getCharacterType()).isEqualTo(CharacterType.FEMALE);
         assertThat(response.getEndingType()).isEqualTo(SessionStatus.CLEAR);
         assertThat(response.getTitle()).isEqualTo("부동산 갑부");
         assertThat(response.getTotalAssets()).isEqualTo(500_000_000L);
@@ -171,6 +172,26 @@ class EndingReportServiceTest {
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
             createGameSession(user.getId(), 777L)
         );
+
+        assertThatThrownBy(() -> endingReportService.getEndingReport(
+                user.getId(),
+                gameSession.getGameSessionId()
+            ))
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.ENDING_REPORT_NOT_READY);
+    }
+
+    @DisplayName("진행 중인 세션이면 엔딩 리포트를 조회할 수 없다")
+    @Test
+    void getEndingReportWhenSessionIsInProgress() {
+        final User user = userRepository.save(
+            User.register(Email.of("ending-in-progress@example.com"), "tester", "hashed")
+        );
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 777L)
+        );
+        gameReportRepository.saveAndFlush(createGameReport(gameSession.getGameSessionId()));
 
         assertThatThrownBy(() -> endingReportService.getEndingReport(
                 user.getId(),
@@ -214,6 +235,28 @@ class EndingReportServiceTest {
             .isInstanceOf(HomerunException.class)
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
             .isEqualTo(ErrorCode.GAME_SESSION_FORBIDDEN);
+    }
+
+    private GameReport createGameReport(final Long gameSessionId) {
+        return GameReport.create(
+            gameSessionId,
+            SessionStatus.CLEAR,
+            "부동산 갑부",
+            120_000_000,
+            80_000_000,
+            "S",
+            500_000_000,
+            40_000_000,
+            "식비",
+            BigDecimal.valueOf(35.2),
+            List.of()
+        );
+    }
+
+    private GameSession createEndedSession(final Long userId, final Long targetPropertyId) {
+        final GameSession gameSession = createGameSession(userId, targetPropertyId);
+        gameSession.markEnding(SessionStatus.CLEAR);
+        return gameSession;
     }
 
     private GameSession createGameSession(final Long userId, final Long targetPropertyId) {

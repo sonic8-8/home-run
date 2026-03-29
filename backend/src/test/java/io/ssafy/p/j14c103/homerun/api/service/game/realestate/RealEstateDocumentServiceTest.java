@@ -11,6 +11,9 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.user.Email;
+import io.ssafy.p.j14c103.homerun.domain.user.User;
+import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocument;
@@ -47,6 +50,9 @@ class RealEstateDocumentServiceTest {
     private GameSessionRepository gameSessionRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private RealEstatePropertyRepository realEstatePropertyRepository;
 
     @Autowired
@@ -59,7 +65,8 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithRenderedMoneyText() {
         // given
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final User user = saveUser("document-rendered-user@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(user.getId()));
         final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
             createGapguDocument(property.getPropertyId(), "위험"),
@@ -70,6 +77,7 @@ class RealEstateDocumentServiceTest {
 
         // when
         final RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
+            user.getId(),
             gameSession.getGameSessionId(),
             property.getPropertyId()
         );
@@ -92,7 +100,8 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithNormalVerdict() {
         // given
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final User user = saveUser("document-normal-user@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(user.getId()));
         final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAllAndFlush(List.of(
             createGapguDocument(property.getPropertyId(), "정상"),
@@ -103,6 +112,7 @@ class RealEstateDocumentServiceTest {
 
         // when
         final RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
+            user.getId(),
             gameSession.getGameSessionId(),
             property.getPropertyId()
         );
@@ -118,12 +128,14 @@ class RealEstateDocumentServiceTest {
     @Test
     void getDocumentWithEmptySamplePool() {
         // given
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final User user = saveUser("document-empty-sample-user@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(user.getId()));
         final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
         realEstateDocumentRepository.saveAndFlush(createGapguDocument(property.getPropertyId(), "정상"));
 
         // when & then
         assertThatThrownBy(() -> realEstateDocumentService.getDocument(
+            user.getId(),
             gameSession.getGameSessionId(),
             property.getPropertyId()
         ))
@@ -132,33 +144,56 @@ class RealEstateDocumentServiceTest {
             .isEqualTo(ErrorCode.HOUSING_REGISTRY_SAMPLE_INVALID);
     }
 
-    @DisplayName("존재하지 않는 세션이면 world 세션 조회 에러를 던진다")
+    @DisplayName("존재하지 않는 세션이면 game 세션 조회 에러를 던진다")
     @Test
     void getDocumentWithUnknownSession() {
         // given
+        final User user = saveUser("document-unknown-session-user@example.com");
         final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
 
         // when & then
-        assertThatThrownBy(() -> realEstateDocumentService.getDocument(9999L, property.getPropertyId()))
+        assertThatThrownBy(() -> realEstateDocumentService.getDocument(user.getId(), 9999L, property.getPropertyId()))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
-            .isEqualTo(ErrorCode.WORLD_SESSION_NOT_FOUND);
+            .isEqualTo(ErrorCode.GAME_SESSION_NOT_FOUND);
     }
 
     @DisplayName("존재하지 않는 매물이면 housing 매물 조회 에러를 던진다")
     @Test
     void getDocumentWithUnknownProperty() {
         // given
-        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession());
+        final User user = saveUser("document-unknown-property-user@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(user.getId()));
 
         // when & then
         assertThatThrownBy(() -> realEstateDocumentService.getDocument(
+            user.getId(),
             gameSession.getGameSessionId(),
             9999L
         ))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
             .isEqualTo(ErrorCode.HOUSING_PROPERTY_NOT_FOUND);
+    }
+
+    @DisplayName("다른 사용자의 세션이면 GAME_SESSION_FORBIDDEN을 던진다")
+    @Test
+    void getDocumentWithForbiddenSession() {
+        // given
+        final User owner = saveUser("document-owner@example.com");
+        final User requester = saveUser("document-requester@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(owner.getId()));
+        final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
+
+        // when & then
+        assertThatThrownBy(() -> realEstateDocumentService.getDocument(
+            requester.getId(),
+            gameSession.getGameSessionId(),
+            property.getPropertyId()
+        ))
+            .isInstanceOf(HomerunException.class)
+            .extracting("errorCode")
+            .isEqualTo(ErrorCode.GAME_SESSION_FORBIDDEN);
     }
 
     private RealEstateProperty createProperty() {
@@ -176,9 +211,13 @@ class RealEstateDocumentServiceTest {
         );
     }
 
-    private GameSession createGameSession() {
+    private User saveUser(final String email) {
+        return userRepository.save(User.register(Email.of(email), "tester", "hashed-password"));
+    }
+
+    private GameSession createGameSession(final Long userId) {
         final GameSession gameSession = GameSession.create(
-            1L,
+            userId,
             1,
             "윤서",
             CharacterType.FEMALE,

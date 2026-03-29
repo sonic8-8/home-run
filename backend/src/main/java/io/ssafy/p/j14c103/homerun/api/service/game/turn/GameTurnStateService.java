@@ -3,7 +3,9 @@ package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameTurnWorldStateService;
+import io.ssafy.p.j14c103.homerun.api.service.world.LatestTurnNewsService;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnWorldStateResponse;
+import io.ssafy.p.j14c103.homerun.api.service.world.response.LatestTurnNewsResponse;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -19,13 +21,17 @@ public class GameTurnStateService {
     private final GameSessionRepository gameSessionRepository;
     private final UserAuthContextService userAuthContextService;
     private final GameTurnWorldStateService gameTurnWorldStateService;
+    private final LatestTurnNewsService latestTurnNewsService;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TurnStateResponse getTurnState(final Long userId, final Long sessionId) {
         userAuthContextService.getContext(userId);
         final GameSession gameSession = getOwnedGameSession(userId, sessionId);
         final GameTurnWorldStateResponse turnWorldState = gameTurnWorldStateService.getWorldState(
             gameSession
+        );
+        final LatestTurnNewsResponse latestTurnNews = latestTurnNewsService.getLatestTurnNews(
+            gameSession.getGameSessionId()
         );
 
         return TurnStateResponse.of(
@@ -35,7 +41,7 @@ public class GameTurnStateService {
                 turnWorldState.getPhase(),
                 turnWorldState.getDescription()
             ),
-            TurnStateResponse.NewsResponse.emptyList()
+            TurnStateResponse.NewsResponse.from(latestTurnNews.getNews())
         );
     }
 

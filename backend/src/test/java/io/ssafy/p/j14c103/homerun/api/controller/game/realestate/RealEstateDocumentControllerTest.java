@@ -42,7 +42,7 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
     @Test
     void getDocuments() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(1001L, 7L)).willReturn(sampleResponse());
+        given(realEstateDocumentService.getDocument(1L, 1001L, 7L)).willReturn(sampleResponse());
 
         // when & then
         mockMvc.perform(get(
@@ -50,6 +50,7 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
                         1001L,
                         7L
                 )
+                        .with(currentUser())
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200))
@@ -108,7 +109,7 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
     @Test
     void getDocumentsWithUnknownProperty() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(1001L, 999L))
+        given(realEstateDocumentService.getDocument(1L, 1001L, 999L))
             .willThrow(new HomerunException(ErrorCode.HOUSING_PROPERTY_NOT_FOUND));
 
         // when & then
@@ -117,6 +118,7 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
                         1001L,
                         999L
                 )
+                        .with(currentUser())
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code").value("HOUSING_001"))
@@ -135,8 +137,8 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
     @Test
     void getDocumentsWithUnknownSession() throws Exception {
         // given
-        given(realEstateDocumentService.getDocument(9999L, 7L))
-            .willThrow(new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
+        given(realEstateDocumentService.getDocument(1L, 9999L, 7L))
+            .willThrow(new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
 
         // when & then
         mockMvc.perform(get(
@@ -144,11 +146,40 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
                         9999L,
                         7L
                 )
+                        .with(currentUser())
                         .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.code").value("WORLD_001"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.code").value("GAME_004"))
             .andExpect(jsonPath("$.message").value("존재하지 않는 게임 세션입니다."))
             .andDo(document("real-estate/documents/session-not-found",
+                    requestHeaders(authorizationHeader()),
+                    pathParameters(
+                            parameterWithName("sessionId").description("게임 세션 ID"),
+                            parameterWithName("propertyId").description("부동산 매물 ID")
+                    ),
+                    basicErrorResponseFields()
+            ));
+    }
+
+    @DisplayName("다른 사용자의 세션이면 에러 응답을 반환한다")
+    @Test
+    void getDocumentsForbidden() throws Exception {
+        // given
+        given(realEstateDocumentService.getDocument(1L, 88L, 7L))
+            .willThrow(new HomerunException(ErrorCode.GAME_SESSION_FORBIDDEN));
+
+        // when & then
+        mockMvc.perform(get(
+                        "/api/games/sessions/{sessionId}/real-estate/properties/{propertyId}/documents",
+                        88L,
+                        7L
+                )
+                        .with(currentUser())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("GAME_002"))
+            .andExpect(jsonPath("$.message").value("해당 게임 세션에 접근할 수 없습니다."))
+            .andDo(document("real-estate/documents/forbidden",
                     requestHeaders(authorizationHeader()),
                     pathParameters(
                             parameterWithName("sessionId").description("게임 세션 ID"),

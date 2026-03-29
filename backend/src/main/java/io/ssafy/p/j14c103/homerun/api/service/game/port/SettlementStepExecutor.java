@@ -20,6 +20,10 @@ public interface SettlementStepExecutor {
         private final Money currentCash;
         private final Money currentStockValue;
         private final Money currentLoanBalance;
+        private final Money previewCashChange;
+        private final Map<String, Integer> previewStatChanges;
+        private final String cycleDescription;
+        private final boolean hasEventCandidate;
         private final Map<String, Integer> currentStatChanges;
         private final boolean targetPropertyOwned;
 
@@ -30,6 +34,10 @@ public interface SettlementStepExecutor {
             final Money currentCash,
             final Money currentStockValue,
             final Money currentLoanBalance,
+            final Money previewCashChange,
+            final Map<String, Integer> previewStatChanges,
+            final String cycleDescription,
+            final boolean hasEventCandidate,
             final Map<String, Integer> currentStatChanges,
             final boolean targetPropertyOwned
         ) {
@@ -40,6 +48,9 @@ public interface SettlementStepExecutor {
                 currentCash,
                 currentStockValue,
                 currentLoanBalance,
+                previewCashChange,
+                previewStatChanges,
+                cycleDescription,
                 currentStatChanges
             );
             this.sessionId = sessionId;
@@ -48,6 +59,10 @@ public interface SettlementStepExecutor {
             this.currentCash = currentCash;
             this.currentStockValue = currentStockValue;
             this.currentLoanBalance = currentLoanBalance;
+            this.previewCashChange = previewCashChange;
+            this.previewStatChanges = Map.copyOf(previewStatChanges);
+            this.cycleDescription = cycleDescription;
+            this.hasEventCandidate = hasEventCandidate;
             this.currentStatChanges = Map.copyOf(currentStatChanges);
             this.targetPropertyOwned = targetPropertyOwned;
         }
@@ -59,6 +74,10 @@ public interface SettlementStepExecutor {
             final Money currentCash,
             final Money currentStockValue,
             final Money currentLoanBalance,
+            final Money previewCashChange,
+            final Map<String, Integer> previewStatChanges,
+            final String cycleDescription,
+            final boolean hasEventCandidate,
             final Map<String, Integer> currentStatChanges,
             final boolean targetPropertyOwned
         ) {
@@ -69,6 +88,10 @@ public interface SettlementStepExecutor {
                 currentCash,
                 currentStockValue,
                 currentLoanBalance,
+                previewCashChange,
+                previewStatChanges,
+                cycleDescription,
+                hasEventCandidate,
                 currentStatChanges,
                 targetPropertyOwned
             );
@@ -81,12 +104,19 @@ public interface SettlementStepExecutor {
             final Money currentCash,
             final Money currentStockValue,
             final Money currentLoanBalance,
+            final Money previewCashChange,
+            final Map<String, Integer> previewStatChanges,
+            final String cycleDescription,
             final Map<String, Integer> currentStatChanges
         ) {
             if (sessionId == null || nextTurnNumber == null || nextTurnNumber < 1 || stepType == null) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
-            if (currentCash == null || currentStockValue == null || currentLoanBalance == null) {
+            if (currentCash == null || currentStockValue == null || currentLoanBalance == null
+                || previewCashChange == null) {
+                throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+            }
+            if (previewStatChanges == null || cycleDescription == null || cycleDescription.isBlank()) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
             if (currentStatChanges == null) {

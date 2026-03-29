@@ -39,6 +39,10 @@ class SettlementOrchestratorServiceTest {
             Money.of(2_000_000L),
             Money.of(300_000L),
             Money.of(100_000L),
+            Money.zero(),
+            Map.of(),
+            "경기 회복기",
+            false,
             false
         );
         stubStep(SettlementStepType.MARKET_CYCLE_UPDATE, "경기 사이클을 갱신한다", 0L, 50_000L, 0L, Map.of());

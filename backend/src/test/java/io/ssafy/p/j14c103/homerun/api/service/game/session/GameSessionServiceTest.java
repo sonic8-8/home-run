@@ -50,10 +50,12 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -62,7 +64,7 @@ class GameSessionServiceTest {
     @Autowired
     private GameSessionService gameSessionService;
 
-    @Autowired
+    @MockitoSpyBean
     private GameSessionRepository gameSessionRepository;
 
     @Autowired
@@ -392,6 +394,25 @@ class GameSessionServiceTest {
 
         // then
         assertThat(gameSessionRepository.findById(saved.getGameSessionId())).isEmpty();
+        then(gameSessionCleanupService).should().deleteAllByGameSessionId(saved.getGameSessionId());
+    }
+
+    @DisplayName("세션 삭제는 커밋 충돌을 피하기 위해 row lock으로 세션을 조회한다.")
+    @Test
+    void deleteUsesRowLock() {
+        // given
+        final User user = saveUser("delete-lock-user@example.com");
+        final GameSession saved = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 1, "락삭제", JobType.STARTUP, 101L)
+        );
+
+        // when
+        gameSessionService.delete(user.getId(), saved.getGameSessionId());
+
+        // then
+        assertThat(Mockito.mockingDetails(gameSessionRepository).getInvocations())
+            .extracting(invocation -> invocation.getMethod().getName())
+            .contains("findByIdForUpdate");
         then(gameSessionCleanupService).should().deleteAllByGameSessionId(saved.getGameSessionId());
     }
 

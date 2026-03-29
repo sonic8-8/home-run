@@ -38,6 +38,10 @@ public class SettlementOrchestratorService {
                         currentCash,
                         currentStockValue,
                         currentLoanBalance,
+                        request.getPreviewCashChange(),
+                        request.getPreviewStatChanges(),
+                        request.getCycleDescription(),
+                        request.isHasEventCandidate(),
                         aggregatedStatChanges,
                         targetPropertyOwned
                     )
