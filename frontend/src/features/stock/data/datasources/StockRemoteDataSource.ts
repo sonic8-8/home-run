@@ -1,3 +1,4 @@
+import { injectable } from 'tsyringe';
 import { apiClient } from '@core/network/apiClient'
 import { unwrapApiData, type ApiEnvelope } from '@core/network/apiResponse'
 import type {
@@ -7,6 +8,7 @@ import type {
   StockOrderResponseModel,
 } from '@features/stock/data/models/StockModel'
 
+@injectable()
 export class StockRemoteDataSource {
   async getMarket(sessionId: number): Promise<StockMarketResponseModel> {
     return apiClient.get<ApiEnvelope<StockMarketResponseModel>>(

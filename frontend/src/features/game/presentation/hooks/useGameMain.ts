@@ -99,7 +99,7 @@ export const useGameMain = () => {
   const [isNewsOpen, setIsNewsOpen] = useState(false);
   const [isMonthlyActivityOpen, setIsMonthlyActivityOpen] = useState(false);
   const [isGameEventOpen, setIsGameEventOpen] = useState(false);
-  const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card'>(openLoan ? 'loan' : 'scene');
+  const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card' | 'stock'>(openLoan ? 'loan' : 'scene');
   const createSessionPromiseRef = useRef<Promise<GameSessionCreation> | null>(null);
   const endingRedirectedRef = useRef(false);
 

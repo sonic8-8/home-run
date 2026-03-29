@@ -8,4 +8,5 @@ export const DI_TOKENS = {
   IGameTurnRepository: 'IGameTurnRepository',
   ILoanRepository: 'ILoanRepository',
   IRealEstateRepository: 'IRealEstateRepository',
+  IStockRepository: 'IStockRepository',
 } as const;
