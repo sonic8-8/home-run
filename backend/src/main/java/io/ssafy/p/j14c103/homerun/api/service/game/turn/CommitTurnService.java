@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SettlementOrchestratorRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.SettlementOrchestratorResult;
@@ -51,6 +53,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommitTurnService {
 
     private static final int DEFAULT_WORLD_ROLL = 50;
+    private static final String TURN_COMMIT_DURATION = "homerun.turn.commit.duration";
+    private static final String BOUNDARY_TAG = "boundary";
+    private static final String RESULT_TAG = "result";
+    private static final String COMMIT_TURN_BOUNDARY = "commit-turn";
     private static final String CLEAR_ENDING_TITLE = "부동산 갑부";
     private static final String BANKRUPT_ENDING_TITLE = "파산";
     private static final String TIMEOUT_ENDING_TITLE = "시간 초과";
@@ -72,47 +78,70 @@ public class CommitTurnService {
     private final StockHoldingRepository stockHoldingRepository;
     private final GameStockMarketStateRepository gameStockMarketStateRepository;
     private final GameCareerRepository gameCareerRepository;
+    private final MeterRegistry meterRegistry;
 
     @Transactional
     public CommitTurnResponse commitTurn(final Long userId, final Long sessionId) {
-        final GameTurnCommitGuardService.CommitTurnGuardResult guardResult =
-            gameTurnCommitGuardService.guard(userId, sessionId);
-        final GameSession gameSession = guardResult.getGameSession();
-        final TurnDraft turnDraft = guardResult.getTurnDraft();
-        final GameWorldResult worldResult = gameWorldResultService.buildWorldResult(
-            sessionId,
-            DEFAULT_WORLD_ROLL
-        );
-        final Integer committedTurn = gameSession.getCurrentTurn();
-        final SettlementOrchestratorResult settlementResult = settlementOrchestratorService.orchestrate(
-            buildSettlementRequest(gameSession, committedTurn + 1, turnDraft, worldResult)
-        );
+        final Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            final GameTurnCommitGuardService.CommitTurnGuardResult guardResult =
+                gameTurnCommitGuardService.guard(userId, sessionId);
+            final GameSession gameSession = guardResult.getGameSession();
+            final TurnDraft turnDraft = guardResult.getTurnDraft();
+            final GameWorldResult worldResult = gameWorldResultService.buildWorldResult(
+                sessionId,
+                DEFAULT_WORLD_ROLL
+            );
+            final Integer committedTurn = gameSession.getCurrentTurn();
+            final SettlementOrchestratorResult settlementResult =
+                settlementOrchestratorService.orchestrate(
+                    buildSettlementRequest(gameSession, committedTurn + 1, turnDraft, worldResult)
+                );
 
-        saveCommittedSlots(gameSession.getGameSessionId(), committedTurn, turnDraft);
-        final SessionAdvanceResult sessionAdvanceResult = advanceSession(gameSession, worldResult, settlementResult);
-        saveSettlementLogs(gameSession.getGameSessionId(), committedTurn, settlementResult);
-        saveTimeline(gameSession.getGameSessionId(), committedTurn, sessionAdvanceResult.nextDate(), settlementResult);
-        saveGameReportIfEnded(gameSession, settlementResult);
-        turnDraftRepository.deleteBySessionId(sessionId);
+            saveCommittedSlots(gameSession.getGameSessionId(), committedTurn, turnDraft);
+            final SessionAdvanceResult sessionAdvanceResult =
+                advanceSession(gameSession, worldResult, settlementResult);
+            saveSettlementLogs(gameSession.getGameSessionId(), committedTurn, settlementResult);
+            saveTimeline(
+                gameSession.getGameSessionId(),
+                committedTurn,
+                sessionAdvanceResult.nextDate(),
+                settlementResult
+            );
+            saveGameReportIfEnded(gameSession, settlementResult);
+            turnDraftRepository.deleteBySessionId(sessionId);
 
-        return CommitTurnResponse.of(
-            committedTurn,
-            buildSettlementLog(settlementResult),
-            CommitTurnResponse.UpdatedAssetsResponse.of(
-                toLong(settlementResult.getFinalCash()),
-                toLong(settlementResult.getFinalLoanBalance()),
-                toLong(resolveCurrentRealEstateAssetValue(sessionId)),
-                toLong(settlementResult.getNetWorth())
-            ),
-            CommitTurnResponse.StatChangesResponse.from(settlementResult.getAggregatedStatChanges()),
-            CommitTurnResponse.FlagsResponse.of(
-                settlementResult.getEndingStatus() == SessionStatus.BANKRUPT,
-                settlementResult.getEndingStatus() == SessionStatus.CLEAR,
-                false,
-                false,
-                settlementResult.isHasEvent()
-            )
-        );
+            final CommitTurnResponse response = CommitTurnResponse.of(
+                committedTurn,
+                buildSettlementLog(settlementResult),
+                CommitTurnResponse.UpdatedAssetsResponse.of(
+                    toLong(settlementResult.getFinalCash()),
+                    toLong(settlementResult.getFinalLoanBalance()),
+                    toLong(resolveCurrentRealEstateAssetValue(sessionId)),
+                    toLong(settlementResult.getNetWorth())
+                ),
+                CommitTurnResponse.StatChangesResponse.from(settlementResult.getAggregatedStatChanges()),
+                CommitTurnResponse.FlagsResponse.of(
+                    settlementResult.getEndingStatus() == SessionStatus.BANKRUPT,
+                    settlementResult.getEndingStatus() == SessionStatus.CLEAR,
+                    false,
+                    false,
+                    settlementResult.isHasEvent()
+                )
+            );
+            sample.stop(turnCommitTimer("success"));
+            return response;
+        } catch (RuntimeException exception) {
+            sample.stop(turnCommitTimer("failure"));
+            throw exception;
+        }
+    }
+
+    private Timer turnCommitTimer(final String result) {
+        return Timer.builder(TURN_COMMIT_DURATION)
+            .tag(BOUNDARY_TAG, COMMIT_TURN_BOUNDARY)
+            .tag(RESULT_TAG, result)
+            .register(meterRegistry);
     }
 
     private void saveCommittedSlots(

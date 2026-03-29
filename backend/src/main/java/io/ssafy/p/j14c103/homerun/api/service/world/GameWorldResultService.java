@@ -1,7 +1,5 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
@@ -22,15 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GameWorldResultService {
 
-    private static final String TURN_COMMIT_DURATION_METRIC = "homerun.turn.commit.duration";
-    private static final String BOUNDARY_TAG = "boundary";
-    private static final String RESULT_TAG = "result";
-    private static final String WORLD_RESULT_BOUNDARY = "world-result";
-
     private final GameSessionRepository gameSessionRepository;
     private final GameHousingRepository gameHousingRepository;
     private final CycleTransitionPolicy cycleTransitionPolicy;
-    private final MeterRegistry meterRegistry;
 
     public GameWorldResult buildWorldResult(final Long gameSessionId, final int roll) {
         return buildWorldResult(gameSessionId, CycleDecisionRolls.of(roll, roll, roll));
@@ -40,38 +32,23 @@ public class GameWorldResultService {
         final Long gameSessionId,
         final CycleDecisionRolls rolls
     ) {
-        final Timer.Sample sample = Timer.start(meterRegistry);
-        try {
-            final GameSession gameSession = gameSessionRepository.findById(gameSessionId)
-                .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
-            final CycleState currentState = requireCycleState(gameSession);
-            final CycleState nextState = cycleTransitionPolicy.nextState(currentState, rolls);
-            final String description = cycleTransitionPolicy.descriptionOf(nextState.getPhase());
+        final GameSession gameSession = gameSessionRepository.findById(gameSessionId)
+            .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_SESSION_NOT_FOUND));
+        final CycleState currentState = requireCycleState(gameSession);
+        final CycleState nextState = cycleTransitionPolicy.nextState(currentState, rolls);
+        final String description = cycleTransitionPolicy.descriptionOf(nextState.getPhase());
 
-            final GameWorldResult result = GameWorldResult.of(
-                GameWorldResult.CycleResult.of(
-                    nextState.getPhase(),
-                    nextState.getType(),
-                    nextState.getRemainingTurns(),
-                    description
-                ),
-                List.of(),
-                List.of(),
-                buildHousingSnapshot(gameSession)
-            );
-            sample.stop(turnCommitTimer("success"));
-            return result;
-        } catch (RuntimeException exception) {
-            sample.stop(turnCommitTimer("failure"));
-            throw exception;
-        }
-    }
-
-    private Timer turnCommitTimer(final String result) {
-        return Timer.builder(TURN_COMMIT_DURATION_METRIC)
-            .tag(BOUNDARY_TAG, WORLD_RESULT_BOUNDARY)
-            .tag(RESULT_TAG, result)
-            .register(meterRegistry);
+        return GameWorldResult.of(
+            GameWorldResult.CycleResult.of(
+                nextState.getPhase(),
+                nextState.getType(),
+                nextState.getRemainingTurns(),
+                description
+            ),
+            List.of(),
+            List.of(),
+            buildHousingSnapshot(gameSession)
+        );
     }
 
     private CycleState requireCycleState(final GameSession gameSession) {
