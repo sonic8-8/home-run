@@ -1,5 +1,8 @@
 import type {
   GameTurn,
+  NewsHistoryItem,
+  PendingGameEvent,
+  ResolvedGameEvent,
   TurnCommitResult,
   TurnNews,
   TurnPreview,
@@ -11,6 +14,13 @@ export interface IGameTurnRepository {
   getTurn(sessionId: number): Promise<GameTurn>
   getAvailableActions(sessionId: number): Promise<TurnActions>
   getLatestNews(sessionId: number): Promise<TurnNews>
+  getNewsHistory(sessionId: number): Promise<readonly NewsHistoryItem[]>
+  getPendingEvents(sessionId: number): Promise<readonly PendingGameEvent[]>
+  resolveEvent(
+    sessionId: number,
+    eventId: number,
+    choiceId: number | null,
+  ): Promise<ResolvedGameEvent>
   submitTurnSlots(
     sessionId: number,
     slots: readonly TurnSlotSelection[],

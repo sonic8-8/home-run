@@ -5,6 +5,10 @@ import type {
   GameTurn,
   EconomicCyclePhase,
   EconomicCycleType,
+  GameEventPresentationType,
+  NewsHistoryItem,
+  PendingGameEvent,
+  ResolvedGameEvent,
   TurnCommitResult,
   TurnNews,
   TurnPreview,
@@ -59,6 +63,73 @@ export class GameTurnRepositoryImpl implements IGameTurnRepository {
         publishedDate: this.toDate(newsItem.publishedDate),
         economicCycleType: this.toEconomicCycleType(newsItem.economicCycleType),
       })),
+    }
+  }
+
+  async getNewsHistory(sessionId: number): Promise<readonly NewsHistoryItem[]> {
+    const model = await this.dataSource.getNewsHistory(sessionId)
+
+    return model.newsHistories.map((item) => ({
+      turnNumber: item.turnNumber,
+      newsId: item.newsId,
+      headline: item.headline,
+      publishedDate: this.toDate(item.publishedDate),
+    }))
+  }
+
+  async getPendingEvents(sessionId: number): Promise<readonly PendingGameEvent[]> {
+    const model = await this.dataSource.getPendingEvents(sessionId)
+
+    return model.events.map((event) => ({
+      eventId: event.eventId,
+      type: this.toGameEventPresentationType(event.type),
+      title: event.title,
+      description: event.description,
+      imageUrl: event.imageUrl,
+      choices: (event.choices ?? []).map((choice) => ({
+        choiceId: choice.choiceId,
+        choiceCode: choice.choiceCode,
+        choiceName: choice.choiceName,
+        description: choice.description,
+      })),
+      sender: event.sender,
+      receiver: event.receiver,
+      date: event.date === null ? null : this.toDate(event.date),
+      offeredSalary: event.offeredSalary,
+      currentSalary: event.currentSalary,
+    }))
+  }
+
+  async resolveEvent(
+    sessionId: number,
+    eventId: number,
+    choiceId: number | null,
+  ): Promise<ResolvedGameEvent> {
+    const model = await this.dataSource.resolveEvent(
+      sessionId,
+      eventId,
+      choiceId === null ? undefined : { choiceId },
+    )
+
+    return {
+      eventId: model.eventId,
+      gameEventId: model.gameEventId,
+      choiceId: model.choiceId,
+      selectedChoiceCode: model.selectedChoiceCode,
+      resultEffects: model.resultEffects.map((effect) => ({
+        effectOrder: effect.effectOrder,
+        applicationTimingType: effect.applicationTimingType,
+        targetTableName: effect.targetTableName,
+        targetColumnName: effect.targetColumnName,
+        operationType: effect.operationType,
+        baseNumberValue: effect.baseNumberValue,
+        minNumberValue: effect.minNumberValue,
+        maxNumberValue: effect.maxNumberValue,
+        baseTextValue: effect.baseTextValue,
+        durationTurns: effect.durationTurns,
+        note: effect.note,
+      })),
+      resultSummary: model.resultSummary,
     }
   }
 
@@ -175,6 +246,19 @@ export class GameTurnRepositoryImpl implements IGameTurnRepository {
         return value
       default:
         throw new ResponseMappingError(`지원하지 않는 경기 사이클 전이입니다: ${value}`)
+    }
+  }
+
+  private toGameEventPresentationType(value: string): GameEventPresentationType {
+    switch (value) {
+      case 'CHOICE':
+      case 'PHONE':
+      case 'JOB_TRANSFER':
+      case 'LETTER':
+      case 'GIFT':
+        return value
+      default:
+        throw new ResponseMappingError(`지원하지 않는 이벤트 표현 방식입니다: ${value}`)
     }
   }
 }

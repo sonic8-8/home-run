@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResponseMappingError } from '@core/error/AppError';
 import type {
+  GameNewsHistoryResponseModel,
   GameTurnResponseModel,
   LatestTurnNewsResponseModel,
+  PendingEventsResponseModel,
+  ResolveEventResponseModel,
   TurnActionsResponseModel,
   TurnCommitResponseModel,
   TurnPreviewResponseModel,
@@ -19,6 +22,11 @@ describe('GameTurnRepositoryImpl', () => {
       getTurn: vi.fn<(_: number) => Promise<GameTurnResponseModel>>(),
       getAvailableActions: vi.fn<(_: number) => Promise<TurnActionsResponseModel>>(),
       getLatestNews: vi.fn<(_: number) => Promise<LatestTurnNewsResponseModel>>(),
+      getNewsHistory: vi.fn<(_: number) => Promise<GameNewsHistoryResponseModel>>(),
+      getPendingEvents: vi.fn<(_: number) => Promise<PendingEventsResponseModel>>(),
+      resolveEvent: vi.fn<
+        (_: number, __: number, ___?: { choiceId?: number }) => Promise<ResolveEventResponseModel>
+      >(),
       submitTurnSlots: vi.fn<
         (_: number, request: { slots: { slotIndex: number; actionType: string }[] }) => Promise<TurnPreviewResponseModel>
       >(),
@@ -85,6 +93,113 @@ describe('GameTurnRepositoryImpl', () => {
         },
       ],
     });
+  });
+
+  it('maps the news history response', async () => {
+    vi.mocked(dataSource.getNewsHistory).mockResolvedValue({
+      newsHistories: [
+        {
+          turnNumber: 11,
+          newsId: 'NEWS-011',
+          headline: '채용 한파 심화',
+          publishedDate: '2026-01-01',
+        },
+      ],
+    });
+
+    const result = await repository.getNewsHistory(203);
+
+    expect(dataSource.getNewsHistory).toHaveBeenCalledWith(203);
+    expect(result).toEqual([
+      {
+        turnNumber: 11,
+        newsId: 'NEWS-011',
+        headline: '채용 한파 심화',
+        publishedDate: new Date('2026-01-01T00:00:00'),
+      },
+    ]);
+  });
+
+  it('maps the pending events response', async () => {
+    vi.mocked(dataSource.getPendingEvents).mockResolvedValue({
+      events: [
+        {
+          eventId: 301,
+          type: 'JOB_TRANSFER',
+          title: '이직 제안',
+          description: '좋은 조건의 이직 제안이 도착했습니다.',
+          imageUrl: '/images/events/job-transfer.png',
+          choices: [
+            {
+              choiceId: 701,
+              choiceCode: 'ACCEPT',
+              choiceName: '승인하기',
+              description: '이직을 수락합니다.',
+            },
+          ],
+          sender: 'OO 기업 인사팀',
+          receiver: '김싸피',
+          date: '2026-05-01',
+          offeredSalary: 42000000,
+          currentSalary: 36000000,
+        },
+      ],
+    });
+
+    const result = await repository.getPendingEvents(204);
+
+    expect(dataSource.getPendingEvents).toHaveBeenCalledWith(204);
+    expect(result[0]).toEqual({
+      eventId: 301,
+      type: 'JOB_TRANSFER',
+      title: '이직 제안',
+      description: '좋은 조건의 이직 제안이 도착했습니다.',
+      imageUrl: '/images/events/job-transfer.png',
+      choices: [
+        {
+          choiceId: 701,
+          choiceCode: 'ACCEPT',
+          choiceName: '승인하기',
+          description: '이직을 수락합니다.',
+        },
+      ],
+      sender: 'OO 기업 인사팀',
+      receiver: '김싸피',
+      date: new Date('2026-05-01T00:00:00'),
+      offeredSalary: 42000000,
+      currentSalary: 36000000,
+    });
+  });
+
+  it('maps the resolve event response', async () => {
+    vi.mocked(dataSource.resolveEvent).mockResolvedValue({
+      eventId: 301,
+      gameEventId: 1201,
+      choiceId: 701,
+      selectedChoiceCode: 'ACCEPT',
+      resultEffects: [
+        {
+          effectOrder: 1,
+          applicationTimingType: 'IMMEDIATE',
+          targetTableName: 'game_career',
+          targetColumnName: 'salary',
+          operationType: 'ADD',
+          baseNumberValue: 6000000,
+          minNumberValue: null,
+          maxNumberValue: null,
+          baseTextValue: null,
+          durationTurns: null,
+          note: '연봉이 올랐습니다.',
+        },
+      ],
+      resultSummary: '이직 제안을 수락했습니다.',
+    });
+
+    const result = await repository.resolveEvent(205, 301, 701);
+
+    expect(dataSource.resolveEvent).toHaveBeenCalledWith(205, 301, { choiceId: 701 });
+    expect(result.resultSummary).toBe('이직 제안을 수락했습니다.');
+    expect(result.resultEffects[0]?.note).toBe('연봉이 올랐습니다.');
   });
 
   it('maps the available turn actions response', async () => {
@@ -253,5 +368,27 @@ describe('GameTurnRepositoryImpl', () => {
     });
 
     await expect(repository.getLatestNews(202)).rejects.toThrowError(ResponseMappingError);
+  });
+
+  it('throws when the pending event contains an unsupported presentation type', async () => {
+    vi.mocked(dataSource.getPendingEvents).mockResolvedValue({
+      events: [
+        {
+          eventId: 301,
+          type: 'UNKNOWN',
+          title: '알 수 없는 이벤트',
+          description: '지원하지 않는 이벤트입니다.',
+          imageUrl: null,
+          choices: [],
+          sender: null,
+          receiver: null,
+          date: null,
+          offeredSalary: null,
+          currentSalary: null,
+        },
+      ],
+    });
+
+    await expect(repository.getPendingEvents(206)).rejects.toThrowError(ResponseMappingError);
   });
 });

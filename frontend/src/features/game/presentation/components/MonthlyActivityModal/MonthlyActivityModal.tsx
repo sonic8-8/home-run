@@ -40,6 +40,8 @@ interface MonthlyActivityModalProps {
   onSubmitSlots: (actionTypes: readonly string[]) => void
   onBackToSelection: () => void
   onCommit: () => void
+  onConfirmCommitResult: () => void
+  isResultConfirming?: boolean
 }
 
 interface ActionCardProps {
@@ -163,6 +165,8 @@ export function MonthlyActivityModal({
   onSubmitSlots,
   onBackToSelection,
   onCommit,
+  onConfirmCommitResult,
+  isResultConfirming = false,
 }: MonthlyActivityModalProps) {
   const [shopPage, setShopPage] = useState(0)
   const [activityPage, setActivityPage] = useState(0)
@@ -290,8 +294,13 @@ export function MonthlyActivityModal({
             </section>
 
             <div className={styles.footer}>
-              <button type="button" className={styles.primaryButton} onClick={onClose}>
-                확인
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={onConfirmCommitResult}
+                disabled={isResultConfirming}
+              >
+                {commitResult.flags.hasEvent ? '이벤트 확인' : '확인'}
               </button>
             </div>
           </>

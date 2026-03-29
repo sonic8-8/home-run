@@ -97,3 +97,61 @@ export interface TurnNews {
   readonly currentDate: Date
   readonly news: readonly NewsItem[]
 }
+
+export interface NewsHistoryItem {
+  readonly turnNumber: number
+  readonly newsId: string
+  readonly headline: string
+  readonly publishedDate: Date
+}
+
+export type GameEventPresentationType =
+  | 'CHOICE'
+  | 'PHONE'
+  | 'JOB_TRANSFER'
+  | 'LETTER'
+  | 'GIFT'
+
+export interface PendingEventChoice {
+  readonly choiceId: number
+  readonly choiceCode: string
+  readonly choiceName: string
+  readonly description: string
+}
+
+export interface PendingGameEvent {
+  readonly eventId: number
+  readonly type: GameEventPresentationType
+  readonly title: string
+  readonly description: string
+  readonly imageUrl: string | null
+  readonly choices: readonly PendingEventChoice[]
+  readonly sender: string | null
+  readonly receiver: string | null
+  readonly date: Date | null
+  readonly offeredSalary: number | null
+  readonly currentSalary: number | null
+}
+
+export interface ResolvedGameEventEffect {
+  readonly effectOrder: number
+  readonly applicationTimingType: string
+  readonly targetTableName: string | null
+  readonly targetColumnName: string | null
+  readonly operationType: string
+  readonly baseNumberValue: number | null
+  readonly minNumberValue: number | null
+  readonly maxNumberValue: number | null
+  readonly baseTextValue: string | null
+  readonly durationTurns: number | null
+  readonly note: string | null
+}
+
+export interface ResolvedGameEvent {
+  readonly eventId: number
+  readonly gameEventId: number
+  readonly choiceId: number | null
+  readonly selectedChoiceCode: string | null
+  readonly resultEffects: readonly ResolvedGameEventEffect[]
+  readonly resultSummary: string
+}

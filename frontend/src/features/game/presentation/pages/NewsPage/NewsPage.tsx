@@ -8,8 +8,11 @@ export function NewsPage() {
   const navigate = useNavigate();
   const {
     news,
+    newsHistory,
     isNewsLoading,
     newsError,
+    isNewsHistoryLoading,
+    newsHistoryError,
     hasValidSessionId,
   } = useGameNewsPage();
 
@@ -43,6 +46,42 @@ export function NewsPage() {
         {!isNewsLoading && news && news.news.map((item) => (
           <NewsArticle key={item.newsId} item={item} />
         ))}
+
+        <section className={styles.historySection}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>지난 턴 헤드라인</h2>
+            <p className={styles.sectionDescription}>
+              이전 턴에 노출된 핵심 뉴스 제목을 빠르게 확인할 수 있습니다.
+            </p>
+          </div>
+          {isNewsHistoryLoading && (
+            <div className={styles.status}>지난 뉴스를 불러오는 중...</div>
+          )}
+          {newsHistoryError && (
+            <div className={`${styles.status} ${styles.statusError}`}>{newsHistoryError}</div>
+          )}
+          {!isNewsHistoryLoading && !newsHistoryError && newsHistory.length === 0 && (
+            <div className={styles.status}>저장된 뉴스 히스토리가 없습니다.</div>
+          )}
+          {!isNewsHistoryLoading && !newsHistoryError && newsHistory.length > 0 && (
+            <ul className={styles.historyList}>
+              {newsHistory.map((item) => (
+                <li
+                  key={`${item.turnNumber}-${item.newsId}`}
+                  className={styles.historyItem}
+                >
+                  <div className={styles.historyTurn}>{item.turnNumber}번째 달</div>
+                  <div className={styles.historyContent}>
+                    <strong className={styles.historyHeadline}>{item.headline}</strong>
+                    <span className={styles.historyMeta}>
+                      {item.newsId} · {formatIsoDate(item.publishedDate)}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );

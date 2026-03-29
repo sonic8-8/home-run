@@ -67,6 +67,7 @@ describe('MonthlyActivityModal', () => {
         onSubmitSlots={onSubmitSlots}
         onBackToSelection={vi.fn()}
         onCommit={vi.fn()}
+        onConfirmCommitResult={vi.fn()}
       />,
     )
 
@@ -112,6 +113,7 @@ describe('MonthlyActivityModal', () => {
         onSubmitSlots={vi.fn()}
         onBackToSelection={onBackToSelection}
         onCommit={onCommit}
+        onConfirmCommitResult={vi.fn()}
       />,
     )
 
@@ -122,8 +124,8 @@ describe('MonthlyActivityModal', () => {
     expect(onCommit).toHaveBeenCalledTimes(1)
   })
 
-  it('shows the commit result and closes on confirm', () => {
-    const onClose = vi.fn()
+  it('shows the commit result and delegates to the result confirm action', () => {
+    const onConfirmCommitResult = vi.fn()
 
     render(
       <MonthlyActivityModal
@@ -173,16 +175,17 @@ describe('MonthlyActivityModal', () => {
         isSubmitting={false}
         isCommitting={false}
         error={null}
-        onClose={onClose}
+        onClose={vi.fn()}
         onSubmitSlots={vi.fn()}
         onBackToSelection={vi.fn()}
         onCommit={vi.fn()}
+        onConfirmCommitResult={onConfirmCommitResult}
       />,
     )
 
     expect(screen.getByText('12번째 턴 정산 완료')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+    fireEvent.click(screen.getByRole('button', { name: '이벤트 확인' }))
 
-    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onConfirmCommitResult).toHaveBeenCalledTimes(1)
   })
 })

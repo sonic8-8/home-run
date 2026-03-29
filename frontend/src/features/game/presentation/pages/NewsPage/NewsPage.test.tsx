@@ -42,8 +42,18 @@ describe('NewsPage', () => {
           },
         ],
       },
+      newsHistory: [
+        {
+          turnNumber: 11,
+          newsId: 'NEWS-011',
+          headline: '채용 한파 심화',
+          publishedDate: new Date('2025-12-01T00:00:00'),
+        },
+      ],
       isNewsLoading: false,
       newsError: null,
+      isNewsHistoryLoading: false,
+      newsHistoryError: null,
       hasValidSessionId: true,
     });
   });
@@ -64,8 +74,18 @@ describe('NewsPage', () => {
           },
         ],
       },
+      newsHistory: [
+        {
+          turnNumber: 11,
+          newsId: 'NEWS-011',
+          headline: '채용 한파 심화',
+          publishedDate: new Date('2025-12-01T00:00:00'),
+        },
+      ],
       isNewsLoading: false,
       newsError: null,
+      isNewsHistoryLoading: false,
+      newsHistoryError: null,
       hasValidSessionId: true,
     });
 
@@ -77,6 +97,8 @@ describe('NewsPage', () => {
     expect(screen.getByText('홈런 경제 신문')).toBeInTheDocument();
     expect(screen.getByText('2026-01-01 · 12번째 달')).toBeInTheDocument();
     expect(screen.getByText('부동산 시장 과열 경고')).toBeInTheDocument();
+    expect(screen.getByText('지난 턴 헤드라인')).toBeInTheDocument();
+    expect(screen.getByText('채용 한파 심화')).toBeInTheDocument();
     fireEvent.click(screen.getByText('부동산 시장 과열 경고'));
     expect(screen.getByText('시장 과열 신호가 확인됐다.')).toBeInTheDocument();
   });
