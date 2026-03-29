@@ -1,10 +1,14 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willAnswer;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.session.GameSessionCleanupService;
+import io.ssafy.p.j14c103.homerun.api.service.game.session.GameSessionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldResultService;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
@@ -47,14 +51,24 @@ import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -98,6 +112,12 @@ class CommitTurnServiceTest {
     private GameCareerRepository gameCareerRepository;
 
     @Autowired
+    private GameSessionService gameSessionService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
     private UserRepository userRepository;
 
     @MockitoBean
@@ -105,6 +125,9 @@ class CommitTurnServiceTest {
 
     @MockitoBean
     private GameWorldResultService gameWorldResultService;
+
+    @MockitoBean
+    private GameSessionCleanupService gameSessionCleanupService;
 
     @AfterEach
     void tearDown() {
@@ -424,8 +447,185 @@ class CommitTurnServiceTest {
         assertThat(timeline.getSalaryAmount()).isEqualTo(2_600_000);
     }
 
+    @DisplayName("종료된 세션의 턴 커밋은 GAME_SESSION_CLOSED가 발생한다.")
+    @Test
+    void commitClosedSession() {
+        // given
+        final User user = saveUser("turn-commit-closed-service@example.com");
+        final GameSession gameSession = createGameSession(user.getId(), 5);
+        gameSession.markEnding(SessionStatus.TIMEOUT);
+        final GameSession saved = gameSessionRepository.saveAndFlush(gameSession);
+
+        // when & then
+        assertThatThrownBy(() -> commitTurnService.commitTurn(user.getId(), saved.getGameSessionId()))
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.GAME_SESSION_CLOSED);
+        then(turnDraftRepository).shouldHaveNoInteractions();
+        then(gameWorldResultService).shouldHaveNoInteractions();
+    }
+
+    @DisplayName("커밋할 draft가 없으면 GAME_TURN_DRAFT_NOT_FOUND가 발생한다.")
+    @Test
+    void commitWithoutDraft() {
+        // given
+        final User user = saveUser("turn-commit-no-draft-service@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 5)
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId()))
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND);
+        then(gameWorldResultService).shouldHaveNoInteractions();
+        assertThat(gameTurnSlotRepository.findAllByGameSessionIdAndTurnNumberOrderBySlotIndex(
+            gameSession.getGameSessionId(),
+            5
+        )).isEmpty();
+    }
+
+    @DisplayName("같은 세션의 턴 커밋이 동시에 들어오면 하나만 성공하고 나머지는 GAME_TURN_ALREADY_COMMITTED가 발생한다.")
+    @Test
+    void commitTurnConcurrently() {
+        // given
+        final User user = saveUser("turn-commit-concurrency@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 8)
+        );
+        saveGameCareer(gameSession.getGameSessionId(), 26_400_000, EmploymentStatus.EMPLOYED);
+        final TurnDraft turnDraft = createTurnDraft(gameSession.getGameSessionId(), 8);
+        final CountDownLatch firstCommitEnteredWorld = new CountDownLatch(1);
+        final CountDownLatch releaseFirstCommit = new CountDownLatch(1);
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willAnswer(invocation -> {
+                firstCommitEnteredWorld.countDown();
+                awaitLatch(releaseFirstCommit);
+                return createWorldResult("동시 커밋 정산");
+            });
+
+        final ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        try {
+            final Future<CommitTurnResponse> firstCommit = executorService.submit(
+                () -> commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId())
+            );
+            awaitLatch(firstCommitEnteredWorld);
+            final Future<CommitTurnResponse> secondCommit = executorService.submit(
+                () -> commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId())
+            );
+            releaseFirstCommit.countDown();
+
+            final CommitTurnResponse response = awaitFuture(firstCommit);
+            final Throwable failure = awaitFailure(secondCommit);
+
+            assertThat(response.getTurnNumber()).isEqualTo(8);
+            assertThat(failure).isInstanceOf(HomerunException.class);
+            assertThat(((HomerunException) failure).getErrorCode())
+                .isEqualTo(ErrorCode.GAME_TURN_ALREADY_COMMITTED);
+            assertThat(gameTurnSlotRepository.findAllByGameSessionIdAndTurnNumberOrderBySlotIndex(
+                gameSession.getGameSessionId(),
+                8
+            )).hasSize(3);
+            assertThat(settlementLogRepository.findAllByGameSessionIdAndTurnNumberOrderBySettlementLogIdAsc(
+                gameSession.getGameSessionId(),
+                8
+            )).hasSize(13);
+            assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
+                gameSession.getGameSessionId()
+            )).hasSize(1);
+            then(gameWorldResultService).should().buildWorldResult(gameSession.getGameSessionId(), 50);
+            then(turnDraftRepository).should().deleteBySessionId(gameSession.getGameSessionId());
+        } finally {
+            executorService.shutdownNow();
+        }
+    }
+
+    @DisplayName("턴 커밋과 세션 삭제가 겹쳐도 삭제는 커밋 이후 최신 데이터를 정리하고 종료된다.")
+    @Test
+    void deleteWhileCommitInProgress() {
+        // given
+        final User user = saveUser("turn-commit-delete-collision@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 9)
+        );
+        saveGameCareer(gameSession.getGameSessionId(), 26_400_000, EmploymentStatus.EMPLOYED);
+        final TurnDraft turnDraft = createTurnDraft(gameSession.getGameSessionId(), 9);
+        final CountDownLatch commitEnteredWorld = new CountDownLatch(1);
+        final CountDownLatch releaseCommit = new CountDownLatch(1);
+        final CountDownLatch cleanupStarted = new CountDownLatch(1);
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willAnswer(invocation -> {
+                commitEnteredWorld.countDown();
+                awaitLatch(releaseCommit);
+                return createWorldResult("삭제 충돌 정산");
+            });
+        willAnswer(invocation -> {
+            cleanupStarted.countDown();
+            new GameSessionCleanupService(jdbcTemplate).deleteAllByGameSessionId(gameSession.getGameSessionId());
+            return null;
+        }).given(gameSessionCleanupService).deleteAllByGameSessionId(gameSession.getGameSessionId());
+
+        final ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        try {
+            final Future<CommitTurnResponse> commitFuture = executorService.submit(
+                () -> commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId())
+            );
+            awaitLatch(commitEnteredWorld);
+            final Future<Void> deleteFuture = executorService.submit(() -> {
+                gameSessionService.delete(user.getId(), gameSession.getGameSessionId());
+                return null;
+            });
+            assertThat(awaitLatch(cleanupStarted, 300, TimeUnit.MILLISECONDS)).isFalse();
+            releaseCommit.countDown();
+
+            final CommitTurnResponse response = awaitFuture(commitFuture);
+            awaitFuture(deleteFuture);
+
+            assertThat(response.getTurnNumber()).isEqualTo(9);
+            assertThat(gameSessionRepository.findById(gameSession.getGameSessionId())).isEmpty();
+            assertThat(gameTurnSlotRepository.findAllByGameSessionIdAndTurnNumberOrderBySlotIndex(
+                gameSession.getGameSessionId(),
+                9
+            )).isEmpty();
+            assertThat(settlementLogRepository.findAllByGameSessionIdAndTurnNumberOrderBySettlementLogIdAsc(
+                gameSession.getGameSessionId(),
+                9
+            )).isEmpty();
+            assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
+                gameSession.getGameSessionId()
+            )).isEmpty();
+            assertThat(gameReportRepository.findById(gameSession.getGameSessionId())).isEmpty();
+        } finally {
+            releaseCommit.countDown();
+            executorService.shutdownNow();
+        }
+    }
+
     private User saveUser(final String email) {
         return userRepository.save(User.register(Email.of(email), "tester", "hashed-password"));
+    }
+
+    private GameWorldResult createWorldResult(final String description) {
+        return GameWorldResult.of(
+            GameWorldResult.CycleResult.of(
+                CyclePhase.RECOVERY,
+                CycleType.CYCLE_RATE_HIKE,
+                18,
+                description
+            ),
+            List.of(),
+            List.of(),
+            GameWorldResult.HousingSnapshot.empty()
+        );
     }
 
     private GameSession createGameSession(final Long userId, final Integer currentTurn) {
@@ -561,5 +761,63 @@ class CommitTurnServiceTest {
             previewCashChange,
             previewStatChanges
         );
+    }
+
+    private void awaitLatch(final CountDownLatch latch) {
+        try {
+            if (latch.await(5, TimeUnit.SECONDS)) {
+                return;
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(exception);
+        }
+
+        throw new AssertionError("동시성 테스트 대기 시간이 초과되었습니다.");
+    }
+
+    private boolean awaitLatch(
+        final CountDownLatch latch,
+        final long timeout,
+        final TimeUnit timeUnit
+    ) {
+        try {
+            return latch.await(timeout, timeUnit);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(exception);
+        }
+    }
+
+    private <T> T awaitFuture(final Future<T> future) {
+        try {
+            return future.get(10, TimeUnit.SECONDS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(exception);
+        } catch (ExecutionException exception) {
+            final Throwable cause = exception.getCause();
+            if (cause instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw new AssertionError(cause);
+        } catch (TimeoutException exception) {
+            throw new AssertionError("동시성 테스트 future 대기 시간이 초과되었습니다.", exception);
+        }
+    }
+
+    private Throwable awaitFailure(final Future<?> future) {
+        try {
+            future.get(10, TimeUnit.SECONDS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(exception);
+        } catch (ExecutionException exception) {
+            return exception.getCause();
+        } catch (TimeoutException exception) {
+            throw new AssertionError("동시성 테스트 future 대기 시간이 초과되었습니다.", exception);
+        }
+
+        throw new AssertionError("실패를 기대한 future가 성공했습니다.");
     }
 }
