@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type SyntheticEvent } from 'react'
 import clsx from 'clsx'
+import fallbackActionIconUrl from '@assets/images/monthly/hobby.png'
 import type {
   TurnCommitResult,
   TurnPreview,
@@ -23,6 +24,17 @@ const EFFECT_LABEL: Record<string, string> = {
 
 function formatSignedValue(value: number): string {
   return value >= 0 ? `+${formatMoney(value)}` : formatMoney(value)
+}
+
+function replaceWithFallbackActionIcon(event: SyntheticEvent<HTMLImageElement>) {
+  const image = event.currentTarget
+
+  if (image.dataset.fallbackApplied === 'true') {
+    return
+  }
+
+  image.dataset.fallbackApplied = 'true'
+  image.src = fallbackActionIconUrl
 }
 
 interface MonthlyActivityModalProps {
@@ -92,7 +104,12 @@ function ActionCard({
         </button>
       )}
       {count > 1 && <span className={styles.countBadge}>{count}</span>}
-      <img className={styles.cardIcon} src={action.iconUrl} alt={action.label} />
+      <img
+        className={styles.cardIcon}
+        src={action.iconUrl || fallbackActionIconUrl}
+        alt={action.label}
+        onError={replaceWithFallbackActionIcon}
+      />
       <div className={styles.cardLabel}>{action.label}</div>
       <div className={styles.effectList}>
         {Object.entries(action.effects).map(([key, value]) => (

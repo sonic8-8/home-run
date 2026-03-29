@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import fallbackActionIconUrl from '@assets/images/monthly/hobby.png'
 import { MonthlyActivityModal } from './MonthlyActivityModal'
 
 const shopping = [
@@ -187,5 +188,33 @@ describe('MonthlyActivityModal', () => {
     fireEvent.click(screen.getByRole('button', { name: '이벤트 확인' }))
 
     expect(onConfirmCommitResult).toHaveBeenCalledTimes(1)
+  })
+
+  it('턴 이미지 로드 완료', () => {
+    render(
+      <MonthlyActivityModal
+        isOpen
+        month={3}
+        shopping={shopping}
+        activities={activities}
+        preview={null}
+        commitResult={null}
+        isActionsLoading={false}
+        isSubmitting={false}
+        isCommitting={false}
+        error={null}
+        onClose={vi.fn()}
+        onSubmitSlots={vi.fn()}
+        onBackToSelection={vi.fn()}
+        onCommit={vi.fn()}
+        onConfirmCommitResult={vi.fn()}
+      />,
+    )
+
+    const image = screen.getByAltText('공부')
+
+    fireEvent.error(image)
+
+    expect(image.getAttribute('src')).toBe(fallbackActionIconUrl)
   })
 })
