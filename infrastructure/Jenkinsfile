@@ -67,8 +67,10 @@ pipeline {
         POSTGRES_HOST_PORT = '5432'
         REDIS_HOST_PORT = '6379'
         PUBLIC_BASE_URL = 'https://j14c103.p.ssafy.io'
-        MONITORING_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/monitoring-evidence'
-        K6_RESULTS_ARTIFACT_ROOT = 'performance/k6/results'
+        RELEASE_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/release-evidence'
+        MONITORING_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/release-evidence/monitoring'
+        K6_RESULTS_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/release-evidence/k6'
+        RUNTIME_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/release-evidence/runtime'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
         POSTGRES_PASSWORD = credentials('homerun-postgres-password')
@@ -255,19 +257,28 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                     env.PIPELINE_STAGE = 'Verify Runtime Startup'
                 }
                 sh '''
+                    RUNTIME_VERIFY_DIR="${RUNTIME_EVIDENCE_ARTIFACT_ROOT}/verify-runtime-startup"
+                    rm -rf "$RUNTIME_VERIFY_DIR"
+                    mkdir -p "$RUNTIME_VERIFY_DIR"
+
                     for i in $(seq 1 60); do
                       if ! docker ps --format '{{.Names}}' | grep -qx homerun-backend; then
+                        docker ps --format '{{.Names}} {{.Status}}' > "${RUNTIME_VERIFY_DIR}/docker-ps.txt" || true
                         docker logs --tail=200 homerun-backend || true
+                        docker logs --tail=200 homerun-backend > "${RUNTIME_VERIFY_DIR}/backend.log" || true
                         exit 1
                       fi
 
                       if ! docker ps --format '{{.Names}}' | grep -qx homerun-frontend; then
+                        docker ps --format '{{.Names}} {{.Status}}' > "${RUNTIME_VERIFY_DIR}/docker-ps.txt" || true
                         docker logs --tail=200 homerun-frontend || true
+                        docker logs --tail=200 homerun-frontend > "${RUNTIME_VERIFY_DIR}/frontend.log" || true
                         exit 1
                       fi
 
-                      if docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/liveness >/dev/null" && \
-                         docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/readiness >/dev/null"; then
+                      if docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/liveness" > "${RUNTIME_VERIFY_DIR}/backend-liveness.json" && \
+                         docker exec homerun-frontend sh -c "wget -qO- http://backend:8080/actuator/health/readiness" > "${RUNTIME_VERIFY_DIR}/backend-readiness.json"; then
+                        printf 'status=success\n' > "${RUNTIME_VERIFY_DIR}/summary.txt"
                         exit 0
                       fi
 
@@ -276,6 +287,9 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
 
                     docker logs --tail=200 homerun-backend || true
                     docker logs --tail=200 homerun-frontend || true
+                    docker ps --format '{{.Names}} {{.Status}}' > "${RUNTIME_VERIFY_DIR}/docker-ps.txt" || true
+                    docker logs --tail=200 homerun-backend > "${RUNTIME_VERIFY_DIR}/backend.log" || true
+                    docker logs --tail=200 homerun-frontend > "${RUNTIME_VERIFY_DIR}/frontend.log" || true
                     exit 1
                 '''
             }
@@ -287,20 +301,29 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                     env.PIPELINE_STAGE = 'Verify Frontend HTTP'
                 }
                 sh '''
+                    FRONTEND_VERIFY_DIR="${RUNTIME_EVIDENCE_ARTIFACT_ROOT}/verify-frontend-http"
+                    rm -rf "$FRONTEND_VERIFY_DIR"
+                    mkdir -p "$FRONTEND_VERIFY_DIR"
+
                     for i in $(seq 1 30); do
                       if ! docker ps --format '{{.Names}}' | grep -qx homerun-frontend; then
+                        docker ps --format '{{.Names}} {{.Status}}' > "${FRONTEND_VERIFY_DIR}/docker-ps.txt" || true
                         docker logs --tail=200 homerun-frontend || true
+                        docker logs --tail=200 homerun-frontend > "${FRONTEND_VERIFY_DIR}/frontend.log" || true
                         exit 1
                       fi
 
                       if ! docker ps --format '{{.Names}}' | grep -qx homerun-grafana; then
+                        docker ps --format '{{.Names}} {{.Status}}' > "${FRONTEND_VERIFY_DIR}/docker-ps.txt" || true
                         docker logs --tail=200 homerun-grafana || true
+                        docker logs --tail=200 homerun-grafana > "${FRONTEND_VERIFY_DIR}/grafana.log" || true
                         exit 1
                       fi
 
-                      if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/ >/dev/null" && \
-                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/ >/dev/null" && \
-                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/grafana >/dev/null"; then
+                      if docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/" > "${FRONTEND_VERIFY_DIR}/frontend-root.html" && \
+                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/docs/" > "${FRONTEND_VERIFY_DIR}/frontend-docs.html" && \
+                         docker exec homerun-frontend sh -c "wget -qO- http://127.0.0.1/grafana" > "${FRONTEND_VERIFY_DIR}/grafana-proxy.html"; then
+                        printf 'status=success\n' > "${FRONTEND_VERIFY_DIR}/summary.txt"
                         exit 0
                       fi
 
@@ -309,6 +332,9 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
 
                     docker logs --tail=200 homerun-frontend || true
                     docker logs --tail=200 homerun-grafana || true
+                    docker ps --format '{{.Names}} {{.Status}}' > "${FRONTEND_VERIFY_DIR}/docker-ps.txt" || true
+                    docker logs --tail=200 homerun-frontend > "${FRONTEND_VERIFY_DIR}/frontend.log" || true
+                    docker logs --tail=200 homerun-grafana > "${FRONTEND_VERIFY_DIR}/grafana.log" || true
                     exit 1
                 '''
             }
@@ -325,6 +351,7 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
 
                     BUILD_NUMBER=${BUILD_NUMBER} \
                     GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT} \
+                    K6_SUMMARY_DIR=${K6_RESULTS_ARTIFACT_ROOT}/settlement-gate \
                     bash infrastructure/scripts/run-k6-settlement-gate.sh
                 '''
             }
@@ -358,16 +385,18 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
             }
         }
         always {
-            archiveArtifacts allowEmptyArchive: true, artifacts: "${env.MONITORING_EVIDENCE_ARTIFACT_ROOT}/**,${env.K6_RESULTS_ARTIFACT_ROOT}/**"
             sh '''
+                mkdir -p ${RUNTIME_EVIDENCE_ARTIFACT_ROOT}
+
                 if [ -f "${ENV_FILE}" ]; then
                   docker compose \
                     --env-file ${ENV_FILE} \
                     -f ${COMPOSE_FILE} \
                     -f ${OBSERVABILITY_COMPOSE_FILE} \
-                    ps
+                    ps > ${RUNTIME_EVIDENCE_ARTIFACT_ROOT}/compose-ps.txt
                 fi
             '''
+            archiveArtifacts allowEmptyArchive: true, artifacts: "${env.RELEASE_EVIDENCE_ARTIFACT_ROOT}/**"
             sh 'rm -f ${ENV_FILE}'
             sh 'rm -rf frontend/generated-docs'
             sh 'rm -f mattermost-payload.json'
