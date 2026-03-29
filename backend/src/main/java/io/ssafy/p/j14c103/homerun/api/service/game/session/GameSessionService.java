@@ -165,26 +165,22 @@ public class GameSessionService {
         final Integer gameId,
         final GameSessionInitialSnapshot initialSnapshot
     ) {
-        return GameCareer.builder()
-            .gameId(gameId)
-            .jobType(initialSnapshot.getCareerSeed().jobType())
-            .jobTitle(initialSnapshot.getCareerSeed().jobTitle())
-            .salary(initialSnapshot.getCareerSeed().annualSalary())
-            .tenureTurns(initialSnapshot.getCareerSeed().tenureTurns())
-            .recentStudyCount(initialSnapshot.getCareerSeed().recentStudyCount())
-            .recentNetworkingCount(initialSnapshot.getCareerSeed().recentNetworkingCount())
-            .negotiationPreparationScore(
-                initialSnapshot.getCareerSeed().negotiationPreparationScore()
-            )
-            .lastNegotiatedTurn(initialSnapshot.getCareerSeed().lastNegotiatedTurn())
-            .employmentStatus(initialSnapshot.getCareerSeed().employmentStatus())
-            .probationEndTurn(initialSnapshot.getCareerSeed().probationEndTurn())
-            .rehireAvailableTurn(initialSnapshot.getCareerSeed().rehireAvailableTurn())
-            .remainingUnemploymentBenefitTurns(
-                initialSnapshot.getCareerSeed().remainingUnemploymentBenefitTurns()
-            )
-            .salaryBeforeResignation(initialSnapshot.getCareerSeed().salaryBeforeResignation())
-            .build();
+        return GameCareer.create(
+            gameId,
+            initialSnapshot.getCareerSeed().jobType(),
+            initialSnapshot.getCareerSeed().jobTitle(),
+            initialSnapshot.getCareerSeed().annualSalary(),
+            initialSnapshot.getCareerSeed().tenureTurns(),
+            initialSnapshot.getCareerSeed().recentStudyCount(),
+            initialSnapshot.getCareerSeed().recentNetworkingCount(),
+            initialSnapshot.getCareerSeed().negotiationPreparationScore(),
+            initialSnapshot.getCareerSeed().lastNegotiatedTurn(),
+            initialSnapshot.getCareerSeed().employmentStatus(),
+            initialSnapshot.getCareerSeed().probationEndTurn(),
+            initialSnapshot.getCareerSeed().rehireAvailableTurn(),
+            initialSnapshot.getCareerSeed().remainingUnemploymentBenefitTurns(),
+            initialSnapshot.getCareerSeed().salaryBeforeResignation()
+        );
     }
 
     private Integer toGameId(final Long sessionId) {
