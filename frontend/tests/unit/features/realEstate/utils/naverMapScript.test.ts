@@ -13,7 +13,7 @@ describe('naverMapScript', () => {
 
   it('builds the sdk url from the client id', () => {
     expect(buildNaverMapScriptUrl('test-client-id')).toBe(
-      'https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=test-client-id',
+      'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=test-client-id',
     );
   });
 
