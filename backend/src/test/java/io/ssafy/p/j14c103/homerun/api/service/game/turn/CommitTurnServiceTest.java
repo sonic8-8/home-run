@@ -7,6 +7,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willAnswer;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.GameSessionCleanupService;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.GameSessionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
@@ -78,6 +80,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ActiveProfiles("test")
 class CommitTurnServiceTest {
 
+    private static final String TURN_COMMIT_DURATION = "homerun.turn.commit.duration";
+    private static final String COMMIT_TURN_BOUNDARY = "commit-turn";
+
     @Autowired
     private CommitTurnService commitTurnService;
 
@@ -120,6 +125,9 @@ class CommitTurnServiceTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private MeterRegistry meterRegistry;
+
     @MockitoBean
     private TurnDraftRepository turnDraftRepository;
 
@@ -148,6 +156,7 @@ class CommitTurnServiceTest {
     @Test
     void commitTurn() {
         // given
+        final long successTimerCountBefore = turnCommitTimerCount("success");
         final User user = saveUser("turn-commit@example.com");
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
             createGameSession(user.getId(), 5)
@@ -247,6 +256,7 @@ class CommitTurnServiceTest {
         assertThat(timelines.get(0).getLoanBalanceAmount()).isEqualTo(0);
         assertThat(timelines.get(0).getSalaryAmount()).isEqualTo(2_200_000);
 
+        assertTurnCommitTimerRecorded("success", successTimerCountBefore);
         then(gameWorldResultService).should().buildWorldResult(gameSession.getGameSessionId(), 50);
         then(turnDraftRepository).should().deleteBySessionId(gameSession.getGameSessionId());
     }
@@ -469,6 +479,7 @@ class CommitTurnServiceTest {
     @Test
     void commitWithoutDraft() {
         // given
+        final long failureTimerCountBefore = turnCommitTimerCount("failure");
         final User user = saveUser("turn-commit-no-draft-service@example.com");
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
             createGameSession(user.getId(), 5)
@@ -482,6 +493,7 @@ class CommitTurnServiceTest {
             .extracting(exception -> ((HomerunException) exception).getErrorCode())
             .isEqualTo(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND);
         then(gameWorldResultService).shouldHaveNoInteractions();
+        assertTurnCommitTimerRecorded("failure", failureTimerCountBefore);
         assertThat(gameTurnSlotRepository.findAllByGameSessionIdAndTurnNumberOrderBySlotIndex(
             gameSession.getGameSessionId(),
             5
@@ -819,5 +831,25 @@ class CommitTurnServiceTest {
         }
 
         throw new AssertionError("실패를 기대한 future가 성공했습니다.");
+    }
+
+    private void assertTurnCommitTimerRecorded(final String result, final long timerCountBefore) {
+        final Timer timer = meterRegistry.get(TURN_COMMIT_DURATION)
+            .tag("boundary", COMMIT_TURN_BOUNDARY)
+            .tag("result", result)
+            .timer();
+        assertThat(timer.count()).isEqualTo(timerCountBefore + 1);
+        assertThat(timer.totalTime(TimeUnit.NANOSECONDS)).isGreaterThanOrEqualTo(0L);
+    }
+
+    private long turnCommitTimerCount(final String result) {
+        final Timer timer = meterRegistry.find(TURN_COMMIT_DURATION)
+            .tag("boundary", COMMIT_TURN_BOUNDARY)
+            .tag("result", result)
+            .timer();
+        if (timer == null) {
+            return 0L;
+        }
+        return timer.count();
     }
 }
