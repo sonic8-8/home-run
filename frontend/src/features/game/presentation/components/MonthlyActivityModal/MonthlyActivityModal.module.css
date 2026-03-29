@@ -1,233 +1,466 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.35);
+  z-index: 150;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 150;
+  background: rgba(10, 16, 28, 0.45);
+  padding: 24px;
 }
 
 .modal {
-  background: #fff;
-  border-radius: var(--radius-lg);
-  width: 760px;
+  width: min(920px, 100%);
   max-height: 90vh;
-  padding: 32px 40px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  box-shadow: var(--shadow-lg);
   overflow-y: auto;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fffaf0 0%, #fff 100%);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
+  padding: 32px;
 }
 
-/* ── 제목 ─────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 .title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
   margin: 0;
+  color: #0f172a;
+  font-size: 30px;
+  font-weight: 800;
 }
 
-/* ── 슬롯 카운터 ─────────────────────────── */
+.subtitle {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.closeButton {
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.errorBox {
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 700;
+}
+
 .slotCounter {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
 .slotCount {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--color-primary);
+  color: #0f766e;
+  font-size: 28px;
+  font-weight: 800;
 }
 
 .slotMax {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  color: #64748b;
+  font-size: 14px;
 }
 
-/* ── 카테고리 ─────────────────────────── */
 .category {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+  margin-bottom: 20px;
 }
 
 .categoryLabel {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: 500;
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 700;
 }
 
-/* ── 캐러셀 ─────────────────────────── */
 .carousel {
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 12px;
 }
 
 .cardRow {
-  display: flex;
-  gap: var(--spacing-md);
-  flex: 1;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.arrowBtn {
-  background: none;
+.arrowButton {
+  width: 44px;
+  height: 44px;
   border: none;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #0f172a;
   font-size: 18px;
-  color: #bbb;
   cursor: pointer;
-  padding: 8px;
-  transition: color var(--transition-fast);
-  flex-shrink: 0;
 }
 
-.arrowBtn:hover:not(:disabled) {
-  color: var(--color-text-primary);
-}
-
-.arrowBtn:disabled {
-  color: #e0e0e0;
+.arrowButton:disabled {
+  background: #f1f5f9;
+  color: #cbd5e1;
   cursor: default;
 }
 
-/* ── 카드 ─────────────────────────────── */
 .card {
   position: relative;
-  width: 180px;
-  min-height: 160px;
-  background: #f8f8f8;
+  min-height: 220px;
   border: 2px solid transparent;
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
+  border-radius: 20px;
+  background: #f8fafc;
+  padding: 20px 16px 18px;
   cursor: pointer;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
-  user-select: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .card:hover {
-  border-color: #c0c0c0;
-  background: #f0f0f0;
+  transform: translateY(-2px);
+  border-color: #7dd3fc;
+  box-shadow: 0 10px 24px rgba(14, 116, 144, 0.12);
 }
 
 .cardSelected {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: #0f766e;
+  background: linear-gradient(180deg, #ecfeff 0%, #f8fafc 100%);
 }
 
-.cardSelected:hover {
-  border-color: var(--color-primary-hover);
+.countBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0f766e;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
 }
 
-/* ── 카드 아이콘 ─────────────────────────── */
+.removeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 .cardIcon {
-  width: 72px;
-  height: 72px;
+  display: block;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 10px;
   object-fit: contain;
 }
 
-/* ── 효과 목록 ─────────────────────────── */
+.cardLabel {
+  margin-bottom: 10px;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .effectList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
+  display: grid;
+  gap: 6px;
 }
 
 .effectRow {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .effectLabel {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  color: #64748b;
+  font-size: 13px;
 }
 
 .effectValue {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .positive {
-  color: #16a34a;
+  color: #15803d;
 }
 
 .negative {
-  color: #dc2626;
+  color: #b91c1c;
 }
 
-/* ── 뱃지 / 제거 버튼 ─────────────────────── */
-.countBadge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 22px;
-  height: 22px;
-  background: var(--color-primary);
-  color: #fff;
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
+.emptyState {
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #64748b;
+  padding: 28px 20px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summaryCard {
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 14px 12px;
+  text-align: center;
+}
+
+.summaryLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.summaryValue {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.previewList {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.previewItem {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 16px;
 }
 
-.removeBtn {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 20px;
-  height: 20px;
-  background: #dc2626;
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-full);
-  font-size: 10px;
-  display: flex;
+.previewAction {
+  margin-top: 4px;
+  color: #475569;
+  font-size: 14px;
+}
+
+.noticeBadge {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  line-height: 1;
-  transition: background-color var(--transition-fast);
-}
-
-.removeBtn:hover {
-  background: #b91c1c;
-}
-
-/* ── START 버튼 ─────────────────────────── */
-.startButton {
-  align-self: center;
-  width: 280px;
-  height: 52px;
-  background: #3a3a3a;
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-md);
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0c4a6e;
+  padding: 6px 10px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 2px;
+}
+
+.cashPreviewCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.resultHeadline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.assetsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.assetCard {
+  border-radius: 16px;
+  background: #f8fafc;
+  padding: 16px;
+}
+
+.assetLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.logList {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.logItem {
+  border-radius: 18px;
+  background: #f8fafc;
+  padding: 16px;
+}
+
+.logHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.logPhase {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.logCash {
+  margin-bottom: 12px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.primaryButton,
+.secondaryButton {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color var(--transition-normal);
-  margin-top: var(--spacing-xs);
 }
 
-.startButton:hover:not(:disabled) {
-  background: #1a1a1a;
+.primaryButton {
+  background: linear-gradient(135deg, #0f766e 0%, #0f172a 100%);
+  color: #fff;
 }
 
-.startButton:disabled {
-  background: #c0c0c0;
+.primaryButton:disabled {
+  background: #cbd5e1;
   cursor: not-allowed;
+}
+
+.secondaryButton {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+@media (max-width: 900px) {
+  .modal {
+    padding: 24px;
+  }
+
+  .cardRow {
+    grid-template-columns: 1fr;
+  }
+
+  .carousel {
+    grid-template-columns: 1fr;
+  }
+
+  .arrowButton {
+    display: none;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assetsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 16px;
+  }
+
+  .modal {
+    padding: 20px;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .closeButton {
+    width: 100%;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer {
+    flex-direction: column-reverse;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    width: 100%;
+  }
 }

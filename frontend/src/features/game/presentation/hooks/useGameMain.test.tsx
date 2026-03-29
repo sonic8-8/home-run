@@ -36,14 +36,33 @@ vi.mock('./useCreateGameSession', () => ({
 
 vi.mock('@features/game/presentation/hooks/useGameTurn', () => ({
   useGameTurn: () => ({
-    turn: { currentDate: new Date('2026-03-01T00:00:00') },
+    turn: {
+      turnNumber: 7,
+      month: 3,
+      currentDate: new Date('2026-03-01T00:00:00'),
+      economicCycle: {
+        phase: 'BOOM',
+        description: '경기 호황기',
+      },
+    },
     news: null,
+    turnActions: null,
+    turnPreview: null,
+    turnCommitResult: null,
     isTurnLoading: false,
     turnError: null,
     isNewsLoading: false,
     newsError: null,
+    isActionsLoading: false,
+    isSlotSubmitting: false,
+    isTurnCommitting: false,
+    scheduleError: null,
     fetchTurn: vi.fn().mockResolvedValue({ currentDate: new Date('2026-03-01T00:00:00') }),
     fetchLatestNews: vi.fn(),
+    fetchTurnActions: vi.fn(),
+    submitTurnSlots: vi.fn(),
+    commitTurn: vi.fn(),
+    resetScheduleFlow: vi.fn(),
   }),
 }));
 

@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '@app/routes';
@@ -29,7 +29,13 @@ function createDeferred<T>() {
 }
 
 function GameMainProbe() {
-  const { sessionId, isLoading, error } = useGameMain();
+  const {
+    sessionId,
+    isLoading,
+    error,
+    openMonthlyActivity,
+    commitTurn,
+  } = useGameMain();
   const location = useLocation();
 
   return (
@@ -38,6 +44,8 @@ function GameMainProbe() {
       <span data-testid="loading">{String(isLoading)}</span>
       <span data-testid="error">{error ?? 'null'}</span>
       <pre data-testid="route-state">{JSON.stringify(location.state ?? null)}</pre>
+      <button onClick={openMonthlyActivity}>월 활동 열기</button>
+      <button onClick={() => { void commitTurn(); }}>턴 커밋</button>
     </div>
   );
 }
@@ -83,6 +91,31 @@ describe('useGameMain', () => {
       return null;
     });
     const fetchLatestNews = vi.fn(async () => null);
+    const fetchTurnActions = vi.fn(async () => null);
+    const commitTurn = vi.fn(async () => ({
+      turnNumber: 2,
+      settlementLog: [],
+      updatedAssets: {
+        cash: 1_000_000,
+        loan: 0,
+        realEstateValue: 0,
+        netAssets: 1_000_000,
+      },
+      statChanges: {
+        health: 0,
+        fatigue: 0,
+        stress: 0,
+        happiness: 0,
+        knowledge: 0,
+      },
+      flags: {
+        isBankrupt: false,
+        isCleared: false,
+        isBurnout: false,
+        isForcedResignation: false,
+        hasEvent: false,
+      },
+    }));
 
     vi.mocked(useCreateGameSession).mockReturnValue({
       createSession,
@@ -95,12 +128,23 @@ describe('useGameMain', () => {
       return {
         turn: null,
         news: null,
+        turnActions: null,
+        turnPreview: null,
+        turnCommitResult: null,
         isTurnLoading: false,
         turnError: null,
         isNewsLoading: false,
         newsError: null,
+        isActionsLoading: false,
+        isSlotSubmitting: false,
+        isTurnCommitting: false,
+        scheduleError: null,
         fetchTurn,
         fetchLatestNews,
+        fetchTurnActions,
+        submitTurnSlots: vi.fn(),
+        commitTurn,
+        resetScheduleFlow: vi.fn(),
       };
     });
 
@@ -124,8 +168,20 @@ describe('useGameMain', () => {
     await waitFor(() => {
       expect(screen.getByTestId('session-id')).toHaveTextContent('31');
     });
-    expect(screen.getByTestId('route-state')).toHaveTextContent('"sessionId":31');
+    await waitFor(() => {
+      expect(screen.getByTestId('route-state')).toHaveTextContent('"sessionId":31');
+    });
     expect(screen.getByTestId('loading')).toHaveTextContent('false');
     expect(screen.getByTestId('error')).toHaveTextContent('null');
+
+    fireEvent.click(screen.getByRole('button', { name: '월 활동 열기' }));
+    expect(fetchTurnActions).toHaveBeenCalledTimes(1);
+
+    fetchTurn.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: '턴 커밋' }));
+    await waitFor(() => {
+      expect(commitTurn).toHaveBeenCalledTimes(1);
+      expect(fetchTurn).toHaveBeenCalledTimes(1);
+    });
   });
 });

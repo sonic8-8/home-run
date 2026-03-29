@@ -3,6 +3,7 @@ import { ROUTES } from '@app/routes';
 import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
 import { useGameMain } from '@features/game/presentation/hooks/useGameMain';
 import { NewsEventModal } from '@features/game/presentation/components/NewsEventModal/NewsEventModal';
+import { MonthlyActivityModal } from '@features/game/presentation/components/MonthlyActivityModal/MonthlyActivityModal';
 import { LoanProductsPanel } from '@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel';
 import { CardRecommendPanel } from '@features/game/presentation/components/CardRecommendPanel/CardRecommendPanel';
 import { formatKoreanDate } from '@shared/utils/formatter';
@@ -18,14 +19,28 @@ export function GameMainPage() {
   const navigate = useNavigate();
   const {
     sessionId,
+    turn,
     currentDate,
     characterType,
     news,
+    turnActions,
+    turnPreview,
+    turnCommitResult,
     isNewsLoading,
     newsError,
     isNewsOpen,
+    isMonthlyActivityOpen,
+    isActionsLoading,
+    isSlotSubmitting,
+    isTurnCommitting,
+    scheduleError,
     openNews,
     closeNews,
+    openMonthlyActivity,
+    closeMonthlyActivity,
+    submitTurnSlots,
+    commitTurn,
+    resetScheduleFlow,
     error,
     isLoading,
     leftView,
@@ -86,6 +101,29 @@ export function GameMainPage() {
 
           <div className={styles.panel}>
             <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>이번 달 진행</h2>
+              <div className={styles.turnCard}>
+                <div className={styles.turnCardLabel}>턴</div>
+                <div className={styles.turnCardValue}>
+                  {turn === null ? '-' : `${turn.turnNumber}번째 달`}
+                </div>
+                <div className={styles.turnCardMeta}>
+                  {turn === null ? '경제 흐름을 불러오는 중입니다.' : turn.economicCycle.description}
+                </div>
+              </div>
+              <button
+                className={styles.actionButton}
+                onClick={openMonthlyActivity}
+                disabled={sessionId === null}
+              >
+                이번 달 활동 진행
+              </button>
+              {scheduleError && !isMonthlyActivityOpen && (
+                <div className={styles.inlineError}>{scheduleError}</div>
+              )}
+            </section>
+
+            <section className={styles.section}>
               <h2 className={styles.sectionTitle}>메뉴</h2>
               <div className={styles.menuList}>
                 <button
@@ -139,6 +177,29 @@ export function GameMainPage() {
           news={news}
           loading={isNewsLoading}
           error={newsError}
+        />
+      )}
+
+      {sessionId !== null && (
+        <MonthlyActivityModal
+          isOpen={isMonthlyActivityOpen}
+          month={turn?.month ?? (currentDate === null ? 0 : currentDate.getMonth() + 1)}
+          shopping={turnActions?.shopping ?? []}
+          activities={turnActions?.activities ?? []}
+          preview={turnPreview}
+          commitResult={turnCommitResult}
+          isActionsLoading={isActionsLoading}
+          isSubmitting={isSlotSubmitting}
+          isCommitting={isTurnCommitting}
+          error={scheduleError}
+          onClose={closeMonthlyActivity}
+          onSubmitSlots={(actionTypes) => {
+            void submitTurnSlots(actionTypes)
+          }}
+          onBackToSelection={resetScheduleFlow}
+          onCommit={() => {
+            void commitTurn()
+          }}
         />
       )}
     </>

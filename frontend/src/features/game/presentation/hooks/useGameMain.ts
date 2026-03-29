@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import { container } from '@core/di/container';
@@ -96,6 +96,7 @@ export const useGameMain = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isNewsOpen, setIsNewsOpen] = useState(false);
+  const [isMonthlyActivityOpen, setIsMonthlyActivityOpen] = useState(false);
   const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card'>(openLoan ? 'loan' : 'scene');
   const createSessionPromiseRef = useRef<Promise<GameSessionCreation> | null>(null);
   const endingRedirectedRef = useRef(false);
@@ -104,12 +105,23 @@ export const useGameMain = () => {
   const {
     turn,
     news,
+    turnActions,
+    turnPreview,
+    turnCommitResult,
     isTurnLoading,
     turnError,
     isNewsLoading,
     newsError,
+    isActionsLoading,
+    isSlotSubmitting,
+    isTurnCommitting,
+    scheduleError,
     fetchTurn,
     fetchLatestNews,
+    fetchTurnActions,
+    submitTurnSlots,
+    commitTurn,
+    resetScheduleFlow,
   } = useGameTurn(sessionId);
   const currentDate = turn?.currentDate ?? null;
   const currentDateKey = currentDate === null ? null : formatIsoDate(currentDate);
@@ -299,10 +311,14 @@ export const useGameMain = () => {
       return;
     }
 
+    if (isMonthlyActivityOpen) {
+      return;
+    }
+
     if (readSessionStorage(getNewsSeenDateStorageKey(sessionId)) !== currentDateKey) {
       setIsNewsOpen(true);
     }
-  }, [currentDateKey, sessionId]);
+  }, [currentDateKey, isMonthlyActivityOpen, sessionId]);
 
   useEffect(() => {
     if (!isNewsOpen) {
@@ -312,16 +328,54 @@ export const useGameMain = () => {
     void fetchLatestNews();
   }, [fetchLatestNews, isNewsOpen]);
 
+  const openMonthlyActivity = useCallback(() => {
+    if (sessionId === null) {
+      return;
+    }
+
+    setIsMonthlyActivityOpen(true);
+    void fetchTurnActions();
+  }, [fetchTurnActions, sessionId]);
+
+  const closeMonthlyActivity = useCallback(() => {
+    setIsMonthlyActivityOpen(false);
+    resetScheduleFlow();
+  }, [resetScheduleFlow]);
+
+  const handleSubmitTurnSlots = useCallback(
+    async (actionTypes: readonly string[]) => submitTurnSlots(actionTypes),
+    [submitTurnSlots],
+  );
+
+  const handleCommitTurn = useCallback(async () => {
+    const result = await commitTurn();
+
+    if (result === null) {
+      return null;
+    }
+
+    await fetchTurn();
+    return result;
+  }, [commitTurn, fetchTurn]);
+
   return {
     sessionId,
     turn,
     news,
+    turnActions,
+    turnPreview,
+    turnCommitResult,
     currentDate,
     characterType,
     isNewsOpen,
     isLoading: isLoading || isSubmitting || isTurnLoading,
     isNewsLoading,
     newsError,
+    isMonthlyActivityOpen,
+    isActionsLoading,
+    isSlotSubmitting,
+    isTurnCommitting,
+    scheduleError,
     openNews: () => setIsNewsOpen(true),
     closeNews: () => {
       writeSessionStorage(
@@ -330,6 +384,11 @@ export const useGameMain = () => {
       );
       setIsNewsOpen(false);
     },
+    openMonthlyActivity,
+    closeMonthlyActivity,
+    submitTurnSlots: handleSubmitTurnSlots,
+    commitTurn: handleCommitTurn,
+    resetScheduleFlow,
     error: error ?? createError ?? turnError,
     leftView,
     setLeftView,
