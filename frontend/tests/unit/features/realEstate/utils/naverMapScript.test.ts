@@ -3,7 +3,7 @@ import {
   buildNaverMapScriptUrl,
   loadNaverMapScript,
   resetNaverMapScriptLoaderForTests,
-} from '@features/realEstate/presentation/utils/naverMapScript';
+} from '@features/realEstate/utils/naverMapScript';
 
 describe('naverMapScript', () => {
   afterEach(() => {

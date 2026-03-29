@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useRef, useEffect, useState } from 'react';
-import { loadNaverMapScript } from '../utils/naverMapScript';
+import { loadNaverMapScript } from '../../utils/naverMapScript';
 
 const NAVER_MAP_CLIENT_ID = import.meta.env.VITE_NAVER_MAP_CLIENT_ID?.trim() ?? '';
 
@@ -12,7 +10,9 @@ const NAVER_MAP_CLIENT_ID = import.meta.env.VITE_NAVER_MAP_CLIENT_ID?.trim() ?? 
  */
 export function useNaverMap(center: [number, number]) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<any>(null);
+  const [mapInstance, setMapInstance] = useState<NaverMapInstance | null>(null);
+  const centerLng = center[0];
+  const centerLat = center[1];
   const [sdkReady, setSdkReady] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.naver?.maps !== undefined;
@@ -27,6 +27,7 @@ export function useNaverMap(center: [number, number]) {
     if (isLocalhost || NAVER_MAP_CLIENT_ID.length === 0) return false;
     return null;
   });
+  const isNaverUnavailable = naverAvailable === false;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -37,13 +38,10 @@ export function useNaverMap(center: [number, number]) {
       window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     if (isLocalhost || NAVER_MAP_CLIENT_ID.length === 0) {
-      setSdkReady(false);
-      setNaverAvailable(false);
       return;
     }
 
     if (window.naver?.maps !== undefined) {
-      setSdkReady(true);
       return;
     }
 
@@ -70,15 +68,15 @@ export function useNaverMap(center: [number, number]) {
 
   useEffect(() => {
     // SDK 없음 → 이미 false, 스킵
-    if (naverAvailable === false) return;
+    if (isNaverUnavailable) return;
     if (!sdkReady) return;
     const maps = window.naver?.maps;
     if (maps === undefined) return;
     if (!mapRef.current) return;
 
-    let map: any = null;
+    let map: NaverMapInstance;
     try {
-      const naverCenter = new maps.LatLng(center[1], center[0]);
+      const naverCenter = new maps.LatLng(centerLat, centerLng);
       map = new maps.Map(mapRef.current, {
         center: naverCenter,
         zoom: 14,
@@ -95,7 +93,9 @@ export function useNaverMap(center: [number, number]) {
         },
       });
     } catch {
-      setNaverAvailable(false);
+      window.setTimeout(() => {
+        setNaverAvailable(false);
+      }, 0);
       return;
     }
 
@@ -120,8 +120,7 @@ export function useNaverMap(center: [number, number]) {
       maps.Event.removeListener(tilesListener);
       setMapInstance(null);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [center[0], center[1], sdkReady]);
+  }, [centerLat, centerLng, isNaverUnavailable, sdkReady]);
 
   return { mapRef, mapInstance, naverAvailable };
 }

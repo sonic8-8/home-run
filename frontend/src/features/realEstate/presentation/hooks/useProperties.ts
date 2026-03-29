@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useState, useEffect, useCallback } from 'react';
 import { container } from '@core/di/container';
 import type { PropertySummary, Property } from '../../domain/entities/Property';
@@ -12,7 +10,6 @@ import { GetPropertyDetailUseCase } from '../../domain/usecases/GetPropertyDetai
  * 백엔드 API에서 매물 목록을 가져와 지도 마커로 표시합니다.
  */
 export function useProperties(
-  _mapInstance: any,
   options: {
     mode?: MapMode;
     sessionId?: number;

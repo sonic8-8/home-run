@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useRef, useCallback } from 'react';
 import type { PropertySummary } from '../../domain/entities/Property';
 import { formatPriceWon } from '../utils/formatUtils';
@@ -23,9 +21,11 @@ function buildPropertyMarkerIcon(property: PropertySummary, isSelected: boolean)
   </div>`;
 }
 
-export function useMapMarkers(mapInstance: any) {
-  const markersRef = useRef<any[]>([]);
-  const selectedMarkerRef = useRef<{ marker: any; property: PropertySummary } | null>(null);
+export function useMapMarkers(mapInstance: NaverMapInstance | null) {
+  const markersRef = useRef<NaverMapMarker[]>([]);
+  const selectedMarkerRef = useRef<{ marker: NaverMapMarker; property: PropertySummary } | null>(
+    null,
+  );
 
   const clearMarkers = useCallback(() => {
     markersRef.current.forEach((m) => m.setMap(null));
