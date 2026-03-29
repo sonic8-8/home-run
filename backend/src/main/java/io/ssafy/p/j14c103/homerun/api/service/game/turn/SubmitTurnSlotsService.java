@@ -23,6 +23,7 @@ public class SubmitTurnSlotsService {
     private final UserAuthContextService userAuthContextService;
     private final TurnPreviewCalculator turnPreviewCalculator;
     private final TurnDraftRepository turnDraftRepository;
+    private final ActionMasterBootstrapService actionMasterBootstrapService;
 
     @Transactional
     public TurnPreviewResponse submitTurnSlots(
@@ -33,6 +34,7 @@ public class SubmitTurnSlotsService {
         userAuthContextService.getContext(userId);
         final GameSession gameSession = getOwnedGameSession(userId, sessionId);
         gameSession.assertInProgress();
+        actionMasterBootstrapService.synchronizeCatalog();
 
         final TurnPreviewResult previewResult = turnPreviewCalculator.calculate(gameSession, request);
         final TurnDraft turnDraft = TurnDraft.of(
