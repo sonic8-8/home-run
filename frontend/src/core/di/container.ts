@@ -16,6 +16,8 @@ import { LoanRemoteDataSource } from '@features/loan/data/datasources/LoanRemote
 import { LoanRepositoryImpl } from '@features/loan/data/repositories/LoanRepositoryImpl';
 import { RealEstateRemoteDataSource } from '@features/realEstate/data/datasources/RealEstateRemoteDataSource';
 import { RealEstateRepositoryImpl } from '@features/realEstate/data/repositories/RealEstateRepositoryImpl';
+import { StockRemoteDataSource } from '@features/stock/data/datasources/StockRemoteDataSource';
+import { StockRepositoryImpl } from '@features/stock/data/repositories/StockRepositoryImpl';
 
 container.registerSingleton(AuthRemoteDataSource);
 container.register(DI_TOKENS.IAuthRepository, {
@@ -32,6 +34,10 @@ container.register(DI_TOKENS.IEndingRepository, {
 container.registerSingleton(LoanRemoteDataSource);
 container.register(DI_TOKENS.ILoanRepository, {
   useClass: LoanRepositoryImpl,
+});
+container.registerSingleton(StockRemoteDataSource);
+container.register(DI_TOKENS.IStockRepository, {
+  useClass: StockRepositoryImpl,
 });
 container.registerSingleton(GameInitRemoteDataSource);
 container.register(DI_TOKENS.IGameInitRepository, {

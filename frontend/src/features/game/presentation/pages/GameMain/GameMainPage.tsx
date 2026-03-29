@@ -6,6 +6,7 @@ import { NewsEventModal } from '@features/game/presentation/components/NewsEvent
 import { MonthlyActivityModal } from '@features/game/presentation/components/MonthlyActivityModal/MonthlyActivityModal';
 import { LoanProductsPanel } from '@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel';
 import { CardRecommendPanel } from '@features/game/presentation/components/CardRecommendPanel/CardRecommendPanel';
+import { StockTradingPanel } from '@features/game/presentation/components/StockTradingPanel';
 import { formatKoreanDate } from '@shared/utils/formatter';
 import sceneRoad from '@assets/images/game_back_road.png';
 import styles from './GameMainPage.module.css';
@@ -96,6 +97,9 @@ export function GameMainPage() {
                 ) : null
               )}
               {leftView === 'card' && <CardRecommendPanel />}
+              {leftView === 'stock' && (
+                sessionId !== null ? <StockTradingPanel sessionId={sessionId} /> : null
+              )}
             </div>
           )}
 
@@ -151,6 +155,12 @@ export function GameMainPage() {
                   onClick={() => setLeftView(leftView === 'card' ? 'scene' : 'card')}
                 >
                   카드 추천
+                </button>
+                <button
+                  className={leftView === 'stock' ? styles.menuButtonActive : styles.menuButton}
+                  onClick={() => setLeftView(leftView === 'stock' ? 'scene' : 'stock')}
+                >
+                  주식 투자
                 </button>
                 <button
                   className={styles.menuButton}

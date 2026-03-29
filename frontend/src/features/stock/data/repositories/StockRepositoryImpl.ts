@@ -1,3 +1,4 @@
+import { inject, injectable } from 'tsyringe';
 import type { IStockRepository } from '@features/stock/domain/repositories/IStockRepository'
 import type {
   StockMarket,
@@ -7,12 +8,16 @@ import type {
   OrderType,
   OrderStatus,
 } from '@features/stock/domain/entities/Stock'
-import type { StockRemoteDataSource } from '@features/stock/data/datasources/StockRemoteDataSource'
+import { StockRemoteDataSource } from '@features/stock/data/datasources/StockRemoteDataSource'
 
+@injectable()
 export class StockRepositoryImpl implements IStockRepository {
   private readonly dataSource: StockRemoteDataSource
 
-  constructor(dataSource: StockRemoteDataSource) {
+  constructor(
+    @inject(StockRemoteDataSource)
+    dataSource: StockRemoteDataSource,
+  ) {
     this.dataSource = dataSource
   }
 

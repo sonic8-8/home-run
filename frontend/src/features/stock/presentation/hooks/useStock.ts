@@ -1,67 +1,82 @@
-import { useState, useCallback } from 'react'
-import { StockRemoteDataSource } from '@features/stock/data/datasources/StockRemoteDataSource'
-import { StockRepositoryImpl } from '@features/stock/data/repositories/StockRepositoryImpl'
+import { useCallback, useEffect, useState } from 'react';
+import { container } from '@core/di/container';
+import { toErrorMessage } from '@core/error/AppError';
 import { GetStockMarketUseCase } from '@features/stock/domain/usecases/GetStockMarketUseCase'
 import { GetStockHoldingsUseCase } from '@features/stock/domain/usecases/GetStockHoldingsUseCase'
 import { OrderStockUseCase } from '@features/stock/domain/usecases/OrderStockUseCase'
 import type { StockMarket, StockHoldings, StockOrder, StockOrderParams } from '@features/stock/domain/entities/Stock'
 
-const stockRepo = new StockRepositoryImpl(new StockRemoteDataSource())
-const getMarketUseCase = new GetStockMarketUseCase(stockRepo)
-const getHoldingsUseCase = new GetStockHoldingsUseCase(stockRepo)
-const orderUseCase = new OrderStockUseCase(stockRepo)
-
 export function useStock(sessionId: number) {
-  const [market, setMarket] = useState<StockMarket | null>(null)
-  const [holdings, setHoldings] = useState<StockHoldings | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [market, setMarket] = useState<StockMarket | null>(null);
+  const [holdings, setHoldings] = useState<StockHoldings | null>(null);
+  const [lastOrder, setLastOrder] = useState<StockOrder | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [marketError, setMarketError] = useState<string | null>(null);
+  const [holdingsError, setHoldingsError] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
-  const fetchMarket = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await getMarketUseCase.execute(sessionId)
-      setMarket(result)
-      return result
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '주식 시장 정보를 불러오지 못했습니다.')
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [sessionId])
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    setMarketError(null);
+    setHoldingsError(null);
 
-  const fetchHoldings = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await getHoldingsUseCase.execute(sessionId)
-      setHoldings(result)
-      return result
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '보유 주식 정보를 불러오지 못했습니다.')
-      return null
-    } finally {
-      setLoading(false)
+    const getMarketUseCase = container.resolve(GetStockMarketUseCase);
+    const getHoldingsUseCase = container.resolve(GetStockHoldingsUseCase);
+    const [marketResult, holdingsResult] = await Promise.allSettled([
+      getMarketUseCase.execute(sessionId),
+      getHoldingsUseCase.execute(sessionId),
+    ]);
+
+    if (marketResult.status === 'fulfilled') {
+      setMarket(marketResult.value);
+    } else {
+      setMarketError(toErrorMessage(marketResult.reason));
     }
-  }, [sessionId])
+
+    if (holdingsResult.status === 'fulfilled') {
+      setHoldings(holdingsResult.value);
+    } else {
+      setHoldingsError(toErrorMessage(holdingsResult.reason));
+    }
+
+    setIsLoading(false);
+  }, [sessionId]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   const order = useCallback(
     async (params: StockOrderParams): Promise<StockOrder | null> => {
-      setLoading(true)
-      setError(null)
+      setIsSubmittingOrder(true);
+      setOrderError(null);
       try {
-        return await orderUseCase.execute(sessionId, params)
-      } catch (e) {
-        setError(e instanceof Error ? e.message : '주식 주문에 실패했습니다.')
-        return null
+        const orderUseCase = container.resolve(OrderStockUseCase);
+        const result = await orderUseCase.execute(sessionId, params);
+        setLastOrder(result);
+        await refresh();
+        return result;
+      } catch (error) {
+        setOrderError(toErrorMessage(error));
+        return null;
       } finally {
-        setLoading(false)
+        setIsSubmittingOrder(false);
       }
     },
-    [sessionId],
-  )
+    [refresh, sessionId],
+  );
 
-  return { market, holdings, loading, error, fetchMarket, fetchHoldings, order }
+  return {
+    market,
+    holdings,
+    lastOrder,
+    isLoading,
+    isSubmittingOrder,
+    marketError,
+    holdingsError,
+    orderError,
+    refresh,
+    order,
+  };
 }
