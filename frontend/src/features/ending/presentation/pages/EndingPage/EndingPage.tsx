@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import maleClearCharacterImage from '@assets/images/result/bcharac_clear.png';
 import maleBankruptCharacterImage from '@assets/images/result/bcharac_bankrupt.png';
 import maleTimeoutCharacterImage from '@assets/images/result/bcharac_timeout.png';
@@ -224,6 +224,12 @@ function buildAreaPath(values: readonly number[], width: number, height: number,
   return `M ${first} L ${pointEntries.slice(1).join(' L ')} L ${lastX},${height - padding} L ${first.split(',')[0]},${height - padding} Z`;
 }
 
+function createReportBackgroundStyle(backgroundImage: string): CSSProperties {
+  return {
+    '--report-background-image': `url(${backgroundImage})`,
+  } as CSSProperties;
+}
+
 export function EndingPage() {
   const {
     report,
@@ -235,10 +241,6 @@ export function EndingPage() {
   } = useEndingPage();
   const [isReportVisible, setIsReportVisible] = useState(false);
   const reportRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    setIsReportVisible(false);
-  }, [report?.title]);
 
   if (!hasValidSessionId) {
     return null;
@@ -362,7 +364,7 @@ export function EndingPage() {
     <main
       className={`${styles.page} ${styles.pageReportVisible}`}
       data-testid="ending-page"
-      style={{ ['--report-background-image' as const]: `url(${reportBackground})` }}
+      style={createReportBackgroundStyle(reportBackground)}
     >
       <section
         ref={reportRef}
