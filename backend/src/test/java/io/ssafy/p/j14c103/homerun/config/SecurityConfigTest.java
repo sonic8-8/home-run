@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -26,6 +27,7 @@ import io.ssafy.p.j14c103.homerun.api.service.auth.response.SignupResponse;
 import io.ssafy.p.j14c103.homerun.api.service.character.CharacterQueryService;
 import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterOptionsResponse;
 import io.ssafy.p.j14c103.homerun.api.service.card.CardService;
+import io.ssafy.p.j14c103.homerun.api.service.card.OwnedCardService;
 import io.ssafy.p.j14c103.homerun.api.service.game.start.GameStartLocationService;
 import io.ssafy.p.j14c103.homerun.api.service.game.start.GameStartProfileService;
 import io.ssafy.p.j14c103.homerun.api.service.home.CreditScoreService;
@@ -76,6 +78,9 @@ class SecurityConfigTest extends SecurityConfigTestSupport {
 
     @MockitoBean
     private CardService cardService;
+
+    @MockitoBean
+    private OwnedCardService ownedCardService;
 
     @MockitoBean
     private GameStartProfileService gameStartProfileService;
@@ -192,6 +197,7 @@ class SecurityConfigTest extends SecurityConfigTestSupport {
         verifyNoInteractions(
                 characterQueryService,
                 cardService,
+                ownedCardService,
                 gameStartProfileService,
                 gameStartLocationService,
                 dashboardService,
@@ -219,6 +225,7 @@ class SecurityConfigTest extends SecurityConfigTestSupport {
         verifyNoInteractions(
                 characterQueryService,
                 cardService,
+                ownedCardService,
                 gameStartProfileService,
                 gameStartLocationService,
                 dashboardService,
@@ -258,6 +265,32 @@ class SecurityConfigTest extends SecurityConfigTestSupport {
                 .andExpect(jsonPath("$.message").value("OK"))
                 .andExpect(jsonPath("$.data.characters[0].characterType").value("FEMALE"))
                 .andExpect(jsonPath("$.data.characters[1].characterType").value("MALE"));
+    }
+
+    @DisplayName("카드 신청 API는 인증 없이 접근하면 401을 반환한다.")
+    @Test
+    void applyCardRequiresAuthentication() throws Exception {
+        mockMvc.perform(post("/api/cards/apply")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {"cardProductId":1}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_UNAUTHORIZED.getCode()))
+                .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_UNAUTHORIZED.getMessage()));
+
+        verifyNoInteractions(cardService, ownedCardService);
+    }
+
+    @DisplayName("카드 해지 API는 인증 없이 접근하면 401을 반환한다.")
+    @Test
+    void cancelOwnedCardRequiresAuthentication() throws Exception {
+        mockMvc.perform(delete("/api/cards/owned/1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(ErrorCode.AUTH_UNAUTHORIZED.getCode()))
+                .andExpect(jsonPath("$.message").value(ErrorCode.AUTH_UNAUTHORIZED.getMessage()));
+
+        verifyNoInteractions(cardService, ownedCardService);
     }
 
     @DisplayName("유효한 Access Token이면 Principal 기반 보호 API에서 사용자 식별을 수행한다.")
@@ -316,6 +349,7 @@ class SecurityConfigTest extends SecurityConfigTestSupport {
                 Arguments.of("/api/games/regions/11/districts"),
                 Arguments.of("/api/games/regions/11/districts/11710/properties"),
                 Arguments.of("/api/cards"),
+                Arguments.of("/api/cards/owned"),
                 Arguments.of("/api/cards/recommendations"),
                 Arguments.of("/api/cards/recommendations/v2"),
                 Arguments.of("/api/home/dashboard"),
