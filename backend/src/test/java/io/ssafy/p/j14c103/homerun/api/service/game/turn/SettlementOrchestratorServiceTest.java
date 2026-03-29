@@ -5,10 +5,13 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.game.port.SettlementStepExecutor;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SettlementOrchestratorRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.SettlementOrchestratorResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementPhaseType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -23,8 +26,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ActiveProfiles("test")
 class SettlementOrchestratorServiceTest {
 
+    private static final String SETTLEMENT_PHASE_DURATION = "homerun.settlement.phase.duration";
+
     @Autowired
     private SettlementOrchestratorService settlementOrchestratorService;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @MockitoBean
     private SettlementStepExecutor settlementStepExecutor;
@@ -33,6 +41,9 @@ class SettlementOrchestratorServiceTest {
     @Test
     void orchestrate() {
         // given
+        final long marketTimerCountBefore = settlementPhaseTimerCount(SettlementPhaseType.MARKET_UPDATE);
+        final long incomeTimerCountBefore = settlementPhaseTimerCount(SettlementPhaseType.INCOME_EXPENSE);
+        final long statusTimerCountBefore = settlementPhaseTimerCount(SettlementPhaseType.STATUS_UPDATE);
         final SettlementOrchestratorRequest request = SettlementOrchestratorRequest.of(
             101L,
             12,
@@ -73,6 +84,12 @@ class SettlementOrchestratorServiceTest {
         assertThat(result.getAggregatedStatChanges()).containsEntry("health", 3)
             .containsEntry("stress", -4)
             .containsEntry("fatigue", 2);
+        assertThat(settlementPhaseTimerCount(SettlementPhaseType.MARKET_UPDATE))
+            .isEqualTo(marketTimerCountBefore + 1);
+        assertThat(settlementPhaseTimerCount(SettlementPhaseType.INCOME_EXPENSE))
+            .isEqualTo(incomeTimerCountBefore + 1);
+        assertThat(settlementPhaseTimerCount(SettlementPhaseType.STATUS_UPDATE))
+            .isEqualTo(statusTimerCountBefore + 1);
 
         final InOrder inOrder = inOrder(settlementStepExecutor);
         for (SettlementStepType stepType : SettlementStepType.orderedValues()) {
@@ -106,5 +123,15 @@ class SettlementOrchestratorServiceTest {
                 false,
                 false
             ));
+    }
+
+    private long settlementPhaseTimerCount(final SettlementPhaseType phaseType) {
+        final Timer timer = meterRegistry.find(SETTLEMENT_PHASE_DURATION)
+            .tag("phase", phaseType.name())
+            .timer();
+        if (timer == null) {
+            return 0L;
+        }
+        return timer.count();
     }
 }

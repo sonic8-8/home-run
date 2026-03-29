@@ -1,7 +1,5 @@
 package io.ssafy.p.j14c103.homerun.api.service.character;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.character.history.GameplayHistoryWriter;
 import io.ssafy.p.j14c103.homerun.api.service.character.request.CharacterTurnResultServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterTurnResultServiceResponse;
@@ -32,15 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CharacterTurnResultService {
 
-    private static final String SETTLEMENT_PHASE_DURATION = "homerun.settlement.phase.duration";
-    private static final String PHASE_TAG = "phase";
-    private static final String CHARACTER_TURN_RESULT_PHASE = "character_turn_result";
-
     private final GameStatRepository gameStatRepository;
     private final GameCareerRepository gameCareerRepository;
     private final GameTurnSlotRepository gameTurnSlotRepository;
     private final GameplayHistoryWriter gameplayHistoryWriter;
-    private final MeterRegistry meterRegistry;
 
     private final TurnSlotPreviewPolicy turnSlotPreviewPolicy = new TurnSlotPreviewPolicy();
     private final StatAutoChangePolicy statAutoChangePolicy = new StatAutoChangePolicy();
@@ -55,51 +48,39 @@ public class CharacterTurnResultService {
     public CharacterTurnResultServiceResponse apply(
         final CharacterTurnResultServiceRequest request
     ) {
-        final Timer.Sample sample = Timer.start(meterRegistry);
+        validateRequest(request);
 
-        try {
-            validateRequest(request);
+        final GameStat gameStat = request.getGameStat();
+        final GameCareer gameCareer = request.getGameCareer();
+        final GameplayHistoryWriter.StatSnapshot previousStat =
+            GameplayHistoryWriter.StatSnapshot.from(gameStat);
 
-            final GameStat gameStat = request.getGameStat();
-            final GameCareer gameCareer = request.getGameCareer();
-            final GameplayHistoryWriter.StatSnapshot previousStat =
-                GameplayHistoryWriter.StatSnapshot.from(gameStat);
+        applyTurnActionResult(gameStat, request);
+        applyAutoChange(gameStat, request);
+        applyNegotiationPreparation(gameCareer, gameStat, request);
+        gameCareer.advanceTurn(jobTitlePolicy, request.getCurrentTurn());
 
-            applyTurnActionResult(gameStat, request);
-            applyAutoChange(gameStat, request);
-            applyNegotiationPreparation(gameCareer, gameStat, request);
-            gameCareer.advanceTurn(jobTitlePolicy, request.getCurrentTurn());
+        final HealthRisk healthRisk = gameStat.evaluateHealthRisk();
+        final boolean forcedResigned = applyForcedResignationIfNeeded(
+            gameCareer,
+            gameStat,
+            request
+        );
+        final UnemploymentBenefitOutcome unemploymentBenefitOutcome =
+            consumeUnemploymentBenefit(gameCareer);
 
-            final HealthRisk healthRisk = gameStat.evaluateHealthRisk();
-            final boolean forcedResigned = applyForcedResignationIfNeeded(
-                gameCareer,
-                gameStat,
-                request
-            );
-            final UnemploymentBenefitOutcome unemploymentBenefitOutcome =
-                consumeUnemploymentBenefit(gameCareer);
+        gameStatRepository.save(gameStat);
+        gameCareerRepository.save(gameCareer);
+        gameplayHistoryWriter.writeStatChange(previousStat, gameStat, request.getCurrentTurn());
 
-            gameStatRepository.save(gameStat);
-            gameCareerRepository.save(gameCareer);
-            gameplayHistoryWriter.writeStatChange(previousStat, gameStat, request.getCurrentTurn());
-
-            return CharacterTurnResultServiceResponse.of(
-                healthRisk,
-                forcedResigned,
-                unemploymentBenefitOutcome.isGranted(),
-                unemploymentBenefitOutcome.getAmount(),
-                gameStat,
-                gameCareer
-            );
-        } finally {
-            sample.stop(settlementPhaseTimer());
-        }
-    }
-
-    private Timer settlementPhaseTimer() {
-        return Timer.builder(SETTLEMENT_PHASE_DURATION)
-            .tag(PHASE_TAG, CHARACTER_TURN_RESULT_PHASE)
-            .register(meterRegistry);
+        return CharacterTurnResultServiceResponse.of(
+            healthRisk,
+            forcedResigned,
+            unemploymentBenefitOutcome.isGranted(),
+            unemploymentBenefitOutcome.getAmount(),
+            gameStat,
+            gameCareer
+        );
     }
 
     private void applyTurnActionResult(
