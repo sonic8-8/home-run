@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.restdocs.headers.HeaderDocumentation.requestHeaders;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -159,7 +160,8 @@ class RealEstateContractReviewControllerTest extends RestDocsTestSupport {
                 .content("{}"))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_INPUT_VALUE.getCode()))
-            .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()));
+            .andExpect(jsonPath("$.message").value(ErrorCode.INVALID_INPUT_VALUE.getMessage()))
+            .andExpect(jsonPath("$.errors[*].field", hasItem("checkedTraps")));
     }
 
     @DisplayName("종료된 세션의 계약 검토 요청이면 409를 반환한다")

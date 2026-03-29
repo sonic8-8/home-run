@@ -5,13 +5,10 @@ import io.ssafy.p.j14c103.homerun.api.service.game.realestate.RealEstateContract
 import io.ssafy.p.j14c103.homerun.api.service.game.realestate.response.ContractReviewResponse;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.AuthenticatedUser;
 import io.ssafy.p.j14c103.homerun.global.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,16 +19,16 @@ public class RealEstateContractReviewController {
 
     @PostMapping
     public ApiResponse<ContractReviewResponse> reviewContract(
-        @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
-        @PathVariable final Long sessionId,
-        @PathVariable final Long propertyId,
-        @RequestBody final SubmitContractReviewRequest request
+            @AuthenticationPrincipal final AuthenticatedUser authenticatedUser,
+            @PathVariable final Long sessionId,
+            @PathVariable final Long propertyId,
+            @Valid @RequestBody final SubmitContractReviewRequest request
     ) {
         final ContractReviewResponse response = realEstateContractReviewService.review(
-            authenticatedUser.getUserId(),
-            sessionId,
-            propertyId,
-            request.toServiceRequest()
+                authenticatedUser.getUserId(),
+                sessionId,
+                propertyId,
+                request.toServiceRequest()
         );
         return ApiResponse.ok(response);
     }

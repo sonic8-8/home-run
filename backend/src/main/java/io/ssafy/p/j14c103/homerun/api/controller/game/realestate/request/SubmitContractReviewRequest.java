@@ -1,5 +1,6 @@
 package io.ssafy.p.j14c103.homerun.api.controller.game.realestate.request;
 
+import jakarta.validation.constraints.NotNull;
 import io.ssafy.p.j14c103.homerun.api.service.game.realestate.request.SubmitContractReviewServiceRequest;
 import java.util.List;
 import lombok.AccessLevel;
@@ -11,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SubmitContractReviewRequest {
 
+    @NotNull(message = "{validation.game.realestate.contract.checkedTraps.notNull}")
     private List<String> checkedTraps;
 
     @Builder(access = AccessLevel.PRIVATE)
