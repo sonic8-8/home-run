@@ -81,8 +81,8 @@ pipeline {
         // Keep automatic real-estate import disabled in CI/CD. Manual imports can reuse these defaults.
         REAL_ESTATE_IMPORT_ENABLED = 'false'
         REAL_ESTATE_IMPORT_REGIONS = 'SEOUL,GWANGJU'
-        REAL_ESTATE_IMPORT_FROM_YEAR_MONTH = '2025-12'
-        REAL_ESTATE_IMPORT_TO_YEAR_MONTH = '2025-12'
+        REAL_ESTATE_IMPORT_FROM_YEAR_MONTH = '2025-04'
+        REAL_ESTATE_IMPORT_TO_YEAR_MONTH = '2026-03'
         REAL_ESTATE_IMPORT_DATASET_TYPES = 'APT_SALE'
     }
 
