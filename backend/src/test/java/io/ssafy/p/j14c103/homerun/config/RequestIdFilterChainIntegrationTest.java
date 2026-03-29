@@ -5,27 +5,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.ssafy.p.j14c103.homerun.support.MockMvcIntegrationTestSupport;
 import java.util.Map;
-import io.ssafy.p.j14c103.homerun.HomerunApplication;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@SpringBootTest(
-        classes = HomerunApplication.class
-)
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
 @Import(RequestIdFilterChainIntegrationTest.RequestIdEchoController.class)
-class RequestIdFilterChainIntegrationTest {
+class RequestIdFilterChainIntegrationTest extends MockMvcIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

@@ -19,6 +19,7 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyReposit
 import io.ssafy.p.j14c103.homerun.domain.world.housing.trade.ApartmentTradeRawRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import io.ssafy.p.j14c103.homerun.support.RealEstateImportTestSupport;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -26,19 +27,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest(properties = "app.real-estate-import.enabled=true")
-@ActiveProfiles("test")
 @Import({
     RealEstateMasterImportService.class,
     io.ssafy.p.j14c103.homerun.client.publicdata.realestate.LegalDongCodeResponseParser.class,
     io.ssafy.p.j14c103.homerun.client.publicdata.realestate.ApartmentTradeResponseParser.class
 })
-class RealEstateMasterImportServiceTest {
+class RealEstateMasterImportServiceTest extends RealEstateImportTestSupport {
 
     @Autowired
     private RealEstateMasterImportService realEstateMasterImportService;

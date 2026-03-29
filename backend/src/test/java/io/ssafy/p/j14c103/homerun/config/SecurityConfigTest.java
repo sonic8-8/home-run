@@ -40,6 +40,7 @@ import io.ssafy.p.j14c103.homerun.api.service.user.UserAssetLinkService;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserMeService;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.support.SecurityConfigTestSupport;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,22 +48,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(properties = {
-        "management.endpoints.web.exposure.include=health,prometheus",
-        "management.endpoint.health.probes.enabled=true",
-        "management.health.redis.enabled=false"
-})
-@AutoConfigureObservability
-@ActiveProfiles("test")
-@AutoConfigureMockMvc
-class SecurityConfigTest {
+class SecurityConfigTest extends SecurityConfigTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

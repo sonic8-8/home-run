@@ -3,7 +3,7 @@ package io.ssafy.p.j14c103.homerun.domain.gamesession.turn;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
+import io.ssafy.p.j14c103.homerun.support.RedisContainerTestSupport;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,33 +13,17 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 @Tag("container")
 @Testcontainers(disabledWithoutDocker = true)
-class TurnDraftRepositoryTest extends IntegrationTestSupport {
-
-    @Container
-    private static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(
-        DockerImageName.parse("redis:7.2-alpine")
-    ).withExposedPorts(6379);
+class TurnDraftRepositoryTest extends RedisContainerTestSupport {
 
     @Autowired
     private TurnDraftRepository turnDraftRepository;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
-
-    @DynamicPropertySource
-    static void overrideRedisProperties(final DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
-        registry.add("spring.data.redis.port", REDIS_CONTAINER::getFirstMappedPort);
-    }
 
     @AfterEach
     void tearDown() {

@@ -14,7 +14,7 @@ import io.ssafy.p.j14c103.homerun.domain.user.auth.RefreshToken;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.RefreshTokenRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
-import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
+import io.ssafy.p.j14c103.homerun.support.RedisContainerTestSupport;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,21 +23,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 @Tag("container")
 @Testcontainers(disabledWithoutDocker = true)
-class LoginServiceTest extends IntegrationTestSupport {
-
-    @Container
-    private static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(
-            DockerImageName.parse("redis:7.2-alpine")
-    ).withExposedPorts(6379);
+class LoginServiceTest extends RedisContainerTestSupport {
 
     @Autowired
     private LoginService loginService;
@@ -59,12 +49,6 @@ class LoginServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
-
-    @DynamicPropertySource
-    static void overrideRedisProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
-        registry.add("spring.data.redis.port", REDIS_CONTAINER::getFirstMappedPort);
-    }
 
     @AfterEach
     void tearDown() {
