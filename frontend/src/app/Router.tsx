@@ -61,6 +61,10 @@ const NewsPage = lazy(() =>
   import('@features/game/presentation/pages/NewsPage').then((m) => ({ default: m.NewsPage }))
 );
 
+const EndingPage = lazy(() =>
+  import('@features/ending/presentation/pages/EndingPage').then((m) => ({ default: m.EndingPage }))
+);
+
 const NotFoundContent = lazy(() =>
   import('@shared/components/NotFoundContent').then((m) => ({ default: m.NotFoundContent }))
 );
@@ -84,6 +88,7 @@ const router = createBrowserRouter([
       { path: ROUTES.GAME_SELECT_START_METHOD, element: <SelectStartMethodPage /> },
       { path: ROUTES.GAME_SELECT_JOB, element: <SelectJobPage /> },
       { path: ROUTES.GAME_NEWS_PATTERN, element: <NewsPage /> },
+      { path: ROUTES.GAME_ENDING_PATTERN, element: <EndingPage /> },
       { path: ROUTES.LOAN,     element: <LoanPlaceholderPage /> },
       { path: ROUTES.REAL_ESTATE, element: <RealEstatePage /> },
       { path: ROUTES.CARD,     element: <CardPlaceholderPage /> },

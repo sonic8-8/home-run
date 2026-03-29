@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import io.ssafy.p.j14c103.homerun.api.service.game.session.EndingReportService;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.EndingReportResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
+import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -60,6 +61,7 @@ class EndingReportControllerTest extends RestDocsTestSupport {
                 .header(AUTHORIZATION, "Bearer access-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.data.characterType").value("FEMALE"))
             .andExpect(jsonPath("$.data.endingType").value("CLEAR"))
             .andExpect(jsonPath("$.data.spendingPattern.topCategory").value("식비"))
             .andExpect(jsonPath("$.data.achievements[0].name").value("첫 내집 마련"))
@@ -75,6 +77,7 @@ class EndingReportControllerTest extends RestDocsTestSupport {
                 relaxedApiResponseFields(
                     "엔딩 리포트와 세계관 이력",
                     fieldWithPath("endingType").description("엔딩 타입"),
+                    fieldWithPath("characterType").description("캐릭터 타입"),
                     fieldWithPath("grade").description("엔딩 등급"),
                     fieldWithPath("title").description("엔딩 타이틀"),
                     fieldWithPath("totalAssets").description("총자산"),
@@ -140,6 +143,7 @@ class EndingReportControllerTest extends RestDocsTestSupport {
 
     private EndingReportResponse createResponse() {
         return EndingReportResponse.create(
+            CharacterType.FEMALE,
             SessionStatus.CLEAR,
             "S",
             "부동산 갑부",

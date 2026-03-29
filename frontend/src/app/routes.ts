@@ -10,6 +10,8 @@ export const ROUTES = {
   GAME_SELECT_JOB: '/game/select-job',
   GAME_NEWS: (sessionId: string | number) => `/game/${sessionId}/news`,
   GAME_NEWS_PATTERN: '/game/:sessionId/news',
+  GAME_ENDING: (sessionId: string | number) => `/game/${sessionId}/ending`,
+  GAME_ENDING_PATTERN: '/game/:sessionId/ending',
   LOAN:     '/loan',
   REAL_ESTATE: '/property',
   CARD:     '/card',

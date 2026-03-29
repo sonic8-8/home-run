@@ -1,6 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.session.response;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.ending.response.WorldEndingHistoryProviderResponse;
+import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportAchievement;
@@ -15,6 +16,7 @@ import lombok.Getter;
 @Getter
 public class EndingReportResponse {
 
+    private final CharacterType characterType;
     private final SessionStatus endingType;
     private final String grade;
     private final String title;
@@ -30,6 +32,7 @@ public class EndingReportResponse {
     private final HousingSnapshotResponse housingSnapshot;
 
     private EndingReportResponse(
+        final CharacterType characterType,
         final SessionStatus endingType,
         final String grade,
         final String title,
@@ -44,6 +47,7 @@ public class EndingReportResponse {
         final List<HousingHistoryResponse> housingHistories,
         final HousingSnapshotResponse housingSnapshot
     ) {
+        this.characterType = characterType;
         this.endingType = endingType;
         this.grade = grade;
         this.title = title;
@@ -60,10 +64,12 @@ public class EndingReportResponse {
     }
 
     public static EndingReportResponse of(
+        final CharacterType characterType,
         final GameReport gameReport,
         final WorldEndingHistoryProviderResponse history
     ) {
         return create(
+            characterType,
             gameReport.getEndingType(),
             gameReport.getGrade(),
             gameReport.getEndingTitle(),
@@ -92,6 +98,7 @@ public class EndingReportResponse {
     }
 
     public static EndingReportResponse create(
+        final CharacterType characterType,
         final SessionStatus endingType,
         final String grade,
         final String title,
@@ -107,6 +114,7 @@ public class EndingReportResponse {
         final HousingSnapshotResponse housingSnapshot
     ) {
         return new EndingReportResponse(
+            characterType,
             endingType,
             grade,
             title,
