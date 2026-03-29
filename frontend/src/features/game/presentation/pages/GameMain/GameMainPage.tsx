@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
 import { useGameMain } from '@features/game/presentation/hooks/useGameMain';
+import { GameEventFlowModal } from '@features/game/presentation/components/GameEventFlowModal';
 import { NewsEventModal } from '@features/game/presentation/components/NewsEventModal/NewsEventModal';
 import { MonthlyActivityModal } from '@features/game/presentation/components/MonthlyActivityModal/MonthlyActivityModal';
 import { LoanProductsPanel } from '@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel';
@@ -24,6 +25,9 @@ export function GameMainPage() {
     currentDate,
     characterType,
     news,
+    currentPendingEvent,
+    resolvedEvent,
+    hasMorePendingEvents,
     turnActions,
     turnPreview,
     turnCommitResult,
@@ -31,16 +35,24 @@ export function GameMainPage() {
     newsError,
     isNewsOpen,
     isMonthlyActivityOpen,
+    isGameEventOpen,
     isActionsLoading,
     isSlotSubmitting,
     isTurnCommitting,
+    isPendingEventsLoading,
+    isEventResolving,
     scheduleError,
+    eventError,
     openNews,
     closeNews,
     openMonthlyActivity,
     closeMonthlyActivity,
+    closeGameEvent,
     submitTurnSlots,
     commitTurn,
+    confirmCommitResult,
+    resolveGameEvent,
+    advanceGameEvent,
     resetScheduleFlow,
     error,
     isLoading,
@@ -187,6 +199,9 @@ export function GameMainPage() {
           news={news}
           loading={isNewsLoading}
           error={newsError}
+          onOpenArchive={() => {
+            navigate(ROUTES.GAME_NEWS(sessionId));
+          }}
         />
       )}
 
@@ -201,7 +216,7 @@ export function GameMainPage() {
           isActionsLoading={isActionsLoading}
           isSubmitting={isSlotSubmitting}
           isCommitting={isTurnCommitting}
-          error={scheduleError}
+          error={scheduleError ?? eventError}
           onClose={closeMonthlyActivity}
           onSubmitSlots={(actionTypes) => {
             void submitTurnSlots(actionTypes)
@@ -210,8 +225,30 @@ export function GameMainPage() {
           onCommit={() => {
             void commitTurn()
           }}
+          onConfirmCommitResult={() => {
+            void confirmCommitResult()
+          }}
+          isResultConfirming={isPendingEventsLoading}
         />
       )}
+
+      <GameEventFlowModal
+        isOpen={isGameEventOpen}
+        event={currentPendingEvent}
+        resolvedEvent={resolvedEvent}
+        hasMoreEvents={hasMorePendingEvents}
+        isLoading={isPendingEventsLoading}
+        isResolving={isEventResolving}
+        error={eventError}
+        onResolve={(choiceId) => {
+          void resolveGameEvent(choiceId)
+        }}
+        onRetry={() => {
+          void confirmCommitResult()
+        }}
+        onContinue={advanceGameEvent}
+        onClose={closeGameEvent}
+      />
     </>
   );
 }

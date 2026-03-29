@@ -14,9 +14,13 @@ export function useGameNewsPage() {
 
   const {
     news,
+    newsHistory,
     isNewsLoading,
     newsError,
+    isNewsHistoryLoading,
+    newsHistoryError,
     fetchLatestNews,
+    fetchNewsHistory,
   } = useGameTurn(hasValidSessionId ? sessionId : null);
 
   useEffect(() => {
@@ -25,13 +29,16 @@ export function useGameNewsPage() {
       return;
     }
 
-    void fetchLatestNews();
-  }, [fetchLatestNews, hasValidSessionId, navigate]);
+    void Promise.all([fetchLatestNews(), fetchNewsHistory()]);
+  }, [fetchLatestNews, fetchNewsHistory, hasValidSessionId, navigate]);
 
   return {
     news,
+    newsHistory,
     isNewsLoading,
     newsError,
+    isNewsHistoryLoading,
+    newsHistoryError,
     hasValidSessionId,
   };
 }

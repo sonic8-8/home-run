@@ -10,6 +10,7 @@ interface Props {
   news: TurnNews | null;
   loading: boolean;
   error: string | null;
+  onOpenArchive?: () => void;
 }
 
 function NewsCard({ item }: { item: NewsItem }) {
@@ -30,7 +31,14 @@ function NewsCard({ item }: { item: NewsItem }) {
   );
 }
 
-export function NewsEventModal({ isOpen, onClose, news, loading, error }: Props) {
+export function NewsEventModal({
+  isOpen,
+  onClose,
+  news,
+  loading,
+  error,
+  onOpenArchive,
+}: Props) {
   if (!isOpen) return null;
 
   return (
@@ -60,6 +68,9 @@ export function NewsEventModal({ isOpen, onClose, news, loading, error }: Props)
 
         {/* 푸터 */}
         <div className={styles.footer}>
+          {onOpenArchive && (
+            <button className={styles.archiveBtn} onClick={onOpenArchive}>지난 뉴스 보기</button>
+          )}
           <button className={styles.confirmBtn} onClick={onClose}>확인</button>
         </div>
       </div>

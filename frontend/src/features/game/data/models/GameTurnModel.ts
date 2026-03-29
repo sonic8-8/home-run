@@ -46,6 +46,65 @@ export interface LatestTurnNewsResponseModel {
   news: NewsItemModel[]
 }
 
+export interface NewsHistoryItemModel {
+  turnNumber: number
+  newsId: string
+  headline: string
+  publishedDate: string
+}
+
+export interface GameNewsHistoryResponseModel {
+  newsHistories: NewsHistoryItemModel[]
+}
+
+export interface PendingEventChoiceModel {
+  choiceId: number
+  choiceCode: string
+  choiceName: string
+  description: string
+}
+
+export interface PendingEventModel {
+  eventId: number
+  type: string
+  title: string
+  description: string
+  imageUrl: string | null
+  choices: PendingEventChoiceModel[] | null
+  sender: string | null
+  receiver: string | null
+  date: string | null
+  offeredSalary: number | null
+  currentSalary: number | null
+}
+
+export interface PendingEventsResponseModel {
+  events: PendingEventModel[]
+}
+
+export interface ResolvedEventEffectModel {
+  effectOrder: number
+  applicationTimingType: string
+  targetTableName: string | null
+  targetColumnName: string | null
+  operationType: string
+  baseNumberValue: number | null
+  minNumberValue: number | null
+  maxNumberValue: number | null
+  baseTextValue: string | null
+  durationTurns: number | null
+  note: string | null
+}
+
+export interface ResolveEventResponseModel {
+  eventId: number
+  gameEventId: number
+  choiceId: number | null
+  selectedChoiceCode: string | null
+  resultEffects: ResolvedEventEffectModel[]
+  resultSummary: string
+}
+
 export interface TurnStatChangesModel {
   health: number
   fatigue: number

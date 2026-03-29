@@ -12,6 +12,10 @@ interface JobChangeEventModalProps {
   companyName: string;
   currentSalary: number;
   offeredSalary: number;
+  subject?: string;
+  description?: string;
+  approveLabel?: string;
+  declineLabel?: string;
 }
 
 function formatSalary(amount: number): string {
@@ -29,6 +33,10 @@ export const JobChangeEventModal: React.FC<JobChangeEventModalProps> = ({
   companyName,
   currentSalary,
   offeredSalary,
+  subject = '열심히 일한 당신! 이직하시겠습니까?',
+  description,
+  approveLabel = '승인하기',
+  declineLabel = '거절하기',
 }) => {
   if (!isOpen) return null;
 
@@ -43,7 +51,7 @@ export const JobChangeEventModal: React.FC<JobChangeEventModalProps> = ({
 
         {/* 제목 */}
         <div className={styles.subject}>
-          열심히 일한 당신! 이직하시겠습니까?
+          {subject}
         </div>
 
         {/* 메일 메타 정보 */}
@@ -63,7 +71,7 @@ export const JobChangeEventModal: React.FC<JobChangeEventModalProps> = ({
 
         {/* 본문 */}
         <div className={styles.body}>
-          <p>열심히 일한 당신에게 {companyName}에서 이직 오퍼가 도착했습니다.</p>
+          <p>{description ?? `열심히 일한 당신에게 ${companyName}에서 이직 오퍼가 도착했습니다.`}</p>
           <p>이직시 연봉: {formatSalary(offeredSalary)}</p>
           <p>현재 연봉: {formatSalary(currentSalary)}</p>
         </div>
@@ -71,10 +79,10 @@ export const JobChangeEventModal: React.FC<JobChangeEventModalProps> = ({
         {/* 버튼 */}
         <div className={styles.buttonGroup}>
           <button className={styles.approveButton} onClick={onApprove}>
-            승인하기
+            {approveLabel}
           </button>
           <button className={styles.declineButton} onClick={onDecline}>
-            거절하기
+            {declineLabel}
           </button>
         </div>
       </div>

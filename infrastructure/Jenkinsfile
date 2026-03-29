@@ -67,6 +67,7 @@ pipeline {
         POSTGRES_HOST_PORT = '5432'
         REDIS_HOST_PORT = '6379'
         PUBLIC_BASE_URL = 'https://j14c103.p.ssafy.io'
+        MONITORING_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/monitoring-evidence'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
         POSTGRES_PASSWORD = credentials('homerun-postgres-password')
@@ -77,11 +78,11 @@ pipeline {
         PUBLIC_DATA_SERVICE_KEY = credentials('public-data-service-key')
         NAVER_GEOCODING_CLIENT_ID = credentials('naver-geocoding-client-id')
         NAVER_GEOCODING_CLIENT_SECRET = credentials('naver-geocoding-client-secret')
-        // Disable this after the one-time December 2025 Seoul bootstrap import succeeds.
-        REAL_ESTATE_IMPORT_ENABLED = 'true'
-        REAL_ESTATE_IMPORT_REGIONS = 'SEOUL'
-        REAL_ESTATE_IMPORT_FROM_YEAR_MONTH = '2025-12'
-        REAL_ESTATE_IMPORT_TO_YEAR_MONTH = '2025-12'
+        // Keep automatic real-estate import disabled in CI/CD. Manual imports can reuse these defaults.
+        REAL_ESTATE_IMPORT_ENABLED = 'false'
+        REAL_ESTATE_IMPORT_REGIONS = 'SEOUL,GWANGJU'
+        REAL_ESTATE_IMPORT_FROM_YEAR_MONTH = '2025-04'
+        REAL_ESTATE_IMPORT_TO_YEAR_MONTH = '2026-03'
         REAL_ESTATE_IMPORT_DATASET_TYPES = 'APT_SALE'
     }
 
@@ -308,6 +309,21 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                 '''
             }
         }
+
+        stage('Collect Monitoring Evidence') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'Collect Monitoring Evidence'
+                }
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    sh '''
+                        rm -rf ${MONITORING_EVIDENCE_ARTIFACT_ROOT}
+                        ARTIFACT_ROOT=${MONITORING_EVIDENCE_ARTIFACT_ROOT} \
+                        bash infrastructure/scripts/collect-monitoring-evidence.sh
+                    '''
+                }
+            }
+        }
     }
 
     post {
@@ -322,6 +338,7 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
             }
         }
         always {
+            archiveArtifacts allowEmptyArchive: true, artifacts: "${env.MONITORING_EVIDENCE_ARTIFACT_ROOT}/**"
             sh '''
                 if [ -f "${ENV_FILE}" ]; then
                   docker compose \

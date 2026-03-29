@@ -4,6 +4,7 @@ import { ROUTES } from '@app/routes';
 import { container } from '@core/di/container';
 import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
 import type { JobType } from '@features/game/domain/entities/GameSlot';
+import type { PendingGameEvent } from '@features/game/domain/entities/GameTurn';
 import { GetGameSessionDetailUseCase } from '@features/game/domain/usecases/GetGameSessionDetailUseCase';
 import { useGameTurn } from '@features/game/presentation/hooks/useGameTurn';
 import { formatIsoDate } from '@shared/utils/formatter';
@@ -97,6 +98,7 @@ export const useGameMain = () => {
   const [error, setError] = useState<string | null>(null);
   const [isNewsOpen, setIsNewsOpen] = useState(false);
   const [isMonthlyActivityOpen, setIsMonthlyActivityOpen] = useState(false);
+  const [isGameEventOpen, setIsGameEventOpen] = useState(false);
   const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card' | 'stock'>(openLoan ? 'loan' : 'scene');
   const createSessionPromiseRef = useRef<Promise<GameSessionCreation> | null>(null);
   const endingRedirectedRef = useRef(false);
@@ -105,6 +107,8 @@ export const useGameMain = () => {
   const {
     turn,
     news,
+    pendingEvents,
+    resolvedEvent,
     turnActions,
     turnPreview,
     turnCommitResult,
@@ -115,16 +119,24 @@ export const useGameMain = () => {
     isActionsLoading,
     isSlotSubmitting,
     isTurnCommitting,
+    isPendingEventsLoading,
+    isEventResolving,
+    eventError,
     scheduleError,
     fetchTurn,
     fetchLatestNews,
+    fetchPendingEvents,
     fetchTurnActions,
+    resolvePendingEvent,
     submitTurnSlots,
     commitTurn,
+    dismissResolvedEvent,
+    resetPendingEventFlow,
     resetScheduleFlow,
   } = useGameTurn(sessionId);
   const currentDate = turn?.currentDate ?? null;
   const currentDateKey = currentDate === null ? null : formatIsoDate(currentDate);
+  const currentPendingEvent: PendingGameEvent | null = pendingEvents.at(0) ?? null;
 
   useEffect(() => {
     if (locationSessionId === undefined || locationSessionId === sessionId) {
@@ -342,6 +354,11 @@ export const useGameMain = () => {
     resetScheduleFlow();
   }, [resetScheduleFlow]);
 
+  const closeGameEvent = useCallback(() => {
+    setIsGameEventOpen(false);
+    resetPendingEventFlow();
+  }, [resetPendingEventFlow]);
+
   const handleSubmitTurnSlots = useCallback(
     async (actionTypes: readonly string[]) => submitTurnSlots(actionTypes),
     [submitTurnSlots],
@@ -358,10 +375,53 @@ export const useGameMain = () => {
     return result;
   }, [commitTurn, fetchTurn]);
 
+  const handleConfirmCommitResult = useCallback(async () => {
+    if (turnCommitResult?.flags.hasEvent !== true) {
+      closeMonthlyActivity();
+      return;
+    }
+
+    resetPendingEventFlow();
+    const events = await fetchPendingEvents();
+
+    if (events === null) {
+      return;
+    }
+
+    closeMonthlyActivity();
+    if (events.length > 0) {
+      setIsGameEventOpen(true);
+    }
+  }, [
+    closeMonthlyActivity,
+    fetchPendingEvents,
+    resetPendingEventFlow,
+    turnCommitResult,
+  ]);
+
+  const handleResolveGameEvent = useCallback(async (choiceId: number | null) => {
+    if (currentPendingEvent === null) {
+      return null;
+    }
+
+    return resolvePendingEvent(currentPendingEvent.eventId, choiceId);
+  }, [currentPendingEvent, resolvePendingEvent]);
+
+  const handleAdvanceGameEvent = useCallback(() => {
+    dismissResolvedEvent();
+
+    if (pendingEvents.length === 0) {
+      closeGameEvent();
+    }
+  }, [closeGameEvent, dismissResolvedEvent, pendingEvents.length]);
+
   return {
     sessionId,
     turn,
     news,
+    currentPendingEvent,
+    resolvedEvent,
+    hasMorePendingEvents: pendingEvents.length > 0,
     turnActions,
     turnPreview,
     turnCommitResult,
@@ -375,7 +435,11 @@ export const useGameMain = () => {
     isActionsLoading,
     isSlotSubmitting,
     isTurnCommitting,
+    isGameEventOpen,
+    isPendingEventsLoading,
+    isEventResolving,
     scheduleError,
+    eventError,
     openNews: () => setIsNewsOpen(true),
     closeNews: () => {
       writeSessionStorage(
@@ -386,8 +450,12 @@ export const useGameMain = () => {
     },
     openMonthlyActivity,
     closeMonthlyActivity,
+    closeGameEvent,
     submitTurnSlots: handleSubmitTurnSlots,
     commitTurn: handleCommitTurn,
+    confirmCommitResult: handleConfirmCommitResult,
+    resolveGameEvent: handleResolveGameEvent,
+    advanceGameEvent: handleAdvanceGameEvent,
     resetScheduleFlow,
     error: error ?? createError ?? turnError,
     leftView,

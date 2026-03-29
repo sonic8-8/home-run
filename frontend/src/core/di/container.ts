@@ -6,6 +6,8 @@ import { AuthRemoteDataSource } from '@features/auth/data/datasources/AuthRemote
 import { AuthRepositoryImpl } from '@features/auth/data/repositories/AuthRepositoryImpl';
 import { CardRemoteDataSource } from '@features/card/data/datasources/CardRemoteDataSource';
 import { CardRepositoryImpl } from '@features/card/data/repositories/CardRepositoryImpl';
+import { CareerRemoteDataSource } from '@features/career/data/datasources/CareerRemoteDataSource';
+import { CareerRepositoryImpl } from '@features/career/data/repositories/CareerRepositoryImpl';
 import { GameInitRemoteDataSource } from '@features/game/data/datasources/GameInitRemoteDataSource';
 import { GameInitRepositoryImpl } from '@features/game/data/repositories/GameInitRepositoryImpl';
 import { GameSessionRemoteDataSource } from '@features/game/data/datasources/GameSessionRemoteDataSource';
@@ -26,6 +28,10 @@ container.register(DI_TOKENS.IAuthRepository, {
 container.registerSingleton(CardRemoteDataSource);
 container.register(DI_TOKENS.ICardRepository, {
   useClass: CardRepositoryImpl,
+});
+container.registerSingleton(CareerRemoteDataSource);
+container.register(DI_TOKENS.ICareerRepository, {
+  useClass: CareerRepositoryImpl,
 });
 container.registerSingleton(EndingRemoteDataSource);
 container.register(DI_TOKENS.IEndingRepository, {

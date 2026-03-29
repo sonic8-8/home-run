@@ -32,6 +32,12 @@ vi.mock('@features/game/presentation/components/MonthlyActivityModal/MonthlyActi
   ),
 }));
 
+vi.mock('@features/game/presentation/components/GameEventFlowModal', () => ({
+  GameEventFlowModal: ({ isOpen }: { isOpen: boolean }) => (
+    isOpen ? <div>이벤트 모달</div> : null
+  ),
+}));
+
 vi.mock('@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel', () => ({
   LoanProductsPanel: () => <div>대출 패널</div>,
 }));
@@ -63,6 +69,9 @@ describe('GameMainPage', () => {
         },
       },
       news: null,
+      currentPendingEvent: null,
+      resolvedEvent: null,
+      hasMorePendingEvents: false,
       turnActions: null,
       turnPreview: null,
       turnCommitResult: null,
@@ -70,19 +79,27 @@ describe('GameMainPage', () => {
       characterType: 'MALE',
       isNewsOpen: true,
       isMonthlyActivityOpen: true,
+      isGameEventOpen: false,
       isLoading: false,
       isNewsLoading: false,
       newsError: null,
       isActionsLoading: false,
       isSlotSubmitting: false,
       isTurnCommitting: false,
+      isPendingEventsLoading: false,
+      isEventResolving: false,
       scheduleError: null,
+      eventError: null,
       openNews,
       closeNews,
       openMonthlyActivity,
       closeMonthlyActivity,
+      closeGameEvent: vi.fn(),
       submitTurnSlots: vi.fn(),
       commitTurn: vi.fn(),
+      confirmCommitResult: vi.fn(),
+      resolveGameEvent: vi.fn(),
+      advanceGameEvent: vi.fn(),
       resetScheduleFlow: vi.fn(),
       error: null,
       leftView: 'scene',

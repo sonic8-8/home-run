@@ -57,8 +57,8 @@ const CardPage = lazy(() =>
   import('@features/card/presentation/pages/CardPage').then((m) => ({ default: m.CardPage }))
 );
 
-const MyPagePlaceholderPage = lazy(() =>
-  import('@features/mypage/presentation/pages/MyPagePlaceholderPage').then((m) => ({ default: m.MyPagePlaceholderPage }))
+const CareerPage = lazy(() =>
+  import('@features/career/presentation/pages/CareerPage').then((m) => ({ default: m.CareerPage }))
 );
 
 const NewsPage = lazy(() =>
@@ -104,7 +104,7 @@ const router = createBrowserRouter([
       { path: ROUTES.LOAN, element: <LoanPlaceholderPage /> },
       { path: ROUTES.REAL_ESTATE, element: <RealEstatePage /> },
       { path: ROUTES.CARD, element: <CardPage /> },
-      { path: ROUTES.MY_PAGE, element: <MyPagePlaceholderPage /> },
+      { path: ROUTES.MY_PAGE, element: <CareerPage /> },
     ],
   },
   { path: ROUTES.NOT_FOUND, element: <NotFoundContent /> },
