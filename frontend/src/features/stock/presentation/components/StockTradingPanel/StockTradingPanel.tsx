@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { formatMoney } from '@shared/utils/formatter';
 import type {
   OrderStatus,
@@ -78,25 +78,15 @@ export function StockTradingPanel({
   const [orderType, setOrderType] = useState<OrderType>('BUY');
   const [quantityInput, setQuantityInput] = useState('1');
 
-  useEffect(() => {
-    if ((market?.stocks.length ?? 0) === 0) {
-      return;
-    }
-
-    if (
-      selectedStockCode !== null &&
-      market?.stocks.some((stock) => stock.stockCode === selectedStockCode)
-    ) {
-      return;
-    }
-
-    setSelectedStockCode(market?.stocks[0]?.stockCode ?? null);
-  }, [market, selectedStockCode]);
-
   const marketStocks = market?.stocks ?? [];
   const holdingItems = holdings?.holdings ?? [];
-  const selectedStock = marketStocks.find((stock) => stock.stockCode === selectedStockCode) ?? null;
-  const selectedHolding = getSelectedHolding(holdingItems, selectedStockCode);
+  const resolvedSelectedStockCode =
+    selectedStockCode !== null &&
+    marketStocks.some((stock) => stock.stockCode === selectedStockCode)
+      ? selectedStockCode
+      : marketStocks[0]?.stockCode ?? null;
+  const selectedStock = marketStocks.find((stock) => stock.stockCode === resolvedSelectedStockCode) ?? null;
+  const selectedHolding = getSelectedHolding(holdingItems, resolvedSelectedStockCode);
   const quantity = Number(quantityInput);
   const isQuantityValid = Number.isInteger(quantity) && quantity > 0;
   const hasOverviewError = marketError !== null || holdingsError !== null;
@@ -190,7 +180,7 @@ export function StockTradingPanel({
                   type="button"
                   className={clsx(
                     styles.marketItem,
-                    selectedStockCode === stock.stockCode && styles.marketItemActive,
+                    resolvedSelectedStockCode === stock.stockCode && styles.marketItemActive,
                   )}
                   onClick={() => setSelectedStockCode(stock.stockCode)}
                 >

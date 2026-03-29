@@ -191,9 +191,15 @@ export function MonthlyActivityModal({
 
   useEffect(() => {
     if (!isOpen) {
-      setShopPage(0)
-      setActivityPage(0)
-      setSelectedActionTypes([])
+      const timeoutId = window.setTimeout(() => {
+        setShopPage(0)
+        setActivityPage(0)
+        setSelectedActionTypes([])
+      }, 0)
+
+      return () => {
+        window.clearTimeout(timeoutId)
+      }
     }
   }, [isOpen])
 

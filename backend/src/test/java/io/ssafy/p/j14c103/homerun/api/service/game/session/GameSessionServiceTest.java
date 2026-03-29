@@ -34,6 +34,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraft;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
@@ -59,18 +61,26 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(GameSessionServiceTest.TurnDraftRepositoryTestConfig.class)
 class GameSessionServiceTest {
 
     @Autowired
@@ -121,11 +131,15 @@ class GameSessionServiceTest {
     @Autowired
     private UserFinancialSummaryRepository userFinancialSummaryRepository;
 
+    @Autowired
+    private TurnDraftRepositoryTestSupport turnDraftRepositoryTestSupport;
+
     @MockitoBean
     private GameSessionCleanupService gameSessionCleanupService;
 
     @AfterEach
     void tearDown() {
+        turnDraftRepositoryTestSupport.clear();
         userFinancialSummaryRepository.deleteAllInBatch();
         userFinancialProductRepository.deleteAllInBatch();
         userAccountRepository.deleteAllInBatch();
@@ -139,6 +153,49 @@ class GameSessionServiceTest {
         housingDistrictRepository.deleteAllInBatch();
         housingRegionRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
+    }
+
+    @TestConfiguration
+    static class TurnDraftRepositoryTestConfig {
+
+        @Bean
+        @Primary
+        TurnDraftRepositoryTestSupport turnDraftRepository() {
+            return new TurnDraftRepositoryTestSupport();
+        }
+    }
+
+    static class TurnDraftRepositoryTestSupport implements TurnDraftRepository {
+
+        private final Map<Long, TurnDraft> store = new ConcurrentHashMap<>();
+
+        @Override
+        public void save(final TurnDraft turnDraft) {
+            validateSessionId(turnDraft.getSessionId());
+            store.put(turnDraft.getSessionId(), turnDraft);
+        }
+
+        @Override
+        public Optional<TurnDraft> findBySessionId(final Long sessionId) {
+            validateSessionId(sessionId);
+            return Optional.ofNullable(store.get(sessionId));
+        }
+
+        @Override
+        public void deleteBySessionId(final Long sessionId) {
+            validateSessionId(sessionId);
+            store.remove(sessionId);
+        }
+
+        void clear() {
+            store.clear();
+        }
+
+        private void validateSessionId(final Long sessionId) {
+            if (sessionId == null || sessionId <= 0L) {
+                throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+        }
     }
 
     @DisplayName("세션 목록 조회는 빈 슬롯을 포함한 3개 저장 슬롯을 반환한다.")
