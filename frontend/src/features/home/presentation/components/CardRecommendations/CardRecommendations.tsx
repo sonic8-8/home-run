@@ -52,9 +52,7 @@ export function CardRecommendations({ cards, allCards }: CardRecommendationsProp
         onClose={() => setModalOpen(false)}
         recommendations={cards}
         allCards={allCards}
-        onApply={(card) => {
-          console.log('카드 신청하기', card.cardProductId);
-        }}
+        onApply={() => undefined}
       />
     </>
   );

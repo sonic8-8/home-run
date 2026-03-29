@@ -41,7 +41,7 @@ describe('naverMapScript', () => {
 
   it('rejects when the client id is blank', async () => {
     await expect(loadNaverMapScript('   ')).rejects.toThrow(
-      '네이버 지도 Client ID가 설정되지 않았습니다.',
+      '네이버 지도 설정이 누락되었습니다.',
     );
   });
 });

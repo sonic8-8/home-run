@@ -55,9 +55,21 @@ export function KoreaMap({
 
   const breadcrumb =
     view.level === 'country' ? '대한민국' : `대한민국 › ${view.data.label}`;
+  const stageTitle =
+    view.level === 'country'
+      ? '지역을 먼저 고르세요'
+      : view.level === 'city'
+        ? `${view.data.label}에서 구를 선택하세요`
+        : `${view.guName} 매물 지도를 보고 있어요`;
+  const stageDescription =
+    view.level === 'country'
+      ? '시작할 광역시·도를 고르면 실제 매물 지도까지 자연스럽게 좁혀집니다.'
+      : view.level === 'city'
+        ? '구를 누르면 네이버 지도 위에 실제 매물 마커가 표시됩니다.'
+        : '마커를 눌러 상세 정보를 보고, 왼쪽 패널이나 액션 버튼으로 다음 행동을 선택하세요.';
 
   return (
-    <div className="size-full min-h-screen bg-[#eceef2] flex overflow-hidden relative">
+    <div className="relative flex min-h-screen size-full overflow-hidden bg-[radial-gradient(circle_at_top,#f8fafc_0%,#eef2ff_48%,#e2e8f0_100%)] p-5 md:p-6">
       <AnimatePresence>
         {view.level !== 'country' && (
           <motion.div
@@ -65,7 +77,7 @@ export function KoreaMap({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.25 }}
-            className="absolute top-6 left-6 z-10 flex items-center gap-3"
+            className="absolute left-10 top-10 z-20 flex items-center gap-3"
           >
             <button
               onClick={handleBack}
@@ -81,7 +93,28 @@ export function KoreaMap({
         )}
       </AnimatePresence>
 
-      <div className="relative w-full h-screen">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute right-10 top-10 z-20 w-[min(360px,calc(100vw-80px))] rounded-[24px] border border-white/70 bg-white/88 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur"
+      >
+        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-500">
+          Real Estate Map
+        </div>
+        <div className="text-[22px] font-black leading-tight text-slate-900">{stageTitle}</div>
+        <p className="mt-3 text-sm leading-6 text-slate-600">{stageDescription}</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+            {breadcrumb}
+          </span>
+          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
+            {view.level === 'district' ? '실시간 매물 단계' : '지역 탐색 단계'}
+          </span>
+        </div>
+      </motion.div>
+
+      <div className="relative h-[calc(100vh-40px)] w-full overflow-hidden rounded-[36px] border border-white/70 bg-white/65 shadow-[0_32px_96px_rgba(15,23,42,0.12)] backdrop-blur-sm">
         <AnimatePresence mode="wait">
           {view.level === 'country' && (
             <motion.div

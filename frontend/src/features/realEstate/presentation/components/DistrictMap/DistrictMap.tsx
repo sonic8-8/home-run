@@ -41,7 +41,14 @@ export function DistrictMap({
   onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
 }) {
   const { mapRef, mapInstance, naverAvailable } = useNaverMap(guCenter);
-  const { properties, selectedProperty, selectedPropertyDetail, selectProperty, clearSelection } =
+  const {
+    properties,
+    selectedProperty,
+    selectedPropertyDetail,
+    loading,
+    selectProperty,
+    clearSelection,
+  } =
     useProperties({
       mode,
       sessionId,
@@ -140,6 +147,27 @@ export function DistrictMap({
             overflowY: 'auto',
           }}
         >
+          <div
+            style={{
+              maxWidth: 520,
+              width: '100%',
+              borderRadius: 20,
+              background: 'rgba(255,255,255,0.86)',
+              border: '1px solid rgba(99,102,241,0.14)',
+              boxShadow: '0 18px 40px rgba(15,23,42,0.08)',
+              padding: '18px 20px',
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#6366f1' }}>
+              Map Fallback
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginTop: 6 }}>
+              {guName ?? '선택한 지역'} 매물 목록
+            </div>
+            <div style={{ fontSize: 13, lineHeight: 1.6, color: '#6b7280', marginTop: 8 }}>
+              지도를 사용할 수 없는 환경이라 카드형 목록으로 대신 보여주고 있습니다. 항목을 누르면 상세 패널과 다음 행동이 이어집니다.
+            </div>
+          </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
             {guName ?? '선택한 지역'} 매물 목록
           </div>
@@ -191,6 +219,43 @@ export function DistrictMap({
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={mapRef} style={{ width: '100%', height: '100%', overflow: 'hidden' }} />
+      <div
+        style={{
+          position: 'absolute',
+          top: 24,
+          right: 24,
+          zIndex: 20,
+          width: 320,
+          borderRadius: 22,
+          background: 'rgba(255,255,255,0.9)',
+          border: '1px solid rgba(99,102,241,0.12)',
+          boxShadow: '0 20px 48px rgba(15,23,42,0.14)',
+          backdropFilter: 'blur(16px)',
+          padding: '18px 18px 16px',
+        }}
+      >
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#6366f1' }}>
+          Live Map
+        </div>
+        <div style={{ marginTop: 6, fontSize: 18, fontWeight: 800, color: '#111827' }}>
+          {guName ?? '선택한 지역'} 부동산 지도
+        </div>
+        <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.6, color: '#6b7280' }}>
+          {loading
+            ? '매물과 마커를 불러오는 중입니다. 잠시만 기다려주세요.'
+            : properties.length === 0
+              ? '이 구역에는 아직 노출 가능한 매물이 없습니다. 다른 구를 선택해보세요.'
+              : '마커를 누르면 왼쪽 상세 패널에서 가격과 액션 버튼을 바로 확인할 수 있습니다.'}
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+          <span style={{ borderRadius: 9999, background: '#eef2ff', color: '#4338ca', padding: '7px 12px', fontSize: 12, fontWeight: 600 }}>
+            파란 마커: 기본 매물
+          </span>
+          <span style={{ borderRadius: 9999, background: '#fffbeb', color: '#b45309', padding: '7px 12px', fontSize: 12, fontWeight: 600 }}>
+            노란 마커: 선택한 매물
+          </span>
+        </div>
+      </div>
 
       {selectedProperty && (
         <PropertyDetailPanel
