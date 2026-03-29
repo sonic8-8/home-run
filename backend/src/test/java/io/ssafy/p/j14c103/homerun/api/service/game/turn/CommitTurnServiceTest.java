@@ -187,7 +187,7 @@ class CommitTurnServiceTest {
         assertThat(timelines.get(0).getLoggedDate()).isEqualTo(LocalDate.of(2026, 2, 1));
         assertThat(timelines.get(0).getCash()).isEqualTo(2_300_000);
         assertThat(timelines.get(0).getLoanBalanceAmount()).isEqualTo(0);
-        assertThat(timelines.get(0).getSalaryAmount()).isEqualTo(300_000);
+        assertThat(timelines.get(0).getSalaryAmount()).isEqualTo(0);
 
         then(gameWorldResultService).should().buildWorldResult(gameSession.getGameSessionId(), 50);
         then(turnDraftRepository).should().deleteBySessionId(gameSession.getGameSessionId());
@@ -207,6 +207,22 @@ class CommitTurnServiceTest {
             Money.zero(),
             Map.of()
         );
+        settlementLogRepository.saveAndFlush(SettlementLog.create(
+            gameSession.getGameSessionId(),
+            120,
+            SettlementPhaseType.INCOME_EXPENSE,
+            "월급을 반영한다",
+            500_000,
+            Map.of()
+        ));
+        settlementLogRepository.saveAndFlush(SettlementLog.create(
+            gameSession.getGameSessionId(),
+            120,
+            SettlementPhaseType.INCOME_EXPENSE,
+            "고정 지출을 차감한다",
+            -200_000,
+            Map.of()
+        ));
         given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
             .willReturn(Optional.of(turnDraft));
         given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
@@ -244,10 +260,70 @@ class CommitTurnServiceTest {
         assertThat(gameReport.getEndingType()).isEqualTo(SessionStatus.TIMEOUT);
         assertThat(gameReport.getEndingTitle()).isEqualTo("시간 초과");
         assertThat(gameReport.getTotalAssetsAmount()).isEqualTo(2_000_000);
-        assertThat(gameReport.getNetProfitAmount()).isEqualTo(0);
+        assertThat(gameReport.getTotalIncomeAmount()).isEqualTo(500_000);
+        assertThat(gameReport.getTotalExpenseAmount()).isEqualTo(200_000);
+        assertThat(gameReport.getNetProfitAmount()).isEqualTo(300_000);
 
         assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(gameSession.getGameSessionId()))
             .hasSize(1);
+    }
+
+    @DisplayName("턴 커밋 결과가 목표 주택 확보면 세션을 클리어하고 report 기본값을 채운다.")
+    @Test
+    void commitTurnAndClearSession() {
+        // given
+        final User user = saveUser("turn-clear@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 12)
+        );
+        final TurnDraft turnDraft = createTurnDraft(
+            gameSession.getGameSessionId(),
+            12,
+            Money.zero(),
+            Map.of()
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(GameWorldResult.of(
+                GameWorldResult.CycleResult.of(
+                    CyclePhase.RECOVERY,
+                    CycleType.CYCLE_RATE_HIKE,
+                    18,
+                    "목표 주택 확보"
+                ),
+                List.of(),
+                List.of(),
+                GameWorldResult.HousingSnapshot.of(
+                    HousingType.OWNED_APT,
+                    gameSession.getTargetPropertyId(),
+                    gameSession.getTargetPropertyId(),
+                    false
+                )
+            ));
+
+        // when
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            user.getId(),
+            gameSession.getGameSessionId()
+        );
+
+        // then
+        assertThat(response.getFlags().isCleared()).isTrue();
+        assertThat(response.getFlags().isBankrupt()).isFalse();
+
+        final GameSession updated = gameSessionRepository.findById(gameSession.getGameSessionId())
+            .orElseThrow();
+        assertThat(updated.getCurrentTurn()).isEqualTo(13);
+        assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.CLEAR);
+
+        final GameReport gameReport = gameReportRepository.findById(gameSession.getGameSessionId())
+            .orElseThrow();
+        assertThat(gameReport.getEndingType()).isEqualTo(SessionStatus.CLEAR);
+        assertThat(gameReport.getEndingTitle()).isEqualTo("부동산 갑부");
+        assertThat(gameReport.getGrade()).isEqualTo("S");
+        assertThat(gameReport.getTopSpendingCategory()).isEqualTo("미집계");
+        assertThat(gameReport.getTopSpendingRatio()).isEqualByComparingTo("0");
     }
 
     private User saveUser(final String email) {

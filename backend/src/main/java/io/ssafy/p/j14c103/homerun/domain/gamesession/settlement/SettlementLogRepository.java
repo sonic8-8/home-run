@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SettlementLogRepository extends JpaRepository<SettlementLog, Long> {
 
+    List<SettlementLog> findAllByGameSessionIdOrderByTurnNumberAscSettlementLogIdAsc(Long gameSessionId);
+
     List<SettlementLog> findAllByGameSessionIdAndTurnNumberOrderBySettlementLogIdAsc(
         Long gameSessionId,
         Integer turnNumber
