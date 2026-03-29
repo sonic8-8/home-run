@@ -10,6 +10,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 IMAGE="${K6_DOCKER_IMAGE:-grafana/k6:0.49.0}"
 SUMMARY_DIR="${K6_SUMMARY_DIR:-performance/k6/results}"
 GIT_COMMIT_SHORT_VALUE="${GIT_COMMIT_SHORT:-$(git -C "$ROOT_DIR" rev-parse --short HEAD)}"
+DOCKER_NETWORK="${K6_DOCKER_NETWORK:-}"
+ADD_HOST_GATEWAY="${K6_DOCKER_ADD_HOST_GATEWAY:-false}"
 
 mkdir -p "$ROOT_DIR/$SUMMARY_DIR"
 
@@ -25,10 +27,24 @@ while IFS='=' read -r key value; do
   fi
 done < <(env)
 
-docker run --rm -i \
-  -u "$(id -u):$(id -g)" \
+docker_args=(
+  --rm
+  -i
+  -u "$(id -u):$(id -g)"
+  -v "$ROOT_DIR:/work"
+  -w /work
+)
+
+if [ -n "$DOCKER_NETWORK" ]; then
+  docker_args+=(--network "$DOCKER_NETWORK")
+fi
+
+if [ "$ADD_HOST_GATEWAY" = "true" ]; then
+  docker_args+=(--add-host host.docker.internal:host-gateway)
+fi
+
+docker run \
+  "${docker_args[@]}" \
   "${env_args[@]}" \
-  -v "$ROOT_DIR:/work" \
-  -w /work \
   "$IMAGE" \
   run "$@"

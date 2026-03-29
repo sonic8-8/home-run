@@ -68,6 +68,7 @@ pipeline {
         REDIS_HOST_PORT = '6379'
         PUBLIC_BASE_URL = 'https://j14c103.p.ssafy.io'
         MONITORING_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/monitoring-evidence'
+        K6_RESULTS_ARTIFACT_ROOT = 'performance/k6/results'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
         POSTGRES_PASSWORD = credentials('homerun-postgres-password')
@@ -313,6 +314,22 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
             }
         }
 
+        stage('k6 Settlement Gate') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'k6 Settlement Gate'
+                }
+                sh '''
+                    rm -rf ${K6_RESULTS_ARTIFACT_ROOT}/settlement-gate
+                    mkdir -p ${K6_RESULTS_ARTIFACT_ROOT}/settlement-gate
+
+                    BUILD_NUMBER=${BUILD_NUMBER} \
+                    GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT} \
+                    bash infrastructure/scripts/run-k6-settlement-gate.sh
+                '''
+            }
+        }
+
         stage('Collect Monitoring Evidence') {
             steps {
                 script {
@@ -341,7 +358,7 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
             }
         }
         always {
-            archiveArtifacts allowEmptyArchive: true, artifacts: "${env.MONITORING_EVIDENCE_ARTIFACT_ROOT}/**"
+            archiveArtifacts allowEmptyArchive: true, artifacts: "${env.MONITORING_EVIDENCE_ARTIFACT_ROOT}/**,${env.K6_RESULTS_ARTIFACT_ROOT}/**"
             sh '''
                 if [ -f "${ENV_FILE}" ]; then
                   docker compose \
