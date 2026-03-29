@@ -111,6 +111,34 @@ class EndingLogsServiceTest {
             .isEqualTo(ErrorCode.ENDING_REPORT_NOT_READY);
     }
 
+    @DisplayName("진행 중인 세션이면 엔딩 로그를 조회할 수 없다")
+    @Test
+    void getLogsWhenSessionIsInProgress() {
+        final User user = userRepository.save(
+            User.register(Email.of("ending-logs-in-progress@example.com"), "tester", "hashed")
+        );
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createInProgressSession(user.getId(), 777L)
+        );
+        gameReportRepository.saveAndFlush(createGameReport(gameSession.getGameSessionId()));
+        gameTimelineRepository.saveAndFlush(GameTimeline.create(
+            gameSession.getGameSessionId(),
+            1,
+            LocalDate.of(2026, 1, 1),
+            13_000_000,
+            13_000_000,
+            13_000_000,
+            0,
+            0,
+            2_000_000
+        ));
+
+        assertThatThrownBy(() -> endingLogsService.getLogs(user.getId(), gameSession.getGameSessionId()))
+            .isInstanceOf(HomerunException.class)
+            .extracting(exception -> ((HomerunException) exception).getErrorCode())
+            .isEqualTo(ErrorCode.ENDING_REPORT_NOT_READY);
+    }
+
     @DisplayName("다른 사용자의 세션이면 GAME_SESSION_FORBIDDEN이 발생한다")
     @Test
     void getLogsForbidden() {
@@ -131,8 +159,8 @@ class EndingLogsServiceTest {
             .isEqualTo(ErrorCode.GAME_SESSION_FORBIDDEN);
     }
 
-    private GameSession createEndedSession(final Long userId, final Long targetPropertyId) {
-        final GameSession gameSession = GameSession.create(
+    private GameSession createInProgressSession(final Long userId, final Long targetPropertyId) {
+        return GameSession.create(
             userId,
             1,
             "윤서",
@@ -144,6 +172,10 @@ class EndingLogsServiceTest {
             targetPropertyId,
             DataSourceType.PROFILE
         );
+    }
+
+    private GameSession createEndedSession(final Long userId, final Long targetPropertyId) {
+        final GameSession gameSession = createInProgressSession(userId, targetPropertyId);
         gameSession.markEnding(SessionStatus.CLEAR);
         return gameSession;
     }
