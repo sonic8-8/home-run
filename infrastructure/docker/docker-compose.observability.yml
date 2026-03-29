@@ -2,7 +2,7 @@ name: homerun-runtime
 
 services:
   prometheus:
-    image: prom/prometheus:v2.54.1
+    image: ${PROMETHEUS_IMAGE:-homerun-prometheus:develop}
     container_name: homerun-prometheus
     restart: unless-stopped
     command:
@@ -11,13 +11,12 @@ services:
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
-      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - homerun_prometheus_data:/prometheus
     networks:
       - web_net
 
   grafana:
-    image: grafana/grafana:11.2.0
+    image: ${GRAFANA_IMAGE:-homerun-grafana:develop}
     container_name: homerun-grafana
     restart: unless-stopped
     environment:
@@ -26,8 +25,6 @@ services:
     ports:
       - "127.0.0.1:3002:3000"
     volumes:
-      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - homerun_grafana_data:/var/lib/grafana
     networks:
       - web_net

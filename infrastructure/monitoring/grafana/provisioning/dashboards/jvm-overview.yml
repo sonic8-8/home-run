@@ -9,5 +9,5 @@ providers:
     updateIntervalSeconds: 30
     allowUiUpdates: false
     options:
-      path: /var/lib/grafana/dashboards/jvm
+      path: /etc/grafana/dashboards/jvm
       foldersFromFilesStructure: false
