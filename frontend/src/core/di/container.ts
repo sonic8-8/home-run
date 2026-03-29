@@ -4,6 +4,8 @@ import { EndingRemoteDataSource } from '@features/ending/data/datasources/Ending
 import { EndingRepositoryImpl } from '@features/ending/data/repositories/EndingRepositoryImpl';
 import { AuthRemoteDataSource } from '@features/auth/data/datasources/AuthRemoteDataSource';
 import { AuthRepositoryImpl } from '@features/auth/data/repositories/AuthRepositoryImpl';
+import { CardRemoteDataSource } from '@features/card/data/datasources/CardRemoteDataSource';
+import { CardRepositoryImpl } from '@features/card/data/repositories/CardRepositoryImpl';
 import { GameInitRemoteDataSource } from '@features/game/data/datasources/GameInitRemoteDataSource';
 import { GameInitRepositoryImpl } from '@features/game/data/repositories/GameInitRepositoryImpl';
 import { GameSessionRemoteDataSource } from '@features/game/data/datasources/GameSessionRemoteDataSource';
@@ -16,6 +18,10 @@ import { RealEstateRepositoryImpl } from '@features/realEstate/data/repositories
 container.registerSingleton(AuthRemoteDataSource);
 container.register(DI_TOKENS.IAuthRepository, {
   useClass: AuthRepositoryImpl,
+});
+container.registerSingleton(CardRemoteDataSource);
+container.register(DI_TOKENS.ICardRepository, {
+  useClass: CardRepositoryImpl,
 });
 container.registerSingleton(EndingRemoteDataSource);
 container.register(DI_TOKENS.IEndingRepository, {
