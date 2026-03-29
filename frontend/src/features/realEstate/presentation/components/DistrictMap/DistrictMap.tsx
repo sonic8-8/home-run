@@ -218,7 +218,12 @@ export function DistrictMap({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={mapRef} style={{ width: '100%', height: '100%', overflow: 'hidden' }} />
+      <div
+        ref={mapRef}
+        data-testid="naver-live-map"
+        data-map-ready={naverAvailable === true ? 'true' : 'false'}
+        style={{ width: '100%', height: '100%', overflow: 'hidden' }}
+      />
       <div
         style={{
           position: 'absolute',

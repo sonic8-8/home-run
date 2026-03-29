@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
-import type { RegionData } from '../../constants/regions';
+import { ACTIVE_REGIONS, type RegionData } from '../../constants/regions';
 import type { MapMode } from '../../pages/RealEstatePage/RealEstatePage';
 
 import { CountryMap } from '../CountryMap/CountryMap';
@@ -12,6 +12,54 @@ type ViewState =
   | { level: 'country' }
   | { level: 'city'; region: string; data: RegionData }
   | { level: 'district'; region: string; data: RegionData; guCode: string; guName: string; guCenter: [number, number] };
+
+function resolveInitialView(): ViewState {
+  if (typeof window === 'undefined') {
+    return { level: 'country' };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const regionCode = params.get('e2eRegionCode')?.trim();
+
+  if (regionCode === undefined || regionCode.length === 0) {
+    return { level: 'country' };
+  }
+
+  const regionEntry = Object.entries(ACTIVE_REGIONS).find(([, data]) => data.code === regionCode);
+  if (regionEntry === undefined) {
+    return { level: 'country' };
+  }
+
+  const [region, data] = regionEntry;
+  const guCode = params.get('e2eDistrictCode')?.trim();
+  const guName = params.get('e2eDistrictName')?.trim();
+  const guCenterLng = Number(params.get('e2eCenterLng'));
+  const guCenterLat = Number(params.get('e2eCenterLat'));
+
+  if (
+    guCode !== undefined &&
+    guCode.length > 0 &&
+    guName !== undefined &&
+    guName.length > 0 &&
+    Number.isFinite(guCenterLng) &&
+    Number.isFinite(guCenterLat)
+  ) {
+    return {
+      level: 'district',
+      region,
+      data,
+      guCode,
+      guName,
+      guCenter: [guCenterLng, guCenterLat],
+    };
+  }
+
+  return {
+    level: 'city',
+    region,
+    data,
+  };
+}
 
 export function KoreaMap({
   sessionId,
@@ -30,7 +78,7 @@ export function KoreaMap({
   }) => void;
   onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
 }) {
-  const [view, setView] = useState<ViewState>({ level: 'country' });
+  const [view, setView] = useState<ViewState>(() => resolveInitialView());
 
   const handleRegionClick = useCallback((region: string, data: RegionData) => {
     setView({ level: 'city', region, data });

@@ -43,6 +43,7 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
                     onMouseEnter={() => isActive && setHoveredKey(geo.rsmKey)}
                     onMouseLeave={() => isActive && setHoveredKey(null)}
                     onClick={() => { if (keyword) onRegionClick(keyword, ACTIVE_REGIONS[keyword]); }}
+                    data-testid={keyword ? `country-region-${ACTIVE_REGIONS[keyword].code}` : undefined}
                     style={{ cursor: isActive ? 'pointer' : 'default' }}
                   >
                     <Geography
