@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: k6-overview
+    orgId: 1
+    folder: Homerun
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards/k6
+      foldersFromFilesStructure: false
