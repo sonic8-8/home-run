@@ -105,6 +105,7 @@ export default function DevPreview() {
         onSubmitSlots={(slots) => { alert(`선택: ${slots.join(', ')}`); }}
         onBackToSelection={() => {}}
         onCommit={() => { alert('턴 진행 확정'); setShowMonthly(false); }}
+        onConfirmCommitResult={() => setShowMonthly(false)}
       />
 
       <LoanReviewResultModal

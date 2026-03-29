@@ -1,10 +1,23 @@
 import React from 'react';
 import clsx from 'clsx';
-import type { GameEvent } from '@features/game/domain/entities/GameEvent';
 import styles from './EventCard.module.css';
 
+export interface EventCardButton {
+  readonly label: string;
+  readonly variant: 'primary' | 'secondary';
+  readonly actionId: string;
+}
+
+export interface EventCardModel {
+  readonly title: string;
+  readonly description: string;
+  readonly imageSrc: string;
+  readonly cardColor?: string;
+  readonly buttons: readonly EventCardButton[];
+}
+
 interface EventCardProps {
-  event: GameEvent;
+  event: EventCardModel;
   onAction: (actionId: string) => void;
 }
 

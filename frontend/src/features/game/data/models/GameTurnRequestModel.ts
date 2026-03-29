@@ -6,3 +6,7 @@ export interface TurnSlotRequestModel {
 export interface SubmitTurnSlotsRequestModel {
   slots: TurnSlotRequestModel[]
 }
+
+export interface ResolveEventRequestModel {
+  choiceId?: number
+}

@@ -1,0 +1,201 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 13, 20, 0.56);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 210;
+}
+
+.modal {
+  width: min(680px, 100%);
+  max-height: min(88vh, 840px);
+  overflow-y: auto;
+  background: linear-gradient(180deg, #fffdf7 0%, #f3ede0 100%);
+  border: 1px solid rgba(39, 32, 20, 0.18);
+  border-radius: 24px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.24);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 28px 28px 12px;
+}
+
+.eventBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e7efe7;
+  color: #2f5a34;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.title {
+  margin: 12px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #211b11;
+}
+
+.closeButton {
+  border: none;
+  background: transparent;
+  color: #6a6255;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.metaCard,
+.salaryCard,
+.statusPanel,
+.resultPanel {
+  margin: 0 28px 18px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(39, 32, 20, 0.1);
+}
+
+.inlineError {
+  margin: 0 28px 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(214, 79, 79, 0.1);
+  border: 1px solid rgba(214, 79, 79, 0.18);
+  color: #8a2626;
+  line-height: 1.5;
+}
+
+.metaCard,
+.salaryCard {
+  display: grid;
+  gap: 10px;
+}
+
+.metaRow,
+.salaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  color: #3d372d;
+}
+
+.metaLabel {
+  color: #746b5d;
+}
+
+.cardShell {
+  padding: 0 28px 28px;
+}
+
+.statusPanel,
+.resultPanel {
+  margin-top: 28px;
+}
+
+.statusPanel strong,
+.resultTitle {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  color: #211b11;
+}
+
+.statusPanel p,
+.resultSummary {
+  margin: 12px 0 0;
+  color: #4d463a;
+  line-height: 1.6;
+}
+
+.resultEyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7f4c17;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.effectList {
+  margin: 18px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+  color: #4d463a;
+}
+
+.effectItem {
+  line-height: 1.6;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.primaryButton,
+.secondaryButton {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: #1d3a2e;
+  border: none;
+  color: #f7f5ef;
+}
+
+.secondaryButton {
+  background: transparent;
+  border: 1px solid rgba(29, 58, 46, 0.28);
+  color: #1d3a2e;
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 16px;
+  }
+
+  .header,
+  .metaCard,
+  .salaryCard,
+  .statusPanel,
+  .resultPanel,
+  .cardShell,
+  .inlineError {
+    margin-left: 18px;
+    margin-right: 18px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .cardShell {
+    padding-bottom: 22px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .metaRow,
+  .salaryRow {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

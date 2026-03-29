@@ -63,6 +63,59 @@ describe('GameTurnRemoteDataSource', () => {
     expect(result.news).toEqual([]);
   });
 
+  it('uses the news history endpoint', async () => {
+    get.mockResolvedValue({
+      data: {
+        data: {
+          newsHistories: [
+            {
+              turnNumber: 11,
+              newsId: 'NEWS-011',
+              headline: '채용 한파 심화',
+              publishedDate: '2026-01-01',
+            },
+          ],
+        },
+      },
+    });
+    const dataSource = new GameTurnRemoteDataSource();
+
+    const result = await dataSource.getNewsHistory(45);
+
+    expect(get).toHaveBeenCalledWith('/games/sessions/45/news/history');
+    expect(result.newsHistories[0]?.newsId).toBe('NEWS-011');
+  });
+
+  it('uses the pending events endpoint', async () => {
+    get.mockResolvedValue({
+      data: {
+        data: {
+          events: [
+            {
+              eventId: 301,
+              type: 'JOB_TRANSFER',
+              title: '이직 제안',
+              description: '좋은 조건의 이직 제안이 도착했습니다.',
+              imageUrl: '/images/events/job-transfer.png',
+              choices: [],
+              sender: 'OO 기업 인사팀',
+              receiver: '김싸피',
+              date: '2026-05-01',
+              offeredSalary: 42000000,
+              currentSalary: 36000000,
+            },
+          ],
+        },
+      },
+    });
+    const dataSource = new GameTurnRemoteDataSource();
+
+    const result = await dataSource.getPendingEvents(46);
+
+    expect(get).toHaveBeenCalledWith('/games/sessions/46/events/pending');
+    expect(result.events[0]?.type).toBe('JOB_TRANSFER');
+  });
+
   it('uses the turn actions endpoint', async () => {
     get.mockResolvedValue({
       data: {
@@ -154,5 +207,28 @@ describe('GameTurnRemoteDataSource', () => {
 
     expect(post).toHaveBeenCalledWith('/games/sessions/77/turn/commit');
     expect(result.turnNumber).toBe(12);
+  });
+
+  it('uses the event resolve endpoint with a choice payload', async () => {
+    post.mockResolvedValue({
+      data: {
+        data: {
+          eventId: 301,
+          gameEventId: 1201,
+          choiceId: 701,
+          selectedChoiceCode: 'ACCEPT',
+          resultEffects: [],
+          resultSummary: '이직 제안을 수락했습니다.',
+        },
+      },
+    });
+    const dataSource = new GameTurnRemoteDataSource();
+
+    const result = await dataSource.resolveEvent(88, 301, { choiceId: 701 });
+
+    expect(post).toHaveBeenCalledWith('/games/sessions/88/events/301/resolve', {
+      choiceId: 701,
+    });
+    expect(result.selectedChoiceCode).toBe('ACCEPT');
   });
 });
