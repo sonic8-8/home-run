@@ -1,20 +1,38 @@
-import { useEffect, useState, useCallback } from 'react';
-import { container } from '@core/di/container';
+import { useEffect, useCallback } from 'react';
 import { useNaverMap } from '../../hooks/useNaverMap';
 import { useProperties } from '../../hooks/useProperties';
 import { useMapMarkers } from '../../hooks/useMapMarkers';
+import { useRegistryReview } from '../../hooks/useRegistryReview';
+import type { PropertySummary } from '../../../domain/entities/Property';
 import { PropertyDetailPanel } from '../PropertyDetailPanel/PropertyDetailPanel';
 import { RegistryDocumentModal } from '../RegistryDocumentModal/RegistryDocumentModal';
+import type { MapMode } from '../../constants/mapMode';
 import { formatPriceWon } from '../../utils/formatUtils';
-import type { MapMode } from '../../pages/RealEstatePage/RealEstatePage';
-import type { RegistryDocument } from '../../../domain/entities/PropertyDocument';
-import { GetDocumentsUseCase } from '../../../domain/usecases/GetDocumentsUseCase';
 
 /**
  * 동 레벨 지도 컴포넌트 (게임용).
  * 네이버 지도 위에 게임 매물 마커를 표시합니다.
  * 네이버 SDK 미로드 시 카드 목록 폴백으로 동일한 흐름을 진행할 수 있습니다.
  */
+interface DistrictMapPropertySelection {
+  propertyId: string;
+  propertyName: string;
+  propertyPrice: number;
+  regionCode: string;
+  districtCode: string;
+}
+
+interface DistrictMapProps {
+  regionCode: string;
+  guCode: string;
+  guCenter: [number, number];
+  guName?: string;
+  sessionId?: number;
+  mode?: MapMode;
+  onPropertySelected?: (selection: DistrictMapPropertySelection) => void;
+  onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
+}
+
 export function DistrictMap({
   regionCode,
   guCode,
@@ -24,22 +42,7 @@ export function DistrictMap({
   mode = 'browse',
   onPropertySelected,
   onLoanRequest,
-}: {
-  regionCode: string;
-  guCode: string;
-  guCenter: [number, number];
-  guName?: string;
-  sessionId?: number;
-  mode?: MapMode;
-  onPropertySelected?: (selection: {
-    propertyId: string;
-    propertyName: string;
-    propertyPrice: number;
-    regionCode: string;
-    districtCode: string;
-  }) => void;
-  onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
-}) {
+}: DistrictMapProps) {
   const { mapRef, mapInstance, naverAvailable } = useNaverMap(guCenter);
   const {
     properties,
@@ -56,40 +59,39 @@ export function DistrictMap({
       districtCode: guCode,
     });
   const { renderPropertyMarkers } = useMapMarkers(mapInstance);
+  const {
+    registryDoc,
+    isOpen: registryModalOpen,
+    isSubmitting: isRegistrySubmitting,
+    loadError,
+    selectedTrapIds,
+    submitError,
+    reviewResult,
+    openReview,
+    closeReview,
+    toggleTrap,
+    resetSelection,
+    submitReview,
+  } = useRegistryReview(sessionId);
 
-  const [registryDoc, setRegistryDoc] = useState<RegistryDocument | null>(null);
-  const [registryModalOpen, setRegistryModalOpen] = useState(false);
+  const handlePropertySelect = useCallback((property: PropertySummary) => {
+    closeReview();
+    selectProperty(property);
+  }, [closeReview, selectProperty]);
+
+  const handlePanelClose = useCallback(() => {
+    closeReview();
+    clearSelection();
+  }, [clearSelection, closeReview]);
 
   useEffect(() => {
     if (!mapInstance || properties.length === 0) return;
-    renderPropertyMarkers(properties, selectedProperty?.propertyId ?? null, selectProperty);
-  }, [mapInstance, properties, selectedProperty, renderPropertyMarkers, selectProperty]);
+    renderPropertyMarkers(properties, selectedProperty?.propertyId ?? null, handlePropertySelect);
+  }, [handlePropertySelect, mapInstance, properties, renderPropertyMarkers, selectedProperty]);
 
   const handleBrowsePurchase = useCallback(async (propertyId: string) => {
-    if (sessionId === undefined) {
-      return;
-    }
-
-    try {
-      const getDocumentsUseCase = container.resolve(GetDocumentsUseCase);
-      const doc = await getDocumentsUseCase.execute(sessionId, propertyId);
-      setRegistryDoc(doc);
-      setRegistryModalOpen(true);
-    } catch {
-      // 문서 조회 실패 시 모달 미표시
-    }
-  }, [sessionId]);
-
-  const handleRegistrySuccess = useCallback(() => {
-    setRegistryModalOpen(false);
-    setRegistryDoc(null);
-    // TODO: 구매 확정 플로우 연결
-  }, []);
-
-  const handleRegistryClose = useCallback(() => {
-    setRegistryModalOpen(false);
-    setRegistryDoc(null);
-  }, []);
+    await openReview(propertyId);
+  }, [openReview]);
 
   const propertyDetailProps = {
     mode,
@@ -106,6 +108,7 @@ export function DistrictMap({
         : undefined,
     onLoanRequest,
     onBrowsePurchase: mode === 'browse' ? handleBrowsePurchase : undefined,
+    browsePurchaseError: mode === 'browse' ? loadError : null,
   };
 
   // 네이버 지도 SDK 미로드 시 카드 목록 폴백
@@ -127,7 +130,7 @@ export function DistrictMap({
             <PropertyDetailPanel
               summary={selectedProperty}
               detail={selectedPropertyDetail}
-              onClose={clearSelection}
+              onClose={handlePanelClose}
               {...propertyDetailProps}
             />
           </div>
@@ -174,7 +177,7 @@ export function DistrictMap({
           {properties.map((p) => (
             <button
               key={p.propertyId}
-              onClick={() => selectProperty(p)}
+              onClick={() => handlePropertySelect(p)}
               style={{
                 width: '100%',
                 maxWidth: 520,
@@ -207,9 +210,15 @@ export function DistrictMap({
         {registryDoc && (
           <RegistryDocumentModal
             isOpen={registryModalOpen}
-            onClose={handleRegistryClose}
+            onClose={closeReview}
             doc={registryDoc}
-            onSuccess={handleRegistrySuccess}
+            selectedTrapIds={selectedTrapIds}
+            isSubmitting={isRegistrySubmitting}
+            submitError={submitError}
+            reviewResult={reviewResult}
+            onToggleTrap={toggleTrap}
+            onResetSelection={resetSelection}
+            onSubmitReview={submitReview}
           />
         )}
       </div>
@@ -273,7 +282,7 @@ export function DistrictMap({
         <PropertyDetailPanel
           summary={selectedProperty}
           detail={selectedPropertyDetail}
-          onClose={clearSelection}
+          onClose={handlePanelClose}
           {...propertyDetailProps}
         />
       )}
@@ -281,9 +290,15 @@ export function DistrictMap({
       {registryDoc && (
         <RegistryDocumentModal
           isOpen={registryModalOpen}
-          onClose={handleRegistryClose}
+          onClose={closeReview}
           doc={registryDoc}
-          onSuccess={handleRegistrySuccess}
+          selectedTrapIds={selectedTrapIds}
+          isSubmitting={isRegistrySubmitting}
+          submitError={submitError}
+          reviewResult={reviewResult}
+          onToggleTrap={toggleTrap}
+          onResetSelection={resetSelection}
+          onSubmitReview={submitReview}
         />
       )}
     </div>

@@ -125,6 +125,10 @@ export class RealEstateRepositoryImpl implements IRealEstateRepository {
       documentType: m.documentType,
       gapguRows: m.gapguRows.map((r) => ({ rankNo: r.rankNo, purpose: r.purpose, receipt: r.receipt, reason: r.reason, details: r.details })),
       eulguRows: m.eulguRows.map((r) => ({ rankNo: r.rankNo, purpose: r.purpose, receipt: r.receipt, reason: r.reason, details: r.details })),
+      checklistItems: m.checklistItems.map((item) => ({
+        trapId: item.trapId,
+        label: item.label,
+      })),
       solution: {
         verdict: toRegistryVerdict(m.solution.verdict),
         gapgu: mapSection(m.solution.gapgu),

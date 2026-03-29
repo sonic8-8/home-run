@@ -5,8 +5,8 @@ import { KoreaMap } from '../../components/KoreaMap/KoreaMap';
 import { LoanReviewResultModal } from '@features/loan/presentation/components/LoanReviewResultModal';
 import { LoanConfirmModal } from '@features/loan/presentation/components/LoanConfirmModal';
 import type { LoanApplication } from '@features/loan/domain/entities/LoanApplication';
+import type { MapMode } from '../../constants/mapMode';
 
-export type MapMode = 'new-game' | 'loan-apply' | 'browse';
 type CharacterType = 'MALE' | 'FEMALE';
 type JobType =
   | 'LARGE_BIZ'

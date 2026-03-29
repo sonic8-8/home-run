@@ -58,6 +58,8 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.data.propertyName").value("서초아트자이"))
             .andExpect(jsonPath("$.data.gapguRows[0].purpose").value("소유권보존"))
             .andExpect(jsonPath("$.data.eulguRows[0].details").value("채권최고액 금195,000,000원 채무자 김도윤 근저당권자 주식회사 한울저축은행"))
+            .andExpect(jsonPath("$.data.checklistItems[0].trapId").value("TRAP-HN-001"))
+            .andExpect(jsonPath("$.data.checklistItems[0].label").value("소유권 변동 이력 확인"))
             .andExpect(jsonPath("$.data.solution.verdict").value("위험"))
             .andExpect(jsonPath("$.data.solution.gapgu.verdict").value("위험"))
             .andExpect(jsonPath("$.data.solution.eulgu.verdict").value("정상"))
@@ -87,6 +89,9 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
                             fieldWithPath("eulguRows[].receipt").type(JsonFieldType.STRING).description("을구 접수일"),
                             fieldWithPath("eulguRows[].reason").type(JsonFieldType.STRING).description("을구 원인"),
                             fieldWithPath("eulguRows[].details").type(JsonFieldType.STRING).description("을구 상세 내용"),
+                            fieldWithPath("checklistItems").type(JsonFieldType.ARRAY).description("계약 검토 체크리스트 항목"),
+                            fieldWithPath("checklistItems[].trapId").type(JsonFieldType.STRING).description("계약 검토 제출에 사용하는 체크리스트 항목 ID"),
+                            fieldWithPath("checklistItems[].label").type(JsonFieldType.STRING).description("사용자에게 노출하는 체크리스트 항목 문구"),
                             fieldWithPath("solution").type(JsonFieldType.OBJECT).description("위험도 해설 정보"),
                             fieldWithPath("solution.verdict").type(JsonFieldType.STRING).description("종합 판정"),
                             fieldWithPath("solution.gapgu").type(JsonFieldType.OBJECT).description("갑구 해설"),
@@ -214,6 +219,16 @@ class RealEstateDocumentControllerTest extends RestDocsTestSupport {
                     "2025년 1월 17일",
                     "2025년 1월 10일 설정계약",
                     "채권최고액 금195,000,000원 채무자 김도윤 근저당권자 주식회사 한울저축은행"
+                )
+            ),
+            List.of(
+                RealEstateDocumentResponse.ChecklistItemResponse.of(
+                    "TRAP-HN-001",
+                    "소유권 변동 이력 확인"
+                ),
+                RealEstateDocumentResponse.ChecklistItemResponse.of(
+                    "CHECK-HN-001",
+                    "가등기 말소 여부 확인"
                 )
             ),
             RealEstateDocumentResponse.SolutionResponse.of(

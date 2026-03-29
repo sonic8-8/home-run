@@ -1,6 +1,7 @@
 import type { Property, PropertySummary } from '../../../domain/entities/Property';
-import type { MapMode } from '../../pages/RealEstatePage/RealEstatePage';
+import type { MapMode } from '../../constants/mapMode';
 import { formatPriceWon, toSquarePyeong } from '../../utils/formatUtils';
+import styles from './PropertyDetailPanel.module.css';
 
 const HOUSING_TYPE_LABEL: Record<string, string> = {
   NONE: '무주거',
@@ -10,6 +11,17 @@ const HOUSING_TYPE_LABEL: Record<string, string> = {
   OWNED_APT: '아파트 자가',
 };
 
+interface PropertyDetailPanelProps {
+  summary: PropertySummary;
+  detail: Property | null;
+  onClose: () => void;
+  mode?: MapMode;
+  onSelect?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
+  onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
+  onBrowsePurchase?: (propertyId: string) => void;
+  browsePurchaseError?: string | null;
+}
+
 export function PropertyDetailPanel({
   summary,
   detail,
@@ -18,15 +30,8 @@ export function PropertyDetailPanel({
   onSelect,
   onLoanRequest,
   onBrowsePurchase,
-}: {
-  summary: PropertySummary;
-  detail: Property | null;
-  onClose: () => void;
-  mode?: MapMode;
-  onSelect?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
-  onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
-  onBrowsePurchase?: (propertyId: string) => void;
-}) {
+  browsePurchaseError = null,
+}: PropertyDetailPanelProps) {
   const pyeong = detail ? toSquarePyeong(detail.specs.area) : null;
 
   return (
@@ -139,44 +144,17 @@ export function PropertyDetailPanel({
       )}
 
       {/* 액션 버튼 */}
-      <div style={{ padding: '16px', display: 'flex', gap: 8 }}>
-        {mode === 'new-game' || mode === 'loan-apply' ? (
-          <button
-            style={{
-              flex: 1,
-              padding: '12px',
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              border: 'none',
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#fff',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-            onClick={() => onSelect?.(summary.propertyId, summary.name, summary.recentPrice)}
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {mode === 'browse' && browsePurchaseError && (
+          <div
+            role="alert"
+            className={styles.actionError}
           >
-            {mode === 'new-game' ? '이 매물로 시작하기' : '이 매물로 대출 신청'}
-          </button>
-        ) : (
-          <>
-            <button
-              style={{
-                flex: 1,
-                padding: '12px',
-                background: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: 10,
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#6b7280',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-              onClick={() => onLoanRequest?.(summary.propertyId, summary.name, summary.recentPrice)}
-            >
-              대출 신청
-            </button>
+            {browsePurchaseError}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {mode === 'new-game' || mode === 'loan-apply' ? (
             <button
               style={{
                 flex: 1,
@@ -190,18 +168,60 @@ export function PropertyDetailPanel({
                 cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
-              onClick={() => onBrowsePurchase?.(summary.propertyId)}
+              onClick={() => onSelect?.(summary.propertyId, summary.name, summary.recentPrice)}
             >
-              구매하기
+              {mode === 'new-game' ? '이 매물로 시작하기' : '이 매물로 대출 신청'}
             </button>
-          </>
-        )}
+          ) : (
+            <>
+              <button
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+                onClick={() => onLoanRequest?.(summary.propertyId, summary.name, summary.recentPrice)}
+              >
+                대출 신청
+              </button>
+              <button
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+                onClick={() => onBrowsePurchase?.(summary.propertyId)}
+              >
+                구매하기
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+interface InfoRowProps {
+  label: string;
+  value: string;
+}
+
+function InfoRow({ label, value }: InfoRowProps) {
   return (
     <div
       style={{

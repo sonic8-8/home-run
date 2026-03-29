@@ -2,7 +2,7 @@ import { useState, useCallback, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { ACTIVE_REGIONS, type RegionData } from '../../constants/regions';
-import type { MapMode } from '../../pages/RealEstatePage/RealEstatePage';
+import type { MapMode } from '../../constants/mapMode';
 
 import { CountryMap } from '../CountryMap/CountryMap';
 import { CityMap } from '../CityMap/CityMap';
@@ -91,6 +91,21 @@ type ViewState =
   | { level: 'city'; region: string; data: RegionData }
   | { level: 'district'; region: string; data: RegionData; guCode: string; guName: string; guCenter: [number, number] };
 
+interface KoreaMapPropertySelection {
+  propertyId: string;
+  propertyName: string;
+  propertyPrice: number;
+  regionCode: string;
+  districtCode: string;
+}
+
+interface KoreaMapProps {
+  sessionId?: number;
+  mode?: MapMode;
+  onPropertySelected?: (selection: KoreaMapPropertySelection) => void;
+  onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
+}
+
 function resolveInitialView(): ViewState {
   if (typeof window === 'undefined') {
     return { level: 'country' };
@@ -144,18 +159,7 @@ export function KoreaMap({
   mode = 'browse',
   onPropertySelected,
   onLoanRequest,
-}: {
-  sessionId?: number;
-  mode?: MapMode;
-  onPropertySelected?: (selection: {
-    propertyId: string;
-    propertyName: string;
-    propertyPrice: number;
-    regionCode: string;
-    districtCode: string;
-  }) => void;
-  onLoanRequest?: (propertyId: string, propertyName: string, propertyPrice: number) => void;
-}) {
+}: KoreaMapProps) {
   const [view, setView] = useState<ViewState>(() => resolveInitialView());
 
   const handleRegionClick = useCallback((region: string, data: RegionData) => {

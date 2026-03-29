@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { container } from '@core/di/container';
 import type { PropertySummary, Property } from '../../domain/entities/Property';
-import type { MapMode } from '../pages/RealEstatePage/RealEstatePage';
+import type { MapMode } from '../constants/mapMode';
 import { GetPropertiesUseCase } from '../../domain/usecases/GetPropertiesUseCase';
 import { GetPropertyDetailUseCase } from '../../domain/usecases/GetPropertyDetailUseCase';
 

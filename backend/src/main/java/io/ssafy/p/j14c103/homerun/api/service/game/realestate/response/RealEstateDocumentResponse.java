@@ -16,6 +16,7 @@ public class RealEstateDocumentResponse {
     private final String documentType;
     private final List<RegistryRowResponse> gapguRows;
     private final List<RegistryRowResponse> eulguRows;
+    private final List<ChecklistItemResponse> checklistItems;
     private final SolutionResponse solution;
 
     private RealEstateDocumentResponse(
@@ -28,6 +29,7 @@ public class RealEstateDocumentResponse {
         final String documentType,
         final List<RegistryRowResponse> gapguRows,
         final List<RegistryRowResponse> eulguRows,
+        final List<ChecklistItemResponse> checklistItems,
         final SolutionResponse solution
     ) {
         this.propertyId = propertyId;
@@ -39,6 +41,7 @@ public class RealEstateDocumentResponse {
         this.documentType = documentType;
         this.gapguRows = List.copyOf(gapguRows);
         this.eulguRows = List.copyOf(eulguRows);
+        this.checklistItems = List.copyOf(checklistItems);
         this.solution = solution;
     }
 
@@ -52,6 +55,7 @@ public class RealEstateDocumentResponse {
         final String documentType,
         final List<RegistryRowResponse> gapguRows,
         final List<RegistryRowResponse> eulguRows,
+        final List<ChecklistItemResponse> checklistItems,
         final SolutionResponse solution
     ) {
         return new RealEstateDocumentResponse(
@@ -64,6 +68,7 @@ public class RealEstateDocumentResponse {
             documentType,
             gapguRows,
             eulguRows,
+            checklistItems,
             solution
         );
     }
@@ -102,6 +107,10 @@ public class RealEstateDocumentResponse {
 
     public List<RegistryRowResponse> eulguRows() {
         return eulguRows;
+    }
+
+    public List<ChecklistItemResponse> checklistItems() {
+        return checklistItems;
     }
 
     public SolutionResponse solution() {
@@ -159,6 +168,36 @@ public class RealEstateDocumentResponse {
 
         public String details() {
             return details;
+        }
+    }
+
+    @Getter
+    public static class ChecklistItemResponse {
+
+        private final String trapId;
+        private final String label;
+
+        private ChecklistItemResponse(
+            final String trapId,
+            final String label
+        ) {
+            this.trapId = trapId;
+            this.label = label;
+        }
+
+        public static ChecklistItemResponse of(
+            final String trapId,
+            final String label
+        ) {
+            return new ChecklistItemResponse(trapId, label);
+        }
+
+        public String trapId() {
+            return trapId;
+        }
+
+        public String label() {
+            return label;
         }
     }
 
