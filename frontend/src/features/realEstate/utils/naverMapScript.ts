@@ -15,7 +15,7 @@ function hasNaverMapSdk(): boolean {
 
 export function buildNaverMapScriptUrl(clientId: string): string {
   const trimmedClientId = clientId.trim();
-  return `${NAVER_MAP_SCRIPT_BASE_URL}?ncpClientId=${encodeURIComponent(trimmedClientId)}`;
+  return `${NAVER_MAP_SCRIPT_BASE_URL}?ncpKeyId=${encodeURIComponent(trimmedClientId)}`;
 }
 
 export function loadNaverMapScript(clientId: string): Promise<void> {
