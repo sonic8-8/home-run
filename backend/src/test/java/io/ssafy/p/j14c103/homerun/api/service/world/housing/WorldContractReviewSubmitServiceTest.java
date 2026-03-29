@@ -29,6 +29,7 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryRow;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistrySection;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,14 +38,10 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class WorldContractReviewSubmitServiceTest {
+class WorldContractReviewSubmitServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private WorldContractReviewSubmitService worldContractReviewSubmitService;

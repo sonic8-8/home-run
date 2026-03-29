@@ -81,7 +81,7 @@ pipeline {
         // Match the production runtime default so deployment verification uses the same schema update behavior.
         SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
         // Enable automatic real-estate import during runtime deployment with the configured default window.
-        REAL_ESTATE_IMPORT_ENABLED = 'true'
+        REAL_ESTATE_IMPORT_ENABLED = 'false'
         REAL_ESTATE_IMPORT_REGIONS = 'SEOUL,GWANGJU'
         REAL_ESTATE_IMPORT_FROM_YEAR_MONTH = '2025-04'
         REAL_ESTATE_IMPORT_TO_YEAR_MONTH = '2026-03'

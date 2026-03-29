@@ -7,15 +7,12 @@ import io.ssafy.p.j14c103.homerun.api.service.character.career.response.Unemploy
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class UnemploymentBenefitServiceTest {
+class UnemploymentBenefitServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private UnemploymentBenefitService unemploymentBenefitService;

@@ -12,17 +12,14 @@ import io.ssafy.p.j14c103.homerun.domain.world.event.EventTriggerType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMasterRepository;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class WorldContentSeedServiceTest {
+class WorldContentSeedServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private WorldContentSeedService worldContentSeedService;
