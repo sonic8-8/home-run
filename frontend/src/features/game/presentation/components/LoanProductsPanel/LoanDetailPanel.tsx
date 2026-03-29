@@ -4,6 +4,7 @@ import { ROUTES } from '@app/routes';
 import type { LoanProduct, LoanCategory } from '@features/loan/domain/entities/LoanProduct';
 import type { RepaymentMethod } from '@features/loan/domain/entities/LoanCalculation';
 import { useLoan } from '@features/loan/presentation/hooks/useLoan';
+import { AuthImage } from '@shared/components/AuthImage/AuthImage';
 import styles from './LoanDetailPanel.module.css';
 
 interface Props {
@@ -101,7 +102,14 @@ export function LoanDetailPanel({ product, sessionId, onBack, preSelectedPropert
     <div className={styles.panel}>
       {/* 헤더 */}
       <div className={styles.header}>
-        <span className={styles.bankIcon}>{detail.bankName.charAt(0)}</span>
+        <div className={styles.bankIcon}>
+          <AuthImage
+            src={detail.bankLogoUrl}
+            alt={detail.bankName}
+            className={styles.bankLogoImage}
+            fallback={<span className={styles.bankLogoFallback}>{detail.bankName.charAt(0)}</span>}
+          />
+        </div>
         <div className={styles.headerInfo}>
           <span className={styles.productName}>{detail.productName}</span>
           <div className={styles.productType}>{getLoanTypeLabel(detail.productType)}</div>

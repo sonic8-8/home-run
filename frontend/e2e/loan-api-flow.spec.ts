@@ -181,7 +181,7 @@ test.describe('loan api flow', () => {
     await page.goto('/game');
     await waitForRouteHydration(page);
 
-    await expect(page.getByRole('heading', { name: '대출 상품' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '대출/상환' })).toBeVisible();
     await expect(page.getByRole('button', { name: /홈런 주택담보 대출/ })).toBeVisible();
 
     await page.getByRole('button', { name: /홈런 주택담보 대출/ }).click();
@@ -290,6 +290,78 @@ test.describe('loan api flow', () => {
     });
 
     await expect(page).toHaveURL(/\/game$/);
-    await expect(page.getByRole('heading', { name: '메뉴' })).toBeVisible();
+    await expect(page.getByTestId('active-loan-card')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('확정된 대출')).toBeVisible();
+  });
+
+  test('repays an active loan from the in-game loan panel', async ({ page }) => {
+    const sessionId = 31;
+    const currentDate = '2026-03-27';
+    let repayPayload: Record<string, unknown> | null = null;
+
+    await seedAuthenticatedUser(page);
+    await seedNewsSeenDate(page, sessionId, currentDate);
+    await seedRouteState(page, '/game', {
+      sessionId,
+      characterType: 'FEMALE',
+      openLoan: true,
+      confirmedLoan: {
+        loanId: 501,
+        amount: 500000000,
+        annualRate: 3.15,
+        monthlyPayment: 2413000,
+        contractDate: '2026-03-27',
+        status: 'ACTIVE',
+      },
+    });
+    await mockGameSessionBase(page, sessionId, currentDate);
+
+    await page.route(`**/api/games/sessions/${sessionId}/loans/products**`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 200,
+          message: 'OK',
+          data: [],
+        }),
+      });
+    });
+
+    await page.route(`**/api/games/sessions/${sessionId}/loans/repay`, async (route) => {
+      repayPayload = route.request().postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 200,
+          message: 'OK',
+          data: {
+            loanId: 501,
+            repaidAmount: 100000000,
+            remainingPrincipal: 400000000,
+            updatedMonthlyPayment: 1930000,
+          },
+        }),
+      });
+    });
+
+    await page.goto('/game');
+    await waitForRouteHydration(page);
+
+    await expect(page.getByTestId('active-loan-card')).toBeVisible();
+    await expect(page.getByText('500,000,000원')).toBeVisible();
+
+    await page.getByPlaceholder('상환할 금액 입력').fill('100000000');
+    await page.getByRole('button', { name: '상환하기' }).click();
+
+    await expect.poll(() => repayPayload).not.toBeNull();
+    expect(repayPayload).toEqual({
+      loanId: 501,
+      amount: 100000000,
+    });
+
+    await expect(page.getByText('400,000,000원')).toBeVisible();
+    await expect(page.getByText('1,930,000원')).toBeVisible();
   });
 });

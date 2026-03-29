@@ -5,6 +5,7 @@ import { KoreaMap } from '../../components/KoreaMap/KoreaMap';
 import { LoanReviewResultModal } from '@features/loan/presentation/components/LoanReviewResultModal';
 import { LoanConfirmModal } from '@features/loan/presentation/components/LoanConfirmModal';
 import type { LoanApplication } from '@features/loan/domain/entities/LoanApplication';
+import type { LoanConfirmResult } from '@features/loan/domain/entities/ActiveLoan';
 import { useLoan } from '@features/loan/presentation/hooks/useLoan';
 import type { MapMode } from '../../constants/mapMode';
 
@@ -31,6 +32,7 @@ interface LocationState {
   preSelectedPropertyId?: string;
   preSelectedPropertyName?: string;
   preSelectedPropertyPrice?: number;
+  confirmedLoan?: LoanConfirmResult;
 }
 
 interface SelectedProperty {
@@ -199,7 +201,13 @@ export function RealEstatePage() {
               void (async () => {
                 const confirmedLoan = await confirm(loanApplication.applicationId, amount);
                 if (confirmedLoan !== null) {
-                  navigate(ROUTES.GAME, { state });
+                  navigate(ROUTES.GAME, {
+                    state: {
+                      ...state,
+                      openLoan: true,
+                      confirmedLoan,
+                    },
+                  });
                 }
               })();
             }}

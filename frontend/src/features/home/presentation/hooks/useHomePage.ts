@@ -115,6 +115,16 @@ export const useHomePage = () => {
 
   useDashboardSse(isAssetLinked, setDashboard);
 
+  const refreshPassData = useCallback(async () => {
+    const [subscriptions, history] = await Promise.all([
+      getPassSubscriptions.execute(),
+      getPassHistory.execute(0, 10),
+    ]);
+
+    setPassSubscriptions(subscriptions);
+    setPassHistory(history);
+  }, []);
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -188,23 +198,21 @@ export const useHomePage = () => {
 
   const subscribeToPas = useCallback(async (passId: number): Promise<PassSubscribeResult> => {
     const result = await subscribePass.execute(passId);
-    const updated = await getPassSubscriptions.execute();
-    setPassSubscriptions(updated);
+    await refreshPassData();
     return result;
-  }, []);
+  }, [refreshPassData]);
 
   const unsubscribeFromPass = useCallback(async (subscriptionId: number) => {
     await unsubscribePass.execute(subscriptionId);
-    setPassSubscriptions((prev) => prev.filter((s) => s.subscriptionId !== subscriptionId));
-  }, []);
+    await refreshPassData();
+  }, [refreshPassData]);
 
   const saveToPass = useCallback(async (subscriptionId: number): Promise<PassSaveResult> => {
     const result = await savePass.execute(subscriptionId);
-    const updatedSubscriptions = await getPassSubscriptions.execute();
     setSeedMoney((prev) => prev ? { ...prev, balance: result.remainingBalance } : prev);
-    setPassSubscriptions(updatedSubscriptions);
+    await refreshPassData();
     return result;
-  }, []);
+  }, [refreshPassData]);
 
   return {
     isAssetLinked,

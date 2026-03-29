@@ -7,6 +7,7 @@ import type { JobType } from '@features/game/domain/entities/GameSlot';
 import type { PendingGameEvent } from '@features/game/domain/entities/GameTurn';
 import { GetGameSessionDetailUseCase } from '@features/game/domain/usecases/GetGameSessionDetailUseCase';
 import { useGameTurn } from '@features/game/presentation/hooks/useGameTurn';
+import type { LoanConfirmResult } from '@features/loan/domain/entities/ActiveLoan';
 import { formatIsoDate } from '@shared/utils/formatter';
 import { readSessionStorage, writeSessionStorage } from '@shared/utils/sessionStorage';
 import {
@@ -30,6 +31,7 @@ interface LocationState {
   preSelectedPropertyId?: string;
   preSelectedPropertyName?: string;
   preSelectedPropertyPrice?: number;
+  confirmedLoan?: LoanConfirmResult;
 }
 
 type NewSessionLocationState =
@@ -89,6 +91,7 @@ export const useGameMain = () => {
     preSelectedPropertyId,
     preSelectedPropertyName,
     preSelectedPropertyPrice,
+    confirmedLoan,
   } = state;
   const [sessionId, setSessionId] = useState<number | null>(locationSessionId ?? null);
   const [characterType, setCharacterType] = useState<CharacterType>(
@@ -99,7 +102,9 @@ export const useGameMain = () => {
   const [isNewsOpen, setIsNewsOpen] = useState(false);
   const [isMonthlyActivityOpen, setIsMonthlyActivityOpen] = useState(false);
   const [isGameEventOpen, setIsGameEventOpen] = useState(false);
-  const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card' | 'stock'>(openLoan ? 'loan' : 'scene');
+  const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card' | 'stock'>(
+    openLoan ? 'loan' : 'scene',
+  );
   const createSessionPromiseRef = useRef<Promise<GameSessionCreation> | null>(null);
   const endingRedirectedRef = useRef(false);
 
@@ -460,6 +465,7 @@ export const useGameMain = () => {
     error: error ?? createError ?? turnError,
     leftView,
     setLeftView,
+    confirmedLoan,
     preSelectedPropertyId,
     preSelectedPropertyName,
     preSelectedPropertyPrice,

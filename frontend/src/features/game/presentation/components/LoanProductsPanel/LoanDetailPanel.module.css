@@ -19,7 +19,6 @@
 }
 
 .bankIcon {
-  font-size: 32px;
   width: 52px;
   height: 52px;
   display: flex;
@@ -28,6 +27,19 @@
   background: #fff8e1;
   border-radius: 14px;
   flex-shrink: 0;
+}
+
+.bankLogoImage {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.bankLogoFallback {
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 700;
+  color: #1f2937;
 }
 
 .headerInfo {
