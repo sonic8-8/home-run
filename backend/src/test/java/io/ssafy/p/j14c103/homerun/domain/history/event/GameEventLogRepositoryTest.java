@@ -8,6 +8,7 @@ import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventTriggerType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,14 +17,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class GameEventLogRepositoryTest {
+class GameEventLogRepositoryTest extends IntegrationTestSupport {
 
     @Autowired
     private GameEventRepository gameEventRepository;

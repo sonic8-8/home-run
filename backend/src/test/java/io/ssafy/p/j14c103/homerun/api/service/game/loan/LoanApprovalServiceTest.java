@@ -5,15 +5,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.LoanApprovalService.ApprovalResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.LoanType;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
 @Transactional
-class LoanApprovalServiceTest {
+class LoanApprovalServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private LoanApprovalService loanApprovalService;

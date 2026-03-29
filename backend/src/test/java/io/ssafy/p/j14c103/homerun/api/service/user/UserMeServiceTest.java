@@ -12,18 +12,15 @@ import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummaryRepositor
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class UserMeServiceTest {
+class UserMeServiceTest extends IntegrationTestSupport {
 
     @MockitoBean
     private UserSsafyAccountSyncService userSsafyAccountSyncService;

@@ -16,6 +16,7 @@ import io.ssafy.p.j14c103.homerun.domain.user.auth.RefreshToken;
 import io.ssafy.p.j14c103.homerun.domain.user.auth.RefreshTokenRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
@@ -26,10 +27,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
@@ -37,11 +36,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Tag("container")
 @Testcontainers(disabledWithoutDocker = true)
-class RefreshAccessTokenServiceTest {
+class RefreshAccessTokenServiceTest extends IntegrationTestSupport {
 
     @Container
     private static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(

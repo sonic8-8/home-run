@@ -11,19 +11,16 @@ import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlot;
 import io.ssafy.p.j14c103.homerun.domain.character.schedule.GameTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class CharacterPersistenceRepositoryTest {
+class CharacterPersistenceRepositoryTest extends IntegrationTestSupport {
 
     @Autowired
     private GameStatRepository gameStatRepository;

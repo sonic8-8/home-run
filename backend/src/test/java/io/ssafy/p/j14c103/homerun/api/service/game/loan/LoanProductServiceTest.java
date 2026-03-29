@@ -7,17 +7,16 @@ import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanProductDeta
 import io.ssafy.p.j14c103.homerun.api.service.game.loan.response.LoanProductResponse;
 import io.ssafy.p.j14c103.homerun.client.fss.FssLoanClient;
 import io.ssafy.p.j14c103.homerun.client.fss.FssLoanResponse;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
-class LoanProductServiceTest {
+class LoanProductServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private LoanProductService loanProductService;

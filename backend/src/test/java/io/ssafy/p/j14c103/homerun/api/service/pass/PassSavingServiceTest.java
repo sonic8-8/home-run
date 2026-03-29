@@ -30,21 +30,18 @@ import io.ssafy.p.j14c103.homerun.domain.pass.PassSubscriptionRepository;
 import io.ssafy.p.j14c103.homerun.domain.pass.UserPassTransactionRepository;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransaction;
 import io.ssafy.p.j14c103.homerun.domain.seedmoney.SeedmoneyTransactionRepository;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class PassSavingServiceTest {
+class PassSavingServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private PassSavingService passSavingService;

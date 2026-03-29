@@ -9,14 +9,11 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class GamePendingEventRepositoryTest {
+class GamePendingEventRepositoryTest extends IntegrationTestSupport {
 
     @Autowired
     private GameEventRepository gameEventRepository;

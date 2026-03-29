@@ -9,15 +9,12 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 
 // 세션에 대한 매물, 함정, 실제 함정, 최종 판정, 검토 이력/결과 테스트
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class GameContractReviewRepositoryTest {
+class GameContractReviewRepositoryTest extends IntegrationTestSupport {
 
     @Autowired
     private GameContractReviewRepository gameContractReviewRepository;

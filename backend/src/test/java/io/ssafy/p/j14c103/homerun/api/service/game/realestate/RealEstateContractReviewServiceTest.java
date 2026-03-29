@@ -29,20 +29,17 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.ContractResult;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
 @Transactional
-@ActiveProfiles("test")
-class RealEstateContractReviewServiceTest {
+class RealEstateContractReviewServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private RealEstateContractReviewService realEstateContractReviewService;

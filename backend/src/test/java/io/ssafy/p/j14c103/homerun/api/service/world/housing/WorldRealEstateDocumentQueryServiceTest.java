@@ -17,20 +17,17 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistryRow;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateRegistrySection;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class WorldRealEstateDocumentQueryServiceTest {
+class WorldRealEstateDocumentQueryServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private WorldRealEstateDocumentQueryService worldRealEstateDocumentQueryService;

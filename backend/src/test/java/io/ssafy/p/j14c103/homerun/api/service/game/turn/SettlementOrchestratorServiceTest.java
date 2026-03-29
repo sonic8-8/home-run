@@ -13,18 +13,15 @@ import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.SettlementOrche
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementPhaseType;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
-@ActiveProfiles("test")
-class SettlementOrchestratorServiceTest {
+class SettlementOrchestratorServiceTest extends IntegrationTestSupport {
 
     private static final String SETTLEMENT_PHASE_DURATION = "homerun.settlement.phase.duration";
 
