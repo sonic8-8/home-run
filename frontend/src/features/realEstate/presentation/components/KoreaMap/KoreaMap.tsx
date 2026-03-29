@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { ACTIVE_REGIONS, type RegionData } from '../../constants/regions';
@@ -7,6 +7,84 @@ import type { MapMode } from '../../pages/RealEstatePage/RealEstatePage';
 import { CountryMap } from '../CountryMap/CountryMap';
 import { CityMap } from '../CityMap/CityMap';
 import { DistrictMap } from '../DistrictMap/DistrictMap';
+
+const ROOT_STYLE: CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  width: '100%',
+  minHeight: '100vh',
+  overflow: 'hidden',
+  background:
+    'radial-gradient(circle at top, #f8fafc 0%, #eef2ff 48%, #e2e8f0 100%)',
+  padding: 20,
+};
+
+const BACK_CONTROL_STYLE: CSSProperties = {
+  position: 'absolute',
+  top: 40,
+  left: 40,
+  zIndex: 20,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+};
+
+const BACK_BUTTON_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '10px 16px',
+  background: 'rgba(255,255,255,0.9)',
+  border: '1px solid rgba(148,163,184,0.2)',
+  borderRadius: 16,
+  boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
+  color: '#4b5563',
+  cursor: 'pointer',
+  backdropFilter: 'blur(12px)',
+};
+
+const BREADCRUMB_STYLE: CSSProperties = {
+  padding: '10px 16px',
+  background: 'rgba(255,255,255,0.7)',
+  borderRadius: 16,
+  border: '1px solid rgba(148,163,184,0.16)',
+  color: '#6b7280',
+  backdropFilter: 'blur(12px)',
+};
+
+const STAGE_CARD_STYLE: CSSProperties = {
+  position: 'absolute',
+  top: 40,
+  right: 40,
+  zIndex: 20,
+  width: 'min(360px, calc(100vw - 80px))',
+  borderRadius: 24,
+  border: '1px solid rgba(255,255,255,0.7)',
+  background: 'rgba(255,255,255,0.88)',
+  padding: 20,
+  boxShadow: '0 24px 80px rgba(15,23,42,0.16)',
+  backdropFilter: 'blur(16px)',
+};
+
+const MAP_FRAME_STYLE: CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  height: 'calc(100vh - 40px)',
+  minHeight: '560px',
+  overflow: 'hidden',
+  borderRadius: 36,
+  border: '1px solid rgba(255,255,255,0.7)',
+  background: 'rgba(255,255,255,0.65)',
+  boxShadow: '0 32px 96px rgba(15,23,42,0.12)',
+  backdropFilter: 'blur(12px)',
+};
+
+const LAYER_STYLE: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+};
 
 type ViewState =
   | { level: 'country' }
@@ -117,7 +195,7 @@ export function KoreaMap({
         : '마커를 눌러 상세 정보를 보고, 왼쪽 패널이나 액션 버튼으로 다음 행동을 선택하세요.';
 
   return (
-    <div className="relative flex min-h-screen size-full overflow-hidden bg-[radial-gradient(circle_at_top,#f8fafc_0%,#eef2ff_48%,#e2e8f0_100%)] p-5 md:p-6">
+    <div style={ROOT_STYLE}>
       <AnimatePresence>
         {view.level !== 'country' && (
           <motion.div
@@ -125,17 +203,17 @@ export function KoreaMap({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.25 }}
-            className="absolute left-10 top-10 z-20 flex items-center gap-3"
+            style={BACK_CONTROL_STYLE}
           >
             <button
               onClick={handleBack}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white/90 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md hover:bg-white transition-all duration-200 cursor-pointer"
+              style={BACK_BUTTON_STYLE}
             >
-              <ArrowLeft size={18} className="text-gray-600" />
-              <span className="text-gray-600" style={{ fontSize: 14 }}>뒤로</span>
+              <ArrowLeft size={18} color="#4b5563" />
+              <span style={{ fontSize: 14, color: '#4b5563' }}>뒤로</span>
             </button>
-            <div className="px-4 py-2.5 bg-white/70 backdrop-blur-sm rounded-xl">
-              <span className="text-gray-500" style={{ fontSize: 13 }}>{breadcrumb}</span>
+            <div style={BREADCRUMB_STYLE}>
+              <span style={{ fontSize: 13 }}>{breadcrumb}</span>
             </div>
           </motion.div>
         )}
@@ -145,24 +223,55 @@ export function KoreaMap({
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute right-10 top-10 z-20 w-[min(360px,calc(100vw-80px))] rounded-[24px] border border-white/70 bg-white/88 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.16)] backdrop-blur"
+        style={STAGE_CARD_STYLE}
       >
-        <div className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-500">
+        <div
+          style={{
+            marginBottom: 8,
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.24em',
+            textTransform: 'uppercase',
+            color: '#6366f1',
+          }}
+        >
           Real Estate Map
         </div>
-        <div className="text-[22px] font-black leading-tight text-slate-900">{stageTitle}</div>
-        <p className="mt-3 text-sm leading-6 text-slate-600">{stageDescription}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+        <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.2, color: '#0f172a' }}>
+          {stageTitle}
+        </div>
+        <p style={{ marginTop: 12, fontSize: 14, lineHeight: 1.7, color: '#475569' }}>
+          {stageDescription}
+        </p>
+        <div style={{ marginTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <span
+            style={{
+              borderRadius: 9999,
+              background: '#f1f5f9',
+              padding: '4px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#475569',
+            }}
+          >
             {breadcrumb}
           </span>
-          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
+          <span
+            style={{
+              borderRadius: 9999,
+              background: '#eef2ff',
+              padding: '4px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: '#4f46e5',
+            }}
+          >
             {view.level === 'district' ? '실시간 매물 단계' : '지역 탐색 단계'}
           </span>
         </div>
       </motion.div>
 
-      <div className="relative h-[calc(100vh-40px)] w-full overflow-hidden rounded-[36px] border border-white/70 bg-white/65 shadow-[0_32px_96px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+      <div style={MAP_FRAME_STYLE}>
         <AnimatePresence mode="wait">
           {view.level === 'country' && (
             <motion.div
@@ -171,7 +280,7 @@ export function KoreaMap({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 h-full"
+              style={LAYER_STYLE}
             >
               <CountryMap onRegionClick={handleRegionClick} />
             </motion.div>
@@ -184,7 +293,7 @@ export function KoreaMap({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 h-full"
+              style={LAYER_STYLE}
             >
               <CityMap region={view.region} data={view.data} onGuClick={handleGuClick} />
             </motion.div>
@@ -197,7 +306,7 @@ export function KoreaMap({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1 }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute inset-0 h-full"
+              style={LAYER_STYLE}
             >
               <DistrictMap
                 regionCode={view.data.code}
