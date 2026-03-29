@@ -1,5 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
+import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import type { LoanApplication } from '@features/loan/domain/entities/LoanApplication';
 import styles from './LoanReviewResultModal.module.css';
 
@@ -30,19 +31,31 @@ export const LoanReviewResultModal: React.FC<LoanReviewResultModalProps> = ({
   propertyName,
   propertyPrice,
 }) => {
+  const {
+    activeFlowId,
+    closeGuide,
+    isOverlayVisible,
+    startFlowAtStep,
+  } = useGameGuide();
+
   if (!isOpen) return null;
 
   const { requestInfo, result, status } = application;
   const isApproved = status === 'APPROVED';
   const displayPropertyName = propertyName ?? '선택한 매물';
   const displayPropertyPrice = propertyPrice ?? 0;
+  const isLoanGuideOpen = activeFlowId === 'propertyLoan' && isOverlayVisible;
 
   // 심사 완료 = step index 1 (0-based)
   const currentStep = 1;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        data-guide="property-loan-review"
+      >
 
         {/* 제목 */}
         <h2 className={styles.title}>대출 심사 이력 및 상세</h2>
@@ -107,6 +120,19 @@ export const LoanReviewResultModal: React.FC<LoanReviewResultModalProps> = ({
 
         {/* 버튼 */}
         <div className={styles.buttonGroup}>
+          <button
+            className={styles.secondaryButton}
+            onClick={() => {
+              if (isLoanGuideOpen) {
+                closeGuide();
+                return;
+              }
+
+              startFlowAtStep('propertyLoan', 'property-loan-review');
+            }}
+          >
+            {isLoanGuideOpen ? '가이드 닫기' : '대출 가이드'}
+          </button>
           <button
             className={styles.primaryButton}
             onClick={onGoToProperty}

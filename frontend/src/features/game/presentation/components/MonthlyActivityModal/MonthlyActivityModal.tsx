@@ -249,7 +249,11 @@ export function MonthlyActivityModal({
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
+      <div
+        className={styles.modal}
+        onClick={(event) => event.stopPropagation()}
+        data-guide="game-schedule-modal"
+      >
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>{month}월 활동</h2>
@@ -293,7 +297,7 @@ export function MonthlyActivityModal({
               </div>
             </section>
 
-            <section className={styles.section}>
+            <section className={styles.section} data-guide="game-turn-result-stats">
               <h3 className={styles.sectionTitle}>이번 달 스탯 변화</h3>
               <StatSummary statChanges={commitResult.statChanges} />
             </section>

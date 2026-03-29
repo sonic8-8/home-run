@@ -42,7 +42,7 @@ export const JobChangeEventModal: React.FC<JobChangeEventModalProps> = ({
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()} data-guide="game-event-modal">
         {/* 헤더 */}
         <div className={styles.header}>
           <span className={styles.headerTitle}>새로 도착한 메일</span>

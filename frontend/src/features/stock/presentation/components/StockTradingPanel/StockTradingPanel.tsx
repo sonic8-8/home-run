@@ -110,7 +110,11 @@ export function StockTradingPanel({
   };
 
   return (
-    <section className={styles.panel} data-testid="stock-trading-panel">
+    <section
+      className={styles.panel}
+      data-testid="stock-trading-panel"
+      data-guide="game-stock-panel"
+    >
       <header className={styles.header}>
         <div className={styles.headerBody}>
           <span className={styles.eyebrow}>Turn-Based Trading</span>

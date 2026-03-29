@@ -67,7 +67,7 @@ export function readGameGuideState(): GameGuideStorageState {
     const nextState: GameGuideStorageState = {};
 
     for (const [key, value] of Object.entries(parsed)) {
-      if ((key === 'start' || key === 'main') && isGuideFlowState(value)) {
+      if ((key === 'start' || key === 'main' || key === 'property' || key === 'propertyLoan') && isGuideFlowState(value)) {
         nextState[key] = value;
       }
     }

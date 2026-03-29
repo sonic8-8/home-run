@@ -180,6 +180,7 @@ function GameMainPageContent() {
                 <button
                   className={leftView === 'stock' ? styles.menuButtonActive : styles.menuButton}
                   onClick={() => setLeftView(leftView === 'stock' ? 'scene' : 'stock')}
+                  data-guide="game-stock-launch"
                 >
                   주식 투자
                 </button>

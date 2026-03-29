@@ -36,6 +36,7 @@ export function PropertyDetailPanel({
 
   return (
     <div
+      data-guide="property-detail-panel"
       style={{
         position: 'absolute',
         top: 0,

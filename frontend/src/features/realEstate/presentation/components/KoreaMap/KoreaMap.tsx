@@ -1,6 +1,7 @@
 import { useState, useCallback, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
+import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import { ACTIVE_REGIONS, type RegionData } from '../../constants/regions';
 import type { MapMode } from '../../constants/mapMode';
 
@@ -160,6 +161,7 @@ export function KoreaMap({
   onPropertySelected,
   onLoanRequest,
 }: KoreaMapProps) {
+  const { getTriggerLabel, toggleFlow } = useGameGuide();
   const [view, setView] = useState<ViewState>(() => resolveInitialView());
 
   const handleRegionClick = useCallback((region: string, data: RegionData) => {
@@ -228,6 +230,7 @@ export function KoreaMap({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         style={STAGE_CARD_STYLE}
+        data-guide="property-map-stage"
       >
         <div
           style={{
@@ -273,6 +276,23 @@ export function KoreaMap({
             {view.level === 'district' ? '실시간 매물 단계' : '지역 탐색 단계'}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={() => toggleFlow('property')}
+          style={{
+            marginTop: 16,
+            border: 'none',
+            borderRadius: 9999,
+            padding: '10px 16px',
+            background: 'linear-gradient(135deg, #0f6ad8 0%, #0f172a 100%)',
+            color: '#ffffff',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          {getTriggerLabel('property')}
+        </button>
       </motion.div>
 
       <div style={MAP_FRAME_STYLE}>

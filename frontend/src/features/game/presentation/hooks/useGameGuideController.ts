@@ -4,6 +4,7 @@ import {
   getGuideFlow,
   getGuideFlowByPath,
   getGuideSteps,
+  matchesGuideStepPath,
   type GameGuideFlowId,
   type GameGuideStep,
 } from './gameGuideRegistry';
@@ -26,6 +27,7 @@ export interface GameGuideControllerValue {
   readonly stepCount: number;
   readonly toggleFlow: (flowId: GameGuideFlowId) => void;
   readonly startOrResumeFlow: (flowId: GameGuideFlowId) => void;
+  readonly startFlowAtStep: (flowId: GameGuideFlowId, stepId: string) => void;
   readonly dismissPrompt: (flowId: GameGuideFlowId) => void;
   readonly closeGuide: () => void;
   readonly nextStep: () => void;
@@ -67,12 +69,12 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
       return;
     }
 
-    if (currentStep.path === pathname) {
+    if (matchesGuideStepPath(currentStep, pathname)) {
       return;
     }
 
     const nextMatchingStepIndex = currentFlow.steps.findIndex(
-      (step, index) => index >= activeStepIndex && step.path === pathname,
+      (step, index) => index >= activeStepIndex && matchesGuideStepPath(step, pathname),
     );
 
     if (nextMatchingStepIndex !== -1) {
@@ -86,9 +88,12 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
       return;
     }
 
-    const firstMatchingStepIndex = currentFlow.steps.findIndex((step) => step.path === pathname);
+    const firstMatchingStepIndex = currentFlow.steps.findIndex((step) =>
+      matchesGuideStepPath(step, pathname),
+    );
 
     if (firstMatchingStepIndex === -1) {
+      setActiveFlowId(null);
       return;
     }
 
@@ -123,7 +128,7 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
       )
     )
   );
-  const isOverlayVisible = currentStep !== null && currentStep.path === pathname;
+  const isOverlayVisible = currentStep !== null && matchesGuideStepPath(currentStep, pathname);
   const isLastStep = currentStep !== null && activeStepIndex === activeSteps.length - 1;
 
   const startOrResumeFlow = useCallback(
@@ -143,6 +148,24 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
       }));
     },
     [flowStates, updateFlowState],
+  );
+
+  const startFlowAtStep = useCallback(
+    (flowId: GameGuideFlowId, stepId: string) => {
+      const steps = getGuideSteps(flowId);
+      const requestedStepIndex = steps.findIndex((step) => step.id === stepId);
+      const nextStepIndex = requestedStepIndex === -1 ? 0 : requestedStepIndex;
+
+      setActiveFlowId(flowId);
+      setActiveStepIndex(nextStepIndex);
+      updateFlowState(flowId, (state) => ({
+        ...state,
+        stepIndex: nextStepIndex,
+        completed: false,
+        promptSeen: true,
+      }));
+    },
+    [updateFlowState],
   );
 
   const dismissPrompt = useCallback(
@@ -258,6 +281,7 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
     stepCount: activeSteps.length,
     toggleFlow,
     startOrResumeFlow,
+    startFlowAtStep,
     dismissPrompt,
     closeGuide,
     nextStep,

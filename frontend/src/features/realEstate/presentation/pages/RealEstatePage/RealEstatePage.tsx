@@ -70,6 +70,23 @@ export function RealEstatePage() {
       : null,
   );
 
+  useEffect(() => {
+    if (!hasPreSelected) {
+      return;
+    }
+
+    setSelectedProperty((current) => current ?? {
+      propertyId: state.preSelectedPropertyId!,
+      propertyName: state.preSelectedPropertyName!,
+      propertyPrice: state.preSelectedPropertyPrice!,
+    });
+  }, [
+    hasPreSelected,
+    state.preSelectedPropertyId,
+    state.preSelectedPropertyName,
+    state.preSelectedPropertyPrice,
+  ]);
+
   const requestLoanReview = useCallback(async (selection: SelectedProperty) => {
     if (sessionId === undefined || state.productId === undefined) {
       return;
@@ -93,8 +110,8 @@ export function RealEstatePage() {
       return;
     }
 
-    autoApplyRequestedRef.current = true;
     const timeoutId = window.setTimeout(() => {
+      autoApplyRequestedRef.current = true;
       void requestLoanReview(selectedProperty);
     }, 0);
 

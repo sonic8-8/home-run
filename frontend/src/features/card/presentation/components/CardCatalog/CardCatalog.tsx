@@ -79,6 +79,7 @@ export function CardCatalog({
         layout === 'page' ? styles.pageLayout : styles.panelLayout,
       )}
       data-testid="card-catalog"
+      data-guide="game-card-panel"
     >
       <header className={styles.header}>
         <div className={styles.headerBody}>
