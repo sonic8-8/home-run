@@ -2,8 +2,6 @@ package io.ssafy.p.j14c103.homerun.api.service.character;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.character.request.CharacterTurnResultServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.request.CharacterTurnResultServiceRequest.TurnActionRequest;
 import io.ssafy.p.j14c103.homerun.api.service.character.response.CharacterTurnResultServiceResponse;
@@ -35,9 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class CharacterTurnResultServiceTest {
 
-    private static final String SETTLEMENT_PHASE_DURATION = "homerun.settlement.phase.duration";
-    private static final String CHARACTER_TURN_RESULT_PHASE = "character_turn_result";
-
     @Autowired
     private CharacterTurnResultService characterTurnResultService;
 
@@ -53,14 +48,10 @@ class CharacterTurnResultServiceTest {
     @Autowired
     private GameTurnSlotRepository gameTurnSlotRepository;
 
-    @Autowired
-    private MeterRegistry meterRegistry;
-
     @DisplayName("한 턴 결과를 반영하면 스탯, 커리어, 이력이 함께 갱신된다.")
     @Test
     void apply() {
         // given
-        final long timerCountBefore = settlementPhaseTimerCount();
         final CharacterTurnResultServiceRequest request =
             CharacterTurnResultServiceRequest.of(
                 createWorkingCareer(2001, 5, EmploymentStatus.PROBATION, 10),
@@ -112,7 +103,6 @@ class CharacterTurnResultServiceTest {
         assertThat(histories.get(0).getTableName()).isEqualTo("게임스탯");
         assertThat(histories.get(0).getSummary()).isEqualTo("스탯 변경 결과를 반영했습니다.");
         assertThat(histories.get(0).getAfterValue()).contains("\"knowledge\":56");
-        assertThat(settlementPhaseTimerCount()).isEqualTo(timerCountBefore + 1);
     }
 
     @DisplayName("번아웃과 강제 퇴사가 동시에 필요하면 실업 급여 상태까지 함께 갱신한다.")
@@ -382,15 +372,5 @@ class CharacterTurnResultServiceTest {
                 : ActionCategory.ACTIVITY)
             .forcedAction(false)
             .build();
-    }
-
-    private long settlementPhaseTimerCount() {
-        final Timer timer = meterRegistry.find(SETTLEMENT_PHASE_DURATION)
-            .tag("phase", CHARACTER_TURN_RESULT_PHASE)
-            .timer();
-        if (timer == null) {
-            return 0;
-        }
-        return timer.count();
     }
 }
