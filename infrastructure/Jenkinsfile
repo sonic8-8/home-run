@@ -78,8 +78,8 @@ pipeline {
         PUBLIC_DATA_SERVICE_KEY = credentials('public-data-service-key')
         NAVER_GEOCODING_CLIENT_ID = credentials('naver-geocoding-client-id')
         NAVER_GEOCODING_CLIENT_SECRET = credentials('naver-geocoding-client-secret')
-        // Keep DDL changes disabled during automatic real-estate import to avoid production schema drift failures.
-        SPRING_JPA_HIBERNATE_DDL_AUTO = 'none'
+        // Match the production runtime default so deployment verification uses the same schema update behavior.
+        SPRING_JPA_HIBERNATE_DDL_AUTO = 'update'
         // Enable automatic real-estate import during runtime deployment with the configured default window.
         REAL_ESTATE_IMPORT_ENABLED = 'true'
         REAL_ESTATE_IMPORT_REGIONS = 'SEOUL,GWANGJU'
