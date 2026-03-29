@@ -4,6 +4,10 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.request.CreateGameSes
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.CreateGameSessionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionDetailResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionListResponse;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.api.service.world.TargetPropertyValidationService;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.TargetPropertyValidationResponse;
@@ -26,6 +30,8 @@ public class GameSessionService {
     private final TargetPropertyValidationService targetPropertyValidationService;
     private final GameSessionCleanupService gameSessionCleanupService;
     private final GameSessionInitialSnapshotService gameSessionInitialSnapshotService;
+    private final GameStatRepository gameStatRepository;
+    private final GameCareerRepository gameCareerRepository;
 
     @Transactional(readOnly = true)
     public GameSessionListResponse getSessions(final Long userId) {
@@ -78,6 +84,7 @@ public class GameSessionService {
             initialSnapshot.getCurrentDate(),
             initialSnapshot.getCycleState()
         );
+        initializeCharacterState(saved, initialSnapshot);
         return CreateGameSessionResponse.from(saved);
     }
 
@@ -127,5 +134,64 @@ public class GameSessionService {
             return;
         }
         throw new HomerunException(ErrorCode.GAME_SLOT_CONFLICT);
+    }
+
+    private void initializeCharacterState(
+        final GameSession gameSession,
+        final GameSessionInitialSnapshot initialSnapshot
+    ) {
+        final Integer gameId = toGameId(gameSession.getGameSessionId());
+        gameStatRepository.save(createGameStat(gameId, gameSession, initialSnapshot));
+        gameCareerRepository.save(createGameCareer(gameId, initialSnapshot));
+    }
+
+    private GameStat createGameStat(
+        final Integer gameId,
+        final GameSession gameSession,
+        final GameSessionInitialSnapshot initialSnapshot
+    ) {
+        return GameStat.create(
+            gameId,
+            initialSnapshot.getStatSeed().health(),
+            initialSnapshot.getStatSeed().fatigue(),
+            initialSnapshot.getStatSeed().stress(),
+            initialSnapshot.getStatSeed().happiness(),
+            initialSnapshot.getStatSeed().knowledge(),
+            gameSession.getCurrentTurn()
+        );
+    }
+
+    private GameCareer createGameCareer(
+        final Integer gameId,
+        final GameSessionInitialSnapshot initialSnapshot
+    ) {
+        return GameCareer.builder()
+            .gameId(gameId)
+            .jobType(initialSnapshot.getCareerSeed().jobType())
+            .jobTitle(initialSnapshot.getCareerSeed().jobTitle())
+            .salary(initialSnapshot.getCareerSeed().annualSalary())
+            .tenureTurns(initialSnapshot.getCareerSeed().tenureTurns())
+            .recentStudyCount(initialSnapshot.getCareerSeed().recentStudyCount())
+            .recentNetworkingCount(initialSnapshot.getCareerSeed().recentNetworkingCount())
+            .negotiationPreparationScore(
+                initialSnapshot.getCareerSeed().negotiationPreparationScore()
+            )
+            .lastNegotiatedTurn(initialSnapshot.getCareerSeed().lastNegotiatedTurn())
+            .employmentStatus(initialSnapshot.getCareerSeed().employmentStatus())
+            .probationEndTurn(initialSnapshot.getCareerSeed().probationEndTurn())
+            .rehireAvailableTurn(initialSnapshot.getCareerSeed().rehireAvailableTurn())
+            .remainingUnemploymentBenefitTurns(
+                initialSnapshot.getCareerSeed().remainingUnemploymentBenefitTurns()
+            )
+            .salaryBeforeResignation(initialSnapshot.getCareerSeed().salaryBeforeResignation())
+            .build();
+    }
+
+    private Integer toGameId(final Long sessionId) {
+        try {
+            return Math.toIntExact(sessionId);
+        } catch (ArithmeticException exception) {
+            throw new HomerunException(ErrorCode.CHARACTER_GAME_ID_INVALID, exception);
+        }
     }
 }
