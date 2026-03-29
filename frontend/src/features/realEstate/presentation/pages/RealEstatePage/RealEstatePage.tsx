@@ -68,14 +68,6 @@ export function RealEstatePage() {
       : null,
   );
 
-  if (mode !== 'new-game' && sessionId === undefined) {
-    return <div>세션 정보를 확인하지 못했습니다.</div>;
-  }
-
-  if (mode === 'loan-apply' && state.productId === undefined) {
-    return <div>대출 상품 정보를 확인하지 못했습니다.</div>;
-  }
-
   const requestLoanReview = useCallback(async (selection: SelectedProperty) => {
     if (sessionId === undefined || state.productId === undefined) {
       return;
@@ -100,8 +92,22 @@ export function RealEstatePage() {
     }
 
     autoApplyRequestedRef.current = true;
-    void requestLoanReview(selectedProperty);
+    const timeoutId = window.setTimeout(() => {
+      void requestLoanReview(selectedProperty);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [hasPreSelected, requestLoanReview, selectedProperty]);
+
+  if (mode !== 'new-game' && sessionId === undefined) {
+    return <div>세션 정보를 확인하지 못했습니다.</div>;
+  }
+
+  if (mode === 'loan-apply' && state.productId === undefined) {
+    return <div>대출 상품 정보를 확인하지 못했습니다.</div>;
+  }
 
   const handlePropertySelected = (selection: {
     propertyId: string;

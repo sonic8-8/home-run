@@ -41,7 +41,13 @@ export function useCardCatalog() {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    const timeoutId = window.setTimeout(() => {
+      void refresh();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [refresh]);
 
   return {
