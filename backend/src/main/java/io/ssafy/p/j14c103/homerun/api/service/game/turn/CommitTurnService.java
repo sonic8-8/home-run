@@ -3,13 +3,22 @@ package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SettlementOrchestratorRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.SettlementOrchestratorResult;
+import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimeline;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimelineRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLog;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLogRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketState;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHolding;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHoldingRepository;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldResultService;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
@@ -21,12 +30,18 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftSlot;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +56,7 @@ public class CommitTurnService {
     private static final String TIMEOUT_ENDING_TITLE = "시간 초과";
     private static final String FORECLOSURE_ENDING_TITLE = "압류";
     private static final String DEFAULT_SPENDING_CATEGORY = "미집계";
+    private static final int MONTHS_PER_YEAR = 12;
 
     private final GameTurnCommitGuardService gameTurnCommitGuardService;
     private final GameWorldResultService gameWorldResultService;
@@ -51,6 +67,11 @@ public class CommitTurnService {
     private final GameReportRepository gameReportRepository;
     private final TurnDraftRepository turnDraftRepository;
     private final ActionCatalog actionCatalog;
+    private final GameHousingRepository gameHousingRepository;
+    private final RealEstatePropertyRepository realEstatePropertyRepository;
+    private final StockHoldingRepository stockHoldingRepository;
+    private final GameStockMarketStateRepository gameStockMarketStateRepository;
+    private final GameCareerRepository gameCareerRepository;
 
     @Transactional
     public CommitTurnResponse commitTurn(final Long userId, final Long sessionId) {
@@ -80,7 +101,7 @@ public class CommitTurnService {
             CommitTurnResponse.UpdatedAssetsResponse.of(
                 toLong(settlementResult.getFinalCash()),
                 toLong(settlementResult.getFinalLoanBalance()),
-                0L,
+                toLong(resolveCurrentRealEstateAssetValue(sessionId)),
                 toLong(settlementResult.getNetWorth())
             ),
             CommitTurnResponse.StatChangesResponse.from(settlementResult.getAggregatedStatChanges()),
@@ -200,9 +221,9 @@ public class CommitTurnService {
             toInteger(settlementResult.getFinalCash()),
             toInteger(settlementResult.getNetWorth()),
             toInteger(settlementResult.getTotalAssets()),
-            toInteger(settlementResult.getFinalStockValue()),
+            extractCurrentStockValueAmount(sessionId),
             toInteger(settlementResult.getFinalLoanBalance()),
-            extractSalaryAmount(settlementResult)
+            extractSalaryAmount(sessionId)
         ));
     }
 
@@ -280,8 +301,97 @@ public class CommitTurnService {
         return currentPropertyId.equals(gameSession.getTargetPropertyId());
     }
 
-    private Integer extractSalaryAmount(final SettlementOrchestratorResult settlementResult) {
-        return 0;
+    private Integer extractCurrentStockValueAmount(final Long sessionId) {
+        return toInteger(resolveCurrentStockValue(sessionId));
+    }
+
+    private Money resolveCurrentStockValue(final Long sessionId) {
+        final Map<String, Integer> currentPriceByStockCode = gameStockMarketStateRepository
+            .findAllByGameSessionId(sessionId)
+            .stream()
+            .collect(Collectors.toMap(
+                GameStockMarketState::getStockCode,
+                GameStockMarketState::getCurrentPriceAmount
+            ));
+        final long currentStockValue = stockHoldingRepository.findAllByGameSessionId(sessionId)
+            .stream()
+            .mapToLong(holding -> resolveCurrentStockValue(holding, currentPriceByStockCode))
+            .sum();
+        return Money.of(currentStockValue);
+    }
+
+    private long resolveCurrentStockValue(
+        final StockHolding holding,
+        final Map<String, Integer> currentPriceByStockCode
+    ) {
+        final Integer quantity = holding.getQuantity();
+        if (quantity == null || quantity <= 0) {
+            return 0L;
+        }
+        final Integer currentPrice = currentPriceByStockCode.getOrDefault(holding.getStockCode(), 0);
+        return (long) currentPrice * quantity;
+    }
+
+    private Money resolveCurrentRealEstateAssetValue(final Long sessionId) {
+        return gameHousingRepository.findByGameSessionId(sessionId)
+            .map(this::resolveCurrentRealEstateAssetValue)
+            .orElse(Money.zero());
+    }
+
+    private Money resolveCurrentRealEstateAssetValue(final GameHousing gameHousing) {
+        final HousingType currentHousingType = gameHousing.getCurrentHousingType();
+        if (currentHousingType == null || currentHousingType == HousingType.NONE) {
+            return Money.zero();
+        }
+        if (currentHousingType == HousingType.OWNED_APT) {
+            return resolveOwnedHousingAssetValue(gameHousing);
+        }
+        return requireCurrentDeposit(gameHousing);
+    }
+
+    private Money resolveOwnedHousingAssetValue(final GameHousing gameHousing) {
+        final Long currentPropertyId = gameHousing.getCurrentPropertyId();
+        if (currentPropertyId == null) {
+            throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+        }
+        return realEstatePropertyRepository.findById(currentPropertyId)
+            .map(RealEstateProperty::getBasePrice)
+            .orElseThrow(() -> new HomerunException(ErrorCode.WORLD_RESULT_INVALID));
+    }
+
+    private Money requireCurrentDeposit(final GameHousing gameHousing) {
+        final Money currentDeposit = gameHousing.getCurrentDeposit();
+        if (currentDeposit != null) {
+            return currentDeposit;
+        }
+        throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+    }
+
+    private Integer extractSalaryAmount(final Long sessionId) {
+        return gameCareerRepository.findById(toGameId(sessionId))
+            .map(this::resolveSalaryAmount)
+            .orElse(0);
+    }
+
+    private Integer resolveSalaryAmount(final GameCareer gameCareer) {
+        if (gameCareer.getEmploymentStatus() == EmploymentStatus.UNEMPLOYED) {
+            return 0;
+        }
+        final Integer annualSalary = gameCareer.getSalary();
+        if (annualSalary == null) {
+            return 0;
+        }
+        return BigDecimal.valueOf(annualSalary)
+            .divide(BigDecimal.valueOf(MONTHS_PER_YEAR), 0, RoundingMode.DOWN)
+            .intValueExact();
+    }
+
+    private Integer toGameId(final Long sessionId) {
+        try {
+            return Math.toIntExact(sessionId);
+        } catch (ArithmeticException exception) {
+            throw new HomerunException(ErrorCode.CHARACTER_GAME_ID_INVALID, exception);
+        }
     }
 
     private Integer calculateTotalIncome(final List<SettlementLog> settlementLogs) {
