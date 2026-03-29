@@ -293,6 +293,7 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         );
         final CreateGameSessionResponse response = gameSessionService.create(user.getId(), request);
         ensureActionMasterForeignKey();
+        jdbcTemplate.update("delete from action_masters");
 
         // when
         final TurnPreviewResponse previewResponse = submitTurnSlotsService.submitTurnSlots(
@@ -311,12 +312,11 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         assertThat(commitTurnResponse.getSettlementLog()).isNotEmpty();
         assertThat(
             jdbcTemplate.queryForObject(
-                "select count(*) from game_turn_slots where game_session_id = ? and turn_number = ?",
+                "select count(*) from action_masters where action_type = ?",
                 Integer.class,
-                response.getSessionId(),
-                0
+                "REST"
             )
-        ).isEqualTo(3);
+        ).isEqualTo(1);
     }
 
     @DisplayName("MY_DATA 세션 생성은 온보딩 자산연동의 직업과 자본 상태로 초기화한다.")

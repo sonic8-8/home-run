@@ -81,12 +81,4 @@ public class OwnedCard {
 
         return new OwnedCard(userId, cardProduct, cardAlias, maskedCardNo, openedAt);
     }
-
-    public boolean isActive() {
-        return Boolean.TRUE.equals(activeYn);
-    }
-
-    public void cancel() {
-        activeYn = false;
-    }
 }

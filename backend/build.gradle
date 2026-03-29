@@ -86,9 +86,6 @@ dependencyManagement {
 tasks.named('test') {
     outputs.dir snippetsDir
     useJUnitPlatform()
-    maxHeapSize = '1536m'
-    jvmArgs '-XX:MaxMetaspaceSize=512m'
-    maxParallelForks = 1
 }
 
 tasks.named('asciidoctor') {
