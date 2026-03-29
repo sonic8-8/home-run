@@ -14,6 +14,13 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimeline;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimelineRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLog;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLogRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementPhaseType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionCategory;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.GameSessionTurnSlotRepository;
@@ -55,6 +62,15 @@ class CommitTurnServiceTest {
     private GameSessionTurnSlotRepository gameTurnSlotRepository;
 
     @Autowired
+    private SettlementLogRepository settlementLogRepository;
+
+    @Autowired
+    private GameTimelineRepository gameTimelineRepository;
+
+    @Autowired
+    private GameReportRepository gameReportRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @MockitoBean
@@ -65,12 +81,15 @@ class CommitTurnServiceTest {
 
     @AfterEach
     void tearDown() {
+        settlementLogRepository.deleteAllInBatch();
+        gameTimelineRepository.deleteAllInBatch();
+        gameReportRepository.deleteAllInBatch();
         gameTurnSlotRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
     }
 
-    @DisplayName("턴 커밋은 draft를 확정 슬롯으로 저장하고 세션을 다음 턴으로 전진시킨 뒤 draft를 제거한다.")
+    @DisplayName("턴 커밋은 정산 결과를 settlement log와 timeline에 저장하고 세션을 다음 턴으로 전진시킨다.")
     @Test
     void commitTurn() {
         // given
@@ -102,8 +121,14 @@ class CommitTurnServiceTest {
 
         // then
         assertThat(response.getTurnNumber()).isEqualTo(5);
-        assertThat(response.getSettlementLog()).hasSize(2);
+        assertThat(response.getSettlementLog()).hasSize(13);
+        assertThat(response.getSettlementLog().get(0).getPhase()).isEqualTo("MARKET_UPDATE");
+        assertThat(response.getSettlementLog().get(0).getDescription()).isEqualTo("경기 회복기");
+        assertThat(response.getSettlementLog())
+            .extracting(CommitTurnResponse.SettlementLogItemResponse::getCashChange)
+            .contains(300_000L);
         assertThat(response.getUpdatedAssets().getCash()).isEqualTo(2_300_000L);
+        assertThat(response.getUpdatedAssets().getLoan()).isEqualTo(0L);
         assertThat(response.getUpdatedAssets().getNetAssets()).isEqualTo(2_300_000L);
         assertThat(response.getStatChanges().getHealth()).isEqualTo(3);
         assertThat(response.getStatChanges().getFatigue()).isEqualTo(-14);
@@ -137,9 +162,92 @@ class CommitTurnServiceTest {
         assertThat(updated.getTotalAssets()).isEqualTo(Money.of(2_300_000L));
         assertThat(updated.getNetWorth()).isEqualTo(Money.of(2_300_000L));
         assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.IN_PROGRESS);
+        assertThat(gameReportRepository.existsById(gameSession.getGameSessionId())).isFalse();
+
+        final List<SettlementLog> settlementLogs = settlementLogRepository
+            .findAllByGameSessionIdAndTurnNumberOrderBySettlementLogIdAsc(gameSession.getGameSessionId(), 5);
+        assertThat(settlementLogs).hasSize(13);
+        assertThat(settlementLogs.get(0).getSettlementPhaseType()).isEqualTo(SettlementPhaseType.MARKET_UPDATE);
+        assertThat(settlementLogs.get(0).getDescription()).isEqualTo("경기 회복기");
+        assertThat(settlementLogs)
+            .filteredOn(log -> log.getCashChangeAmount() != null && log.getCashChangeAmount() != 0)
+            .extracting(SettlementLog::getCashChangeAmount)
+            .containsExactly(300_000);
+        assertThat(settlementLogs)
+            .filteredOn(log -> !log.getStatChanges().isEmpty())
+            .singleElement()
+            .extracting(log -> log.getStatChanges().get("knowledge"))
+            .isEqualTo(8);
+
+        final List<GameTimeline> timelines = gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
+            gameSession.getGameSessionId()
+        );
+        assertThat(timelines).hasSize(1);
+        assertThat(timelines.get(0).getTurnNumber()).isEqualTo(5);
+        assertThat(timelines.get(0).getLoggedDate()).isEqualTo(LocalDate.of(2026, 2, 1));
+        assertThat(timelines.get(0).getCash()).isEqualTo(2_300_000);
+        assertThat(timelines.get(0).getLoanBalanceAmount()).isEqualTo(0);
+        assertThat(timelines.get(0).getSalaryAmount()).isEqualTo(300_000);
 
         then(gameWorldResultService).should().buildWorldResult(gameSession.getGameSessionId(), 50);
         then(turnDraftRepository).should().deleteBySessionId(gameSession.getGameSessionId());
+    }
+
+    @DisplayName("턴 커밋 결과가 종료 상태면 세션을 종료하고 game report를 생성한다.")
+    @Test
+    void commitTurnAndCloseSession() {
+        // given
+        final User user = saveUser("turn-timeout@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 359)
+        );
+        final TurnDraft turnDraft = createTurnDraft(
+            gameSession.getGameSessionId(),
+            359,
+            Money.zero(),
+            Map.of()
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(GameWorldResult.of(
+                GameWorldResult.CycleResult.of(
+                    CyclePhase.RECOVERY,
+                    CycleType.CYCLE_RATE_HIKE,
+                    18,
+                    "장기 정체 구간"
+                ),
+                List.of(),
+                List.of(),
+                GameWorldResult.HousingSnapshot.empty()
+            ));
+
+        // when
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            user.getId(),
+            gameSession.getGameSessionId()
+        );
+
+        // then
+        assertThat(response.getTurnNumber()).isEqualTo(359);
+        assertThat(response.getSettlementLog()).hasSize(13);
+        assertThat(response.getFlags().isBankrupt()).isFalse();
+        assertThat(response.getFlags().isCleared()).isFalse();
+
+        final GameSession updated = gameSessionRepository.findById(gameSession.getGameSessionId())
+            .orElseThrow();
+        assertThat(updated.getCurrentTurn()).isEqualTo(360);
+        assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.TIMEOUT);
+
+        final GameReport gameReport = gameReportRepository.findById(gameSession.getGameSessionId())
+            .orElseThrow();
+        assertThat(gameReport.getEndingType()).isEqualTo(SessionStatus.TIMEOUT);
+        assertThat(gameReport.getEndingTitle()).isEqualTo("시간 초과");
+        assertThat(gameReport.getTotalAssetsAmount()).isEqualTo(2_000_000);
+        assertThat(gameReport.getNetProfitAmount()).isEqualTo(0);
+
+        assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(gameSession.getGameSessionId()))
+            .hasSize(1);
     }
 
     private User saveUser(final String email) {
@@ -183,14 +291,9 @@ class CommitTurnServiceTest {
     }
 
     private TurnDraft createTurnDraft(final Long sessionId, final Integer turnNumber) {
-        return TurnDraft.of(
+        return createTurnDraft(
             sessionId,
             turnNumber,
-            List.of(
-                TurnDraftSlot.of(0, ActionType.STUDY),
-                TurnDraftSlot.of(1, ActionType.HOBBY),
-                TurnDraftSlot.of(2, ActionType.SIDE_JOB)
-            ),
             Money.of(300_000L),
             Map.of(
                 "health", 3,
@@ -199,6 +302,25 @@ class CommitTurnServiceTest {
                 "happiness", 4,
                 "knowledge", 8
             )
+        );
+    }
+
+    private TurnDraft createTurnDraft(
+        final Long sessionId,
+        final Integer turnNumber,
+        final Money previewCashChange,
+        final Map<String, Integer> previewStatChanges
+    ) {
+        return TurnDraft.of(
+            sessionId,
+            turnNumber,
+            List.of(
+                TurnDraftSlot.of(0, ActionType.STUDY),
+                TurnDraftSlot.of(1, ActionType.HOBBY),
+                TurnDraftSlot.of(2, ActionType.SIDE_JOB)
+            ),
+            previewCashChange,
+            previewStatChanges
         );
     }
 }

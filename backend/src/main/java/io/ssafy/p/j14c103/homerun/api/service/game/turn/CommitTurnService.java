@@ -1,6 +1,15 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SettlementOrchestratorRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.SettlementOrchestratorResult;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimeline;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimelineRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLog;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLogRepository;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldResultService;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
@@ -26,13 +35,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommitTurnService {
 
     private static final int DEFAULT_WORLD_ROLL = 50;
-    private static final String MARKET_UPDATE_PHASE = "MARKET_UPDATE";
-    private static final String ACTION_RESULT_PHASE = "ACTION_RESULT";
-    private static final String ACTION_RESULT_DESCRIPTION = "턴 행동 결과를 반영한다";
+    private static final String CLEAR_ENDING_TITLE = "부동산 갑부";
+    private static final String BANKRUPT_ENDING_TITLE = "파산";
+    private static final String TIMEOUT_ENDING_TITLE = "시간 초과";
+    private static final String FORECLOSURE_ENDING_TITLE = "압류";
 
     private final GameTurnCommitGuardService gameTurnCommitGuardService;
     private final GameWorldResultService gameWorldResultService;
+    private final SettlementOrchestratorService settlementOrchestratorService;
     private final GameSessionTurnSlotRepository gameSessionTurnSlotRepository;
+    private final SettlementLogRepository settlementLogRepository;
+    private final GameTimelineRepository gameTimelineRepository;
+    private final GameReportRepository gameReportRepository;
     private final TurnDraftRepository turnDraftRepository;
     private final ActionCatalog actionCatalog;
 
@@ -47,27 +61,33 @@ public class CommitTurnService {
             DEFAULT_WORLD_ROLL
         );
         final Integer committedTurn = gameSession.getCurrentTurn();
+        final SettlementOrchestratorResult settlementResult = settlementOrchestratorService.orchestrate(
+            buildSettlementRequest(gameSession, committedTurn + 1, turnDraft, worldResult)
+        );
 
         saveCommittedSlots(gameSession.getGameSessionId(), committedTurn, turnDraft);
-        final SessionAdvanceResult sessionAdvanceResult = advanceSession(gameSession, turnDraft, worldResult);
+        final SessionAdvanceResult sessionAdvanceResult = advanceSession(gameSession, worldResult, settlementResult);
+        saveSettlementLogs(gameSession.getGameSessionId(), committedTurn, settlementResult);
+        saveTimeline(gameSession.getGameSessionId(), committedTurn, sessionAdvanceResult.nextDate(), settlementResult);
+        saveGameReportIfEnded(gameSession, settlementResult, sessionAdvanceResult.previousNetWorth());
         turnDraftRepository.deleteBySessionId(sessionId);
 
         return CommitTurnResponse.of(
             committedTurn,
-            buildSettlementLog(worldResult, turnDraft),
+            buildSettlementLog(settlementResult),
             CommitTurnResponse.UpdatedAssetsResponse.of(
-                toLong(sessionAdvanceResult.nextCash()),
+                toLong(settlementResult.getFinalCash()),
+                toLong(settlementResult.getFinalLoanBalance()),
                 0L,
-                0L,
-                toLong(sessionAdvanceResult.nextNetWorth())
+                toLong(settlementResult.getNetWorth())
             ),
-            CommitTurnResponse.StatChangesResponse.from(turnDraft.getPreviewStatChanges()),
+            CommitTurnResponse.StatChangesResponse.from(settlementResult.getAggregatedStatChanges()),
             CommitTurnResponse.FlagsResponse.of(
-                sessionAdvanceResult.nextNetWorth().isNegative(),
+                settlementResult.getEndingStatus() == SessionStatus.BANKRUPT,
+                settlementResult.getEndingStatus() == SessionStatus.CLEAR,
                 false,
                 false,
-                false,
-                !worldResult.getEventCandidates().isEmpty()
+                settlementResult.isHasEvent()
             )
         );
     }
@@ -91,15 +111,35 @@ public class CommitTurnService {
         gameSessionTurnSlotRepository.saveAllAndFlush(committedSlots);
     }
 
-    private SessionAdvanceResult advanceSession(
+    private SettlementOrchestratorRequest buildSettlementRequest(
         final GameSession gameSession,
+        final Integer nextTurnNumber,
         final TurnDraft turnDraft,
         final GameWorldResult worldResult
     ) {
-        final Money previewCashChange = turnDraft.getPreviewCashChange();
-        final Money nextCash = gameSession.getCashBalance().add(previewCashChange);
-        final Money nextTotalAssets = gameSession.getTotalAssets().add(previewCashChange);
-        final Money nextNetWorth = gameSession.getNetWorth().add(previewCashChange);
+        return SettlementOrchestratorRequest.of(
+            gameSession.getGameSessionId(),
+            nextTurnNumber,
+            gameSession.getCashBalance(),
+            extractCurrentStockValue(gameSession),
+            extractCurrentLoanBalance(gameSession),
+            turnDraft.getPreviewCashChange(),
+            turnDraft.getPreviewStatChanges(),
+            worldResult.getCycleResult().getDescription(),
+            !worldResult.getEventCandidates().isEmpty(),
+            isTargetPropertyOwned(gameSession, worldResult)
+        );
+    }
+
+    private SessionAdvanceResult advanceSession(
+        final GameSession gameSession,
+        final GameWorldResult worldResult,
+        final SettlementOrchestratorResult settlementResult
+    ) {
+        final Money previousNetWorth = gameSession.getNetWorth();
+        final Money nextCash = settlementResult.getFinalCash();
+        final Money nextTotalAssets = settlementResult.getTotalAssets();
+        final Money nextNetWorth = settlementResult.getNetWorth();
         final LocalDate nextDate = requireCurrentDate(gameSession).plusMonths(1);
         final CycleState nextCycleState = CycleState.of(
             worldResult.getCycleResult().getNextPhase(),
@@ -115,7 +155,10 @@ public class CommitTurnService {
             nextNetWorth,
             nextCycleState
         );
-        return new SessionAdvanceResult(nextCash, nextNetWorth);
+        if (settlementResult.getEndingStatus() != SessionStatus.IN_PROGRESS) {
+            gameSession.markEnding(settlementResult.getEndingStatus());
+        }
+        return new SessionAdvanceResult(nextDate, previousNetWorth);
     }
 
     private LocalDate requireCurrentDate(final GameSession gameSession) {
@@ -125,33 +168,164 @@ public class CommitTurnService {
         return gameSession.getCurrentDate();
     }
 
-    private List<CommitTurnResponse.SettlementLogItemResponse> buildSettlementLog(
-        final GameWorldResult worldResult,
-        final TurnDraft turnDraft
+    private void saveSettlementLogs(
+        final Long sessionId,
+        final Integer committedTurn,
+        final SettlementOrchestratorResult settlementResult
     ) {
-        return List.of(
-            CommitTurnResponse.SettlementLogItemResponse.of(
-                MARKET_UPDATE_PHASE,
-                worldResult.getCycleResult().getDescription(),
-                0L,
-                CommitTurnResponse.StatChangesResponse.zero()
-            ),
-            CommitTurnResponse.SettlementLogItemResponse.of(
-                ACTION_RESULT_PHASE,
-                ACTION_RESULT_DESCRIPTION,
-                toLong(turnDraft.getPreviewCashChange()),
-                CommitTurnResponse.StatChangesResponse.from(turnDraft.getPreviewStatChanges())
-            )
-        );
+        final List<SettlementLog> settlementLogs = settlementResult.getStepResults().stream()
+            .map(stepResult -> SettlementLog.create(
+                sessionId,
+                committedTurn,
+                stepResult.getPhaseType(),
+                stepResult.getDescription(),
+                toInteger(stepResult.getCashDelta()),
+                stepResult.getStatChanges()
+            ))
+            .toList();
+        settlementLogRepository.saveAllAndFlush(settlementLogs);
+    }
+
+    private void saveTimeline(
+        final Long sessionId,
+        final Integer committedTurn,
+        final LocalDate nextDate,
+        final SettlementOrchestratorResult settlementResult
+    ) {
+        gameTimelineRepository.saveAndFlush(GameTimeline.create(
+            sessionId,
+            committedTurn,
+            nextDate,
+            toInteger(settlementResult.getFinalCash()),
+            toInteger(settlementResult.getNetWorth()),
+            toInteger(settlementResult.getTotalAssets()),
+            toInteger(settlementResult.getFinalStockValue()),
+            toInteger(settlementResult.getFinalLoanBalance()),
+            extractSalaryAmount(settlementResult)
+        ));
+    }
+
+    private void saveGameReportIfEnded(
+        final GameSession gameSession,
+        final SettlementOrchestratorResult settlementResult,
+        final Money previousNetWorth
+    ) {
+        if (settlementResult.getEndingStatus() == SessionStatus.IN_PROGRESS) {
+            return;
+        }
+
+        gameReportRepository.saveAndFlush(GameReport.create(
+            gameSession.getGameSessionId(),
+            settlementResult.getEndingStatus(),
+            resolveEndingTitle(settlementResult.getEndingStatus()),
+            calculateTotalIncome(settlementResult),
+            calculateTotalExpense(settlementResult),
+            resolveGrade(settlementResult.getEndingStatus()),
+            toInteger(settlementResult.getTotalAssets()),
+            toInteger(settlementResult.getNetWorth().subtract(previousNetWorth)),
+            null,
+            null,
+            List.of()
+        ));
+    }
+
+    private List<CommitTurnResponse.SettlementLogItemResponse> buildSettlementLog(
+        final SettlementOrchestratorResult settlementResult
+    ) {
+        return settlementResult.getStepResults().stream()
+            .map(stepResult -> CommitTurnResponse.SettlementLogItemResponse.of(
+                stepResult.getPhaseType().name(),
+                stepResult.getDescription(),
+                toLong(stepResult.getCashDelta()),
+                CommitTurnResponse.StatChangesResponse.from(stepResult.getStatChanges())
+            ))
+            .toList();
+    }
+
+    private Money extractCurrentStockValue(final GameSession gameSession) {
+        final Money currentStockValue = gameSession.getTotalAssets().subtract(gameSession.getCashBalance());
+        if (currentStockValue.isNegative()) {
+            return Money.zero();
+        }
+        return currentStockValue;
+    }
+
+    private Money extractCurrentLoanBalance(final GameSession gameSession) {
+        final Money currentLoanBalance = gameSession.getTotalAssets().subtract(gameSession.getNetWorth());
+        if (currentLoanBalance.isNegative()) {
+            return Money.zero();
+        }
+        return currentLoanBalance;
+    }
+
+    private boolean isTargetPropertyOwned(
+        final GameSession gameSession,
+        final GameWorldResult worldResult
+    ) {
+        final Long currentPropertyId = worldResult.getHousingSnapshot().getCurrentPropertyId();
+        if (currentPropertyId == null) {
+            return false;
+        }
+        final Long targetPropertyId = worldResult.getHousingSnapshot().getTargetPropertyId();
+        if (targetPropertyId != null) {
+            return currentPropertyId.equals(targetPropertyId);
+        }
+        return currentPropertyId.equals(gameSession.getTargetPropertyId());
+    }
+
+    private Integer extractSalaryAmount(final SettlementOrchestratorResult settlementResult) {
+        return settlementResult.getStepResults().stream()
+            .filter(stepResult -> stepResult.getStepType() == SettlementStepType.INCOME_SALARY_SETTLEMENT)
+            .findFirst()
+            .map(stepResult -> toInteger(stepResult.getCashDelta()))
+            .orElse(0);
+    }
+
+    private Integer calculateTotalIncome(final SettlementOrchestratorResult settlementResult) {
+        return settlementResult.getStepResults().stream()
+            .map(stepResult -> toInteger(stepResult.getCashDelta()))
+            .filter(cashDelta -> cashDelta > 0)
+            .reduce(0, Integer::sum);
+    }
+
+    private Integer calculateTotalExpense(final SettlementOrchestratorResult settlementResult) {
+        return settlementResult.getStepResults().stream()
+            .map(stepResult -> toInteger(stepResult.getCashDelta()))
+            .filter(cashDelta -> cashDelta < 0)
+            .map(Math::abs)
+            .reduce(0, Integer::sum);
+    }
+
+    private String resolveEndingTitle(final SessionStatus endingStatus) {
+        return switch (endingStatus) {
+            case CLEAR -> CLEAR_ENDING_TITLE;
+            case BANKRUPT -> BANKRUPT_ENDING_TITLE;
+            case TIMEOUT -> TIMEOUT_ENDING_TITLE;
+            case FORECLOSURE -> FORECLOSURE_ENDING_TITLE;
+            case IN_PROGRESS -> throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        };
+    }
+
+    private String resolveGrade(final SessionStatus endingStatus) {
+        return switch (endingStatus) {
+            case CLEAR -> "S";
+            case TIMEOUT -> "A";
+            case BANKRUPT, FORECLOSURE -> "B";
+            case IN_PROGRESS -> throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+        };
     }
 
     private Long toLong(final Money money) {
         return money.getAmount().longValueExact();
     }
 
+    private Integer toInteger(final Money money) {
+        return money.getAmount().intValueExact();
+    }
+
     private record SessionAdvanceResult(
-        Money nextCash,
-        Money nextNetWorth
+        LocalDate nextDate,
+        Money previousNetWorth
     ) {
     }
 }
