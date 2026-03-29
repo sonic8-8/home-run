@@ -69,6 +69,7 @@ pipeline {
         PUBLIC_BASE_URL = 'https://j14c103.p.ssafy.io'
         K6_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/k6'
         MONITORING_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/monitoring-evidence'
+        K6_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/k6'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
         POSTGRES_PASSWORD = credentials('homerun-postgres-password')
@@ -330,6 +331,23 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                     K6_DOCKER_NETWORK=homerun-runtime_web_net \
                     K6_SUMMARY_DIR=${K6_AUTH_ARTIFACT_DIR} \
                     bash performance/k6/run.sh performance/k6/auth-smoke.js
+                '''
+            }
+        }
+
+        stage('k6 Core Gate') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'k6 Core Gate'
+                }
+                sh '''
+                    rm -rf ${K6_ARTIFACT_ROOT}/core-read
+                    mkdir -p ${K6_ARTIFACT_ROOT}/core-read
+
+                    K6_DOCKER_NETWORK=homerun-runtime_web_net \
+                    K6_BASE_URL=http://backend:8080 \
+                    K6_SUMMARY_DIR=${K6_ARTIFACT_ROOT}/core-read \
+                    bash performance/k6/run.sh performance/k6/core-read.js
                 '''
             }
         }
