@@ -107,6 +107,23 @@ async function mockGameMainTurn(page: Page) {
   });
 }
 
+async function mockGameSessionDetail(page: Page) {
+  await page.route('**/api/games/sessions/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 200,
+        message: 'OK',
+        data: {
+          sessionId: 1,
+          sessionStatus: 'IN_PROGRESS',
+        },
+      }),
+    });
+  });
+}
+
 async function mockLatestNews(page: Page) {
   await page.route('**/api/games/sessions/*/news/latest', async (route) => {
     await route.fulfill({
@@ -158,6 +175,7 @@ test.describe('game save slot selection', () => {
     await seedAuthenticatedUser(page);
     await mockExternalScripts(page);
     await mockGameSlots(page);
+    await mockGameSessionDetail(page);
     await mockGameMainTurn(page);
     await mockLatestNews(page);
     await page.goto('/game/save');

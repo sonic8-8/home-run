@@ -133,7 +133,7 @@ export function GameSaveSlotPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.container}>
+      <div className={styles.container} data-guide="game-save-slots">
         <div className={styles.title}>{title}</div>
         <p className={styles.description}>{description}</p>
         {isLoading && <p className={styles.message}>불러오는 중...</p>}

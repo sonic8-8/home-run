@@ -2,10 +2,12 @@ import { useNavigate } from 'react-router-dom';
 import backgroundImg from '@assets/images/background.png';
 import logoImg from '@assets/images/logo.png';
 import { ROUTES } from '@app/routes';
+import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import styles from './GameStart.module.css';
 
 export function GameStartPage() {
   const navigate = useNavigate();
+  const { getTriggerLabel, toggleFlow } = useGameGuide();
 
   const handleContinue = () => {
     navigate(ROUTES.GAME_SAVE_WITH_MODE('continue'), {
@@ -19,11 +21,7 @@ export function GameStartPage() {
     });
   };
 
-  const handleGuide = () => {
-    navigate(ROUTES.GAME_GUIDE, {
-      state: { from: 'start' as const },
-    });
-  };
+  const handleGuide = () => toggleFlow('start');
 
   const handleEndingArchive = () => {
     navigate(ROUTES.GAME_ENDING_ARCHIVE);
@@ -41,14 +39,18 @@ export function GameStartPage() {
           <button className={`${styles.button} ${styles.continue}`} onClick={handleContinue}>
             이어하기
           </button>
-          <button className={`${styles.button} ${styles.newGame}`} onClick={handleNewGame}>
+          <button
+            className={`${styles.button} ${styles.newGame}`}
+            onClick={handleNewGame}
+            data-guide="game-start-new"
+          >
             새로하기
           </button>
           <button className={`${styles.button} ${styles.archive}`} onClick={handleEndingArchive}>
             엔딩 저장소
           </button>
           <button className={`${styles.button} ${styles.guide}`} onClick={handleGuide}>
-            게임 가이드
+            {getTriggerLabel('start')}
           </button>
         </div>
       </div>

@@ -43,7 +43,7 @@ export function SelectCharacterPage() {
         </h1>
       </div>
 
-      <div className={styles.selectArea}>
+      <div className={styles.selectArea} data-guide="game-character-options">
         {characters.map((character, i) => {
           const fallbackImage = CHARACTER_IMAGES[character.characterType];
           const imageSrc =

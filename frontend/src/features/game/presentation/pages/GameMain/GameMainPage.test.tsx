@@ -4,8 +4,17 @@ import { MemoryRouter } from 'react-router-dom';
 import { GameMainPage } from '@features/game/presentation/pages/GameMain/GameMainPage';
 import { useGameMain } from '@features/game/presentation/hooks/useGameMain';
 
+const mockedGuideToggle = vi.fn();
+
 vi.mock('@features/game/presentation/hooks/useGameMain', () => ({
   useGameMain: vi.fn(),
+}));
+
+vi.mock('@features/game/presentation/hooks/useGameGuide', () => ({
+  useGameGuide: () => ({
+    toggleFlow: mockedGuideToggle,
+    getTriggerLabel: () => '게임 가이드',
+  }),
 }));
 
 vi.mock('@features/game/presentation/components/NewsEventModal/NewsEventModal', () => ({
@@ -52,6 +61,7 @@ vi.mock('@features/game/presentation/components/StockTradingPanel', () => ({
 
 describe('GameMainPage', () => {
   it('delegates news open and close actions to useGameMain', () => {
+    mockedGuideToggle.mockReset();
     const openNews = vi.fn();
     const closeNews = vi.fn();
     const openMonthlyActivity = vi.fn();
@@ -117,17 +127,20 @@ describe('GameMainPage', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: '이달의 뉴스' }));
+    fireEvent.click(screen.getByRole('button', { name: '게임 가이드' }));
     fireEvent.click(screen.getByRole('button', { name: '뉴스 닫기' }));
     fireEvent.click(screen.getByRole('button', { name: '이번 달 활동 진행' }));
     fireEvent.click(screen.getByRole('button', { name: '월 활동 닫기' }));
 
     expect(openNews).toHaveBeenCalledTimes(1);
+    expect(mockedGuideToggle).toHaveBeenCalledWith('main');
     expect(closeNews).toHaveBeenCalledTimes(1);
     expect(openMonthlyActivity).toHaveBeenCalledTimes(1);
     expect(closeMonthlyActivity).toHaveBeenCalledTimes(1);
   });
 
   it('opens the stock panel from the in-game menu', () => {
+    mockedGuideToggle.mockReset();
     const setLeftView = vi.fn();
 
     vi.mocked(useGameMain).mockReturnValue({
