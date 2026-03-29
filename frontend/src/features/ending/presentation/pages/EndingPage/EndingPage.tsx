@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import maleClearCharacterImage from '@assets/images/result/bcharac_clear.png';
 import maleBankruptCharacterImage from '@assets/images/result/bcharac_bankrupt.png';
 import maleTimeoutCharacterImage from '@assets/images/result/bcharac_timeout.png';
@@ -7,6 +7,7 @@ import clearCharacterImage from '@assets/images/result/gcharac_clear.png';
 import bankruptCharacterImage from '@assets/images/result/gcharac_bankrupt.png';
 import timeoutCharacterImage from '@assets/images/result/gcharac_timeout.png';
 import foreclosureCharacterImage from '@assets/images/result/gcharac_foreclosed.png';
+import reportBackground from '@assets/images/background.png';
 import roadBackground from '@assets/images/game_back_road.png';
 import apartmentBackground from '@assets/images/gameback_aprt.png';
 import villaBackground from '@assets/images/gameback_villa.png';
@@ -57,7 +58,7 @@ function toEndingTypeLabel(endingType: EndingType): string {
     case 'BANKRUPT':
       return '파산';
     case 'TIMEOUT':
-      return '시간 종료';
+      return '기한 초과';
     case 'FORECLOSURE':
       return '차압';
     case 'IN_PROGRESS':
@@ -130,7 +131,15 @@ function getGradeClassName(grade: string): string {
   }
 }
 
-function getSceneBackground(housingType: HousingType | null): string {
+function getSceneBackground(endingType: EndingType, housingType: HousingType | null): string {
+  if (endingType === 'BANKRUPT' || endingType === 'FORECLOSURE') {
+    return roadBackground;
+  }
+
+  if (endingType === 'TIMEOUT') {
+    return villaBackground;
+  }
+
   if (housingType === 'OWNED_APT') {
     return apartmentBackground;
   }
@@ -170,6 +179,14 @@ function getEndingIllustration(
   return illustrationMap[endingType] ?? null;
 }
 
+function formatHousingState(state: { housingType: HousingType; propertyId: number | null } | null): string {
+  if (state === null) {
+    return '기록 없음';
+  }
+
+  return toHousingTypeLabel(state.housingType);
+}
+
 function buildLinePoints(values: readonly number[], width: number, height: number, padding: number): string {
   if (values.length === 0) {
     return '';
@@ -205,6 +222,12 @@ function buildAreaPath(values: readonly number[], width: number, height: number,
   const [lastX] = last.split(',');
 
   return `M ${first} L ${pointEntries.slice(1).join(' L ')} L ${lastX},${height - padding} L ${first.split(',')[0]},${height - padding} Z`;
+}
+
+function createReportBackgroundStyle(backgroundImage: string): CSSProperties {
+  return {
+    '--report-background-image': `url(${backgroundImage})`,
+  } as CSSProperties;
 }
 
 export function EndingPage() {
@@ -261,7 +284,10 @@ export function EndingPage() {
   }
 
   const illustration = getEndingIllustration(report.characterType, report.endingType);
-  const sceneBackground = getSceneBackground(report.housingSnapshot?.currentHousingType ?? null);
+  const sceneBackground = getSceneBackground(
+    report.endingType,
+    report.housingSnapshot?.currentHousingType ?? null,
+  );
   const narrative = getEndingNarrative(report.endingType);
   const endingTypeLabel = toEndingTypeLabel(report.endingType);
   const reportLead = getReportLead(report.endingType);
@@ -278,32 +304,10 @@ export function EndingPage() {
   const netAssetLinePoints = buildLinePoints(netAssetSeries, chartWidth, chartHeight, chartPadding);
   const totalAssetAreaPath = buildAreaPath(totalAssetSeries, chartWidth, chartHeight, chartPadding);
   const topCategoryRatio = clamp(report.spendingPattern?.topCategoryRatio ?? 0, 0, 1);
-  const processEntries = [
-    {
-      label: '뉴스',
-      turnText: report.newsHistories[0] ? `${report.newsHistories[0].turnNumber}턴` : '기록 없음',
-      text: report.newsHistories[0]?.headline ?? '기록된 뉴스가 없습니다.',
-      tag: `${report.newsHistories.length}건`,
-    },
-    {
-      label: '이벤트',
-      turnText: report.eventHistories[0] ? `${report.eventHistories[0].turnNumber}턴` : '기록 없음',
-      text: report.eventHistories[0]?.resultSummary ?? '기록된 이벤트가 없습니다.',
-      tag: `${report.eventHistories.length}건`,
-    },
-    {
-      label: '주거 이동',
-      turnText: report.housingHistories[0] ? `${report.housingHistories[0].turnNumber}턴` : '기록 없음',
-      text: report.housingHistories[0]?.summary ?? '주거 이동 기록이 없습니다.',
-      tag: `${report.housingHistories.length}건`,
-    },
-    {
-      label: '현재 주거',
-      turnText: '최종 상태',
-      text: `현재 ${currentHousingLabel} · 목표 매물 ${report.housingSnapshot?.targetPropertyId ?? '-'}번 · 현재 매물 ${report.housingSnapshot?.currentPropertyId ?? '-'}번`,
-      tag: currentHousingLabel,
-    },
-  ];
+  const hasReachedTargetProperty =
+    report.housingSnapshot?.currentPropertyId != null &&
+    report.housingSnapshot?.targetPropertyId != null &&
+    report.housingSnapshot.currentPropertyId === report.housingSnapshot.targetPropertyId;
 
   const handleRevealReport = () => {
     setRevealedReportTitle(report.title);
@@ -361,8 +365,13 @@ export function EndingPage() {
     <main
       className={`${styles.page} ${styles.pageReportVisible}`}
       data-testid="ending-page"
+      style={createReportBackgroundStyle(reportBackground)}
     >
-      <section ref={reportRef} className={styles.reportPage} data-testid="ending-report">
+      <section
+        ref={reportRef}
+        className={styles.reportPage}
+        data-testid="ending-report"
+      >
         <header className={styles.reportTopBar}>
           <button type="button" className={styles.reportBack} onClick={() => setRevealedReportTitle(null)}>
             엔딩 화면으로
@@ -388,194 +397,279 @@ export function EndingPage() {
           <div className={styles.reportSectionHeader}>
             <h2 className={styles.reportSectionTitle}>이번 생의 결과</h2>
           </div>
-          <div className={styles.statGrid}>
-            <article className={styles.statCard}>
-              <span className={styles.statLabel}>총 자산</span>
-              <strong className={styles.statValue}>{formatNumber(report.totalAssets)}</strong>
-            </article>
-            <article className={styles.statCard}>
-              <span className={styles.statLabel}>순이익</span>
-              <strong className={styles.statValue}>{formatNumber(report.netProfit)}</strong>
-            </article>
-            <article className={styles.statCard}>
-              <span className={styles.statLabel}>지출 성향</span>
-              <strong className={styles.statValue}>
-                {report.spendingPattern?.topCategory ?? '기록 없음'} {formatPercent(report.spendingPattern?.topCategoryRatio ?? null)}
-              </strong>
-            </article>
-          </div>
-        </section>
-
-        <section className={styles.reportSection} data-testid="ending-timeline">
-          <div className={styles.reportSectionHeader}>
-            <h2 className={styles.reportSectionTitle}>자산 타임라인</h2>
-          </div>
-          <div className={styles.reportCard}>
-            <p className={styles.reportSectionSub}>총 {timeline.length}개의 월별 로그가 준비되었습니다.</p>
-            {timeline.length > 0 ? (
-              <>
-                <div className={styles.timelineLegend}>
-                  <span className={styles.timelineLegendItem}>
-                    <span className={`${styles.timelineLegendDot} ${styles.timelineLegendDotPrimary}`} />
-                    총자산
+          <div className={styles.storyCard}>
+            <div className={styles.statGrid}>
+              <article className={styles.statCard}>
+                <span className={styles.statLabel}>총 자산</span>
+                <strong className={styles.statValue}>{formatNumber(report.totalAssets)}</strong>
+              </article>
+              <article className={styles.statCard}>
+                <span className={styles.statLabel}>순이익</span>
+                <strong className={styles.statValue}>{formatNumber(report.netProfit)}</strong>
+              </article>
+              <article className={styles.statCard}>
+                <span className={styles.statLabel}>지출 성향</span>
+                <strong className={styles.statValue}>
+                  {report.spendingPattern?.topCategory ?? '기록 없음'} {formatPercent(report.spendingPattern?.topCategoryRatio ?? null)}
+                </strong>
+              </article>
+            </div>
+            <div className={styles.storyDivider} />
+            <p className={styles.verdictText}>{verdictText}</p>
+            {report.achievements.length > 0 && (
+              <div className={styles.badgeRow}>
+                {report.achievements.slice(0, 3).map((achievement) => (
+                  <span key={achievement.name} className={styles.resultBadge}>
+                    {achievement.name}
                   </span>
-                  <span className={styles.timelineLegendItem}>
-                    <span className={`${styles.timelineLegendDot} ${styles.timelineLegendDotSecondary}`} />
-                    순자산
-                  </span>
-                </div>
-                <div className={styles.timelineChartWrap}>
-                  <svg
-                    className={styles.timelineChart}
-                    viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                    role="img"
-                    aria-label="자산 타임라인 그래프"
-                  >
-                    <defs>
-                      <linearGradient id="ending-total-assets-fill" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor="rgba(87, 173, 255, 0.28)" />
-                        <stop offset="100%" stopColor="rgba(87, 173, 255, 0.03)" />
-                      </linearGradient>
-                    </defs>
-                    <line
-                      x1={chartPadding}
-                      y1={chartHeight - chartPadding}
-                      x2={chartWidth - chartPadding}
-                      y2={chartHeight - chartPadding}
-                      className={styles.timelineAxis}
-                    />
-                    <line
-                      x1={chartPadding}
-                      y1={chartPadding}
-                      x2={chartPadding}
-                      y2={chartHeight - chartPadding}
-                      className={styles.timelineAxis}
-                    />
-                    {totalAssetAreaPath !== '' && (
-                      <path d={totalAssetAreaPath} className={styles.timelineArea} />
-                    )}
-                    {totalAssetLinePoints !== '' && (
-                      totalAssetSeries.length === 1 ? (
-                        <circle
-                          cx={chartWidth / 2}
-                          cy={chartHeight / 2}
-                          r="7"
-                          className={styles.timelinePrimaryPoint}
-                        />
-                      ) : (
-                        <polyline
-                          points={totalAssetLinePoints}
-                          className={styles.timelinePrimaryLine}
-                        />
-                      )
-                    )}
-                    {netAssetLinePoints !== '' && (
-                      netAssetSeries.length === 1 ? (
-                        <circle
-                          cx={chartWidth / 2}
-                          cy={chartHeight / 2}
-                          r="5"
-                          className={styles.timelineSecondaryPoint}
-                        />
-                      ) : (
-                        <polyline
-                          points={netAssetLinePoints}
-                          className={styles.timelineSecondaryLine}
-                        />
-                      )
-                    )}
-                  </svg>
-                </div>
-                <div className={styles.timelineBottomLabels}>
-                  {timeline.slice(0, 6).map((item) => (
-                    <span key={`${item.turnNumber}-${item.date.toISOString()}`}>
-                      {item.turnNumber}턴
-                    </span>
-                  ))}
-                </div>
-                <div className={styles.timelineList}>
-                  {timeline.slice(0, 4).map((item) => (
-                    <article key={`${item.turnNumber}-${item.date.toISOString()}`} className={styles.timelineItem}>
-                      <div className={styles.timelineMeta}>
-                        <span>{item.turnNumber}턴</span>
-                        <span>{formatIsoDate(item.date)}</span>
-                      </div>
-                      <p className={styles.timelineText}>
-                        현금 {formatNumber(item.cash)} · 순자산 {formatNumber(item.netAssets)} · 총자산 {formatNumber(item.totalAssets)}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className={styles.timelineEmpty}>자산 타임라인 기록이 없습니다.</div>
+                ))}
+              </div>
             )}
           </div>
         </section>
 
         <section className={styles.reportSection}>
           <div className={styles.reportSectionHeader}>
-            <h2 className={styles.reportSectionTitle}>지출 성향</h2>
+            <h2 className={styles.reportSectionTitle}>돈의 흐름</h2>
           </div>
-          <div className={styles.reportCard}>
-            <div className={styles.spendingInfoColumn}>
-              <div className={styles.spendingTop}>
-                <span>{report.spendingPattern?.topCategory ?? '기록 없음'}</span>
-                <span>{formatPercent(report.spendingPattern?.topCategoryRatio ?? null)}</span>
+          <div className={styles.financeGrid}>
+            <div className={styles.reportCard} data-testid="ending-timeline">
+              <p className={styles.reportSectionSub}>총 {timeline.length}개의 월별 로그가 준비되었습니다.</p>
+              {timeline.length > 0 ? (
+                <>
+                  <div className={styles.timelineLegend}>
+                    <span className={styles.timelineLegendItem}>
+                      <span className={`${styles.timelineLegendDot} ${styles.timelineLegendDotPrimary}`} />
+                      총자산
+                    </span>
+                    <span className={styles.timelineLegendItem}>
+                      <span className={`${styles.timelineLegendDot} ${styles.timelineLegendDotSecondary}`} />
+                      순자산
+                    </span>
+                  </div>
+                  <div className={styles.timelineChartWrap}>
+                    <svg
+                      className={styles.timelineChart}
+                      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                      role="img"
+                      aria-label="자산 타임라인 그래프"
+                    >
+                      <defs>
+                        <linearGradient id="ending-total-assets-fill" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="rgba(87, 173, 255, 0.28)" />
+                          <stop offset="100%" stopColor="rgba(87, 173, 255, 0.03)" />
+                        </linearGradient>
+                      </defs>
+                      <line
+                        x1={chartPadding}
+                        y1={chartHeight - chartPadding}
+                        x2={chartWidth - chartPadding}
+                        y2={chartHeight - chartPadding}
+                        className={styles.timelineAxis}
+                      />
+                      <line
+                        x1={chartPadding}
+                        y1={chartPadding}
+                        x2={chartPadding}
+                        y2={chartHeight - chartPadding}
+                        className={styles.timelineAxis}
+                      />
+                      {totalAssetAreaPath !== '' && (
+                        <path d={totalAssetAreaPath} className={styles.timelineArea} />
+                      )}
+                      {totalAssetLinePoints !== '' && (
+                        totalAssetSeries.length === 1 ? (
+                          <circle
+                            cx={chartWidth / 2}
+                            cy={chartHeight / 2}
+                            r="7"
+                            className={styles.timelinePrimaryPoint}
+                          />
+                        ) : (
+                          <polyline
+                            points={totalAssetLinePoints}
+                            className={styles.timelinePrimaryLine}
+                          />
+                        )
+                      )}
+                      {netAssetLinePoints !== '' && (
+                        netAssetSeries.length === 1 ? (
+                          <circle
+                            cx={chartWidth / 2}
+                            cy={chartHeight / 2}
+                            r="5"
+                            className={styles.timelineSecondaryPoint}
+                          />
+                        ) : (
+                          <polyline
+                            points={netAssetLinePoints}
+                            className={styles.timelineSecondaryLine}
+                          />
+                        )
+                      )}
+                    </svg>
+                  </div>
+                  <div className={styles.timelineBottomLabels}>
+                    {timeline.slice(0, 6).map((item) => (
+                      <span key={`${item.turnNumber}-${item.date.toISOString()}`}>
+                        {item.turnNumber}턴
+                      </span>
+                    ))}
+                  </div>
+                  <div className={styles.timelineList}>
+                    {timeline.slice(0, 4).map((item) => (
+                      <article key={`${item.turnNumber}-${item.date.toISOString()}`} className={styles.timelineItem}>
+                        <div className={styles.timelineMeta}>
+                          <span>{item.turnNumber}턴</span>
+                          <span>{formatIsoDate(item.date)}</span>
+                        </div>
+                        <p className={styles.timelineText}>
+                          현금 {formatNumber(item.cash)} · 순자산 {formatNumber(item.netAssets)} · 총자산 {formatNumber(item.totalAssets)}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className={styles.timelineEmpty}>자산 타임라인 기록이 없습니다.</div>
+              )}
+            </div>
+
+            <div className={styles.reportCard}>
+              <div className={styles.reportSectionHeader}>
+                <h3 className={styles.reportSectionTitle}>지출 성향</h3>
               </div>
-              <div className={styles.spendingTrack}>
-                <div
-                  className={styles.spendingFill}
-                  style={{
-                    width: report.spendingPattern?.topCategoryRatio == null
-                      ? '0%'
-                      : `${Math.round(topCategoryRatio * 100)}%`,
-                  }}
-                />
-              </div>
-              <div className={styles.spendingBreakdown}>
-                <div className={styles.spendingBreakdownRow}>
-                  <span>최대 지출 항목</span>
-                  <strong>{report.spendingPattern?.topCategory ?? '기록 없음'}</strong>
+              <div className={styles.spendingInfoColumn}>
+                <div className={styles.spendingTop}>
+                  <span>{report.spendingPattern?.topCategory ?? '기록 없음'}</span>
+                  <span>{formatPercent(report.spendingPattern?.topCategoryRatio ?? null)}</span>
                 </div>
+                <div className={styles.spendingTrack}>
+                  <div
+                    className={styles.spendingFill}
+                    style={{
+                      width: report.spendingPattern?.topCategoryRatio == null
+                        ? '0%'
+                        : `${Math.round(topCategoryRatio * 100)}%`,
+                    }}
+                  />
+                </div>
+                <div className={styles.spendingBreakdown}>
+                  <div className={styles.spendingBreakdownRow}>
+                    <span>최대 지출 항목</span>
+                    <strong>{report.spendingPattern?.topCategory ?? '기록 없음'}</strong>
+                  </div>
+                </div>
+                <p className={styles.spendingText}>이번 회차에서 가장 큰 비중을 차지한 소비 항목입니다.</p>
               </div>
             </div>
-            <p className={styles.spendingText}>이번 회차에서 가장 큰 비중을 차지한 소비 항목입니다.</p>
           </div>
         </section>
 
         <section className={styles.reportSection} data-testid="ending-histories">
           <div className={styles.reportSectionHeader}>
-            <h2 className={styles.reportSectionTitle}>과정 회고</h2>
+            <h2 className={styles.reportSectionTitle}>생활 회고</h2>
           </div>
-          <div className={styles.historyGrid}>
-            {processEntries.map((entry) => (
-              <article key={entry.label} className={styles.historyCard}>
-                <div className={styles.historyMeta}>
-                  <span>{entry.turnText}</span>
-                  <span>{entry.label}</span>
-                </div>
-                <h3 className={styles.historyTitle}>{entry.label} · {entry.tag}</h3>
-                <p className={styles.historyText}>{entry.text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className={styles.verdictCard}>
-          <div className={styles.reportSectionHeader}>
-            <h2 className={styles.reportSectionTitle}>최종 총평</h2>
-          </div>
-          <p className={styles.verdictText}>{verdictText}</p>
-          {report.achievements.length > 0 && (
-            <div className={styles.badgeRow}>
-              {report.achievements.slice(0, 3).map((achievement) => (
-                <span key={achievement.name} className={styles.resultBadge}>
-                  {achievement.name}
-                </span>
-              ))}
+          <div className={styles.historyBoard}>
+            <div className={styles.historyBoardSummary}>
+              <span>뉴스 {report.newsHistories.length}건</span>
+              <span>이벤트 {report.eventHistories.length}건</span>
+              <span>주거 이동 {report.housingHistories.length}건</span>
             </div>
-          )}
+
+            <div className={styles.historyColumns}>
+              <div className={styles.historyColumn}>
+                <article className={styles.historyCard} data-testid="ending-news-history">
+                  <div className={styles.historyMeta}>
+                    <span>뉴스</span>
+                    <span>{report.newsHistories.length}건</span>
+                  </div>
+                  <h3 className={styles.historyTitle}>뉴스 이력</h3>
+                  {report.newsHistories.length > 0 ? (
+                    <div className={`${styles.historyList} ${styles.historyListScrollable}`}>
+                      {report.newsHistories.map((item) => (
+                        <div key={`${item.newsId}-${item.turnNumber}`} className={styles.historyListItem}>
+                          <div className={styles.historyListMeta}>
+                            <span>{item.turnNumber}턴</span>
+                            <span>{formatIsoDate(item.publishedDate)}</span>
+                          </div>
+                          <p className={styles.historyText}>{item.headline}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.historyEmpty}>기록된 뉴스가 없습니다.</p>
+                  )}
+                </article>
+
+                <article className={styles.historyCard} data-testid="ending-event-history">
+                  <div className={styles.historyMeta}>
+                    <span>이벤트</span>
+                    <span>{report.eventHistories.length}건</span>
+                  </div>
+                  <h3 className={styles.historyTitle}>이벤트 이력</h3>
+                  {report.eventHistories.length > 0 ? (
+                    <div className={`${styles.historyList} ${styles.historyListScrollable}`}>
+                      {report.eventHistories.map((item) => (
+                        <div key={`${item.gameEventId}-${item.turnNumber}`} className={styles.historyListItem}>
+                          <div className={styles.historyListMeta}>
+                            <span>{item.turnNumber}턴</span>
+                            <span>{item.selectedChoiceCode == null ? '선택 없음' : `선택 ${item.selectedChoiceCode}`}</span>
+                          </div>
+                          <p className={styles.historyText}>{item.resultSummary ?? '이벤트 결과 기록이 없습니다.'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.historyEmpty}>기록된 이벤트가 없습니다.</p>
+                  )}
+                </article>
+              </div>
+
+              <div className={styles.historyColumn}>
+                <article className={styles.historyCard} data-testid="ending-housing-history">
+                  <div className={styles.historyMeta}>
+                    <span>주거 이동</span>
+                    <span>{report.housingHistories.length}건</span>
+                  </div>
+                  <h3 className={styles.historyTitle}>주거 이동 이력</h3>
+                  <div className={styles.snapshotRows}>
+                    <div className={styles.snapshotRow}>
+                      <span>현재 주거</span>
+                      <strong>{currentHousingLabel}</strong>
+                    </div>
+                    <div className={styles.snapshotRow}>
+                      <span>목표 주거 달성</span>
+                      <strong>
+                        {report.housingSnapshot == null
+                          ? '-'
+                          : hasReachedTargetProperty
+                            ? '달성'
+                            : '미달성'}
+                      </strong>
+                    </div>
+                  </div>
+                  {report.housingHistories.length > 0 ? (
+                    <div className={`${styles.historyList} ${styles.historyListScrollable}`}>
+                      {report.housingHistories.map((item) => (
+                        <div key={`${item.turnNumber}-${item.summary}`} className={styles.historyListItem}>
+                          <div className={styles.historyListMeta}>
+                            <span>{item.turnNumber}턴</span>
+                            <span>{item.summary}</span>
+                          </div>
+                          <p className={styles.historyText}>
+                            {formatHousingState(item.beforeState)} → {formatHousingState(item.afterState)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.historyEmpty}>주거 이동 기록이 없습니다.</p>
+                  )}
+                </article>
+              </div>
+            </div>
+          </div>
         </section>
       </section>
     </main>
