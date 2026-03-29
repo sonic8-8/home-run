@@ -48,7 +48,22 @@ public class GameTurnCommitGuardService {
             return;
         }
 
+        if (isAlreadyCommittedDraft(gameSession, turnDraft)) {
+            throw new HomerunException(ErrorCode.GAME_TURN_ALREADY_COMMITTED);
+        }
+
         throw new HomerunException(ErrorCode.GAME_TURN_DRAFT_MISMATCH);
+    }
+
+    private boolean isAlreadyCommittedDraft(final GameSession gameSession, final TurnDraft turnDraft) {
+        if (gameSession.getCurrentTurn() <= turnDraft.getTurnNumber()) {
+            return false;
+        }
+
+        return gameSessionTurnSlotRepository.existsByGameSessionIdAndTurnNumber(
+            gameSession.getGameSessionId(),
+            turnDraft.getTurnNumber()
+        );
     }
 
     @Getter
