@@ -102,7 +102,13 @@ export function RealEstatePage() {
     }
 
     autoApplyRequestedRef.current = true;
-    void requestLoanReview(selectedProperty);
+    const timeoutId = window.setTimeout(() => {
+      void requestLoanReview(selectedProperty);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [hasPreSelected, requestLoanReview, selectedProperty]);
 
   const handlePropertySelected = (selection: {
