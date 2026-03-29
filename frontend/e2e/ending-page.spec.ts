@@ -253,4 +253,17 @@ test.describe('ending page', () => {
     await expect(page.getByTestId('ending-not-ready')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('엔딩 리포트 준비 중')).toBeVisible({ timeout: 15_000 });
   });
+
+  test('supports direct ending entry reload recovery', async ({ page }) => {
+    await seedAuthenticatedUser(page);
+    await mockEndingApis(page);
+
+    await page.goto('/game/10/ending');
+    await expect(page.getByTestId('ending-scene')).toContainText('내 집 마련 성공', { timeout: 15_000 });
+
+    await page.reload();
+
+    await expect(page.getByTestId('ending-scene')).toContainText('내 집 마련 성공', { timeout: 15_000 });
+    await expect(page.getByTestId('ending-reveal-report')).toContainText('>> 결과 보기', { timeout: 15_000 });
+  });
 });

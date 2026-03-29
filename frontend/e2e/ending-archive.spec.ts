@@ -127,4 +127,38 @@ test.describe('ending archive', () => {
     await expect(page.getByTestId('ending-page')).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId('ending-scene')).toContainText('내 집 마련 성공', { timeout: 15_000 });
   });
+
+  test('supports direct archive entry, empty state, and back navigation', async ({ page }) => {
+    await seedAuthenticatedUser(page);
+
+    await page.route('**/api/games/sessions', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 200,
+          message: 'OK',
+          data: {
+            sessions: [
+              {
+                sessionId: null,
+                slotNumber: 1,
+                status: 'EMPTY',
+              },
+            ],
+          },
+        }),
+      });
+    });
+
+    await page.goto('/game/endings');
+
+    await expect(page.getByTestId('ending-archive-page')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('아직 저장된 엔딩이 없습니다.')).toBeVisible({ timeout: 15_000 });
+
+    await page.getByRole('button', { name: '게임 시작 화면으로' }).click();
+
+    await expect(page).toHaveURL(/\/game\/start$/);
+    await expect(page.getByRole('button', { name: '엔딩 저장소' })).toBeVisible({ timeout: 15_000 });
+  });
 });
