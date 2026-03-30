@@ -221,6 +221,18 @@ test.describe('loan api flow', () => {
     });
     await mockGameSessionBase(page, sessionId, currentDate);
 
+    await page.route(`**/api/games/sessions/${sessionId}/loans/products**`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 200,
+          message: 'OK',
+          data: [],
+        }),
+      });
+    });
+
     await page.route(`**/api/games/sessions/${sessionId}/loans/apply`, async (route) => {
       applyPayload = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({

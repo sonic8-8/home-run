@@ -295,7 +295,7 @@ export function KoreaMap({
         </button>
       </motion.div>
 
-      <div style={MAP_FRAME_STYLE}>
+      <div style={MAP_FRAME_STYLE} data-guide="property-map-interaction">
         <AnimatePresence mode="wait">
           {view.level === 'country' && (
             <motion.div

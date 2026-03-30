@@ -145,7 +145,10 @@ export function PropertyDetailPanel({
       )}
 
       {/* 액션 버튼 */}
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div
+        data-guide="property-detail-actions"
+        style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}
+      >
         {mode === 'browse' && browsePurchaseError && (
           <div
             role="alert"

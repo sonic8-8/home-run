@@ -54,11 +54,24 @@ export const LoanReviewResultModal: React.FC<LoanReviewResultModalProps> = ({
       <div
         className={styles.modal}
         onClick={(e) => e.stopPropagation()}
-        data-guide="property-loan-review"
       >
+        <div className={styles.titleRow}>
+          <h2 className={styles.title}>대출 심사 이력 및 상세</h2>
+          <button
+            type="button"
+            className={styles.guideButton}
+            onClick={() => {
+              if (isLoanGuideOpen) {
+                closeGuide();
+                return;
+              }
 
-        {/* 제목 */}
-        <h2 className={styles.title}>대출 심사 이력 및 상세</h2>
+              startFlowAtStep('propertyLoan', 'property-loan-review-action');
+            }}
+          >
+            {isLoanGuideOpen ? '가이드 닫기' : '대출 가이드'}
+          </button>
+        </div>
 
         {/* 스테퍼 */}
         <div className={styles.stepper}>
@@ -103,7 +116,7 @@ export const LoanReviewResultModal: React.FC<LoanReviewResultModalProps> = ({
 
         {/* 최종 심사 결과 */}
         <h3 className={clsx(styles.sectionTitle, styles.resultTitle)}>최종 심사 결과</h3>
-        <div className={styles.resultBox}>
+        <div className={styles.resultBox} data-guide="property-loan-review-result">
           {isApproved && result.maxLoanAmount != null ? (
             <>
               <span className={styles.resultLabel}>최대 대출 가능 금액</span>
@@ -121,22 +134,10 @@ export const LoanReviewResultModal: React.FC<LoanReviewResultModalProps> = ({
         {/* 버튼 */}
         <div className={styles.buttonGroup}>
           <button
-            className={styles.secondaryButton}
-            onClick={() => {
-              if (isLoanGuideOpen) {
-                closeGuide();
-                return;
-              }
-
-              startFlowAtStep('propertyLoan', 'property-loan-review');
-            }}
-          >
-            {isLoanGuideOpen ? '가이드 닫기' : '대출 가이드'}
-          </button>
-          <button
             className={styles.primaryButton}
             onClick={onGoToProperty}
             disabled={!isApproved}
+            data-guide="property-loan-review-action"
           >
             부동산 계약하러 가기
           </button>

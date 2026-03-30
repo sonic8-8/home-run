@@ -196,7 +196,7 @@ export function RegistryDocumentModal({
                     로 제출됩니다.
                   </p>
                 </div>
-                <div className={styles.checklistCard}>
+                <div className={styles.checklistCard} data-guide="property-registry-checklist">
                   <div className={styles.checklistMeta}>
                     <span className={styles.badge}>선택 {selectedTrapIds.length}개</span>
                     <span className={styles.badge}>전체 {doc.checklistItems.length}개</span>

@@ -59,11 +59,24 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
       <div
         className={styles.modal}
         onClick={(e) => e.stopPropagation()}
-        data-guide="property-loan-confirm"
       >
+        <div className={styles.titleRow}>
+          <h2 className={styles.title}>대출 심사 이력 및 상세</h2>
+          <button
+            type="button"
+            className={styles.guideButton}
+            onClick={() => {
+              if (isLoanGuideOpen) {
+                closeGuide();
+                return;
+              }
 
-        {/* 제목 */}
-        <h2 className={styles.title}>대출 심사 이력 및 상세</h2>
+              startFlowAtStep('propertyLoan', 'property-loan-confirm-amount');
+            }}
+          >
+            {isLoanGuideOpen ? '가이드 닫기' : '대출 가이드'}
+          </button>
+        </div>
 
         {/* 스테퍼 */}
         <div className={styles.stepper}>
@@ -94,7 +107,7 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
 
         {/* 대출 신청 금액 */}
         <h3 className={clsx(styles.sectionTitle, styles.amountTitle)}>대출 신청 금액</h3>
-        <div className={styles.amountRow}>
+        <div className={styles.amountRow} data-guide="property-loan-confirm-amount">
           <span className={styles.amountPrefix}>금</span>
           <input
             className={styles.amountInput}
@@ -127,22 +140,10 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
         {/* 버튼 */}
         <div className={styles.buttonGroup}>
           <button
-            className={styles.secondaryButton}
-            onClick={() => {
-              if (isLoanGuideOpen) {
-                closeGuide();
-                return;
-              }
-
-              startFlowAtStep('propertyLoan', 'property-loan-confirm');
-            }}
-          >
-            {isLoanGuideOpen ? '가이드 닫기' : '대출 가이드'}
-          </button>
-          <button
             className={styles.primaryButton}
             onClick={handleConfirm}
             disabled={!isValid || isSubmitting}
+            data-guide="property-loan-confirm-action"
           >
             {isSubmitting ? '신청 중...' : '부동산 계약하러 가기'}
           </button>

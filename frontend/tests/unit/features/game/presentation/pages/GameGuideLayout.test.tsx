@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import { GameGuideLayout } from '@features/game/presentation/components/GameGuideLayout';
@@ -32,6 +33,7 @@ function SaveSlotHarness() {
 function MainHarness() {
   const navigate = useNavigate();
   const { startFlowAtStep, toggleFlow } = useGameGuide();
+  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
 
   return (
     <div>
@@ -54,6 +56,18 @@ function MainHarness() {
       >
         news-archive-flow
       </button>
+      <button
+        type="button"
+        onClick={() => {
+          startFlowAtStep('main', 'main-news-modal');
+        }}
+      >
+        news-modal-flow
+      </button>
+      <button type="button" onClick={() => setIsNewsModalOpen(true)}>
+        open-news-modal
+      </button>
+      {isNewsModalOpen && <div data-guide="game-news-modal">news-modal-screen</div>}
     </div>
   );
 }
@@ -152,5 +166,22 @@ describe('GameGuideLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: '← 돌아가기' }));
 
     expect(screen.getByText('주식 투자 메뉴 열기')).toBeInTheDocument();
+  });
+
+  it('explains missing targets and recovers when the guided target opens later', async () => {
+    renderGuideFlow(ROUTES.GAME);
+
+    fireEvent.click(screen.getByRole('button', { name: 'news-modal-flow' }));
+
+    expect(screen.getByText('이달의 뉴스 창이 아직 화면에 열려 있지 않습니다.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '다음' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'open-news-modal' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('이달의 뉴스 창이 아직 화면에 열려 있지 않습니다.')).not.toBeInTheDocument();
+      expect(screen.getByText('news-modal-screen')).toHaveAttribute('data-guide-active', 'true');
+      expect(screen.getByRole('button', { name: '다음' })).toBeEnabled();
+    });
   });
 });
