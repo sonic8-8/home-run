@@ -67,7 +67,6 @@ pipeline {
         POSTGRES_HOST_PORT = '5432'
         REDIS_HOST_PORT = '6379'
         PUBLIC_BASE_URL = 'https://j14c103.p.ssafy.io'
-        K6_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/k6'
         MONITORING_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/monitoring-evidence'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
@@ -314,78 +313,6 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
             }
         }
 
-        stage('K6 Auth Gate') {
-            steps {
-                script {
-                    env.PIPELINE_STAGE = 'K6 Auth Gate'
-                }
-                sh '''
-                    K6_AUTH_ARTIFACT_DIR=${K6_ARTIFACT_ROOT}/auth-smoke
-                    rm -rf ${K6_AUTH_ARTIFACT_DIR}
-                    mkdir -p ${K6_AUTH_ARTIFACT_DIR}
-
-                    BUILD_NUMBER=${BUILD_NUMBER} \
-                    GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT} \
-                    K6_BASE_URL=http://backend:8080 \
-                    K6_DOCKER_NETWORK=homerun-runtime_web_net \
-                    K6_SUMMARY_DIR=${K6_AUTH_ARTIFACT_DIR} \
-                    bash performance/k6/run.sh performance/k6/auth-smoke.js
-                '''
-            }
-        }
-
-        stage('k6 Core Gate') {
-            steps {
-                script {
-                    env.PIPELINE_STAGE = 'k6 Core Gate'
-                }
-                sh '''
-                    rm -rf ${K6_ARTIFACT_ROOT}/core-read
-                    mkdir -p ${K6_ARTIFACT_ROOT}/core-read
-
-                    K6_DOCKER_NETWORK=homerun-runtime_web_net \
-                    K6_BASE_URL=http://backend:8080 \
-                    K6_SUMMARY_DIR=${K6_ARTIFACT_ROOT}/core-read \
-                    bash performance/k6/run.sh performance/k6/core-read.js
-                '''
-            }
-        }
-
-        stage('k6 Core Write Gate') {
-            steps {
-                script {
-                    env.PIPELINE_STAGE = 'k6 Core Write Gate'
-                }
-                sh '''
-                    rm -rf ${K6_ARTIFACT_ROOT}/core-write
-                    mkdir -p ${K6_ARTIFACT_ROOT}/core-write
-
-                    K6_BASE_URL=http://backend:8080 \
-                    K6_DOCKER_NETWORK=homerun-runtime_web_net \
-                    K6_SUMMARY_DIR=${K6_ARTIFACT_ROOT}/core-write \
-                    bash performance/k6/run.sh performance/k6/core-write.js
-                '''
-            }
-        }
-
-        stage('k6 Settlement Gate') {
-            steps {
-                script {
-                    env.PIPELINE_STAGE = 'k6 Settlement Gate'
-                }
-                sh '''
-                    K6_SETTLEMENT_ARTIFACT_DIR=${K6_ARTIFACT_ROOT}/settlement-gate
-                    rm -rf ${K6_SETTLEMENT_ARTIFACT_DIR}
-                    mkdir -p ${K6_SETTLEMENT_ARTIFACT_DIR}
-
-                    BUILD_NUMBER=${BUILD_NUMBER} \
-                    GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT} \
-                    K6_SUMMARY_DIR=${K6_SETTLEMENT_ARTIFACT_DIR} \
-                    bash infrastructure/scripts/run-k6-settlement-gate.sh
-                '''
-            }
-        }
-
         stage('Collect Monitoring Evidence') {
             steps {
                 script {
@@ -414,7 +341,6 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
             }
         }
         always {
-            archiveArtifacts allowEmptyArchive: true, artifacts: "${env.K6_ARTIFACT_ROOT}/**"
             archiveArtifacts allowEmptyArchive: true, artifacts: "${env.MONITORING_EVIDENCE_ARTIFACT_ROOT}/**"
             sh '''
                 if [ -f "${ENV_FILE}" ]; then
