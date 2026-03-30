@@ -10,6 +10,7 @@ import {
   getBaseUrl,
   getNumberEnv,
   getStringEnv,
+  waitForNonEmptyArray,
 } from './common.js';
 
 const SCRIPT_NAME = 'core-read';
@@ -77,26 +78,35 @@ export function setup() {
     throw new Error('login accessToken is missing');
   }
 
-  const regionsResponse = http.get(
-    `${baseUrl}/api/games/regions`,
-    authGetParams('games-regions', accessToken)
-  );
-  ensureStatus(regionsResponse, 200, 'regions');
-  const regionCode = unwrapData(regionsResponse, 'regions')[0].regionCode;
+  const regions = waitForNonEmptyArray('regions', function fetchRegions() {
+    const regionsResponse = http.get(
+      `${baseUrl}/api/games/regions`,
+      authGetParams('games-regions', accessToken)
+    );
+    ensureStatus(regionsResponse, 200, 'regions');
+    return unwrapArrayData(regionsResponse, 'regions', 'regions');
+  });
+  const regionCode = requireField(regions[0], 'regionCode', 'regions[0]');
 
-  const districtsResponse = http.get(
-    `${baseUrl}/api/games/regions/${regionCode}/districts`,
-    authGetParams('games-districts', accessToken)
-  );
-  ensureStatus(districtsResponse, 200, 'districts');
-  const districtCode = unwrapData(districtsResponse, 'districts')[0].districtCode;
+  const districts = waitForNonEmptyArray('districts', function fetchDistricts() {
+    const districtsResponse = http.get(
+      `${baseUrl}/api/games/regions/${regionCode}/districts`,
+      authGetParams('games-districts', accessToken)
+    );
+    ensureStatus(districtsResponse, 200, 'districts');
+    return unwrapArrayData(districtsResponse, 'districts', 'districts');
+  });
+  const districtCode = requireField(districts[0], 'districtCode', 'districts[0]');
 
-  const propertiesResponse = http.get(
-    `${baseUrl}/api/games/regions/${regionCode}/districts/${districtCode}/properties`,
-    authGetParams('games-properties', accessToken)
-  );
-  ensureStatus(propertiesResponse, 200, 'properties');
-  const propertyId = unwrapData(propertiesResponse, 'properties')[0].propertyId;
+  const properties = waitForNonEmptyArray('properties', function fetchProperties() {
+    const propertiesResponse = http.get(
+      `${baseUrl}/api/games/regions/${regionCode}/districts/${districtCode}/properties`,
+      authGetParams('games-properties', accessToken)
+    );
+    ensureStatus(propertiesResponse, 200, 'properties');
+    return unwrapArrayData(propertiesResponse, 'properties', 'properties');
+  });
+  const propertyId = requireField(properties[0], 'propertyId', 'properties[0]');
 
   const createSessionPayload = JSON.stringify({
     slotNumber: 1,
@@ -198,4 +208,23 @@ function unwrapData(response, label) {
   }
 
   return parsed.data;
+}
+
+function unwrapArrayData(response, label, key) {
+  const data = unwrapData(response, label);
+  const values = data && data[key];
+
+  if (!Array.isArray(values)) {
+    throw new Error(`${label} response ${key} is missing`);
+  }
+
+  return values;
+}
+
+function requireField(source, key, label) {
+  if (source && source[key] !== undefined && source[key] !== null && source[key] !== '') {
+    return source[key];
+  }
+
+  throw new Error(`${label} is missing ${key}.`);
 }

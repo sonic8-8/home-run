@@ -1,3 +1,5 @@
+import { sleep } from 'k6';
+
 const DEFAULT_SUMMARY_DIR = 'performance/k6/results';
 const DEFAULT_FAILURE_RATE_LIMIT = 0.01;
 const DEFAULT_TREND_STATS = ['avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'];
@@ -161,6 +163,49 @@ export function createSummaryHandler(scriptName) {
       stdout: `${summaryText}\n`,
     };
   };
+}
+
+export function waitForNonEmptyArray(label, supplier, options = {}) {
+  const timeoutSeconds = options.timeoutSeconds !== undefined && options.timeoutSeconds !== null
+    ? options.timeoutSeconds
+    : getNumberEnv('K6_SETUP_WAIT_TIMEOUT_SECONDS', 45);
+  const intervalSeconds = options.intervalSeconds !== undefined && options.intervalSeconds !== null
+    ? options.intervalSeconds
+    : getNumberEnv('K6_SETUP_WAIT_INTERVAL_SECONDS', 2);
+  const deadline = Date.now() + (timeoutSeconds * 1000);
+  let lastValue = null;
+  let lastError = null;
+
+  while (Date.now() <= deadline) {
+    try {
+      const value = supplier();
+
+      if (Array.isArray(value) && value.length > 0) {
+        return value;
+      }
+
+      lastValue = value;
+      lastError = null;
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (Date.now() >= deadline) {
+      break;
+    }
+
+    sleep(intervalSeconds);
+  }
+
+  if (lastError) {
+    throw new Error(`${label} did not become available within ${timeoutSeconds}s: ${lastError.message}`);
+  }
+
+  if (Array.isArray(lastValue)) {
+    throw new Error(`${label} did not become available within ${timeoutSeconds}s: length=${lastValue.length}`);
+  }
+
+  throw new Error(`${label} did not become available within ${timeoutSeconds}s: type=${typeof lastValue}`);
 }
 
 function resolveSummaryDir() {
