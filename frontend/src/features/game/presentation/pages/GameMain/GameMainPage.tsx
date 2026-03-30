@@ -7,6 +7,7 @@ import { NewsEventModal } from '@features/game/presentation/components/NewsEvent
 import { MonthlyActivityModal } from '@features/game/presentation/components/MonthlyActivityModal/MonthlyActivityModal';
 import { LoanProductsPanel } from '@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel';
 import { CardRecommendPanel } from '@features/game/presentation/components/CardRecommendPanel/CardRecommendPanel';
+import { GameStatusPanel } from '@features/game/presentation/components/GameStatusPanel';
 import { StockTradingPanel } from '@features/game/presentation/components/StockTradingPanel';
 import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import { formatKoreanDate } from '@shared/utils/formatter';
@@ -114,6 +115,9 @@ function GameMainPageContent() {
                 ) : null
               )}
               {leftView === 'card' && <CardRecommendPanel />}
+              {leftView === 'status' && (
+                <GameStatusPanel turnCommitResult={turnCommitResult} />
+              )}
               {leftView === 'stock' && (
                 sessionId !== null ? <StockTradingPanel sessionId={sessionId} /> : null
               )}
@@ -148,6 +152,13 @@ function GameMainPageContent() {
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>메뉴</h2>
               <div className={styles.menuList}>
+                <button
+                  className={leftView === 'status' ? styles.menuButtonActive : styles.menuButton}
+                  onClick={() => setLeftView(leftView === 'status' ? 'scene' : 'status')}
+                  data-guide="game-status"
+                >
+                  자산/스탯 보기
+                </button>
                 <button
                   className={leftView === 'loan' ? styles.menuButtonActive : styles.menuButton}
                   onClick={() => setLeftView(leftView === 'loan' ? 'scene' : 'loan')}

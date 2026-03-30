@@ -165,7 +165,7 @@ describe('GameGuideLayout', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '← 돌아가기' }));
 
-    expect(screen.getByText('주식 투자 메뉴 열기')).toBeInTheDocument();
+    expect(screen.getByText('자산/스탯 리포트 열기')).toBeInTheDocument();
   });
 
   it('explains missing targets and recovers when the guided target opens later', async () => {

@@ -55,6 +55,10 @@ vi.mock('@features/game/presentation/components/CardRecommendPanel/CardRecommend
   CardRecommendPanel: () => <div>카드 패널</div>,
 }));
 
+vi.mock('@features/game/presentation/components/GameStatusPanel', () => ({
+  GameStatusPanel: () => <div>자산 패널</div>,
+}));
+
 vi.mock('@features/game/presentation/components/StockTradingPanel', () => ({
   StockTradingPanel: () => <div>주식 패널</div>,
 }));
@@ -205,5 +209,73 @@ describe('GameMainPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '주식 투자' }));
 
     expect(setLeftView).toHaveBeenCalledWith('stock');
+  });
+
+  it('opens the status panel from the in-game menu', () => {
+    mockedGuideToggle.mockReset();
+    const setLeftView = vi.fn();
+
+    vi.mocked(useGameMain).mockReturnValue({
+      sessionId: 7,
+      turn: {
+        turnNumber: 7,
+        month: 3,
+        currentDate: new Date('2026-03-01T00:00:00'),
+        economicCycle: {
+          phase: 'BOOM',
+          description: '경기 호황기',
+        },
+      },
+      news: null,
+      currentPendingEvent: null,
+      resolvedEvent: null,
+      hasMorePendingEvents: false,
+      turnActions: null,
+      turnPreview: null,
+      turnCommitResult: null,
+      currentDate: new Date('2026-03-01T00:00:00'),
+      characterType: 'MALE',
+      isNewsOpen: false,
+      isMonthlyActivityOpen: false,
+      isGameEventOpen: false,
+      isLoading: false,
+      isNewsLoading: false,
+      newsError: null,
+      isActionsLoading: false,
+      isSlotSubmitting: false,
+      isTurnCommitting: false,
+      isPendingEventsLoading: false,
+      isEventResolving: false,
+      scheduleError: null,
+      eventError: null,
+      openNews: vi.fn(),
+      closeNews: vi.fn(),
+      openMonthlyActivity: vi.fn(),
+      closeMonthlyActivity: vi.fn(),
+      closeGameEvent: vi.fn(),
+      submitTurnSlots: vi.fn(),
+      commitTurn: vi.fn(),
+      confirmCommitResult: vi.fn(),
+      resolveGameEvent: vi.fn(),
+      advanceGameEvent: vi.fn(),
+      resetScheduleFlow: vi.fn(),
+      error: null,
+      leftView: 'scene',
+      setLeftView,
+      confirmedLoan: undefined,
+      preSelectedPropertyId: undefined,
+      preSelectedPropertyName: undefined,
+      preSelectedPropertyPrice: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <GameMainPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '자산/스탯 보기' }));
+
+    expect(setLeftView).toHaveBeenCalledWith('status');
   });
 });
