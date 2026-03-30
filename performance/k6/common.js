@@ -2,8 +2,14 @@ import { sleep } from 'k6';
 
 const DEFAULT_SUMMARY_DIR = 'performance/k6/results';
 const DEFAULT_FAILURE_RATE_LIMIT = 0.01;
+const DEFAULT_HARD_GATE_P95_MS = 1500;
 const DEFAULT_TREND_STATS = ['avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max'];
 const SUMMARY_VALUE_ORDER = ['rate', 'avg', 'min', 'med', 'p(90)', 'p(95)', 'p(99)', 'max', 'count'];
+
+export {
+  DEFAULT_FAILURE_RATE_LIMIT,
+  DEFAULT_HARD_GATE_P95_MS,
+};
 
 export function getStringEnv(name, defaultValue = '') {
   const value = __ENV[name];

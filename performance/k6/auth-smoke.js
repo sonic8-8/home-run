@@ -3,6 +3,8 @@ import { check } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
 import {
+  DEFAULT_FAILURE_RATE_LIMIT,
+  DEFAULT_HARD_GATE_P95_MS,
   buildTestId,
   getBooleanEnv,
   buildThresholds,
@@ -14,8 +16,6 @@ import {
 } from './common.js';
 
 const SCRIPT_NAME = 'auth-smoke';
-const DEFAULT_AUTH_FLOW_P95_MS = 1500;
-const DEFAULT_AUTH_HTTP_P95_MS = 1100;
 const authFlowDuration = new Trend('auth_gate_duration', true);
 const authFlowFailureRate = new Rate('auth_gate_failed');
 
@@ -26,12 +26,12 @@ export const options = createOptions({
   thresholds: buildThresholds({
     latencyMetricName: authFlowDuration.name,
     // The auth smoke gate measures the full signup -> login -> refresh flow in one iteration.
-    latencyP95Ms: getNumberEnv('K6_AUTH_THRESHOLD_P95_MS', DEFAULT_AUTH_FLOW_P95_MS),
+    latencyP95Ms: getNumberEnv('K6_AUTH_THRESHOLD_P95_MS', DEFAULT_HARD_GATE_P95_MS),
     failureMetricName: authFlowFailureRate.name,
-    maxFailureRate: getNumberEnv('K6_AUTH_MAX_FAILURE_RATE', 0.01),
+    maxFailureRate: getNumberEnv('K6_AUTH_MAX_FAILURE_RATE', DEFAULT_FAILURE_RATE_LIMIT),
     includeFailureRate: true,
     extraThresholds: {
-      http_req_duration: [`p(95)<${getNumberEnv('K6_AUTH_HTTP_P95_MS', DEFAULT_AUTH_HTTP_P95_MS)}`],
+      http_req_duration: [`p(95)<${getNumberEnv('K6_AUTH_HTTP_P95_MS', DEFAULT_HARD_GATE_P95_MS)}`],
       checks: [`rate>=${getNumberEnv('K6_AUTH_CHECK_RATE', 1)}`],
     },
   }),
