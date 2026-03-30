@@ -11,6 +11,7 @@ import {
   getBaseUrl,
   getNumberEnv,
   getStringEnv,
+  waitForNonEmptyArray,
 } from './common.js';
 
 const SCRIPT_NAME = 'core-write';
@@ -58,32 +59,41 @@ export function setup() {
   }
 
   const authParams = (requestName) => createJsonParams(requestName, accessToken);
-  const regionsResponse = requestJson('GET', `${baseUrl}/api/games/regions`, null, authParams('regions-list'));
-  const regionCode = pickNestedValue(regionsResponse.data, ['regions', 0, 'regionCode']);
+  const regions = waitForNonEmptyArray('regions', function fetchRegions() {
+    const response = requestJson('GET', `${baseUrl}/api/games/regions`, null, authParams('regions-list'));
+    return getNestedArray(response.data, 'regions', 'regions');
+  });
+  const regionCode = pickNestedValue({ regions }, ['regions', 0, 'regionCode']);
 
   if (!regionCode) {
     throw new Error('region code extraction failed');
   }
 
-  const districtsResponse = requestJson(
-    'GET',
-    `${baseUrl}/api/games/regions/${regionCode}/districts`,
-    null,
-    authParams('districts-list'),
-  );
-  const districtCode = pickNestedValue(districtsResponse.data, ['districts', 0, 'districtCode']);
+  const districts = waitForNonEmptyArray('districts', function fetchDistricts() {
+    const response = requestJson(
+      'GET',
+      `${baseUrl}/api/games/regions/${regionCode}/districts`,
+      null,
+      authParams('districts-list'),
+    );
+    return getNestedArray(response.data, 'districts', 'districts');
+  });
+  const districtCode = pickNestedValue({ districts }, ['districts', 0, 'districtCode']);
 
   if (!districtCode) {
     throw new Error('district code extraction failed');
   }
 
-  const propertiesResponse = requestJson(
-    'GET',
-    `${baseUrl}/api/games/regions/${regionCode}/districts/${districtCode}/properties`,
-    null,
-    authParams('properties-list'),
-  );
-  const propertyId = pickNestedValue(propertiesResponse.data, ['properties', 0, 'propertyId']);
+  const properties = waitForNonEmptyArray('properties', function fetchProperties() {
+    const response = requestJson(
+      'GET',
+      `${baseUrl}/api/games/regions/${regionCode}/districts/${districtCode}/properties`,
+      null,
+      authParams('properties-list'),
+    );
+    return getNestedArray(response.data, 'properties', 'properties');
+  });
+  const propertyId = pickNestedValue({ properties }, ['properties', 0, 'propertyId']);
 
   if (!propertyId) {
     throw new Error('target property id extraction failed');
@@ -193,6 +203,16 @@ function selectCheapestStockCode(stocks) {
     .sort((left, right) => Number(left.currentPrice) - Number(right.currentPrice));
 
   return sortedStocks.length > 0 ? sortedStocks[0].stockCode : null;
+}
+
+function getNestedArray(source, key, label) {
+  const values = source && source[key];
+
+  if (!Array.isArray(values)) {
+    throw new Error(`${label} response ${key} is missing`);
+  }
+
+  return values;
 }
 
 function pickNestedValue(source, path) {
