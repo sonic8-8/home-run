@@ -2,6 +2,8 @@ import http from 'k6/http';
 import { Trend, Rate } from 'k6/metrics';
 
 import {
+  DEFAULT_FAILURE_RATE_LIMIT,
+  DEFAULT_HARD_GATE_P95_MS,
   buildThresholds,
   createJsonParams,
   createOptions,
@@ -24,12 +26,12 @@ export const options = createOptions({
   iterations: getNumberEnv('K6_ITERATIONS', 1),
   thresholds: buildThresholds({
     latencyMetricName: COMMIT_DURATION_METRIC,
-    latencyP95Ms: getNumberEnv('K6_SETTLEMENT_COMMIT_P95_MS', 2000),
+    latencyP95Ms: getNumberEnv('K6_SETTLEMENT_COMMIT_P95_MS', DEFAULT_HARD_GATE_P95_MS),
     failureMetricName: COMMIT_FAILURE_METRIC,
-    maxFailureRate: getNumberEnv('K6_MAX_FAILURE_RATE', 0.01),
+    maxFailureRate: getNumberEnv('K6_MAX_FAILURE_RATE', DEFAULT_FAILURE_RATE_LIMIT),
     includeFailureRate: true,
     extraThresholds: {
-      http_req_failed: [`rate<${getNumberEnv('K6_HTTP_FAILURE_RATE', 0.01)}`],
+      http_req_failed: [`rate<${getNumberEnv('K6_HTTP_FAILURE_RATE', DEFAULT_FAILURE_RATE_LIMIT)}`],
     },
   }),
 });

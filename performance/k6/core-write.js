@@ -3,6 +3,8 @@ import { check } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
 import {
+  DEFAULT_FAILURE_RATE_LIMIT,
+  DEFAULT_HARD_GATE_P95_MS,
   buildTestId,
   buildThresholds,
   createJsonParams,
@@ -24,9 +26,9 @@ export const options = createOptions({
   iterations: getNumberEnv('K6_ITERATIONS', 1),
   thresholds: buildThresholds({
     latencyMetricName: coreWriteDuration.name,
-    latencyP95Ms: getNumberEnv('K6_CORE_WRITE_P95_MS', 1500),
+    latencyP95Ms: getNumberEnv('K6_CORE_WRITE_P95_MS', DEFAULT_HARD_GATE_P95_MS),
     failureMetricName: coreWriteFailureRate.name,
-    maxFailureRate: getNumberEnv('K6_CORE_WRITE_MAX_FAILURE_RATE', 0.01),
+    maxFailureRate: getNumberEnv('K6_CORE_WRITE_MAX_FAILURE_RATE', DEFAULT_FAILURE_RATE_LIMIT),
     includeFailureRate: true,
   }),
   tags: {
