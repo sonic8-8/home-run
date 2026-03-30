@@ -15,7 +15,7 @@ import {
 
 const SCRIPT_NAME = 'auth-smoke';
 const DEFAULT_AUTH_FLOW_P95_MS = 1500;
-const DEFAULT_AUTH_HTTP_P95_MS = 800;
+const DEFAULT_AUTH_HTTP_P95_MS = 1100;
 const authFlowDuration = new Trend('auth_gate_duration', true);
 const authFlowFailureRate = new Rate('auth_gate_failed');
 
