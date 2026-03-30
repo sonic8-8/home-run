@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   GAME_GUIDE_FLOWS,
   getGuideFlow,
@@ -61,53 +61,54 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
     () => (activeFlowId === null ? [] : getGuideSteps(activeFlowId)),
     [activeFlowId],
   );
-  const currentStep = activeFlowId === null ? null : activeSteps[activeStepIndex] ?? null;
   const currentFlow = activeFlowId === null ? null : getGuideFlow(activeFlowId);
-
-  useEffect(() => {
-    if (activeFlowId === null || currentFlow === null || currentStep === null) {
-      return;
+  const resolvedFlowState = useMemo(() => {
+    if (activeFlowId === null || currentFlow === null) {
+      return {
+        flowId: null,
+        stepIndex: 0,
+      };
     }
 
-    if (matchesGuideStepPath(currentStep, pathname)) {
-      return;
+    const activeStep = activeSteps[activeStepIndex] ?? null;
+    if (activeStep !== null && matchesGuideStepPath(activeStep, pathname)) {
+      return {
+        flowId: activeFlowId,
+        stepIndex: activeStepIndex,
+      };
     }
 
     const nextMatchingStepIndex = currentFlow.steps.findIndex(
       (step, index) => index >= activeStepIndex && matchesGuideStepPath(step, pathname),
     );
-
     if (nextMatchingStepIndex !== -1) {
-      setActiveStepIndex(nextMatchingStepIndex);
-      updateFlowState(activeFlowId, (state) => ({
-        ...state,
+      return {
+        flowId: activeFlowId,
         stepIndex: nextMatchingStepIndex,
-        completed: false,
-        promptSeen: true,
-      }));
-      return;
+      };
     }
 
     const firstMatchingStepIndex = currentFlow.steps.findIndex((step) =>
       matchesGuideStepPath(step, pathname),
     );
-
     if (firstMatchingStepIndex === -1) {
-      setActiveFlowId(null);
-      return;
+      return {
+        flowId: null,
+        stepIndex: 0,
+      };
     }
 
-    setActiveStepIndex(firstMatchingStepIndex);
-    updateFlowState(activeFlowId, (state) => ({
-      ...state,
+    return {
+      flowId: activeFlowId,
       stepIndex: firstMatchingStepIndex,
-      completed: false,
-      promptSeen: true,
-    }));
-  }, [pathname, activeFlowId, activeStepIndex, currentFlow, currentStep, updateFlowState]);
+    };
+  }, [activeFlowId, activeStepIndex, activeSteps, currentFlow, pathname]);
+  const resolvedActiveFlowId = resolvedFlowState.flowId;
+  const resolvedStepIndex = resolvedFlowState.stepIndex;
+  const currentStep = resolvedActiveFlowId === null ? null : activeSteps[resolvedStepIndex] ?? null;
 
   const matchedFlowId = useMemo(() => getGuideFlowByPath(pathname), [pathname]);
-  const launcherFlowId = activeFlowId === null ? matchedFlowId : null;
+  const launcherFlowId = resolvedActiveFlowId === null ? matchedFlowId : null;
   const launcherFlowState = launcherFlowId === null ? null : getStoredFlowState(flowStates, launcherFlowId);
   const isEntryPromptVisible = (
     launcherFlowId !== null
@@ -129,7 +130,7 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
     )
   );
   const isOverlayVisible = currentStep !== null && matchesGuideStepPath(currentStep, pathname);
-  const isLastStep = currentStep !== null && activeStepIndex === activeSteps.length - 1;
+  const isLastStep = currentStep !== null && resolvedStepIndex === activeSteps.length - 1;
 
   const startOrResumeFlow = useCallback(
     (flowId: GameGuideFlowId) => {
@@ -185,23 +186,23 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
 
     updateFlowState(activeFlowId, (state) => ({
       ...state,
-      stepIndex: activeStepIndex,
+      stepIndex: resolvedStepIndex,
       completed: false,
       promptSeen: true,
     }));
     setActiveFlowId(null);
-  }, [activeFlowId, activeStepIndex, updateFlowState]);
+  }, [activeFlowId, resolvedStepIndex, updateFlowState]);
 
   const nextStep = useCallback(() => {
-    if (activeFlowId === null) {
+    if (resolvedActiveFlowId === null) {
       return;
     }
 
-    const nextStepIndex = activeStepIndex + 1;
-    const steps = getGuideSteps(activeFlowId);
+    const nextStepIndex = resolvedStepIndex + 1;
+    const steps = getGuideSteps(resolvedActiveFlowId);
 
     if (nextStepIndex >= steps.length) {
-      updateFlowState(activeFlowId, (state) => ({
+      updateFlowState(resolvedActiveFlowId, (state) => ({
         ...state,
         stepIndex: 0,
         completed: true,
@@ -212,45 +213,45 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
       return;
     }
 
-    updateFlowState(activeFlowId, (state) => ({
+    updateFlowState(resolvedActiveFlowId, (state) => ({
       ...state,
       stepIndex: nextStepIndex,
       completed: false,
       promptSeen: true,
     }));
     setActiveStepIndex(nextStepIndex);
-  }, [activeFlowId, activeStepIndex, updateFlowState]);
+  }, [resolvedActiveFlowId, resolvedStepIndex, updateFlowState]);
 
   const previousStep = useCallback(() => {
-    if (activeFlowId === null || activeStepIndex === 0) {
+    if (resolvedActiveFlowId === null || resolvedStepIndex === 0) {
       return;
     }
 
-    const previousStepIndex = activeStepIndex - 1;
-    updateFlowState(activeFlowId, (state) => ({
+    const previousStepIndex = resolvedStepIndex - 1;
+    updateFlowState(resolvedActiveFlowId, (state) => ({
       ...state,
       stepIndex: previousStepIndex,
       completed: false,
       promptSeen: true,
     }));
     setActiveStepIndex(previousStepIndex);
-  }, [activeFlowId, activeStepIndex, updateFlowState]);
+  }, [resolvedActiveFlowId, resolvedStepIndex, updateFlowState]);
 
   const toggleFlow = useCallback(
     (flowId: GameGuideFlowId) => {
-      if (activeFlowId === flowId && isOverlayVisible) {
+      if (resolvedActiveFlowId === flowId && isOverlayVisible) {
         closeGuide();
         return;
       }
 
       startOrResumeFlow(flowId);
     },
-    [activeFlowId, closeGuide, isOverlayVisible, startOrResumeFlow],
+    [closeGuide, isOverlayVisible, resolvedActiveFlowId, startOrResumeFlow],
   );
 
   const getTriggerLabel = useCallback(
     (flowId: GameGuideFlowId) => {
-      if (activeFlowId === flowId && isOverlayVisible) {
+      if (resolvedActiveFlowId === flowId && isOverlayVisible) {
         return '가이드 닫기';
       }
 
@@ -266,19 +267,19 @@ export function useGameGuideController(pathname: string): GameGuideControllerVal
 
       return '게임 가이드';
     },
-    [activeFlowId, flowStates, isOverlayVisible],
+    [flowStates, isOverlayVisible, resolvedActiveFlowId],
   );
 
   return {
-    activeFlowId,
-    activeStepIndex,
+    activeFlowId: resolvedActiveFlowId,
+    activeStepIndex: resolvedStepIndex,
     currentStep,
     isOverlayVisible,
     isEntryPromptVisible,
     launcherFlowId,
     isLauncherVisible,
     isLastStep,
-    stepCount: activeSteps.length,
+    stepCount: resolvedActiveFlowId === null ? 0 : activeSteps.length,
     toggleFlow,
     startOrResumeFlow,
     startFlowAtStep,
