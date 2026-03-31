@@ -103,6 +103,8 @@ class SubmitTurnSlotsServiceTest extends IntegrationTestSupport {
         // then
         assertThat(response.getSlots()).hasSize(3);
         assertThat(response.getPreviewCashChange()).isEqualTo(430_000L);
+        assertThat(response.getPreviewCashMinChange()).isEqualTo(430_000L);
+        assertThat(response.getPreviewCashMaxChange()).isEqualTo(430_000L);
         assertThat(response.getPreviewStatChanges().getKnowledge()).isEqualTo(8);
         final ArgumentCaptor<TurnDraft> turnDraftCaptor = ArgumentCaptor.forClass(TurnDraft.class);
         then(turnDraftRepository).should().save(turnDraftCaptor.capture());

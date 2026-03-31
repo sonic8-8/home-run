@@ -61,6 +61,8 @@ public class CharacterTurnPreviewCalculator implements TurnPreviewCalculator {
                 .toList(),
             // Redis draft currently stores one cash delta, so keep the conservative lower bound.
             Money.of(previewResponse.getCashPreview().getMinimumCashDelta()),
+            Money.of(previewResponse.getCashPreview().getMinimumCashDelta()),
+            Money.of(previewResponse.getCashPreview().getMaximumCashDelta()),
             Map.of(
                 "health", previewResponse.getStatPreview().getHealthDelta(),
                 "fatigue", previewResponse.getStatPreview().getFatigueDelta(),

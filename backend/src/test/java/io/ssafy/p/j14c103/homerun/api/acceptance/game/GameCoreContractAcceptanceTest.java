@@ -1,0 +1,649 @@
+package io.ssafy.p.j14c103.homerun.api.acceptance.game;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.ssafy.p.j14c103.homerun.api.service.world.WorldContentSeedService;
+import io.ssafy.p.j14c103.homerun.api.service.world.WorldEventTriggerService;
+import io.ssafy.p.j14c103.homerun.api.service.world.WorldPendingEventProviderService;
+import io.ssafy.p.j14c103.homerun.api.service.world.WorldPendingEventQueueService;
+import io.ssafy.p.j14c103.homerun.api.service.world.response.PendingEventsProviderResponse;
+import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
+import io.ssafy.p.j14c103.homerun.config.JwtTokenProvider;
+import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
+import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportAchievement;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimeline;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimelineRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLogRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.GameSessionTurnSlotRepository;
+import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
+import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
+import io.ssafy.p.j14c103.homerun.domain.history.event.GameEventLog;
+import io.ssafy.p.j14c103.homerun.domain.history.event.GameEventLogRepository;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLog;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLogRepository;
+import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.user.Email;
+import io.ssafy.p.j14c103.homerun.domain.user.User;
+import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
+import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventConditionRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventEffectRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GamePendingEventRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMaster;
+import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMasterRepository;
+import io.ssafy.p.j14c103.homerun.global.ErrorCode;
+import io.ssafy.p.j14c103.homerun.support.HttpIntegrationTestSupport;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
+@Tag("container")
+@Testcontainers(disabledWithoutDocker = true)
+class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
+
+    @Container
+    static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(
+        DockerImageName.parse("redis:7.2-alpine")
+    ).withExposedPorts(6379);
+
+    @DynamicPropertySource
+    static void overrideRedisProperties(final DynamicPropertyRegistry registry) {
+        registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
+        registry.add("spring.data.redis.port", REDIS_CONTAINER::getFirstMappedPort);
+    }
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private WorldContentSeedService worldContentSeedService;
+
+    @Autowired
+    private WorldEventTriggerService worldEventTriggerService;
+
+    @Autowired
+    private WorldPendingEventQueueService worldPendingEventQueueService;
+
+    @Autowired
+    private WorldPendingEventProviderService worldPendingEventProviderService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private GameSessionRepository gameSessionRepository;
+
+    @Autowired
+    private GameStatRepository gameStatRepository;
+
+    @Autowired
+    private GameCareerRepository gameCareerRepository;
+
+    @Autowired
+    private GameSessionTurnSlotRepository gameTurnSlotRepository;
+
+    @Autowired
+    private SettlementLogRepository settlementLogRepository;
+
+    @Autowired
+    private GameReportRepository gameReportRepository;
+
+    @Autowired
+    private GameTimelineRepository gameTimelineRepository;
+
+    @Autowired
+    private GameHousingRepository gameHousingRepository;
+
+    @Autowired
+    private GameplayHistoryRepository gameplayHistoryRepository;
+
+    @Autowired
+    private GameNewsLogRepository gameNewsLogRepository;
+
+    @Autowired
+    private GameEventLogRepository gameEventLogRepository;
+
+    @Autowired
+    private GamePendingEventRepository gamePendingEventRepository;
+
+    @Autowired
+    private EventEffectRepository eventEffectRepository;
+
+    @Autowired
+    private EventConditionRepository eventConditionRepository;
+
+    @Autowired
+    private EventChoiceRepository eventChoiceRepository;
+
+    @Autowired
+    private GameEventRepository gameEventRepository;
+
+    @Autowired
+    private NewsMasterRepository newsMasterRepository;
+
+    @AfterEach
+    void tearDown() {
+        final Set<String> keys = stringRedisTemplate.keys("session:*:turn");
+        if (keys != null && !keys.isEmpty()) {
+            stringRedisTemplate.delete(keys);
+        }
+
+        gameEventLogRepository.deleteAllInBatch();
+        gameNewsLogRepository.deleteAllInBatch();
+        gameplayHistoryRepository.deleteAllInBatch();
+        gamePendingEventRepository.deleteAllInBatch();
+        gameTimelineRepository.deleteAllInBatch();
+        gameReportRepository.deleteAllInBatch();
+        settlementLogRepository.deleteAllInBatch();
+        gameTurnSlotRepository.deleteAllInBatch();
+        gameHousingRepository.deleteAllInBatch();
+        gameCareerRepository.deleteAllInBatch();
+        gameStatRepository.deleteAllInBatch();
+        gameSessionRepository.deleteAllInBatch();
+        eventEffectRepository.deleteAllInBatch();
+        eventConditionRepository.deleteAllInBatch();
+        eventChoiceRepository.deleteAllInBatch();
+        gameEventRepository.deleteAllInBatch();
+        newsMasterRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+    }
+
+    @DisplayName("현재 턴 조회와 최신 뉴스 조회는 같은 저장 뉴스 source를 읽는다.")
+    @Test
+    void getTurnAndLatestNewsReadSameSavedNewsSource() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-news-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
+            "NEWS-001",
+            "부동산 시장 과열 경고",
+            "negative",
+            "테스트 언론",
+            "시장 과열 신호가 확인됐다.",
+            "BOOM_TO_CRISIS",
+            "테스트 이유",
+            null,
+            null,
+            null,
+            null
+        ));
+        gameNewsLogRepository.saveAndFlush(GameNewsLog.create(
+            fixture.session().getGameSessionId(),
+            12,
+            "NEWS-001",
+            "부동산 시장 과열 경고",
+            LocalDate.of(2026, 1, 1)
+        ));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(12))
+            .andExpect(jsonPath("$.data.economicCycle.phase").value("BOOM"))
+            .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-001"))
+            .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 과열 경고"));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(12))
+            .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-001"))
+            .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 과열 경고"));
+    }
+
+    @DisplayName("다른 사용자의 턴 조회는 403으로 차단된다.")
+    @Test
+    void getTurnRejectsOtherUsersSession() throws Exception {
+        final SessionFixture ownerFixture = saveSessionFixture(
+            "turn-owner@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        final User otherUser = saveUser("turn-requester@example.com");
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", ownerFixture.session().getGameSessionId())
+                .header(AUTHORIZATION, bearer(otherUser)))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_FORBIDDEN.getCode()));
+    }
+
+    @DisplayName("행동 조회와 뉴스 히스토리 조회는 현재 공개 계약을 그대로 반환한다.")
+    @Test
+    void getTurnActionsAndNewsHistoryExposeCurrentContracts() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-actions-user@example.com",
+            12,
+            CycleState.of(CyclePhase.RECOVERY, CycleType.CYCLE_RATE_HIKE, 18)
+        );
+        newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
+            "NEWS-011",
+            "기준금리 동결",
+            "neutral",
+            "테스트 언론",
+            "테스트 기사 11",
+            "RECOVERY_TO_RECOVERY",
+            "테스트 이유",
+            null,
+            null,
+            null,
+            null
+        ));
+        newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
+            "NEWS-012",
+            "채용 한파 심화",
+            "negative",
+            "테스트 언론",
+            "테스트 기사 12",
+            "RECOVERY_TO_CRISIS",
+            "테스트 이유",
+            null,
+            null,
+            null,
+            null
+        ));
+        gameNewsLogRepository.saveAndFlush(GameNewsLog.create(
+            fixture.session().getGameSessionId(),
+            11,
+            "NEWS-011",
+            "기준금리 동결",
+            LocalDate.of(2025, 12, 1)
+        ));
+        gameNewsLogRepository.saveAndFlush(GameNewsLog.create(
+            fixture.session().getGameSessionId(),
+            12,
+            "NEWS-012",
+            "채용 한파 심화",
+            LocalDate.of(2026, 1, 1)
+        ));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn/actions", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.shopping").isArray())
+            .andExpect(jsonPath("$.data.activities").isArray())
+            .andExpect(jsonPath("$.data.activities[?(@.actionType == 'SIDE_JOB')]").isNotEmpty());
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/news/history", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.newsHistories[0].newsId").value("NEWS-012"))
+            .andExpect(jsonPath("$.data.newsHistories[1].newsId").value("NEWS-011"));
+    }
+
+    @DisplayName("pending 이벤트 조회와 resolve는 같은 세션 상태 변화를 외부 계약으로 닫는다.")
+    @Test
+    void pendingEventsAndResolveWorkOverHttp() throws Exception {
+        worldContentSeedService.seed();
+        final SessionFixture fixture = saveSessionFixture(
+            "event-flow-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        saveGameStat(fixture.session(), 70, 10, 10, 50, 70, 12);
+        saveGameCareer(fixture.session(), 12, 31_000_000);
+
+        final List<GameWorldResult.EventCandidate> eventCandidates = worldEventTriggerService.calculateEventCandidates(
+            fixture.session().getGameSessionId(),
+            Map.of(
+                "EVT-VOICE-001", new BigDecimal("0.0100"),
+                "EVT-FAMILY-001", new BigDecimal("0.0200"),
+                "EVT-OVERTIME-001", new BigDecimal("0.1500")
+            )
+        );
+        worldPendingEventQueueService.enqueuePendingEvents(
+            fixture.session().getGameSessionId(),
+            eventCandidates
+        );
+
+        final PendingEventsProviderResponse pendingEvents = worldPendingEventProviderService.getPendingEvents(
+            fixture.session().getGameSessionId()
+        );
+        final PendingEventsProviderResponse.PendingEventItem familyEvent = pendingEvents.getEvents().stream()
+            .filter(event -> "경조사".equals(event.getTitle()))
+            .findFirst()
+            .orElseThrow();
+        final PendingEventsProviderResponse.PendingEventChoiceItem attendChoice =
+            familyEvent.getChoices().stream()
+                .filter(choice -> "A".equals(choice.getChoiceCode()))
+                .findFirst()
+                .orElseThrow();
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/events/pending", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.events").isArray())
+            .andExpect(jsonPath("$.data.events[?(@.title == '경조사')]").isNotEmpty());
+
+        mockMvc.perform(post(
+                    "/api/games/sessions/{sessionId}/events/{eventId}/resolve",
+                    fixture.session().getGameSessionId(),
+                    familyEvent.getEventId()
+                )
+                .header(AUTHORIZATION, fixture.bearerToken())
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("choiceId", attendChoice.getChoiceId()))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.eventId").value(familyEvent.getEventId()))
+            .andExpect(jsonPath("$.data.selectedChoiceCode").value("A"));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/events/pending", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.events[?(@.title == '경조사')]").isEmpty());
+    }
+
+    @DisplayName("엔딩 리포트와 로그 조회는 같은 종료 세션 read-back을 반환한다.")
+    @Test
+    void endingAndLogsReadBackEndedSession() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "ending-readback-user@example.com",
+            12,
+            CycleState.of(CyclePhase.RECOVERY, CycleType.CYCLE_RATE_HIKE, 18)
+        );
+        fixture.session().markEnding(SessionStatus.CLEAR);
+        gameSessionRepository.saveAndFlush(fixture.session());
+
+        gameReportRepository.saveAndFlush(GameReport.create(
+            fixture.session().getGameSessionId(),
+            SessionStatus.CLEAR,
+            "부동산 갑부",
+            120_000_000,
+            80_000_000,
+            "S",
+            500_000_000,
+            40_000_000,
+            "식비",
+            BigDecimal.valueOf(35.2),
+            List.of(GameReportAchievement.of("첫 내집 마련", "/images/badges/first-house.png"))
+        ));
+        gameTimelineRepository.saveAndFlush(GameTimeline.create(
+            fixture.session().getGameSessionId(),
+            12,
+            LocalDate.of(2026, 12, 1),
+            5_000_000,
+            25_000_000,
+            75_000_000,
+            5_000_000,
+            50_000_000,
+            2_200_000
+        ));
+        gameTimelineRepository.saveAndFlush(GameTimeline.create(
+            fixture.session().getGameSessionId(),
+            1,
+            LocalDate.of(2026, 1, 1),
+            13_000_000,
+            13_000_000,
+            13_000_000,
+            0,
+            0,
+            2_000_000
+        ));
+        gameNewsLogRepository.saveAndFlush(GameNewsLog.create(
+            fixture.session().getGameSessionId(),
+            8,
+            "NEWS-001",
+            "금리 인하 기조 지속",
+            LocalDate.of(2026, 8, 1)
+        ));
+        gameEventLogRepository.saveAndFlush(GameEventLog.create(
+            fixture.session().getGameSessionId(),
+            7,
+            2001,
+            10,
+            "A",
+            Map.of("cash", 100000),
+            "지원금을 신청했다.",
+            LocalDateTime.of(2026, 7, 18, 10, 30)
+        ));
+        gameplayHistoryRepository.saveAndFlush(
+            GameplayHistory.builder()
+                .gameId(Math.toIntExact(fixture.session().getGameSessionId()))
+                .eventId(920001)
+                .tableName("게임주거")
+                .columnName("주거형태,보증금,월세,관리비,현재매물ID")
+                .targetKey1(String.valueOf(fixture.session().getGameSessionId()))
+                .beforeValue("{\"housingType\":\"VILLA\",\"propertyId\":202}")
+                .afterValue("{\"housingType\":\"OWNED_APT\",\"propertyId\":301}")
+                .summary("자가 아파트를 마련했다.")
+                .occurredTurn(12)
+                .build()
+        );
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/ending", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.endingType").value("CLEAR"))
+            .andExpect(jsonPath("$.data.title").value("부동산 갑부"))
+            .andExpect(jsonPath("$.data.newsHistories[0].newsId").value("NEWS-001"))
+            .andExpect(jsonPath("$.data.eventHistories[0].gameEventId").value(2001))
+            .andExpect(jsonPath("$.data.housingHistories[0].turnNumber").value(12));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/logs", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.timeline[0].turnNumber").value(1))
+            .andExpect(jsonPath("$.data.timeline[1].turnNumber").value(12));
+    }
+
+    @DisplayName("변동 수익 행동 preview는 min/max 범위를 공개 계약으로 노출해야 한다. 현재 구현은 RED baseline이다.")
+    @Test
+    void submitTurnSlotsShouldExposeCashRangeForVariableIncomeActions() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-preview-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        saveGameStat(fixture.session(), 70, 20, 20, 50, 50, 12);
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken())
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(turnSlotsRequest())))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.previewCashMinChange").exists())
+            .andExpect(jsonPath("$.data.previewCashMaxChange").exists());
+    }
+
+    @DisplayName("턴 커밋 정산 로그는 placeholder 문구를 숨기지 말고 실제 계산 결과만 노출해야 한다. 현재 구현은 RED baseline이다.")
+    @Test
+    void commitTurnShouldNotPersistPlaceholderSettlementDescriptions() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-commit-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        saveGameStat(fixture.session(), 70, 20, 20, 50, 50, 12);
+        saveGameCareer(fixture.session(), 12, 31_000_000);
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken())
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(turnSlotsRequest())))
+            .andExpect(status().isOk());
+
+        final MvcResult commitResult = mockMvc.perform(
+                post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
+                    .header(AUTHORIZATION, fixture.bearerToken())
+            )
+            .andExpect(status().isOk())
+            .andReturn();
+
+        final JsonNode root = objectMapper.readTree(commitResult.getResponse().getContentAsString());
+        final List<String> descriptions = new ArrayList<>();
+        root.path("data").path("settlementLog").forEach(item ->
+            descriptions.add(item.path("description").asText())
+        );
+
+        assertThat(descriptions).doesNotContain("대기한다");
+    }
+
+    private SessionFixture saveSessionFixture(
+        final String email,
+        final int currentTurn,
+        final CycleState cycleState
+    ) {
+        final User user = saveUser(email);
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), currentTurn, cycleState, 101L)
+        );
+        return new SessionFixture(user, gameSession, bearer(user));
+    }
+
+    private User saveUser(final String email) {
+        return userRepository.save(User.register(Email.of(email), "tester", "hashed-password"));
+    }
+
+    private String bearer(final User user) {
+        return "Bearer " + jwtTokenProvider.createAccessToken(user.getId(), user.getEmail().getValue());
+    }
+
+    private GameSession createGameSession(
+        final Long userId,
+        final int currentTurn,
+        final CycleState cycleState,
+        final Long targetPropertyId
+    ) {
+        final GameSession gameSession = GameSession.create(
+            userId,
+            1,
+            "윤서",
+            CharacterType.FEMALE,
+            JobType.STARTUP,
+            HousingType.STUDIO,
+            "11",
+            "11680",
+            targetPropertyId,
+            DataSourceType.PROFILE
+        );
+        gameSession.initializeCapital(
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            LocalDate.of(2026, 1, 1),
+            cycleState
+        );
+        gameSession.advanceTurn(
+            currentTurn,
+            LocalDate.of(2026, 1, 1),
+            Money.of(2_000_000L),
+            Money.of(2_000_000L),
+            cycleState
+        );
+        return gameSession;
+    }
+
+    private void saveGameStat(
+        final GameSession gameSession,
+        final int health,
+        final int fatigue,
+        final int stress,
+        final int happiness,
+        final int knowledge,
+        final int currentTurn
+    ) {
+        gameStatRepository.saveAndFlush(GameStat.create(
+            Math.toIntExact(gameSession.getGameSessionId()),
+            health,
+            fatigue,
+            stress,
+            happiness,
+            knowledge,
+            currentTurn
+        ));
+    }
+
+    private void saveGameCareer(
+        final GameSession gameSession,
+        final int tenureTurns,
+        final int salary
+    ) {
+        gameCareerRepository.saveAndFlush(GameCareer.builder()
+            .gameId(Math.toIntExact(gameSession.getGameSessionId()))
+            .jobType(JobType.STARTUP)
+            .jobTitle("사원")
+            .salary(salary)
+            .tenureTurns(tenureTurns)
+            .recentStudyCount(0)
+            .recentNetworkingCount(0)
+            .negotiationPreparationScore(0)
+            .lastNegotiatedTurn(0)
+            .employmentStatus(EmploymentStatus.EMPLOYED)
+            .probationEndTurn(null)
+            .rehireAvailableTurn(null)
+            .remainingUnemploymentBenefitTurns(0)
+            .salaryBeforeResignation(null)
+            .build());
+    }
+
+    private Map<String, Object> turnSlotsRequest() {
+        return Map.of(
+            "slots",
+            List.of(
+                Map.of("slotIndex", 0, "actionType", "STUDY"),
+                Map.of("slotIndex", 1, "actionType", "REST"),
+                Map.of("slotIndex", 2, "actionType", "SIDE_JOB")
+            )
+        );
+    }
+
+    private record SessionFixture(
+        User user,
+        GameSession session,
+        String bearerToken
+    ) {
+    }
+}

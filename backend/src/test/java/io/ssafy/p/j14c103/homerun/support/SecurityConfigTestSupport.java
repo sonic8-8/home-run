@@ -9,5 +9,5 @@ import org.springframework.test.context.TestPropertySource;
     "management.endpoint.health.probes.enabled=true",
     "management.health.redis.enabled=false"
 })
-public abstract class SecurityConfigTestSupport extends MockMvcIntegrationTestSupport {
+public abstract class SecurityConfigTestSupport extends HttpIntegrationTestSupport {
 }

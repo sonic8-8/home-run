@@ -323,6 +323,8 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                 TurnPreviewResponse.PreviewSlotResponse.of(2, "SIDE_JOB", false)
             ),
             430_000L,
+            430_000L,
+            790_000L,
             TurnPreviewResponse.PreviewStatChangesResponse.of(3, -14, -8, 4, 8)
         );
         given(submitTurnSlotsService.submitTurnSlots(eq(1L), eq(1001L), any()))
@@ -341,6 +343,8 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.data.slots[0].slotIndex").value(0))
             .andExpect(jsonPath("$.data.slots[0].actionType").value("STUDY"))
             .andExpect(jsonPath("$.data.previewCashChange").value(430000))
+            .andExpect(jsonPath("$.data.previewCashMinChange").value(430000))
+            .andExpect(jsonPath("$.data.previewCashMaxChange").value(790000))
             .andExpect(jsonPath("$.data.previewStatChanges.health").value(3))
             .andExpect(jsonPath("$.data.previewStatChanges.knowledge").value(8))
             .andDo(document("game-turn/slots/success",
@@ -359,7 +363,9 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                     fieldWithPath("slots[].slotIndex").type(JsonFieldType.NUMBER).description("슬롯 인덱스"),
                     fieldWithPath("slots[].actionType").type(JsonFieldType.STRING).description("preview 행동 타입"),
                     fieldWithPath("slots[].forcedAction").type(JsonFieldType.BOOLEAN).description("강제 행동 여부"),
-                    fieldWithPath("previewCashChange").type(JsonFieldType.NUMBER).description("예상 현금 변화량"),
+                    fieldWithPath("previewCashChange").type(JsonFieldType.NUMBER).description("기존 호환용 예상 현금 변화량"),
+                    fieldWithPath("previewCashMinChange").type(JsonFieldType.NUMBER).description("예상 현금 최소 변화량"),
+                    fieldWithPath("previewCashMaxChange").type(JsonFieldType.NUMBER).description("예상 현금 최대 변화량"),
                     fieldWithPath("previewStatChanges").type(JsonFieldType.OBJECT).description("예상 스탯 변화량"),
                     fieldWithPath("previewStatChanges.health").type(JsonFieldType.NUMBER).description("체력 변화량"),
                     fieldWithPath("previewStatChanges.fatigue").type(JsonFieldType.NUMBER).description("피로 변화량"),
