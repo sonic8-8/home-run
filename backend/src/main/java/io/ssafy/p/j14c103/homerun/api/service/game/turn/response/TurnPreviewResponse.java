@@ -14,19 +14,31 @@ public class TurnPreviewResponse {
 
     private final List<PreviewSlotResponse> slots;
     private final Long previewCashChange;
+    private final Long previewCashMinChange;
+    private final Long previewCashMaxChange;
     private final PreviewStatChangesResponse previewStatChanges;
 
     @Builder(access = AccessLevel.PRIVATE)
     private TurnPreviewResponse(
         final List<PreviewSlotResponse> slots,
         final Long previewCashChange,
+        final Long previewCashMinChange,
+        final Long previewCashMaxChange,
         final PreviewStatChangesResponse previewStatChanges
     ) {
-        if (slots == null || previewCashChange == null || previewStatChanges == null) {
+        if (
+            slots == null
+                || previewCashChange == null
+                || previewCashMinChange == null
+                || previewCashMaxChange == null
+                || previewStatChanges == null
+        ) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         this.slots = List.copyOf(slots);
         this.previewCashChange = previewCashChange;
+        this.previewCashMinChange = previewCashMinChange;
+        this.previewCashMaxChange = previewCashMaxChange;
         this.previewStatChanges = previewStatChanges;
     }
 
@@ -36,6 +48,8 @@ public class TurnPreviewResponse {
                 .map(PreviewSlotResponse::from)
                 .toList())
             .previewCashChange(previewResult.getPreviewCashChange().getAmount().longValueExact())
+            .previewCashMinChange(previewResult.getPreviewCashMinChange().getAmount().longValueExact())
+            .previewCashMaxChange(previewResult.getPreviewCashMaxChange().getAmount().longValueExact())
             .previewStatChanges(PreviewStatChangesResponse.from(previewResult))
             .build();
     }
@@ -45,9 +59,27 @@ public class TurnPreviewResponse {
         final Long previewCashChange,
         final PreviewStatChangesResponse previewStatChanges
     ) {
+        return TurnPreviewResponse.of(
+            slots,
+            previewCashChange,
+            previewCashChange,
+            previewCashChange,
+            previewStatChanges
+        );
+    }
+
+    public static TurnPreviewResponse of(
+        final List<PreviewSlotResponse> slots,
+        final Long previewCashChange,
+        final Long previewCashMinChange,
+        final Long previewCashMaxChange,
+        final PreviewStatChangesResponse previewStatChanges
+    ) {
         return TurnPreviewResponse.builder()
             .slots(slots)
             .previewCashChange(previewCashChange)
+            .previewCashMinChange(previewCashMinChange)
+            .previewCashMaxChange(previewCashMaxChange)
             .previewStatChanges(previewStatChanges)
             .build();
     }

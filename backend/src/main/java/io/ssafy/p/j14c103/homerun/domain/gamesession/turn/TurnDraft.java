@@ -16,6 +16,8 @@ public class TurnDraft {
     private final Integer turnNumber;
     private final List<TurnDraftSlot> slots;
     private final Money previewCashChange;
+    private final Money previewCashMinChange;
+    private final Money previewCashMaxChange;
     private final Map<String, Integer> previewStatChanges;
 
     private TurnDraft(
@@ -23,18 +25,22 @@ public class TurnDraft {
         final Integer turnNumber,
         final List<TurnDraftSlot> slots,
         final Money previewCashChange,
+        final Money previewCashMinChange,
+        final Money previewCashMaxChange,
         final Map<String, Integer> previewStatChanges
     ) {
         validateSessionId(sessionId);
         validateTurnNumber(turnNumber);
         validateSlots(slots);
-        validatePreviewCashChange(previewCashChange);
+        validatePreviewCashRange(previewCashChange, previewCashMinChange, previewCashMaxChange);
         validatePreviewStatChanges(previewStatChanges);
 
         this.sessionId = sessionId;
         this.turnNumber = turnNumber;
         this.slots = List.copyOf(slots);
         this.previewCashChange = previewCashChange;
+        this.previewCashMinChange = previewCashMinChange;
+        this.previewCashMaxChange = previewCashMaxChange;
         this.previewStatChanges = Map.copyOf(previewStatChanges);
     }
 
@@ -50,6 +56,28 @@ public class TurnDraft {
             turnNumber,
             slots,
             previewCashChange,
+            previewCashChange,
+            previewCashChange,
+            previewStatChanges
+        );
+    }
+
+    public static TurnDraft of(
+        final Long sessionId,
+        final Integer turnNumber,
+        final List<TurnDraftSlot> slots,
+        final Money previewCashChange,
+        final Money previewCashMinChange,
+        final Money previewCashMaxChange,
+        final Map<String, Integer> previewStatChanges
+    ) {
+        return new TurnDraft(
+            sessionId,
+            turnNumber,
+            slots,
+            previewCashChange,
+            previewCashMinChange,
+            previewCashMaxChange,
             previewStatChanges
         );
     }
@@ -81,8 +109,15 @@ public class TurnDraft {
         }
     }
 
-    private static void validatePreviewCashChange(final Money previewCashChange) {
-        if (previewCashChange == null) {
+    private static void validatePreviewCashRange(
+        final Money previewCashChange,
+        final Money previewCashMinChange,
+        final Money previewCashMaxChange
+    ) {
+        if (previewCashChange == null || previewCashMinChange == null || previewCashMaxChange == null) {
+            throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (previewCashMinChange.isGreaterThan(previewCashMaxChange)) {
             throw new HomerunException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }

@@ -19,16 +19,28 @@ public interface TurnPreviewCalculator {
 
         private final List<PreviewSlot> slots;
         private final Money previewCashChange;
+        private final Money previewCashMinChange;
+        private final Money previewCashMaxChange;
         private final Map<String, Integer> previewStatChanges;
 
         private TurnPreviewResult(
             final List<PreviewSlot> slots,
             final Money previewCashChange,
+            final Money previewCashMinChange,
+            final Money previewCashMaxChange,
             final Map<String, Integer> previewStatChanges
         ) {
-            validate(slots, previewCashChange, previewStatChanges);
+            validate(
+                slots,
+                previewCashChange,
+                previewCashMinChange,
+                previewCashMaxChange,
+                previewStatChanges
+            );
             this.slots = List.copyOf(slots);
             this.previewCashChange = previewCashChange;
+            this.previewCashMinChange = previewCashMinChange;
+            this.previewCashMaxChange = previewCashMaxChange;
             this.previewStatChanges = Map.copyOf(previewStatChanges);
         }
 
@@ -37,15 +49,48 @@ public interface TurnPreviewCalculator {
             final Money previewCashChange,
             final Map<String, Integer> previewStatChanges
         ) {
-            return new TurnPreviewResult(slots, previewCashChange, previewStatChanges);
+            return new TurnPreviewResult(
+                slots,
+                previewCashChange,
+                previewCashChange,
+                previewCashChange,
+                previewStatChanges
+            );
+        }
+
+        public static TurnPreviewResult of(
+            final List<PreviewSlot> slots,
+            final Money previewCashChange,
+            final Money previewCashMinChange,
+            final Money previewCashMaxChange,
+            final Map<String, Integer> previewStatChanges
+        ) {
+            return new TurnPreviewResult(
+                slots,
+                previewCashChange,
+                previewCashMinChange,
+                previewCashMaxChange,
+                previewStatChanges
+            );
         }
 
         private static void validate(
             final List<PreviewSlot> slots,
             final Money previewCashChange,
+            final Money previewCashMinChange,
+            final Money previewCashMaxChange,
             final Map<String, Integer> previewStatChanges
         ) {
-            if (slots == null || previewCashChange == null || previewStatChanges == null) {
+            if (
+                slots == null
+                    || previewCashChange == null
+                    || previewCashMinChange == null
+                    || previewCashMaxChange == null
+                    || previewStatChanges == null
+            ) {
+                throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
+            }
+            if (previewCashMinChange.isGreaterThan(previewCashMaxChange)) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
         }

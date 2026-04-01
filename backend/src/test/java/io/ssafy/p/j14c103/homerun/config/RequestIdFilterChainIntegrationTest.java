@@ -5,7 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.ssafy.p.j14c103.homerun.support.MockMvcIntegrationTestSupport;
+import io.ssafy.p.j14c103.homerun.support.HttpIntegrationTestSupport;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Import(RequestIdFilterChainIntegrationTest.RequestIdEchoController.class)
-class RequestIdFilterChainIntegrationTest extends MockMvcIntegrationTestSupport {
+class RequestIdFilterChainIntegrationTest extends HttpIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

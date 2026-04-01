@@ -157,7 +157,7 @@ public class CommitTurnService {
                 slot.getSlotIndex(),
                 slot.getActionType(),
                 actionCatalog.getDefinition(slot.getActionType()).category(),
-                false
+                slot.isForcedAction()
             ))
             .toList();
         gameSessionTurnSlotRepository.saveAllAndFlush(committedSlots);
