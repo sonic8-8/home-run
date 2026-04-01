@@ -480,6 +480,33 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(jsonPath("$.data.timeline[1].turnNumber").value(12));
     }
 
+    @DisplayName("번아웃 상태 preview는 강제 REST 슬롯을 공개 계약으로 노출해야 한다.")
+    @Test
+    void submitTurnSlotsShouldExposeForcedRestSlotsForBurnout() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-burnout-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        saveGameStat(fixture.session(), 70, 85, 82, 50, 50, 12);
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken())
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "slots",
+                    List.of(
+                        Map.of("slotIndex", 0, "actionType", "REST"),
+                        Map.of("slotIndex", 1, "actionType", "STUDY"),
+                        Map.of("slotIndex", 2, "actionType", "REST")
+                    )
+                ))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.slots[0].forcedAction").value(true))
+            .andExpect(jsonPath("$.data.slots[1].forcedAction").value(false))
+            .andExpect(jsonPath("$.data.slots[2].forcedAction").value(true));
+    }
+
     @DisplayName("변동 수익 행동 preview는 min/max 범위를 공개 계약으로 노출해야 한다. 현재 구현은 RED baseline이다.")
     @Test
     void submitTurnSlotsShouldExposeCashRangeForVariableIncomeActions() throws Exception {

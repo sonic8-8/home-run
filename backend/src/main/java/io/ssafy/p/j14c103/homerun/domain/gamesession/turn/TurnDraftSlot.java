@@ -12,23 +12,34 @@ public class TurnDraftSlot {
 
     private final Integer slotIndex;
     private final ActionType actionType;
+    private final boolean forcedAction;
 
     private TurnDraftSlot(
         final Integer slotIndex,
-        final ActionType actionType
+        final ActionType actionType,
+        final boolean forcedAction
     ) {
         validateSlotIndex(slotIndex);
         validateActionType(actionType);
 
         this.slotIndex = slotIndex;
         this.actionType = actionType;
+        this.forcedAction = forcedAction;
     }
 
     public static TurnDraftSlot of(
         final Integer slotIndex,
         final ActionType actionType
     ) {
-        return new TurnDraftSlot(slotIndex, actionType);
+        return TurnDraftSlot.of(slotIndex, actionType, false);
+    }
+
+    public static TurnDraftSlot of(
+        final Integer slotIndex,
+        final ActionType actionType,
+        final boolean forcedAction
+    ) {
+        return new TurnDraftSlot(slotIndex, actionType, forcedAction);
     }
 
     private static void validateSlotIndex(final Integer slotIndex) {

@@ -1,18 +1,14 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 
-import io.ssafy.p.j14c103.homerun.api.service.character.schedule.TurnSlotPreviewService;
-import io.ssafy.p.j14c103.homerun.api.service.character.schedule.request.TurnSlotPreviewRequest;
-import io.ssafy.p.j14c103.homerun.api.service.character.schedule.response.TurnSlotPreviewResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.port.TurnPreviewCalculator;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SubmitTurnSlotsServiceRequest;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
 import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
-import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionType;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnPreviewPolicy;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
-import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -20,14 +16,14 @@ import org.springframework.stereotype.Component;
 public class CharacterTurnPreviewCalculator implements TurnPreviewCalculator {
 
     private final GameStatRepository gameStatRepository;
-    private final TurnSlotPreviewService turnSlotPreviewService;
+    private final TurnPreviewPolicy turnPreviewPolicy;
 
     public CharacterTurnPreviewCalculator(
         final GameStatRepository gameStatRepository,
-        final TurnSlotPreviewService turnSlotPreviewService
+        final TurnPreviewPolicy turnPreviewPolicy
     ) {
         this.gameStatRepository = gameStatRepository;
-        this.turnSlotPreviewService = turnSlotPreviewService;
+        this.turnPreviewPolicy = turnPreviewPolicy;
     }
 
     @Override
@@ -37,38 +33,34 @@ public class CharacterTurnPreviewCalculator implements TurnPreviewCalculator {
     ) {
         final GameStat gameStat = gameStatRepository.findById(Math.toIntExact(gameSession.getGameSessionId()))
             .orElseThrow(() -> new HomerunException(ErrorCode.GAME_SESSION_NOT_FOUND));
-        final TurnSlotPreviewResponse previewResponse = turnSlotPreviewService.preview(
-            TurnSlotPreviewRequest.of(
-                gameStat,
-                request.getSlots().stream()
-                    .map(slot -> TurnSlotPreviewRequest.TurnSlotRequest.of(
-                        slot.getSlotIndex(),
-                        io.ssafy.p.j14c103.homerun.domain.character.schedule.ActionType.valueOf(
-                            slot.getActionType().name()
-                        )
-                    ))
-                    .toList()
-            )
+        final TurnPreviewPolicy.PreviewResult previewResult = turnPreviewPolicy.preview(
+            gameStat,
+            gameSession.getCurrentTurn(),
+            request.getSlots().stream()
+                .map(slot -> TurnPreviewPolicy.RequestedSlot.of(
+                    slot.getSlotIndex(),
+                    slot.getActionType()
+                ))
+                .toList()
         );
 
         return TurnPreviewResult.of(
-            previewResponse.getSlots().stream()
+            previewResult.slots().stream()
                 .map(slot -> PreviewSlot.of(
-                    slot.getSlotIndex(),
-                    ActionType.valueOf(slot.getActionType().name()),
-                    slot.isForcedAction()
+                    slot.slotIndex(),
+                    slot.actionType(),
+                    slot.forcedAction()
                 ))
                 .toList(),
-            // Redis draft currently stores one cash delta, so keep the conservative lower bound.
-            Money.of(previewResponse.getCashPreview().getMinimumCashDelta()),
-            Money.of(previewResponse.getCashPreview().getMinimumCashDelta()),
-            Money.of(previewResponse.getCashPreview().getMaximumCashDelta()),
+            Money.of(previewResult.cashPreview().minimumCashDelta()),
+            Money.of(previewResult.cashPreview().minimumCashDelta()),
+            Money.of(previewResult.cashPreview().maximumCashDelta()),
             Map.of(
-                "health", previewResponse.getStatPreview().getHealthDelta(),
-                "fatigue", previewResponse.getStatPreview().getFatigueDelta(),
-                "stress", previewResponse.getStatPreview().getStressDelta(),
-                "happiness", previewResponse.getStatPreview().getHappinessDelta(),
-                "knowledge", previewResponse.getStatPreview().getKnowledgeDelta()
+                "health", previewResult.statPreview().healthDelta(),
+                "fatigue", previewResult.statPreview().fatigueDelta(),
+                "stress", previewResult.statPreview().stressDelta(),
+                "happiness", previewResult.statPreview().happinessDelta(),
+                "knowledge", previewResult.statPreview().knowledgeDelta()
             )
         );
     }

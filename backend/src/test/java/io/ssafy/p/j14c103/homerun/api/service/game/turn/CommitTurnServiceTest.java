@@ -149,6 +149,67 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         userRepository.deleteAllInBatch();
     }
 
+    @DisplayName("턴 커밋은 draft의 forcedAction을 저장 슬롯에 그대로 반영한다.")
+    @Test
+    void commitTurnPreservesForcedActionFromDraft() {
+        // given
+        final User user = saveUser("turn-commit-forced@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 5)
+        );
+        saveGameCareer(gameSession.getGameSessionId(), 26_400_000, EmploymentStatus.EMPLOYED);
+        final TurnDraft turnDraft = createTurnDraft(
+            gameSession.getGameSessionId(),
+            5,
+            List.of(
+                TurnDraftSlot.of(0, ActionType.REST, true),
+                TurnDraftSlot.of(1, ActionType.STUDY, false),
+                TurnDraftSlot.of(2, ActionType.REST, true)
+            ),
+            Money.of(300_000L),
+            Map.of(
+                "health", 3,
+                "fatigue", -14,
+                "stress", -8,
+                "happiness", 4,
+                "knowledge", 0
+            )
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(GameWorldResult.of(
+                GameWorldResult.CycleResult.of(
+                    CyclePhase.RECOVERY,
+                    CycleType.CYCLE_RATE_HIKE,
+                    18,
+                    "경기 회복기"
+                ),
+                List.of(),
+                List.of(),
+                GameWorldResult.HousingSnapshot.empty()
+            ));
+
+        // when
+        commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId());
+
+        // then
+        assertThat(gameTurnSlotRepository.findAllByGameSessionIdAndTurnNumberOrderBySlotIndex(
+                gameSession.getGameSessionId(),
+                5
+            ))
+            .extracting(
+                GameTurnSlot::getSlotIndex,
+                GameTurnSlot::getActionType,
+                GameTurnSlot::isForcedAction
+            )
+            .containsExactly(
+                tuple(0, ActionType.REST, true),
+                tuple(1, ActionType.STUDY, false),
+                tuple(2, ActionType.REST, true)
+            );
+    }
+
     @DisplayName("턴 커밋은 정산 결과를 settlement log와 timeline에 저장하고 세션을 다음 턴으로 전진시킨다.")
     @Test
     void commitTurn() {
@@ -759,7 +820,7 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         final Money previewCashChange,
         final Map<String, Integer> previewStatChanges
     ) {
-        return TurnDraft.of(
+        return createTurnDraft(
             sessionId,
             turnNumber,
             List.of(
@@ -767,6 +828,24 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
                 TurnDraftSlot.of(1, ActionType.HOBBY),
                 TurnDraftSlot.of(2, ActionType.SIDE_JOB)
             ),
+            previewCashChange,
+            previewStatChanges
+        );
+    }
+
+    private TurnDraft createTurnDraft(
+        final Long sessionId,
+        final Integer turnNumber,
+        final List<TurnDraftSlot> slots,
+        final Money previewCashChange,
+        final Map<String, Integer> previewStatChanges
+    ) {
+        return TurnDraft.of(
+            sessionId,
+            turnNumber,
+            slots,
+            previewCashChange,
+            previewCashChange,
             previewCashChange,
             previewStatChanges
         );
