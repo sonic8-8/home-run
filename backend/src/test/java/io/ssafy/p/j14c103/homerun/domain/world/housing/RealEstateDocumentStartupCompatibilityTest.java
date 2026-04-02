@@ -22,58 +22,43 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import org.mockito.BDDMockito;
 
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(properties = {
-    "spring.datasource.driver-class-name=org.postgresql.Driver",
     "spring.jpa.hibernate.ddl-auto=update",
     "spring.sql.init.mode=never",
     "app.real-estate-import.enabled=false"
 })
 class RealEstateDocumentStartupCompatibilityTest {
 
-    static final GenericContainer<?> POSTGRES_CONTAINER = new GenericContainer<>(
+    @Container
+    @ServiceConnection
+    static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>(
         DockerImageName.parse("postgres:16-alpine")
     )
-        .withEnv("POSTGRES_DB", "compat_test")
-        .withEnv("POSTGRES_USER", "compat_user")
-        .withEnv("POSTGRES_PASSWORD", "compat_password")
-        .withExposedPorts(5432)
+        .withDatabaseName("compat_test")
+        .withUsername("compat_user")
+        .withPassword("compat_password")
         .withCopyFileToContainer(
             MountableFile.forClasspathResource("sql/legacy-real-estate-documents-null-property-id.sql"),
             "/docker-entrypoint-initdb.d/001-legacy-real-estate-documents.sql"
         )
         .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 1))
         .withStartupTimeout(Duration.ofMinutes(2));
-
-    @DynamicPropertySource
-    static void overrideDatasourceProperties(final DynamicPropertyRegistry registry) {
-        if (!POSTGRES_CONTAINER.isRunning()) {
-            POSTGRES_CONTAINER.start();
-        }
-
-        registry.add(
-            "spring.datasource.url",
-            () -> "jdbc:postgresql://%s:%d/compat_test".formatted(
-                POSTGRES_CONTAINER.getHost(),
-                POSTGRES_CONTAINER.getMappedPort(5432)
-            )
-        );
-        registry.add("spring.datasource.username", () -> "compat_user");
-        registry.add("spring.datasource.password", () -> "compat_password");
-    }
 
     @Autowired
     private RealEstateDocumentRepository realEstateDocumentRepository;
