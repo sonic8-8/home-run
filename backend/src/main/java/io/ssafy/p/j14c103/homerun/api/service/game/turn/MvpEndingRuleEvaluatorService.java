@@ -14,6 +14,7 @@ public class MvpEndingRuleEvaluatorService implements EndingRuleEvaluator {
     public EndingEvaluation evaluate(final EndingRuleContext context) {
         final Money netWorth = context.getCashBalance()
             .add(context.getStockValue())
+            .add(context.getRealEstateValue())
             .subtract(context.getLoanBalance());
 
         if (context.isTargetPropertyOwned()) {

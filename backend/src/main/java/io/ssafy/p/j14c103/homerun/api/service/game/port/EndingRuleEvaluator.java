@@ -16,6 +16,7 @@ public interface EndingRuleEvaluator {
         private final Integer nextTurnNumber;
         private final Money cashBalance;
         private final Money stockValue;
+        private final Money realEstateValue;
         private final Money loanBalance;
         private final boolean targetPropertyOwned;
 
@@ -23,13 +24,15 @@ public interface EndingRuleEvaluator {
             final Integer nextTurnNumber,
             final Money cashBalance,
             final Money stockValue,
+            final Money realEstateValue,
             final Money loanBalance,
             final boolean targetPropertyOwned
         ) {
-            validate(nextTurnNumber, cashBalance, stockValue, loanBalance);
+            validate(nextTurnNumber, cashBalance, stockValue, realEstateValue, loanBalance);
             this.nextTurnNumber = nextTurnNumber;
             this.cashBalance = cashBalance;
             this.stockValue = stockValue;
+            this.realEstateValue = realEstateValue;
             this.loanBalance = loanBalance;
             this.targetPropertyOwned = targetPropertyOwned;
         }
@@ -38,6 +41,7 @@ public interface EndingRuleEvaluator {
             final Integer nextTurnNumber,
             final Money cashBalance,
             final Money stockValue,
+            final Money realEstateValue,
             final Money loanBalance,
             final boolean targetPropertyOwned
         ) {
@@ -45,6 +49,7 @@ public interface EndingRuleEvaluator {
                 nextTurnNumber,
                 cashBalance,
                 stockValue,
+                realEstateValue,
                 loanBalance,
                 targetPropertyOwned
             );
@@ -54,12 +59,16 @@ public interface EndingRuleEvaluator {
             final Integer nextTurnNumber,
             final Money cashBalance,
             final Money stockValue,
+            final Money realEstateValue,
             final Money loanBalance
         ) {
             if (nextTurnNumber == null || nextTurnNumber < 1) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
-            if (cashBalance == null || stockValue == null || loanBalance == null) {
+            if (cashBalance == null
+                || stockValue == null
+                || realEstateValue == null
+                || loanBalance == null) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
         }
