@@ -87,7 +87,13 @@ dependencyManagement {
 tasks.named('test') {
     outputs.dir snippetsDir
     useJUnitPlatform()
+    if (project.findProperty('skipDockerlessTestcontainers') == 'true') {
+        filter {
+            excludeTestsMatching 'io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateDocumentStartupCompatibilityTest'
+        }
+    }
     reports {
+        html.required = false
         junitXml {
             includeSystemOutLog = false
             includeSystemErrLog = false

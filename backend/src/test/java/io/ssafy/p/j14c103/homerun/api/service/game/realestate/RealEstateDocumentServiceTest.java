@@ -148,6 +148,73 @@ class RealEstateDocumentServiceTest extends IntegrationTestSupport {
             .isEqualTo(ErrorCode.HOUSING_REGISTRY_SAMPLE_INVALID);
     }
 
+    @DisplayName("property별 문서에 샘플 payload가 없으면 global 샘플 row를 fallback으로 사용한다")
+    @Test
+    void getDocumentWithGlobalSampleFallback() {
+        // given
+        final User user = saveUser("document-global-fallback-user@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(user.getId()));
+        final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
+        realEstateDocumentRepository.saveAllAndFlush(List.of(
+            createChecklistOnlyGapguDocument(property.getPropertyId()),
+            createChecklistOnlyEulguDocument(property.getPropertyId()),
+            createGlobalGapguSample(),
+            createGlobalEulguSample()
+        ));
+        given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
+        given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
+
+        // when
+        final RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
+            user.getId(),
+            gameSession.getGameSessionId(),
+            property.getPropertyId()
+        );
+
+        // then
+        assertThat(response.getGapguRows()).hasSize(1);
+        assertThat(response.getGapguRows().get(0).getDetails()).contains("global gapgu sample");
+        assertThat(response.getEulguRows()).hasSize(1);
+        assertThat(response.getEulguRows().get(0).getDetails()).contains("global eulgu sample");
+        assertThat(response.getChecklistItems())
+            .extracting(RealEstateDocumentResponse.ChecklistItemResponse::getTrapId)
+            .containsExactly("TRAP-GLOBAL-001");
+        assertThat(response.getSolution().getVerdict()).isEqualTo("정상");
+    }
+
+    @DisplayName("property별 문서 payload가 불완전해도 global 샘플 row를 fallback으로 사용한다")
+    @Test
+    void getDocumentWithMalformedPropertyPayloadUsesGlobalFallback() {
+        // given
+        final User user = saveUser("document-global-fallback-malformed-user@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(createGameSession(user.getId()));
+        final RealEstateProperty property = realEstatePropertyRepository.saveAndFlush(createProperty());
+        realEstateDocumentRepository.saveAllAndFlush(List.of(
+            createMalformedGapguDocument(property.getPropertyId()),
+            createMalformedEulguDocument(property.getPropertyId()),
+            createGlobalGapguSample(),
+            createGlobalEulguSample()
+        ));
+        given(realEstateRegistryRandomService.nextGapguIndex(1)).willReturn(0);
+        given(realEstateRegistryRandomService.nextEulguIndex(1)).willReturn(0);
+
+        // when
+        final RealEstateDocumentResponse response = realEstateDocumentService.getDocument(
+            user.getId(),
+            gameSession.getGameSessionId(),
+            property.getPropertyId()
+        );
+
+        // then
+        assertThat(response.getGapguRows()).hasSize(1);
+        assertThat(response.getGapguRows().get(0).getDetails()).contains("global gapgu sample");
+        assertThat(response.getEulguRows()).hasSize(1);
+        assertThat(response.getEulguRows().get(0).getDetails()).contains("global eulgu sample");
+        assertThat(response.getChecklistItems())
+            .extracting(RealEstateDocumentResponse.ChecklistItemResponse::getTrapId)
+            .containsExactly("TRAP-MALFORMED-001");
+    }
+
     @DisplayName("존재하지 않는 세션이면 game 세션 조회 에러를 던진다")
     @Test
     void getDocumentWithUnknownSession() {
@@ -273,6 +340,148 @@ class RealEstateDocumentServiceTest extends IntegrationTestSupport {
                 List.of("갑구 포인트"),
                 "갑구 정답 해설",
                 "갑구 오답 해설"
+            )
+        );
+    }
+
+    private RealEstateDocument createChecklistOnlyGapguDocument(final Long propertyId) {
+        return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.GAPGU,
+            null,
+            List.of(
+                RealEstateDocumentChecklistItem.create(
+                    "TRAP-GLOBAL-001",
+                    "글로벌 샘플 체크리스트",
+                    false
+                )
+            ),
+            null
+        );
+    }
+
+    private RealEstateDocument createMalformedGapguDocument(final Long propertyId) {
+        return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.GAPGU,
+            null,
+            List.of(
+                RealEstateDocumentChecklistItem.create(
+                    "TRAP-MALFORMED-001",
+                    "불완전 payload 체크리스트",
+                    false
+                )
+            ),
+            RealEstateRegistryQuizSample.create(
+                "정상",
+                List.of(
+                    RealEstateRegistryRow.create(
+                        "1",
+                        "소유권보존",
+                        "2024년 1월 1일",
+                        "보존",
+                        "malformed gapgu sample",
+                        Map.of()
+                    )
+                ),
+                "갑구 해설",
+                null,
+                "갑구 정답 해설",
+                "갑구 오답 해설"
+            )
+        );
+    }
+
+    private RealEstateDocument createChecklistOnlyEulguDocument(final Long propertyId) {
+        return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.EULGU,
+            null,
+            List.of(),
+            null
+        );
+    }
+
+    private RealEstateDocument createMalformedEulguDocument(final Long propertyId) {
+        return RealEstateDocument.create(
+            propertyId,
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.EULGU,
+            null,
+            List.of(),
+            RealEstateRegistryQuizSample.create(
+                "정상",
+                List.of(
+                    RealEstateRegistryRow.create(
+                        "1",
+                        "근저당권설정",
+                        "2024년 1월 1일",
+                        "설정",
+                        "malformed eulgu sample",
+                        Map.of()
+                    )
+                ),
+                "을구 해설",
+                List.of("을구 포인트"),
+                "을구 정답 해설",
+                null
+            )
+        );
+    }
+
+    private RealEstateDocument createGlobalGapguSample() {
+        return RealEstateDocument.create(
+            null,
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.GAPGU,
+            null,
+            List.of(),
+            RealEstateRegistryQuizSample.create(
+                "정상",
+                List.of(
+                    RealEstateRegistryRow.create(
+                        "1",
+                        "소유권보존",
+                        "2024년 1월 1일",
+                        "보존",
+                        "global gapgu sample",
+                        Map.of()
+                    )
+                ),
+                "갑구 해설",
+                List.of("갑구 포인트"),
+                "갑구 정답 해설",
+                "갑구 오답 해설"
+            )
+        );
+    }
+
+    private RealEstateDocument createGlobalEulguSample() {
+        return RealEstateDocument.create(
+            null,
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.EULGU,
+            null,
+            List.of(),
+            RealEstateRegistryQuizSample.create(
+                "정상",
+                List.of(
+                    RealEstateRegistryRow.create(
+                        "1",
+                        "근저당권설정",
+                        "2024년 1월 1일",
+                        "설정",
+                        "global eulgu sample",
+                        Map.of()
+                    )
+                ),
+                "을구 해설",
+                List.of("을구 포인트"),
+                "을구 정답 해설",
+                "을구 오답 해설"
             )
         );
     }

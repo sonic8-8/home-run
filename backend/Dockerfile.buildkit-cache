@@ -18,7 +18,7 @@ COPY src ./src
 FROM source AS tester
 RUN --mount=type=cache,target=/home/gradle/.gradle \
     --mount=type=cache,target=/workspace/.gradle \
-    ./gradlew --no-daemon --build-cache test
+    ./gradlew --no-daemon --build-cache -PskipDockerlessTestcontainers=true test
 
 FROM tester AS docs
 RUN --mount=type=cache,target=/home/gradle/.gradle \
