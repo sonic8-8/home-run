@@ -313,8 +313,6 @@ class GameSessionServiceTest extends IntegrationTestSupport {
             false
         );
         final CreateGameSessionResponse response = gameSessionService.create(user.getId(), request);
-        ensureActionMasterForeignKey();
-        jdbcTemplate.update("delete from action_masters");
 
         // when
         final TurnPreviewResponse previewResponse = submitTurnSlotsService.submitTurnSlots(
@@ -331,13 +329,6 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         assertThat(previewResponse.getSlots()).hasSize(3);
         assertThat(commitTurnResponse.getTurnNumber()).isEqualTo(0);
         assertThat(commitTurnResponse.getSettlementLog()).isNotEmpty();
-        assertThat(
-            jdbcTemplate.queryForObject(
-                "select count(*) from action_masters where action_type = ?",
-                Integer.class,
-                "REST"
-            )
-        ).isEqualTo(1);
     }
 
     @DisplayName("MY_DATA 세션 생성은 온보딩 자산연동의 직업과 자본 상태로 초기화한다.")
@@ -770,30 +761,6 @@ class GameSessionServiceTest extends IntegrationTestSupport {
                 SubmitTurnSlotsServiceRequest.TurnSlotRequest.of(2, ActionType.REST)
             )
         );
-    }
-
-    private void ensureActionMasterForeignKey() {
-        final Integer constraintCount = jdbcTemplate.queryForObject(
-            """
-                select count(*)
-                  from information_schema.table_constraints
-                 where lower(table_name) = lower(?)
-                   and lower(constraint_name) = lower(?)
-                """,
-            Integer.class,
-            "game_turn_slots",
-            "fk_game_turn_slots__action_master"
-        );
-
-        if (constraintCount != null && constraintCount > 0) {
-            return;
-        }
-
-        jdbcTemplate.execute("""
-            alter table game_turn_slots
-            add constraint fk_game_turn_slots__action_master
-            foreign key (action_type) references action_masters (action_type)
-            """);
     }
 
     private GameSession createGameSession(

@@ -74,6 +74,7 @@ dependencies {
     testImplementation platform('org.testcontainers:testcontainers-bom:1.20.4')
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:testcontainers'
+    testRuntimeOnly 'net.java.dev.jna:jna-platform:5.13.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -86,6 +87,12 @@ dependencyManagement {
 tasks.named('test') {
     outputs.dir snippetsDir
     useJUnitPlatform()
+    reports {
+        junitXml {
+            includeSystemOutLog = false
+            includeSystemErrLog = false
+        }
+    }
 }
 
 tasks.named('asciidoctor') {
