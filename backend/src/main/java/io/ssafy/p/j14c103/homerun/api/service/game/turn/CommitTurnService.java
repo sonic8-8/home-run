@@ -112,7 +112,7 @@ public class CommitTurnService {
             saveCommittedSlots(gameSession.getGameSessionId(), committedTurn, turnDraft);
             applyCharacterState(gameSession.getGameSessionId(), committedTurn + 1, settlementResult);
             final SessionAdvanceResult sessionAdvanceResult =
-                advanceSession(gameSession, worldResult, settlementResult);
+                advanceSession(gameSession, worldResult, settlementResult, settlementResult.getEndingStatus());
             saveSettlementLogs(gameSession.getGameSessionId(), committedTurn, settlementResult);
             saveNewsLog(
                 gameSession.getGameSessionId(),
@@ -130,7 +130,11 @@ public class CommitTurnService {
                 sessionAdvanceResult.nextDate(),
                 settlementResult
             );
-            saveGameReportIfEnded(gameSession, settlementResult);
+            saveGameReportIfEnded(
+                gameSession,
+                settlementResult,
+                settlementResult.getEndingStatus()
+            );
             turnDraftRepository.deleteBySessionId(sessionId);
 
             final CommitTurnResponse response = CommitTurnResponse.of(
@@ -203,7 +207,8 @@ public class CommitTurnService {
             turnDraft.getPreviewStatChanges(),
             worldResult.getCycleResult().getDescription(),
             !worldResult.getEventCandidates().isEmpty(),
-            isTargetPropertyOwned(gameSession, worldResult)
+            isTargetPropertyOwned(gameSession, worldResult),
+            hasForeclosureSignal(worldResult)
         );
     }
 
@@ -227,7 +232,8 @@ public class CommitTurnService {
     private SessionAdvanceResult advanceSession(
         final GameSession gameSession,
         final GameWorldResult worldResult,
-        final SettlementOrchestratorResult settlementResult
+        final SettlementOrchestratorResult settlementResult,
+        final SessionStatus endingStatus
     ) {
         final Money nextCash = settlementResult.getFinalCash();
         final Money nextTotalAssets = settlementResult.getTotalAssets();
@@ -247,8 +253,8 @@ public class CommitTurnService {
             nextNetWorth,
             nextCycleState
         );
-        if (settlementResult.getEndingStatus() != SessionStatus.IN_PROGRESS) {
-            gameSession.markEnding(settlementResult.getEndingStatus());
+        if (endingStatus != SessionStatus.IN_PROGRESS) {
+            gameSession.markEnding(endingStatus);
         }
         return new SessionAdvanceResult(nextDate);
     }
@@ -319,9 +325,10 @@ public class CommitTurnService {
 
     private void saveGameReportIfEnded(
         final GameSession gameSession,
-        final SettlementOrchestratorResult settlementResult
+        final SettlementOrchestratorResult settlementResult,
+        final SessionStatus endingStatus
     ) {
-        if (settlementResult.getEndingStatus() == SessionStatus.IN_PROGRESS) {
+        if (endingStatus == SessionStatus.IN_PROGRESS) {
             return;
         }
 
@@ -334,17 +341,31 @@ public class CommitTurnService {
 
         gameReportRepository.saveAndFlush(GameReport.create(
             gameSession.getGameSessionId(),
-            settlementResult.getEndingStatus(),
-            resolveEndingTitle(settlementResult.getEndingStatus()),
+            endingStatus,
+            resolveEndingTitle(endingStatus),
             totalIncome,
             totalExpense,
-            resolveGrade(settlementResult.getEndingStatus()),
+            resolveGrade(endingStatus),
             toInteger(settlementResult.getTotalAssets()),
             totalIncome - totalExpense,
             DEFAULT_SPENDING_CATEGORY,
             BigDecimal.ZERO,
             List.of()
         ));
+    }
+
+    private boolean hasForeclosureSignal(final GameWorldResult worldResult) {
+        final GameWorldResult.HousingSnapshot housingSnapshot = worldResult.getHousingSnapshot();
+        if (!housingSnapshot.isHasHousingLossSignal() || housingSnapshot.getTargetPropertyId() == null) {
+            return false;
+        }
+
+        if (housingSnapshot.getCurrentHousingType() == HousingType.NONE) {
+            return true;
+        }
+
+        return housingSnapshot.getCurrentHousingType() == HousingType.OWNED_APT
+            && housingSnapshot.getCurrentPropertyId() == null;
     }
 
     private List<CommitTurnResponse.SettlementLogItemResponse> buildSettlementLog(

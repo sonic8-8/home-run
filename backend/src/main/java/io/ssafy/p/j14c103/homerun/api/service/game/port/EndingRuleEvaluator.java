@@ -19,6 +19,7 @@ public interface EndingRuleEvaluator {
         private final Money realEstateValue;
         private final Money loanBalance;
         private final boolean targetPropertyOwned;
+        private final boolean foreclosureTriggered;
 
         private EndingRuleContext(
             final Integer nextTurnNumber,
@@ -26,7 +27,8 @@ public interface EndingRuleEvaluator {
             final Money stockValue,
             final Money realEstateValue,
             final Money loanBalance,
-            final boolean targetPropertyOwned
+            final boolean targetPropertyOwned,
+            final boolean foreclosureTriggered
         ) {
             validate(nextTurnNumber, cashBalance, stockValue, realEstateValue, loanBalance);
             this.nextTurnNumber = nextTurnNumber;
@@ -35,6 +37,7 @@ public interface EndingRuleEvaluator {
             this.realEstateValue = realEstateValue;
             this.loanBalance = loanBalance;
             this.targetPropertyOwned = targetPropertyOwned;
+            this.foreclosureTriggered = foreclosureTriggered;
         }
 
         public static EndingRuleContext of(
@@ -43,7 +46,8 @@ public interface EndingRuleEvaluator {
             final Money stockValue,
             final Money realEstateValue,
             final Money loanBalance,
-            final boolean targetPropertyOwned
+            final boolean targetPropertyOwned,
+            final boolean foreclosureTriggered
         ) {
             return new EndingRuleContext(
                 nextTurnNumber,
@@ -51,7 +55,8 @@ public interface EndingRuleEvaluator {
                 stockValue,
                 realEstateValue,
                 loanBalance,
-                targetPropertyOwned
+                targetPropertyOwned,
+                foreclosureTriggered
             );
         }
 

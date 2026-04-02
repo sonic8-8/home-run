@@ -609,6 +609,37 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(jsonPath("$.data.timeline[1].turnNumber").value(12));
     }
 
+    @DisplayName("압류 종료 세션은 ending 조회에서 foreclosure 타입과 제목을 같은 계약으로 읽어야 한다.")
+    @Test
+    void endingReadBackForeclosure() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "ending-foreclosure-user@example.com",
+            12,
+            CycleState.of(CyclePhase.RECOVERY, CycleType.CYCLE_RATE_HIKE, 18)
+        );
+        fixture.session().markEnding(SessionStatus.FORECLOSURE);
+        gameSessionRepository.saveAndFlush(fixture.session());
+        gameReportRepository.saveAndFlush(GameReport.create(
+            fixture.session().getGameSessionId(),
+            SessionStatus.FORECLOSURE,
+            "압류",
+            30_000_000,
+            42_000_000,
+            "B",
+            15_000_000,
+            -12_000_000,
+            "주거비",
+            BigDecimal.valueOf(52.4),
+            List.of()
+        ));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/ending", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.endingType").value("FORECLOSURE"))
+            .andExpect(jsonPath("$.data.title").value("압류"));
+    }
+
     @DisplayName("번아웃 상태 preview는 강제 REST 슬롯을 공개 계약으로 노출해야 한다.")
     @Test
     void submitTurnSlotsShouldExposeForcedRestSlotsForBurnout() throws Exception {

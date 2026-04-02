@@ -53,6 +53,7 @@ class SettlementOrchestratorServiceTest extends IntegrationTestSupport {
             Map.of(),
             "경기 회복기",
             false,
+            false,
             false
         );
         stubStep(SettlementStepType.MARKET_CYCLE_UPDATE, "경기 사이클을 갱신한다", 0L, 50_000L, 0L, Map.of());

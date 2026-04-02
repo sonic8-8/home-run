@@ -167,6 +167,34 @@ class GameWorldResultServiceTest extends IntegrationTestSupport {
         assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isFalse();
     }
 
+    @DisplayName("자가 주택인데 현재 매물 연결이 끊기면 housing loss signal을 유지한다")
+    @Test
+    void buildWorldResultWithOwnedHousingLoss() {
+        // given
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(12, CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1), 101L)
+        );
+        gameHousingRepository.saveAndFlush(GameHousing.create(
+            gameSession.getGameSessionId(),
+            HousingType.OWNED_APT,
+            Money.zero(),
+            Money.zero(),
+            Money.zero(),
+            null
+        ));
+
+        // when
+        final GameWorldResult result = gameWorldResultService.buildWorldResult(
+            gameSession.getGameSessionId(),
+            60
+        );
+
+        // then
+        assertThat(result.getHousingSnapshot().getCurrentHousingType()).isEqualTo(HousingType.OWNED_APT);
+        assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isNull();
+        assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isTrue();
+    }
+
     @DisplayName("현재 주거 데이터가 없어도 기본 housing snapshot을 포함한 world result를 반환한다")
     @Test
     void buildWorldResultWithoutHousing() {

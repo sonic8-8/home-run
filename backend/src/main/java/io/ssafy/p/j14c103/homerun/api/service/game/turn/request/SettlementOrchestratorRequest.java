@@ -21,6 +21,7 @@ public class SettlementOrchestratorRequest {
     private final String cycleDescription;
     private final boolean hasEventCandidate;
     private final boolean targetPropertyOwned;
+    private final boolean foreclosureTriggered;
 
     private SettlementOrchestratorRequest(
         final Long sessionId,
@@ -34,7 +35,8 @@ public class SettlementOrchestratorRequest {
         final Map<String, Integer> previewStatChanges,
         final String cycleDescription,
         final boolean hasEventCandidate,
-        final boolean targetPropertyOwned
+        final boolean targetPropertyOwned,
+        final boolean foreclosureTriggered
     ) {
         validate(
             sessionId,
@@ -60,6 +62,7 @@ public class SettlementOrchestratorRequest {
         this.cycleDescription = cycleDescription;
         this.hasEventCandidate = hasEventCandidate;
         this.targetPropertyOwned = targetPropertyOwned;
+        this.foreclosureTriggered = foreclosureTriggered;
     }
 
     public static SettlementOrchestratorRequest of(
@@ -74,7 +77,8 @@ public class SettlementOrchestratorRequest {
         final Map<String, Integer> previewStatChanges,
         final String cycleDescription,
         final boolean hasEventCandidate,
-        final boolean targetPropertyOwned
+        final boolean targetPropertyOwned,
+        final boolean foreclosureTriggered
     ) {
         return new SettlementOrchestratorRequest(
             sessionId,
@@ -88,7 +92,8 @@ public class SettlementOrchestratorRequest {
             previewStatChanges,
             cycleDescription,
             hasEventCandidate,
-            targetPropertyOwned
+            targetPropertyOwned,
+            foreclosureTriggered
         );
     }
 
