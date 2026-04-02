@@ -3,6 +3,8 @@ package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willAnswer;
@@ -12,6 +14,7 @@ import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.GameSessionCleanupService;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.GameSessionService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
+import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldRollService;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldResultService;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
@@ -43,6 +46,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.GameTurnSlot;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraft;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftSlot;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLog;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLogRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
@@ -50,6 +55,12 @@ import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventTriggerType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GamePendingEvent;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GamePendingEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
@@ -68,6 +79,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -114,6 +126,15 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
     private GameCareerRepository gameCareerRepository;
 
     @Autowired
+    private GameNewsLogRepository gameNewsLogRepository;
+
+    @Autowired
+    private GamePendingEventRepository gamePendingEventRepository;
+
+    @Autowired
+    private GameEventRepository gameEventRepository;
+
+    @Autowired
     private GameSessionService gameSessionService;
 
     @Autowired
@@ -132,15 +153,26 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
     private GameWorldResultService gameWorldResultService;
 
     @MockitoBean
+    private GameWorldRollService gameWorldRollService;
+
+    @MockitoBean
     private GameSessionCleanupService gameSessionCleanupService;
+
+    @BeforeEach
+    void setUp() {
+        given(gameWorldRollService.resolveTurnRoll(anyLong(), anyInt())).willReturn(50);
+    }
 
     @AfterEach
     void tearDown() {
         stockHoldingRepository.deleteAllInBatch();
         gameStockMarketStateRepository.deleteAllInBatch();
+        gamePendingEventRepository.deleteAllInBatch();
+        gameNewsLogRepository.deleteAllInBatch();
         gameHousingRepository.deleteAllInBatch();
         gameCareerRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
+        gameEventRepository.deleteAllInBatch();
         settlementLogRepository.deleteAllInBatch();
         gameTimelineRepository.deleteAllInBatch();
         gameReportRepository.deleteAllInBatch();
@@ -315,8 +347,81 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         assertThat(timelines.get(0).getSalaryAmount()).isEqualTo(2_200_000);
 
         assertTurnCommitTimerRecorded("success", successTimerCountBefore);
+        then(gameWorldRollService).should().resolveTurnRoll(gameSession.getGameSessionId(), 6);
         then(gameWorldResultService).should().buildWorldResult(gameSession.getGameSessionId(), 50);
         then(turnDraftRepository).should().deleteBySessionId(gameSession.getGameSessionId());
+    }
+
+    @DisplayName("턴 커밋은 world result에서 생성된 뉴스와 이벤트를 다음 턴 read-back source로 저장한다.")
+    @Test
+    void commitTurnMaterializesNewsLogAndPendingEvents() {
+        // given
+        final User user = saveUser("turn-commit-world-result@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 5)
+        );
+        saveGameCareer(gameSession.getGameSessionId(), 26_400_000, EmploymentStatus.EMPLOYED);
+        final TurnDraft turnDraft = createTurnDraft(gameSession.getGameSessionId(), 5);
+        final GameEvent gameEvent = gameEventRepository.saveAndFlush(createPhoneEvent("EVT-COMMIT-001"));
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(GameWorldResult.of(
+                GameWorldResult.CycleResult.of(
+                    CyclePhase.RECOVERY,
+                    CycleType.CYCLE_RATE_HIKE,
+                    18,
+                    "월드 결과 저장"
+                ),
+                List.of(GameWorldResult.NewsCandidate.of("NEWS-COMMIT-001", "커밋 기준 뉴스")),
+                List.of(GameWorldResult.EventCandidate.of(
+                    gameEvent.getGameEventId(),
+                    gameEvent.getEventCode(),
+                    gameEvent.getEventName(),
+                    gameEvent.getEventPresentationType()
+                )),
+                GameWorldResult.HousingSnapshot.empty()
+            ));
+
+        // when
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            user.getId(),
+            gameSession.getGameSessionId()
+        );
+
+        // then
+        assertThat(response.getFlags().isHasEvent()).isTrue();
+        assertThat(gameNewsLogRepository
+            .findAllByGameSessionIdAndTurnNumberOrderByGameNewsLogIdAsc(
+                gameSession.getGameSessionId(),
+                6
+            ))
+            .singleElement()
+            .extracting(
+                GameNewsLog::getNewsId,
+                GameNewsLog::getHeadlineSnapshot,
+                GameNewsLog::getPublishedDate
+            )
+            .containsExactly(
+                "NEWS-COMMIT-001",
+                "커밋 기준 뉴스",
+                LocalDate.of(2026, 2, 1)
+            );
+        assertThat(gamePendingEventRepository
+            .findAllByGameSessionIdAndResolvedYnFalseOrderByCreatedAtAscGamePendingEventIdAsc(
+                gameSession.getGameSessionId()
+            ))
+            .singleElement()
+            .extracting(
+                GamePendingEvent::getTurnNumber,
+                GamePendingEvent::getGameEventId,
+                GamePendingEvent::getEventPresentationType
+            )
+            .containsExactly(
+                6,
+                gameEvent.getGameEventId(),
+                EventPresentationType.PHONE
+            );
     }
 
     @DisplayName("턴 커밋 결과가 종료 상태면 세션을 종료하고 game report를 생성한다.")
@@ -781,6 +886,23 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
             property.getPropertyId()
         ));
         return property.getPropertyId();
+    }
+
+    private GameEvent createPhoneEvent(final String eventCode) {
+        return GameEvent.create(
+            "PHONE",
+            eventCode,
+            "월드 이벤트",
+            EventPresentationType.PHONE,
+            EventTriggerType.PROBABILITY,
+            BigDecimal.ONE,
+            false,
+            null,
+            null,
+            null,
+            "월드 이벤트 설명",
+            true
+        );
     }
 
     private void saveStockHolding(

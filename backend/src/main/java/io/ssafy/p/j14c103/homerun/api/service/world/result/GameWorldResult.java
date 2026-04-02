@@ -136,16 +136,31 @@ public class GameWorldResult {
     @Getter
     public static class NewsCandidate {
 
-        private final Integer newsId;
+        private final String newsId;
         private final String headline;
 
-        private NewsCandidate(Integer newsId, String headline) {
+        private NewsCandidate(final String newsId, final String headline) {
+            validateNewsId(newsId);
+            validateHeadline(headline);
+
             this.newsId = newsId;
             this.headline = headline;
         }
 
-        public static NewsCandidate of(Integer newsId, String headline) {
+        public static NewsCandidate of(final String newsId, final String headline) {
             return new NewsCandidate(newsId, headline);
+        }
+
+        private void validateNewsId(final String newsId) {
+            if (newsId == null || newsId.isBlank()) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
+        }
+
+        private void validateHeadline(final String headline) {
+            if (headline == null || headline.isBlank()) {
+                throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
+            }
         }
     }
 

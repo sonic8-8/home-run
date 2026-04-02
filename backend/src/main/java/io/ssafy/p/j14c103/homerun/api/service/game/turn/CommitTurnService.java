@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.Timer;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SettlementOrchestratorRequest;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.SettlementOrchestratorResult;
+import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldRollService;
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
@@ -22,6 +23,7 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateR
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHolding;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHoldingRepository;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldResultService;
+import io.ssafy.p.j14c103.homerun.api.service.world.WorldPendingEventQueueService;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionCatalog;
@@ -30,6 +32,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.GameTurnSlot;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraft;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftSlot;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLog;
+import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLogRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
@@ -52,7 +56,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CommitTurnService {
 
-    private static final int DEFAULT_WORLD_ROLL = 50;
     private static final String TURN_COMMIT_DURATION = "homerun.turn.commit.duration";
     private static final String BOUNDARY_TAG = "boundary";
     private static final String RESULT_TAG = "result";
@@ -66,12 +69,15 @@ public class CommitTurnService {
 
     private final GameTurnCommitGuardService gameTurnCommitGuardService;
     private final GameWorldResultService gameWorldResultService;
+    private final GameWorldRollService gameWorldRollService;
+    private final WorldPendingEventQueueService worldPendingEventQueueService;
     private final SettlementOrchestratorService settlementOrchestratorService;
     private final GameSessionTurnSlotRepository gameSessionTurnSlotRepository;
     private final SettlementLogRepository settlementLogRepository;
     private final GameTimelineRepository gameTimelineRepository;
     private final GameReportRepository gameReportRepository;
     private final TurnDraftRepository turnDraftRepository;
+    private final GameNewsLogRepository gameNewsLogRepository;
     private final ActionCatalog actionCatalog;
     private final GameHousingRepository gameHousingRepository;
     private final RealEstatePropertyRepository realEstatePropertyRepository;
@@ -88,11 +94,12 @@ public class CommitTurnService {
                 gameTurnCommitGuardService.guard(userId, sessionId);
             final GameSession gameSession = guardResult.getGameSession();
             final TurnDraft turnDraft = guardResult.getTurnDraft();
+            final Integer committedTurn = gameSession.getCurrentTurn();
+            final int worldRoll = gameWorldRollService.resolveTurnRoll(sessionId, committedTurn + 1);
             final GameWorldResult worldResult = gameWorldResultService.buildWorldResult(
                 sessionId,
-                DEFAULT_WORLD_ROLL
+                worldRoll
             );
-            final Integer committedTurn = gameSession.getCurrentTurn();
             final SettlementOrchestratorResult settlementResult =
                 settlementOrchestratorService.orchestrate(
                     buildSettlementRequest(gameSession, committedTurn + 1, turnDraft, worldResult)
@@ -102,6 +109,16 @@ public class CommitTurnService {
             final SessionAdvanceResult sessionAdvanceResult =
                 advanceSession(gameSession, worldResult, settlementResult);
             saveSettlementLogs(gameSession.getGameSessionId(), committedTurn, settlementResult);
+            saveNewsLog(
+                gameSession.getGameSessionId(),
+                committedTurn + 1,
+                sessionAdvanceResult.nextDate(),
+                worldResult
+            );
+            worldPendingEventQueueService.enqueuePendingEvents(
+                gameSession.getGameSessionId(),
+                worldResult.getEventCandidates()
+            );
             saveTimeline(
                 gameSession.getGameSessionId(),
                 committedTurn,
@@ -235,6 +252,26 @@ public class CommitTurnService {
             ))
             .toList();
         settlementLogRepository.saveAllAndFlush(settlementLogs);
+    }
+
+    private void saveNewsLog(
+        final Long sessionId,
+        final Integer turnNumber,
+        final LocalDate publishedDate,
+        final GameWorldResult worldResult
+    ) {
+        if (worldResult.getNewsCandidates().isEmpty()) {
+            return;
+        }
+
+        final GameWorldResult.NewsCandidate selectedNews = worldResult.getNewsCandidates().get(0);
+        gameNewsLogRepository.saveAndFlush(GameNewsLog.create(
+            sessionId,
+            turnNumber,
+            selectedNews.getNewsId(),
+            selectedNews.getHeadline(),
+            publishedDate
+        ));
     }
 
     private void saveTimeline(
