@@ -26,7 +26,7 @@ public class RealEstateDocument {
     @Column(name = "real_estate_document_id")
     private Long realEstateDocumentId;
 
-    @Column(name = "property_id", nullable = false)
+    @Column(name = "property_id")
     private Long propertyId;
 
     @Enumerated(EnumType.STRING)
