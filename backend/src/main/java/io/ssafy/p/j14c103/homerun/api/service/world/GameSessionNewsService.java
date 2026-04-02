@@ -11,7 +11,6 @@ import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +24,7 @@ public class GameSessionNewsService {
     private final GameNewsLogRepository gameNewsLogRepository;
     private final NewsMasterRepository newsMasterRepository;
     private final LatestTurnNewsPhaseService latestTurnNewsPhaseService;
+    private final GameWorldRollService gameWorldRollService;
 
     public GameSessionNewsResult getCurrentTurnNews(final Long gameSessionId) {
         final GameSession gameSession = findGameSession(gameSessionId);
@@ -37,9 +37,14 @@ public class GameSessionNewsService {
             return createResult(gameSession, savedNews, savedNewsLog.getPublishedDate());
         }
 
+        final int worldRoll = gameWorldRollService.resolveTurnRoll(gameSessionId, currentTurn);
         final LatestTurnNewsPhaseService.PhaseResolution phaseResolution =
-            latestTurnNewsPhaseService.resolve(gameSession.getCyclePhase());
-        final NewsMaster selectedNews = selectNews(phaseResolution.getEconomicCycleType());
+            latestTurnNewsPhaseService.resolve(gameSession.getCyclePhase(), worldRoll);
+        final NewsMaster selectedNews = selectNews(
+            gameSessionId,
+            phaseResolution.getEconomicCycleType(),
+            worldRoll
+        );
 
         gameNewsLogRepository.save(
             GameNewsLog.create(
@@ -88,7 +93,11 @@ public class GameSessionNewsService {
         return newsLogs.get(0);
     }
 
-    private NewsMaster selectNews(final String economicCycleType) {
+    private NewsMaster selectNews(
+        final Long gameSessionId,
+        final String economicCycleType,
+        final int worldRoll
+    ) {
         final List<NewsMaster> candidates = newsMasterRepository
             .findAllByEconomicCycleTypeOrderByNewsIdAsc(economicCycleType);
         if (candidates.isEmpty()) {
@@ -98,8 +107,13 @@ public class GameSessionNewsService {
             return candidates.get(0);
         }
 
-        final int randomIndex = ThreadLocalRandom.current().nextInt(candidates.size());
-        return candidates.get(randomIndex);
+        final int selectedIndex = gameWorldRollService.selectIndex(
+            gameSessionId,
+            worldRoll,
+            economicCycleType,
+            candidates.size()
+        );
+        return candidates.get(selectedIndex);
     }
 
     private NewsMaster findNewsMaster(final String newsId) {

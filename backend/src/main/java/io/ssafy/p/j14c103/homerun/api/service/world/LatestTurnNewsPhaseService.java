@@ -4,7 +4,6 @@ import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleTransitionPolicy;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
-import java.util.concurrent.ThreadLocalRandom;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,17 +14,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LatestTurnNewsPhaseService {
 
-    private static final int MIN_ROLL = 1;
-    private static final int MAX_ROLL_EXCLUSIVE = 101;
-
     private final CycleTransitionPolicy cycleTransitionPolicy;
 
-    public PhaseResolution resolve(final CyclePhase currentPhase) {
+    public PhaseResolution resolve(final CyclePhase currentPhase, final int roll) {
         if (currentPhase == null) {
             throw new HomerunException(ErrorCode.WORLD_CYCLE_STATE_INVALID);
         }
 
-        final int roll = ThreadLocalRandom.current().nextInt(MIN_ROLL, MAX_ROLL_EXCLUSIVE);
         final CyclePhase nextPhase = cycleTransitionPolicy.nextPhase(currentPhase, roll);
 
         return PhaseResolution.of(

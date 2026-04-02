@@ -37,6 +37,14 @@ public class ActionResolutionPolicy {
     }
 
     public ResolvedAction resolvePreviewAction(
+        final ActionType actionType,
+        final GameStat gameStat,
+        final int currentTurn
+    ) {
+        return resolvePreviewAction(actionCatalog.getDefinition(actionType), gameStat, currentTurn);
+    }
+
+    public ResolvedAction resolvePreviewAction(
         final ActionCatalog.ActionDefinition definition,
         final GameStat gameStat,
         final int currentTurn

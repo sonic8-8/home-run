@@ -5,6 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
+import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
@@ -12,14 +17,20 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
-import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleDecisionRolls;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventTriggerType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMaster;
+import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMasterRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import io.ssafy.p.j14c103.homerun.support.IntegrationTestSupport;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,13 +48,29 @@ class GameWorldResultServiceTest extends IntegrationTestSupport {
     @Autowired
     private GameHousingRepository gameHousingRepository;
 
+    @Autowired
+    private GameStatRepository gameStatRepository;
+
+    @Autowired
+    private GameCareerRepository gameCareerRepository;
+
+    @Autowired
+    private NewsMasterRepository newsMasterRepository;
+
+    @Autowired
+    private GameEventRepository gameEventRepository;
+
     @AfterEach
     void tearDown() {
         gameHousingRepository.deleteAllInBatch();
+        gameCareerRepository.deleteAllInBatch();
+        gameStatRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
+        gameEventRepository.deleteAllInBatch();
+        newsMasterRepository.deleteAllInBatch();
     }
 
-    @DisplayName("턴 커밋용 world result를 누락 필드 없이 조립한다")
+    @DisplayName("턴 커밋용 world result는 cycle 변화에 맞는 뉴스와 이벤트 후보를 materialize한다")
     @Test
     void buildWorldResult() {
         // given
@@ -59,21 +86,80 @@ class GameWorldResultServiceTest extends IntegrationTestSupport {
             201L
         );
         gameHousingRepository.saveAndFlush(gameHousing);
+        gameStatRepository.saveAndFlush(GameStat.create(
+            Math.toIntExact(gameSession.getGameSessionId()),
+            70,
+            10,
+            10,
+            50,
+            70,
+            12
+        ));
+        gameCareerRepository.saveAndFlush(GameCareer.create(
+            Math.toIntExact(gameSession.getGameSessionId()),
+            JobType.STARTUP,
+            "사원",
+            31_000_000,
+            12,
+            0,
+            0,
+            0,
+            0,
+            EmploymentStatus.EMPLOYED,
+            null,
+            null,
+            0,
+            null
+        ));
+        newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
+            "NEWS-001",
+            "호황 과열 경보",
+            "negative",
+            "테스트 언론",
+            "테스트 기사 본문",
+            "BOOM_TO_CRISIS",
+            "테스트 사유",
+            null,
+            null,
+            null,
+            null
+        ));
+        gameEventRepository.saveAndFlush(GameEvent.create(
+            "PHONE",
+            "EVT-WORLD-001",
+            "월드 이벤트",
+            EventPresentationType.PHONE,
+            EventTriggerType.PROBABILITY,
+            BigDecimal.ONE,
+            false,
+            null,
+            null,
+            null,
+            "월드 이벤트 설명",
+            true
+        ));
 
         // when
         GameWorldResult result = gameWorldResultService.buildWorldResult(
             gameSession.getGameSessionId(),
-            CycleDecisionRolls.of(81, 1, 1)
+            60
         );
 
         // then
         assertThat(result.getCycleResult()).isNotNull();
-        assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.RECOVERY);
-        assertThat(result.getCycleResult().getNextType()).isEqualTo(CycleType.CYCLE_RATE_HIKE);
-        assertThat(result.getCycleResult().getRemainingTurns()).isEqualTo(18);
-        assertThat(result.getCycleResult().getDescription()).isEqualTo("경기 회복기");
-        assertThat(result.getNewsCandidates()).isEmpty();
-        assertThat(result.getEventCandidates()).isEmpty();
+        assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.CRISIS);
+        assertThat(result.getCycleResult().getDescription()).isEqualTo("경기 위기");
+        assertThat(result.getNewsCandidates())
+            .singleElement()
+            .extracting(GameWorldResult.NewsCandidate::getNewsId, GameWorldResult.NewsCandidate::getHeadline)
+            .containsExactly("NEWS-001", "호황 과열 경보");
+        assertThat(result.getEventCandidates())
+            .singleElement()
+            .extracting(
+                GameWorldResult.EventCandidate::getEventCode,
+                GameWorldResult.EventCandidate::getEventName
+            )
+            .containsExactly("EVT-WORLD-001", "월드 이벤트");
         assertThat(result.getHousingSnapshot()).isNotNull();
         assertThat(result.getHousingSnapshot().getCurrentHousingType()).isEqualTo(HousingType.STUDIO);
         assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isEqualTo(201L);
@@ -92,20 +178,20 @@ class GameWorldResultServiceTest extends IntegrationTestSupport {
         // when
         GameWorldResult result = gameWorldResultService.buildWorldResult(
             gameSession.getGameSessionId(),
-            CycleDecisionRolls.of(1, 1, 1)
+            1
         );
 
         // then
         assertThat(result.getCycleResult().getNextPhase()).isEqualTo(CyclePhase.BOOM);
         assertThat(result.getCycleResult().getNextType()).isEqualTo(CycleType.CYCLE_BOOM);
-        assertThat(result.getCycleResult().getRemainingTurns()).isEqualTo(24);
+        assertThat(result.getCycleResult().getRemainingTurns()).isBetween(24, 48);
         assertThat(result.getNewsCandidates()).isEmpty();
         assertThat(result.getEventCandidates()).isEmpty();
         assertThat(result.getHousingSnapshot()).isNotNull();
         assertThat(result.getHousingSnapshot().getCurrentHousingType()).isNull();
         assertThat(result.getHousingSnapshot().getCurrentPropertyId()).isNull();
         assertThat(result.getHousingSnapshot().getTargetPropertyId()).isEqualTo(101L);
-        assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isFalse();
+        assertThat(result.getHousingSnapshot().isHasHousingLossSignal()).isTrue();
     }
 
     @DisplayName("존재하지 않는 세션이면 world 세션 조회 에러를 던진다")
@@ -117,7 +203,7 @@ class GameWorldResultServiceTest extends IntegrationTestSupport {
         // then
         assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(
             unknownSessionId,
-            CycleDecisionRolls.of(50, 50, 50)
+            50
         ))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")
@@ -136,7 +222,7 @@ class GameWorldResultServiceTest extends IntegrationTestSupport {
         // then
         assertThatThrownBy(() -> gameWorldResultService.buildWorldResult(
             gameSession.getGameSessionId(),
-            CycleDecisionRolls.of(50, 50, 50)
+            50
         ))
             .isInstanceOf(HomerunException.class)
             .extracting("errorCode")

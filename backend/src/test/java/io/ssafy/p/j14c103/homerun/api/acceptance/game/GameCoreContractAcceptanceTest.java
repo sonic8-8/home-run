@@ -1,6 +1,10 @@
 package io.ssafy.p.j14c103.homerun.api.acceptance.game;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldRollService;
 import io.ssafy.p.j14c103.homerun.api.service.world.WorldContentSeedService;
 import io.ssafy.p.j14c103.homerun.api.service.world.WorldEventTriggerService;
 import io.ssafy.p.j14c103.homerun.api.service.world.WorldPendingEventProviderService;
@@ -60,6 +65,9 @@ import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleType;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventChoiceRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventConditionRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.EventEffectRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventPresentationType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.EventTriggerType;
+import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GamePendingEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
@@ -75,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -82,6 +91,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.GenericContainer;
@@ -191,6 +201,17 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
     @Autowired
     private NewsMasterRepository newsMasterRepository;
 
+    @MockitoBean
+    private GameWorldRollService gameWorldRollService;
+
+    @BeforeEach
+    void setUp() {
+        given(gameWorldRollService.resolveTurnRoll(anyLong(), anyInt())).willReturn(50);
+        given(gameWorldRollService.deriveRoll(anyLong(), anyInt(), anyString())).willReturn(50);
+        given(gameWorldRollService.deriveProbabilityRoll(anyLong(), anyInt(), anyString()))
+            .willReturn(BigDecimal.ONE);
+    }
+
     @AfterEach
     void tearDown() {
         final Set<String> keys = stringRedisTemplate.keys("session:*:turn");
@@ -264,6 +285,94 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(jsonPath("$.data.turnNumber").value(12))
             .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-001"))
             .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 과열 경고"));
+    }
+
+    @DisplayName("턴 커밋은 world result에서 생성한 뉴스와 이벤트를 다음 턴 조회 계약에 materialize한다.")
+    @Test
+    void commitTurnMaterializesWorldResultIntoNewsAndPendingReadBack() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-world-result-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        saveGameStat(fixture.session(), 70, 20, 20, 50, 50, 12);
+        saveGameCareer(fixture.session(), 12, 31_000_000);
+        newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
+            "NEWS-COMMIT-001",
+            "호황 꺾임 신호",
+            "negative",
+            "테스트 언론",
+            "commit 이후 최신 뉴스는 저장된 source를 읽어야 한다.",
+            "BOOM_TO_CRISIS",
+            "테스트 사유",
+            null,
+            null,
+            null,
+            null
+        ));
+        gameEventRepository.saveAndFlush(GameEvent.create(
+            "PHONE",
+            "EVT-COMMIT-001",
+            "월드 이벤트",
+            EventPresentationType.PHONE,
+            EventTriggerType.PROBABILITY,
+            BigDecimal.ONE,
+            false,
+            null,
+            null,
+            null,
+            "월드 이벤트 설명",
+            true
+        ));
+        given(gameWorldRollService.resolveTurnRoll(fixture.session().getGameSessionId(), 13))
+            .willReturn(60);
+        given(gameWorldRollService.deriveRoll(fixture.session().getGameSessionId(), 60, "cycle-subtype"))
+            .willReturn(1);
+        given(gameWorldRollService.deriveRoll(fixture.session().getGameSessionId(), 60, "cycle-duration"))
+            .willReturn(1);
+        given(gameWorldRollService.deriveProbabilityRoll(
+            fixture.session().getGameSessionId(),
+            60,
+            "event:EVT-COMMIT-001"
+        )).willReturn(BigDecimal.ZERO);
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken())
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(turnSlotsRequest())))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(12))
+            .andExpect(jsonPath("$.data.flags.hasEvent").value(true));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/news/history", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.newsHistories[0].newsId").value("NEWS-COMMIT-001"))
+            .andExpect(jsonPath("$.data.newsHistories[0].headline").value("호황 꺾임 신호"));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/events/pending", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.events[0].title").value("월드 이벤트"));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(13))
+            .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-COMMIT-001"))
+            .andExpect(jsonPath("$.data.news[0].headline").value("호황 꺾임 신호"));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(13))
+            .andExpect(jsonPath("$.data.economicCycle.phase").value("CRISIS"))
+            .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-COMMIT-001"))
+            .andExpect(jsonPath("$.data.news[0].headline").value("호황 꺾임 신호"));
     }
 
     @DisplayName("다른 사용자의 턴 조회는 403으로 차단된다.")
