@@ -45,6 +45,7 @@ public class SettlementOrchestratorService {
                     settlementStepExecutor.execute(
                         SettlementStepExecutor.SettlementStepExecutionContext.of(
                             request.getSessionId(),
+                            request.getUserId(),
                             request.getNextTurnNumber(),
                             stepType,
                             currentCash,
@@ -77,17 +78,20 @@ public class SettlementOrchestratorService {
                 request.getNextTurnNumber(),
                 currentCash,
                 currentStockValue,
+                request.getCurrentRealEstateValue(),
                 currentLoanBalance,
                 targetPropertyOwned
             )
         );
+
+        final Money totalAssetsWithRealEstate = totalAssets.add(request.getCurrentRealEstateValue());
 
         return SettlementOrchestratorResult.of(
             stepResults,
             currentCash,
             currentStockValue,
             currentLoanBalance,
-            totalAssets,
+            totalAssetsWithRealEstate,
             endingEvaluation.getNetWorth(),
             aggregatedStatChanges,
             endingEvaluation.getSessionStatus(),

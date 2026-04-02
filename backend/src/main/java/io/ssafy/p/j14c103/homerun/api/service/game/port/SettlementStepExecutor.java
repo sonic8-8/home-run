@@ -15,6 +15,7 @@ public interface SettlementStepExecutor {
     class SettlementStepExecutionContext {
 
         private final Long sessionId;
+        private final Long userId;
         private final Integer nextTurnNumber;
         private final SettlementStepType stepType;
         private final Money currentCash;
@@ -29,6 +30,7 @@ public interface SettlementStepExecutor {
 
         private SettlementStepExecutionContext(
             final Long sessionId,
+            final Long userId,
             final Integer nextTurnNumber,
             final SettlementStepType stepType,
             final Money currentCash,
@@ -43,6 +45,7 @@ public interface SettlementStepExecutor {
         ) {
             validate(
                 sessionId,
+                userId,
                 nextTurnNumber,
                 stepType,
                 currentCash,
@@ -54,6 +57,7 @@ public interface SettlementStepExecutor {
                 currentStatChanges
             );
             this.sessionId = sessionId;
+            this.userId = userId;
             this.nextTurnNumber = nextTurnNumber;
             this.stepType = stepType;
             this.currentCash = currentCash;
@@ -69,6 +73,7 @@ public interface SettlementStepExecutor {
 
         public static SettlementStepExecutionContext of(
             final Long sessionId,
+            final Long userId,
             final Integer nextTurnNumber,
             final SettlementStepType stepType,
             final Money currentCash,
@@ -83,6 +88,7 @@ public interface SettlementStepExecutor {
         ) {
             return new SettlementStepExecutionContext(
                 sessionId,
+                userId,
                 nextTurnNumber,
                 stepType,
                 currentCash,
@@ -99,6 +105,7 @@ public interface SettlementStepExecutor {
 
         private static void validate(
             final Long sessionId,
+            final Long userId,
             final Integer nextTurnNumber,
             final SettlementStepType stepType,
             final Money currentCash,
@@ -109,7 +116,11 @@ public interface SettlementStepExecutor {
             final String cycleDescription,
             final Map<String, Integer> currentStatChanges
         ) {
-            if (sessionId == null || nextTurnNumber == null || nextTurnNumber < 1 || stepType == null) {
+            if (sessionId == null
+                || userId == null
+                || nextTurnNumber == null
+                || nextTurnNumber < 1
+                || stepType == null) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
             if (currentCash == null || currentStockValue == null || currentLoanBalance == null

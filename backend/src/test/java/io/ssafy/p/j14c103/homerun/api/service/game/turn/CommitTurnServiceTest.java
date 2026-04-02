@@ -28,6 +28,9 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoan;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.RepaymentType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimeline;
@@ -37,6 +40,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLogRep
 import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementPhaseType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketState;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockOrder;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockOrderRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHolding;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockHoldingRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionCategory;
@@ -49,8 +54,13 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftSlot;
 import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLog;
 import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLogRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpend;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
@@ -114,10 +124,16 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
     private GameHousingRepository gameHousingRepository;
 
     @Autowired
+    private GameLoanRepository gameLoanRepository;
+
+    @Autowired
     private RealEstatePropertyRepository realEstatePropertyRepository;
 
     @Autowired
     private StockHoldingRepository stockHoldingRepository;
+
+    @Autowired
+    private StockOrderRepository stockOrderRepository;
 
     @Autowired
     private GameStockMarketStateRepository gameStockMarketStateRepository;
@@ -133,6 +149,12 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private GameEventRepository gameEventRepository;
+
+    @Autowired
+    private UserAssetProfileRepository userAssetProfileRepository;
+
+    @Autowired
+    private UserAssetCardSpendRepository userAssetCardSpendRepository;
 
     @Autowired
     private GameSessionService gameSessionService;
@@ -165,12 +187,16 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
 
     @AfterEach
     void tearDown() {
+        stockOrderRepository.deleteAllInBatch();
         stockHoldingRepository.deleteAllInBatch();
         gameStockMarketStateRepository.deleteAllInBatch();
         gamePendingEventRepository.deleteAllInBatch();
         gameNewsLogRepository.deleteAllInBatch();
+        gameLoanRepository.deleteAllInBatch();
         gameHousingRepository.deleteAllInBatch();
         gameCareerRepository.deleteAllInBatch();
+        userAssetCardSpendRepository.deleteAllInBatch();
+        userAssetProfileRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
         gameEventRepository.deleteAllInBatch();
         settlementLogRepository.deleteAllInBatch();
@@ -281,11 +307,11 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         assertThat(response.getSettlementLog().get(0).getDescription()).isEqualTo("경기 회복기");
         assertThat(response.getSettlementLog())
             .extracting(CommitTurnResponse.SettlementLogItemResponse::getCashChange)
-            .contains(300_000L);
-        assertThat(response.getUpdatedAssets().getCash()).isEqualTo(2_300_000L);
+            .contains(2_200_000L, 300_000L);
+        assertThat(response.getUpdatedAssets().getCash()).isEqualTo(4_500_000L);
         assertThat(response.getUpdatedAssets().getLoan()).isEqualTo(0L);
         assertThat(response.getUpdatedAssets().getRealEstateValue()).isEqualTo(0L);
-        assertThat(response.getUpdatedAssets().getNetAssets()).isEqualTo(2_300_000L);
+        assertThat(response.getUpdatedAssets().getNetAssets()).isEqualTo(4_500_000L);
         assertThat(response.getStatChanges().getHealth()).isEqualTo(3);
         assertThat(response.getStatChanges().getFatigue()).isEqualTo(-14);
         assertThat(response.getStatChanges().getKnowledge()).isEqualTo(8);
@@ -314,9 +340,9 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         assertThat(updated.getCyclePhase()).isEqualTo(CyclePhase.RECOVERY);
         assertThat(updated.getCycleType()).isEqualTo(CycleType.CYCLE_RATE_HIKE);
         assertThat(updated.getCycleRemainingTurns()).isEqualTo(18);
-        assertThat(updated.getCashBalance()).isEqualTo(Money.of(2_300_000L));
-        assertThat(updated.getTotalAssets()).isEqualTo(Money.of(2_300_000L));
-        assertThat(updated.getNetWorth()).isEqualTo(Money.of(2_300_000L));
+        assertThat(updated.getCashBalance()).isEqualTo(Money.of(4_500_000L));
+        assertThat(updated.getTotalAssets()).isEqualTo(Money.of(4_500_000L));
+        assertThat(updated.getNetWorth()).isEqualTo(Money.of(4_500_000L));
         assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.IN_PROGRESS);
         assertThat(gameReportRepository.existsById(gameSession.getGameSessionId())).isFalse();
 
@@ -328,7 +354,7 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         assertThat(settlementLogs)
             .filteredOn(log -> log.getCashChangeAmount() != null && log.getCashChangeAmount() != 0)
             .extracting(SettlementLog::getCashChangeAmount)
-            .containsExactly(300_000);
+            .containsExactly(2_200_000, 300_000);
         assertThat(settlementLogs)
             .filteredOn(log -> !log.getStatChanges().isEmpty())
             .singleElement()
@@ -341,7 +367,7 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         assertThat(timelines).hasSize(1);
         assertThat(timelines.get(0).getTurnNumber()).isEqualTo(5);
         assertThat(timelines.get(0).getLoggedDate()).isEqualTo(LocalDate.of(2026, 2, 1));
-        assertThat(timelines.get(0).getCash()).isEqualTo(2_300_000);
+        assertThat(timelines.get(0).getCash()).isEqualTo(4_500_000);
         assertThat(timelines.get(0).getStockValueAmount()).isEqualTo(0);
         assertThat(timelines.get(0).getLoanBalanceAmount()).isEqualTo(0);
         assertThat(timelines.get(0).getSalaryAmount()).isEqualTo(2_200_000);
@@ -574,6 +600,7 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         );
         saveGameCareer(gameSession.getGameSessionId(), 31_200_000, EmploymentStatus.EMPLOYED);
         final Long currentPropertyId = saveOwnedHousing(gameSession.getGameSessionId(), 8_000_000L);
+        saveGameLoan(gameSession.getGameSessionId(), 1_000_000, 25_000, 120);
         saveStockHolding(gameSession.getGameSessionId(), "BIGTECH", 10, 90_000, 100_000, 7);
         final TurnDraft turnDraft = createTurnDraft(gameSession.getGameSessionId(), 7);
         given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
@@ -603,21 +630,116 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         );
 
         // then
-        assertThat(response.getUpdatedAssets().getCash()).isEqualTo(2_300_000L);
+        assertThat(response.getUpdatedAssets().getCash()).isEqualTo(4_875_000L);
         assertThat(response.getUpdatedAssets().getLoan()).isEqualTo(1_000_000L);
         assertThat(response.getUpdatedAssets().getRealEstateValue()).isEqualTo(8_000_000L);
-        assertThat(response.getUpdatedAssets().getNetAssets()).isEqualTo(10_300_000L);
+        assertThat(response.getUpdatedAssets().getNetAssets()).isEqualTo(12_875_000L);
         assertThat(response.getFlags().isCleared()).isFalse();
 
         final GameTimeline timeline = gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
             gameSession.getGameSessionId()
         ).get(0);
-        assertThat(timeline.getCash()).isEqualTo(2_300_000);
-        assertThat(timeline.getTotalAssets()).isEqualTo(11_300_000);
-        assertThat(timeline.getNetAssets()).isEqualTo(10_300_000);
+        assertThat(timeline.getCash()).isEqualTo(4_875_000);
+        assertThat(timeline.getTotalAssets()).isEqualTo(13_875_000);
+        assertThat(timeline.getNetAssets()).isEqualTo(12_875_000);
         assertThat(timeline.getStockValueAmount()).isEqualTo(1_000_000);
         assertThat(timeline.getLoanBalanceAmount()).isEqualTo(1_000_000);
         assertThat(timeline.getSalaryAmount()).isEqualTo(2_600_000);
+    }
+
+    @DisplayName("턴 커밋은 급여, 고정지출, 주거비, 카드대금, 대출 상환을 실제 source 기준으로 합산한다.")
+    @Test
+    void commitTurnWithRealSettlementSources() {
+        // given
+        final User user = saveUser("turn-real-settlement@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 359, DataSourceType.MY_DATA)
+        );
+        saveGameCareer(gameSession.getGameSessionId(), 31_200_000, EmploymentStatus.EMPLOYED);
+        saveUserAssetProfile(user.getId(), 2_600_000L, 400_000L);
+        saveCardSpend(user.getId(), 80_000L);
+        saveCardSpend(user.getId(), 50_000L);
+        saveRentalHousing(gameSession.getGameSessionId(), 300_000L, 50_000L);
+        saveGameLoan(gameSession.getGameSessionId(), 1_200_000, 25_000, 120);
+        final TurnDraft turnDraft = createTurnDraft(
+            gameSession.getGameSessionId(),
+            359,
+            Money.zero(),
+            Map.of("health", 1, "fatigue", -2, "stress", -3, "happiness", 0, "knowledge", 4)
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(createWorldResult("실제 정산 합산"));
+
+        // when
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            user.getId(),
+            gameSession.getGameSessionId()
+        );
+
+        // then
+        assertThat(response.getUpdatedAssets().getCash()).isEqualTo(3_695_000L);
+        assertThat(response.getUpdatedAssets().getLoan()).isEqualTo(1_200_000L);
+        assertThat(response.getUpdatedAssets().getNetAssets()).isEqualTo(7_495_000L);
+        assertThat(response.getSettlementLog())
+            .extracting(CommitTurnResponse.SettlementLogItemResponse::getCashChange)
+            .contains(2_600_000L, -400_000L, -350_000L, -130_000L, -25_000L);
+        assertThat(response.getSettlementLog())
+            .extracting(CommitTurnResponse.SettlementLogItemResponse::getDescription)
+            .doesNotContain("대기한다");
+
+        final GameTimeline timeline = gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
+            gameSession.getGameSessionId()
+        ).get(0);
+        assertThat(timeline.getCash()).isEqualTo(3_695_000);
+        assertThat(timeline.getLoanBalanceAmount()).isEqualTo(1_200_000);
+        assertThat(timeline.getSalaryAmount()).isEqualTo(2_600_000);
+
+        final GameSession updated = gameSessionRepository.findById(gameSession.getGameSessionId())
+            .orElseThrow();
+        assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.TIMEOUT);
+        assertThat(gameReportRepository.findById(gameSession.getGameSessionId())).isPresent();
+    }
+
+    @DisplayName("턴 커밋은 pending 주식 주문을 체결하고 현금과 주식 평가액을 동시에 반영한다.")
+    @Test
+    void commitTurnSettlesPendingStockOrders() {
+        // given
+        final User user = saveUser("turn-stock-settlement@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 7)
+        );
+        saveGameCareer(gameSession.getGameSessionId(), 31_200_000, EmploymentStatus.EMPLOYED);
+        saveStockHolding(gameSession.getGameSessionId(), "BIGTECH", 10, 90_000, 100_000, 7);
+        stockOrderRepository.saveAndFlush(StockOrder.createBuyOrder(gameSession.getGameSessionId(), "BIGTECH", 2, 7));
+        final TurnDraft turnDraft = createTurnDraft(
+            gameSession.getGameSessionId(),
+            7,
+            Money.zero(),
+            Map.of("health", 0, "fatigue", 0, "stress", 0, "happiness", 0, "knowledge", 0)
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(createWorldResult("주식 주문 체결"));
+
+        // when
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            user.getId(),
+            gameSession.getGameSessionId()
+        );
+
+        // then
+        assertThat(response.getUpdatedAssets().getCash()).isEqualTo(4_400_000L);
+        assertThat(response.getUpdatedAssets().getNetAssets()).isEqualTo(5_600_000L);
+
+        final GameTimeline timeline = gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
+            gameSession.getGameSessionId()
+        ).get(0);
+        assertThat(timeline.getCash()).isEqualTo(4_400_000);
+        assertThat(timeline.getStockValueAmount()).isEqualTo(1_200_000);
+        assertThat(timeline.getTotalAssets()).isEqualTo(5_600_000);
     }
 
     @DisplayName("종료된 세션의 턴 커밋은 GAME_SESSION_CLOSED가 발생한다.")
@@ -804,7 +926,15 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
     }
 
     private GameSession createGameSession(final Long userId, final Integer currentTurn) {
-        return createGameSession(userId, currentTurn, 101L, 2_000_000L, 2_000_000L, 2_000_000L);
+        return createGameSession(userId, currentTurn, DataSourceType.PROFILE);
+    }
+
+    private GameSession createGameSession(
+        final Long userId,
+        final Integer currentTurn,
+        final DataSourceType dataSourceType
+    ) {
+        return createGameSession(userId, currentTurn, 101L, 2_000_000L, 2_000_000L, 2_000_000L, dataSourceType);
     }
 
     private GameSession createGameSession(
@@ -814,6 +944,26 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         final long cashBalance,
         final long totalAssets,
         final long netWorth
+    ) {
+        return createGameSession(
+            userId,
+            currentTurn,
+            targetPropertyId,
+            cashBalance,
+            totalAssets,
+            netWorth,
+            DataSourceType.PROFILE
+        );
+    }
+
+    private GameSession createGameSession(
+        final Long userId,
+        final Integer currentTurn,
+        final Long targetPropertyId,
+        final long cashBalance,
+        final long totalAssets,
+        final long netWorth,
+        final DataSourceType dataSourceType
     ) {
         final CycleState currentCycleState = CycleState.of(
             CyclePhase.BOOM,
@@ -830,7 +980,7 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
             "11",
             "11680",
             targetPropertyId,
-            DataSourceType.PROFILE
+            dataSourceType
         );
         gameSession.initializeCapital(
             Money.of(cashBalance),
@@ -905,6 +1055,21 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         );
     }
 
+    private void saveRentalHousing(
+        final Long gameSessionId,
+        final long monthlyRentAmount,
+        final long maintenanceFeeAmount
+    ) {
+        gameHousingRepository.saveAndFlush(GameHousing.create(
+            gameSessionId,
+            HousingType.STUDIO,
+            Money.of(5_000_000L),
+            Money.of(monthlyRentAmount),
+            Money.of(maintenanceFeeAmount),
+            null
+        ));
+    }
+
     private void saveStockHolding(
         final Long gameSessionId,
         final String stockCode,
@@ -918,6 +1083,45 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         );
         gameStockMarketStateRepository.saveAndFlush(
             GameStockMarketState.initializeFrom(gameSessionId, stockCode, currentPriceAmount, currentTurn)
+        );
+    }
+
+    private void saveGameLoan(
+        final Long gameSessionId,
+        final int principalAmount,
+        final int monthlyPaymentAmount,
+        final int remainingRepaymentTurns
+    ) {
+        gameLoanRepository.saveAndFlush(GameLoan.create(
+            gameSessionId,
+            "테스트 대출",
+            principalAmount,
+            BigDecimal.valueOf(3.5),
+            monthlyPaymentAmount,
+            remainingRepaymentTurns,
+            "TEST-LOAN",
+            RepaymentType.EQUAL_PRINCIPAL_INTEREST
+        ));
+    }
+
+    private void saveUserAssetProfile(
+        final Long userId,
+        final long monthlySalaryAmount,
+        final long monthlyFixedExpenseAmount
+    ) {
+        userAssetProfileRepository.saveAndFlush(UserAssetProfile.create(
+            userId,
+            Long.valueOf(0L),
+            Integer.valueOf(25),
+            Long.valueOf(monthlySalaryAmount),
+            Long.valueOf(monthlyFixedExpenseAmount),
+            JobType.STARTUP
+        ));
+    }
+
+    private void saveCardSpend(final Long userId, final long amount) {
+        userAssetCardSpendRepository.saveAndFlush(
+            UserAssetCardSpend.create(userId, SpendingCategory.LIVING, amount)
         );
     }
 

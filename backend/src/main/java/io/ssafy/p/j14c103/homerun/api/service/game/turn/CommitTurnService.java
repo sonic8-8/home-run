@@ -6,12 +6,16 @@ import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SettlementOrches
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.SettlementOrchestratorResult;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldRollService;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.EmploymentStatus;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareer;
 import io.ssafy.p.j14c103.homerun.domain.character.career.GameCareerRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoan;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimeline;
@@ -26,6 +30,7 @@ import io.ssafy.p.j14c103.homerun.api.service.world.GameWorldResultService;
 import io.ssafy.p.j14c103.homerun.api.service.world.WorldPendingEventQueueService;
 import io.ssafy.p.j14c103.homerun.api.service.world.result.GameWorldResult;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionCatalog;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.GameSessionTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.GameTurnSlot;
@@ -42,7 +47,6 @@ import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyReposit
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -65,13 +69,12 @@ public class CommitTurnService {
     private static final String TIMEOUT_ENDING_TITLE = "시간 초과";
     private static final String FORECLOSURE_ENDING_TITLE = "압류";
     private static final String DEFAULT_SPENDING_CATEGORY = "미집계";
-    private static final int MONTHS_PER_YEAR = 12;
-
     private final GameTurnCommitGuardService gameTurnCommitGuardService;
     private final GameWorldResultService gameWorldResultService;
     private final GameWorldRollService gameWorldRollService;
     private final WorldPendingEventQueueService worldPendingEventQueueService;
     private final SettlementOrchestratorService settlementOrchestratorService;
+    private final GameSessionRepository gameSessionRepository;
     private final GameSessionTurnSlotRepository gameSessionTurnSlotRepository;
     private final SettlementLogRepository settlementLogRepository;
     private final GameTimelineRepository gameTimelineRepository;
@@ -83,7 +86,8 @@ public class CommitTurnService {
     private final RealEstatePropertyRepository realEstatePropertyRepository;
     private final StockHoldingRepository stockHoldingRepository;
     private final GameStockMarketStateRepository gameStockMarketStateRepository;
-    private final GameCareerRepository gameCareerRepository;
+    private final GameLoanRepository gameLoanRepository;
+    private final GameStatRepository gameStatRepository;
     private final MeterRegistry meterRegistry;
 
     @Transactional
@@ -106,6 +110,7 @@ public class CommitTurnService {
                 );
 
             saveCommittedSlots(gameSession.getGameSessionId(), committedTurn, turnDraft);
+            applyCharacterState(gameSession.getGameSessionId(), committedTurn + 1, settlementResult);
             final SessionAdvanceResult sessionAdvanceResult =
                 advanceSession(gameSession, worldResult, settlementResult);
             saveSettlementLogs(gameSession.getGameSessionId(), committedTurn, settlementResult);
@@ -188,15 +193,34 @@ public class CommitTurnService {
     ) {
         return SettlementOrchestratorRequest.of(
             gameSession.getGameSessionId(),
+            gameSession.getUserId(),
             nextTurnNumber,
             gameSession.getCashBalance(),
-            extractCurrentStockValue(gameSession),
-            extractCurrentLoanBalance(gameSession),
+            resolveCurrentStockValue(gameSession.getGameSessionId()),
+            resolveCurrentRealEstateAssetValue(gameSession.getGameSessionId()),
+            resolveCurrentLoanBalance(gameSession.getGameSessionId()),
             turnDraft.getPreviewCashChange(),
             turnDraft.getPreviewStatChanges(),
             worldResult.getCycleResult().getDescription(),
             !worldResult.getEventCandidates().isEmpty(),
             isTargetPropertyOwned(gameSession, worldResult)
+        );
+    }
+
+    private void applyCharacterState(
+        final Long sessionId,
+        final int nextTurnNumber,
+        final SettlementOrchestratorResult settlementResult
+    ) {
+        gameStatRepository.findById(toGameId(sessionId)).ifPresent(gameStat ->
+            gameStat.applyChange(
+                settlementResult.getAggregatedStatChanges().getOrDefault("health", 0),
+                settlementResult.getAggregatedStatChanges().getOrDefault("fatigue", 0),
+                settlementResult.getAggregatedStatChanges().getOrDefault("stress", 0),
+                settlementResult.getAggregatedStatChanges().getOrDefault("happiness", 0),
+                settlementResult.getAggregatedStatChanges().getOrDefault("knowledge", 0),
+                nextTurnNumber
+            )
         );
     }
 
@@ -289,7 +313,7 @@ public class CommitTurnService {
             toInteger(settlementResult.getTotalAssets()),
             extractCurrentStockValueAmount(sessionId),
             toInteger(settlementResult.getFinalLoanBalance()),
-            extractSalaryAmount(sessionId)
+            extractSalaryAmount(settlementResult)
         ));
     }
 
@@ -336,20 +360,11 @@ public class CommitTurnService {
             .toList();
     }
 
-    private Money extractCurrentStockValue(final GameSession gameSession) {
-        final Money currentStockValue = gameSession.getTotalAssets().subtract(gameSession.getCashBalance());
-        if (currentStockValue.isNegative()) {
-            return Money.zero();
-        }
-        return currentStockValue;
-    }
-
-    private Money extractCurrentLoanBalance(final GameSession gameSession) {
-        final Money currentLoanBalance = gameSession.getTotalAssets().subtract(gameSession.getNetWorth());
-        if (currentLoanBalance.isNegative()) {
-            return Money.zero();
-        }
-        return currentLoanBalance;
+    private Money resolveCurrentLoanBalance(final Long sessionId) {
+        return Money.of(gameLoanRepository.findAllByGameSessionId(sessionId).stream()
+            .filter(GameLoan::isActive)
+            .mapToLong(loan -> loan.getPrincipalAmount() == null ? 0L : loan.getPrincipalAmount())
+            .sum());
     }
 
     private boolean isTargetPropertyOwned(
@@ -433,23 +448,13 @@ public class CommitTurnService {
         throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
     }
 
-    private Integer extractSalaryAmount(final Long sessionId) {
-        return gameCareerRepository.findById(toGameId(sessionId))
-            .map(this::resolveSalaryAmount)
+    private Integer extractSalaryAmount(final SettlementOrchestratorResult settlementResult) {
+        return settlementResult.getStepResults().stream()
+            .filter(stepResult -> stepResult.getStepType() == SettlementStepType.INCOME_SALARY_SETTLEMENT)
+            .findFirst()
+            .map(SettlementOrchestratorResult.StepResult::getCashDelta)
+            .map(this::toInteger)
             .orElse(0);
-    }
-
-    private Integer resolveSalaryAmount(final GameCareer gameCareer) {
-        if (gameCareer.getEmploymentStatus() == EmploymentStatus.UNEMPLOYED) {
-            return 0;
-        }
-        final Integer annualSalary = gameCareer.getSalary();
-        if (annualSalary == null) {
-            return 0;
-        }
-        return BigDecimal.valueOf(annualSalary)
-            .divide(BigDecimal.valueOf(MONTHS_PER_YEAR), 0, RoundingMode.DOWN)
-            .intValueExact();
     }
 
     private Integer toGameId(final Long sessionId) {
