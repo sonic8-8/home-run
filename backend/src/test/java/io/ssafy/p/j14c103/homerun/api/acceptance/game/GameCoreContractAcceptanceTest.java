@@ -29,6 +29,9 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousingRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoan;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.GameLoanRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.loan.RepaymentType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReport;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportAchievement;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository;
@@ -43,8 +46,13 @@ import io.ssafy.p.j14c103.homerun.domain.history.event.GameEventLogRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLog;
 import io.ssafy.p.j14c103.homerun.domain.history.news.GameNewsLogRepository;
 import io.ssafy.p.j14c103.homerun.domain.money.Money;
+import io.ssafy.p.j14c103.homerun.domain.spending.SpendingCategory;
 import io.ssafy.p.j14c103.homerun.domain.user.Email;
 import io.ssafy.p.j14c103.homerun.domain.user.User;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpend;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetCardSpendRepository;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfile;
+import io.ssafy.p.j14c103.homerun.domain.user.UserAssetProfileRepository;
 import io.ssafy.p.j14c103.homerun.domain.user.UserRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CycleState;
@@ -148,6 +156,9 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
     private GameHousingRepository gameHousingRepository;
 
     @Autowired
+    private GameLoanRepository gameLoanRepository;
+
+    @Autowired
     private GameplayHistoryRepository gameplayHistoryRepository;
 
     @Autowired
@@ -158,6 +169,12 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
 
     @Autowired
     private GamePendingEventRepository gamePendingEventRepository;
+
+    @Autowired
+    private UserAssetProfileRepository userAssetProfileRepository;
+
+    @Autowired
+    private UserAssetCardSpendRepository userAssetCardSpendRepository;
 
     @Autowired
     private EventEffectRepository eventEffectRepository;
@@ -189,9 +206,12 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
         gameReportRepository.deleteAllInBatch();
         settlementLogRepository.deleteAllInBatch();
         gameTurnSlotRepository.deleteAllInBatch();
+        gameLoanRepository.deleteAllInBatch();
         gameHousingRepository.deleteAllInBatch();
         gameCareerRepository.deleteAllInBatch();
         gameStatRepository.deleteAllInBatch();
+        userAssetCardSpendRepository.deleteAllInBatch();
+        userAssetProfileRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
         eventEffectRepository.deleteAllInBatch();
         eventConditionRepository.deleteAllInBatch();
@@ -559,14 +579,66 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
         assertThat(descriptions).doesNotContain("대기한다");
     }
 
+    @DisplayName("턴 커밋과 종료 로그 조회는 급여, 고정지출, 주거비, 카드대금, 대출 상환 결과를 같은 source로 읽는다.")
+    @Test
+    void commitTurnAndEndingLogsShouldExposeRealSettlementSources() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-real-settlement-user@example.com",
+            359,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1),
+            DataSourceType.MY_DATA
+        );
+        saveGameStat(fixture.session(), 70, 20, 20, 50, 50, 359);
+        saveGameCareer(fixture.session(), 12, 31_200_000);
+        saveUserAssetProfile(fixture.user().getId(), 2_600_000L, 400_000L);
+        saveCardSpend(fixture.user().getId(), 80_000L);
+        saveCardSpend(fixture.user().getId(), 50_000L);
+        saveRentalHousing(fixture.session().getGameSessionId(), 300_000L, 50_000L);
+        saveGameLoan(fixture.session().getGameSessionId(), 1_200_000, 25_000, 120);
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken())
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(noCashTurnSlotsRequest())))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.updatedAssets.cash").value(3_695_000))
+            .andExpect(jsonPath("$.data.updatedAssets.loan").value(1_200_000))
+            .andExpect(jsonPath("$.data.updatedAssets.netAssets").value(7_495_000))
+            .andExpect(jsonPath("$.data.settlementLog[?(@.cashChange == 2600000)]").isNotEmpty())
+            .andExpect(jsonPath("$.data.settlementLog[?(@.cashChange == -400000)]").isNotEmpty())
+            .andExpect(jsonPath("$.data.settlementLog[?(@.cashChange == -350000)]").isNotEmpty())
+            .andExpect(jsonPath("$.data.settlementLog[?(@.cashChange == -130000)]").isNotEmpty())
+            .andExpect(jsonPath("$.data.settlementLog[?(@.cashChange == -25000)]").isNotEmpty());
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/logs", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.timeline[0].cash").value(3_695_000))
+            .andExpect(jsonPath("$.data.timeline[0].loanBalance").value(1_200_000))
+            .andExpect(jsonPath("$.data.timeline[0].salary").value(2_600_000));
+    }
+
     private SessionFixture saveSessionFixture(
         final String email,
         final int currentTurn,
         final CycleState cycleState
     ) {
+        return saveSessionFixture(email, currentTurn, cycleState, DataSourceType.PROFILE);
+    }
+
+    private SessionFixture saveSessionFixture(
+        final String email,
+        final int currentTurn,
+        final CycleState cycleState,
+        final DataSourceType dataSourceType
+    ) {
         final User user = saveUser(email);
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
-            createGameSession(user.getId(), currentTurn, cycleState, 101L)
+            createGameSession(user.getId(), currentTurn, cycleState, 101L, dataSourceType)
         );
         return new SessionFixture(user, gameSession, bearer(user));
     }
@@ -585,6 +657,16 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
         final CycleState cycleState,
         final Long targetPropertyId
     ) {
+        return createGameSession(userId, currentTurn, cycleState, targetPropertyId, DataSourceType.PROFILE);
+    }
+
+    private GameSession createGameSession(
+        final Long userId,
+        final int currentTurn,
+        final CycleState cycleState,
+        final Long targetPropertyId,
+        final DataSourceType dataSourceType
+    ) {
         final GameSession gameSession = GameSession.create(
             userId,
             1,
@@ -595,7 +677,7 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             "11",
             "11680",
             targetPropertyId,
-            DataSourceType.PROFILE
+            dataSourceType
         );
         gameSession.initializeCapital(
             Money.of(2_000_000L),
@@ -665,6 +747,73 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
                 Map.of("slotIndex", 2, "actionType", "SIDE_JOB")
             )
         );
+    }
+
+    private Map<String, Object> noCashTurnSlotsRequest() {
+        return Map.of(
+            "slots",
+            List.of(
+                Map.of("slotIndex", 0, "actionType", "STUDY"),
+                Map.of("slotIndex", 1, "actionType", "REST"),
+                Map.of("slotIndex", 2, "actionType", "REST")
+            )
+        );
+    }
+
+    private void saveUserAssetProfile(
+        final Long userId,
+        final long monthlySalaryAmount,
+        final long monthlyFixedExpenseAmount
+    ) {
+        userAssetProfileRepository.saveAndFlush(UserAssetProfile.create(
+            userId,
+            Long.valueOf(0L),
+            Integer.valueOf(25),
+            Long.valueOf(monthlySalaryAmount),
+            Long.valueOf(monthlyFixedExpenseAmount),
+            JobType.STARTUP
+        ));
+    }
+
+    private void saveCardSpend(final Long userId, final long amount) {
+        userAssetCardSpendRepository.saveAndFlush(
+            UserAssetCardSpend.create(userId, SpendingCategory.LIVING, amount)
+        );
+    }
+
+    private void saveRentalHousing(
+        final Long gameSessionId,
+        final long monthlyRentAmount,
+        final long maintenanceFeeAmount
+    ) {
+        gameHousingRepository.saveAndFlush(
+            io.ssafy.p.j14c103.homerun.domain.gamesession.housing.GameHousing.create(
+                gameSessionId,
+                HousingType.STUDIO,
+                Money.of(5_000_000L),
+                Money.of(monthlyRentAmount),
+                Money.of(maintenanceFeeAmount),
+                null
+            )
+        );
+    }
+
+    private void saveGameLoan(
+        final Long gameSessionId,
+        final int principalAmount,
+        final int monthlyPaymentAmount,
+        final int remainingRepaymentTurns
+    ) {
+        gameLoanRepository.saveAndFlush(GameLoan.create(
+            gameSessionId,
+            "테스트 대출",
+            principalAmount,
+            BigDecimal.valueOf(3.5),
+            monthlyPaymentAmount,
+            remainingRepaymentTurns,
+            "TEST-LOAN",
+            RepaymentType.EQUAL_PRINCIPAL_INTEREST
+        ));
     }
 
     private record SessionFixture(
