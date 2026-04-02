@@ -127,6 +127,29 @@ class RealEstateDocumentRepositoryTest extends IntegrationTestSupport {
             );
     }
 
+    @DisplayName("샘플 풀 문서는 propertyId 없이 저장하고 registry section으로 다시 조회할 수 있다")
+    @Test
+    void saveSamplePoolDocumentWithoutPropertyId() {
+        // given
+        final RealEstateDocument samplePoolDocument = RealEstateDocument.create(
+            null,
+            RealEstateDocumentType.REGISTRY,
+            RealEstateRegistrySection.GAPGU,
+            createGapguSample("정상")
+        );
+
+        // when
+        final RealEstateDocument saved = realEstateDocumentRepository.saveAndFlush(samplePoolDocument);
+        final List<RealEstateDocument> documents = realEstateDocumentRepository
+            .findAllByRegistrySectionOrderByRealEstateDocumentIdAsc(RealEstateRegistrySection.GAPGU);
+
+        // then
+        assertThat(saved.getPropertyId()).isNull();
+        assertThat(documents)
+            .extracting(RealEstateDocument::getRealEstateDocumentId, RealEstateDocument::getPropertyId)
+            .contains(tuple(saved.getRealEstateDocumentId(), null));
+    }
+
     private RealEstateProperty createProperty(
         final String providerId,
         final String districtCode
