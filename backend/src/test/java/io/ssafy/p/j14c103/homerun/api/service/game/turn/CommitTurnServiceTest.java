@@ -583,6 +583,92 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         assertThat(gameReport.getTopSpendingRatio()).isEqualByComparingTo("0");
     }
 
+    @DisplayName("주거 상실 신호가 있으면 턴 커밋은 세션을 압류 종료 상태로 닫아야 한다.")
+    @Test
+    void commitTurnAndCloseSessionAsForeclosure() {
+        // given
+        final User user = saveUser("turn-foreclosure@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 12)
+        );
+        final TurnDraft turnDraft = createTurnDraft(
+            gameSession.getGameSessionId(),
+            12,
+            Money.zero(),
+            Map.of()
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(GameWorldResult.of(
+                GameWorldResult.CycleResult.of(
+                    CyclePhase.RECOVERY,
+                    CycleType.CYCLE_RATE_HIKE,
+                    18,
+                    "주거 상실 정산"
+                ),
+                List.of(),
+                List.of(),
+                GameWorldResult.HousingSnapshot.of(
+                    HousingType.NONE,
+                    null,
+                    gameSession.getTargetPropertyId(),
+                    true
+                )
+            ));
+
+        // when
+        commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId());
+
+        // then
+        final GameSession updated = gameSessionRepository.findById(gameSession.getGameSessionId())
+            .orElseThrow();
+        assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.FORECLOSURE);
+    }
+
+    @DisplayName("자가 주택 매물 연결이 끊긴 주거 상실 신호도 턴 커밋에서 압류 종료로 닫아야 한다.")
+    @Test
+    void commitTurnAndCloseOwnedHousingLossSessionAsForeclosure() {
+        // given
+        final User user = saveUser("turn-foreclosure-owned@example.com");
+        final GameSession gameSession = gameSessionRepository.saveAndFlush(
+            createGameSession(user.getId(), 12)
+        );
+        final TurnDraft turnDraft = createTurnDraft(
+            gameSession.getGameSessionId(),
+            12,
+            Money.zero(),
+            Map.of()
+        );
+        given(turnDraftRepository.findBySessionId(gameSession.getGameSessionId()))
+            .willReturn(Optional.of(turnDraft));
+        given(gameWorldResultService.buildWorldResult(gameSession.getGameSessionId(), 50))
+            .willReturn(GameWorldResult.of(
+                GameWorldResult.CycleResult.of(
+                    CyclePhase.RECOVERY,
+                    CycleType.CYCLE_RATE_HIKE,
+                    18,
+                    "자가 주거 상실 정산"
+                ),
+                List.of(),
+                List.of(),
+                GameWorldResult.HousingSnapshot.of(
+                    HousingType.OWNED_APT,
+                    null,
+                    gameSession.getTargetPropertyId(),
+                    true
+                )
+            ));
+
+        // when
+        commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId());
+
+        // then
+        final GameSession updated = gameSessionRepository.findById(gameSession.getGameSessionId())
+            .orElseThrow();
+        assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.FORECLOSURE);
+    }
+
     @DisplayName("턴 커밋은 부동산 자산과 주식 평가금액을 분리해 응답과 timeline에 반영한다.")
     @Test
     void commitTurnWithSeparatedAssetSnapshots() {

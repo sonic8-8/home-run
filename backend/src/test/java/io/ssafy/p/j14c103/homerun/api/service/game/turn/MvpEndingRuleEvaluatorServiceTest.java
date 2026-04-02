@@ -23,6 +23,7 @@ class MvpEndingRuleEvaluatorServiceTest {
             Money.of(300_000L),
             Money.of(500_000L),
             Money.of(500_000L),
+            false,
             false
         );
 
@@ -44,7 +45,8 @@ class MvpEndingRuleEvaluatorServiceTest {
             Money.of(0L),
             Money.of(0L),
             Money.of(300_000L),
-            true
+            true,
+            false
         );
 
         // when
@@ -65,6 +67,7 @@ class MvpEndingRuleEvaluatorServiceTest {
             Money.of(100_000L),
             Money.of(0L),
             Money.of(300_000L),
+            false,
             false
         );
 
@@ -86,6 +89,7 @@ class MvpEndingRuleEvaluatorServiceTest {
             Money.of(500_000L),
             Money.of(700_000L),
             Money.of(100_000L),
+            false,
             false
         );
 
@@ -95,5 +99,27 @@ class MvpEndingRuleEvaluatorServiceTest {
         // then
         assertThat(evaluation.getSessionStatus()).isEqualTo(SessionStatus.TIMEOUT);
         assertThat(evaluation.getNetWorth()).isEqualTo(Money.of(3_100_000L));
+    }
+
+    @DisplayName("주거 상실 압류 신호가 있으면 파산이나 타임아웃보다 압류 엔딩을 우선한다.")
+    @Test
+    void foreclosureWhenTriggered() {
+        // given
+        final EndingRuleEvaluator.EndingRuleContext context = EndingRuleEvaluator.EndingRuleContext.of(
+            360,
+            Money.of(200_000L),
+            Money.of(100_000L),
+            Money.of(0L),
+            Money.of(300_000L),
+            false,
+            true
+        );
+
+        // when
+        final EndingRuleEvaluator.EndingEvaluation evaluation = mvpEndingRuleEvaluator.evaluate(context);
+
+        // then
+        assertThat(evaluation.getSessionStatus()).isEqualTo(SessionStatus.FORECLOSURE);
+        assertThat(evaluation.getNetWorth()).isEqualTo(Money.zero());
     }
 }

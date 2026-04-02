@@ -80,7 +80,8 @@ public class SettlementOrchestratorService {
                 currentStockValue,
                 request.getCurrentRealEstateValue(),
                 currentLoanBalance,
-                targetPropertyOwned
+                targetPropertyOwned,
+                request.isForeclosureTriggered()
             )
         );
 
