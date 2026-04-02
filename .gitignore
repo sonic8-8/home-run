@@ -2,6 +2,11 @@
 /.vscode/
 /.claude/
 /.gradle-cache/
+/.agent/
+!/.agent/AGENTS.md
+/.agents/
+/.codex
+/.codex/
 /.agent/private/
 /.env.runtime
 

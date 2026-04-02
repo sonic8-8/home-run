@@ -69,11 +69,13 @@ dependencies {
     // Test
     asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation platform('org.testcontainers:testcontainers-bom:1.20.4')
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:postgresql'
     testRuntimeOnly 'net.java.dev.jna:jna-platform:5.13.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
