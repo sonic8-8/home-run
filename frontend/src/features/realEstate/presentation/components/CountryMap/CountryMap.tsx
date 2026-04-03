@@ -54,9 +54,9 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
                     <Geography
                       geography={geo}
                       style={{
-                        default: { fill: isActive ? '#ffffff' : '#f3f4f6', stroke: '#d0d2d8', strokeWidth: 0.7, outline: 'none' },
-                        hover:   { fill: isActive ? '#ffffff' : '#f3f4f6', stroke: isActive ? '#b8bac0' : '#d0d2d8', strokeWidth: isActive ? 0.8 : 0.7, outline: 'none' },
-                        pressed: { fill: isActive ? '#ffffff' : '#f3f4f6', stroke: isActive ? '#b8bac0' : '#d0d2d8', strokeWidth: isActive ? 0.8 : 0.7, outline: 'none' },
+                        default: { fill: isActive ? '#ffffff' : '#e2e8f0', stroke: isActive ? '#d0d2d8' : '#cbd5e1', strokeWidth: isActive ? 0.7 : 0.9, outline: 'none' },
+                        hover:   { fill: isActive ? '#ffffff' : '#dbe4ee', stroke: isActive ? '#b8bac0' : '#b8c6d8', strokeWidth: isActive ? 0.8 : 1, outline: 'none' },
+                        pressed: { fill: isActive ? '#ffffff' : '#dbe4ee', stroke: isActive ? '#b8bac0' : '#b8c6d8', strokeWidth: isActive ? 0.8 : 1, outline: 'none' },
                       }}
                     />
                   </g>
@@ -106,9 +106,9 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
                         dominantBaseline="central"
                         style={{
                           fontFamily: "'Pretendard', 'Apple SD Gothic Neo', sans-serif",
-                          fontSize: isActive ? 18 : 12,
-                          fontWeight: isActive ? 600 : 300,
-                          fill: raised ? '#ffffff' : isActive ? '#374151' : '#c4c7cd',
+                          fontSize: isActive ? 18 : 13,
+                          fontWeight: isActive ? 600 : 500,
+                          fill: raised ? '#ffffff' : isActive ? '#374151' : '#94a3b8',
                           paintOrder: 'stroke',
                           stroke: raised ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.8)',
                           strokeWidth: raised ? 3.5 : 3,

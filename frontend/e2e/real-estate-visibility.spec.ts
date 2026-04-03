@@ -216,6 +216,34 @@ async function triggerMapSelection(page: Page, testId: string) {
   await page.getByTestId(testId).dispatchEvent('click');
 }
 
+function parseRgb(rgb: string): [number, number, number] {
+  const match = rgb.match(/\d+/g);
+  if (!match || match.length < 3) {
+    throw new Error(`RGB 값을 파싱할 수 없습니다: ${rgb}`);
+  }
+
+  return [Number(match[0]), Number(match[1]), Number(match[2])];
+}
+
+function relativeLuminance([r, g, b]: [number, number, number]): number {
+  const normalized = [r, g, b].map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+
+  return 0.2126 * normalized[0] + 0.7152 * normalized[1] + 0.0722 * normalized[2];
+}
+
+function contrastRatio(foreground: string, background: string): number {
+  const foregroundLuminance = relativeLuminance(parseRgb(foreground));
+  const backgroundLuminance = relativeLuminance(parseRgb(background));
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+  const darker = Math.min(foregroundLuminance, backgroundLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 test.describe('real estate visibility', () => {
   test('shows the staged guidance card while narrowing from country to city', async ({ page }) => {
     await seedAuthenticatedUser(page);
@@ -236,6 +264,22 @@ test.describe('real estate visibility', () => {
 
     await expect(page.getByText('서울에서 구를 선택하세요')).toBeVisible();
     await expect(page.getByText('대한민국 › 서울').first()).toBeVisible();
+  });
+
+  test('keeps inactive province labels readable in country view', async ({ page }) => {
+    await seedAuthenticatedUser(page);
+    await seedRealEstateRouteState(page);
+    await mockMapGeographies(page);
+
+    await page.goto('/property');
+
+    for (const label of ['세종', '부산']) {
+      const provinceLabel = page.locator('svg text').filter({ hasText: label }).first();
+      await expect(provinceLabel).toBeVisible();
+
+      const fill = await provinceLabel.evaluate((element) => getComputedStyle(element).fill);
+      expect(contrastRatio(fill, 'rgb(255, 255, 255)')).toBeGreaterThanOrEqual(2.5);
+    }
   });
 
   test('shows the fallback property list and summary panel in district view on localhost', async ({ page }) => {
