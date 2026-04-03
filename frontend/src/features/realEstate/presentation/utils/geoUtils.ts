@@ -2,7 +2,7 @@
 
 import {
   NAME_TO_REGION,
-  CODE_TO_REGION,
+  TOPOJSON_PROVINCE_CODE_TO_REGION,
   DISTRICT_CODE_BY_REGION,
   LABEL_OFFSETS,
   GU_LABEL_OFFSETS,
@@ -24,7 +24,7 @@ export function matchRegion(geo: any): string | null {
     const codeStr = String(codeRaw).trim();
     if (codeStr.length >= 2) {
       const prefix = codeStr.slice(0, 2);
-      if (CODE_TO_REGION[prefix]) return CODE_TO_REGION[prefix];
+      if (TOPOJSON_PROVINCE_CODE_TO_REGION[prefix]) return TOPOJSON_PROVINCE_CODE_TO_REGION[prefix];
     }
   }
 
@@ -32,7 +32,7 @@ export function matchRegion(geo: any): string | null {
     const idStr = String(geo.id).trim();
     if (idStr.length >= 2 && /^\d+$/.test(idStr)) {
       const prefix = idStr.slice(0, 2);
-      if (CODE_TO_REGION[prefix]) return CODE_TO_REGION[prefix];
+      if (TOPOJSON_PROVINCE_CODE_TO_REGION[prefix]) return TOPOJSON_PROVINCE_CODE_TO_REGION[prefix];
     }
   }
 

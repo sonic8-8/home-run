@@ -2,6 +2,7 @@ export interface RegionData {
   color: string;
   sideColor: string;
   code: string;
+  geoCode: string;
   center: [number, number];
   scale: number;
   label: string;
@@ -17,6 +18,7 @@ export const ACTIVE_REGIONS: Record<string, RegionData> = {
     color: '#60a5fa',
     sideColor: '#3b82f6',
     code: '11',
+    geoCode: '11',
     center: [126.98, 37.56],
     scale: 160000,
     label: '서울',
@@ -25,6 +27,7 @@ export const ACTIVE_REGIONS: Record<string, RegionData> = {
     color: '#60a5fa',
     sideColor: '#3b82f6',
     code: '29',
+    geoCode: '24',
     center: [126.855, 35.16],
     scale: 260000,
     label: '광주',
@@ -40,9 +43,9 @@ export const NAME_TO_REGION: Record<string, string> = {
   Gwangju: '광주광역시',
 };
 
-export const CODE_TO_REGION: Record<string, string> = {
+export const TOPOJSON_PROVINCE_CODE_TO_REGION: Record<string, string> = {
   '11': '서울특별시',
-  '29': '광주광역시',
+  '24': '광주광역시',
 };
 
 export const DISTRICT_CODE_BY_REGION: Record<string, Record<string, string>> = {
