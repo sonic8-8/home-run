@@ -15,7 +15,7 @@ public class GameWorldRollService {
 
     public int resolveTurnRoll(final Long gameSessionId, final int turnNumber) {
         validateGameSessionId(gameSessionId);
-        validatePositive(turnNumber);
+        validateNonNegative(turnNumber);
 
         return toRoll(Objects.hash(gameSessionId, turnNumber, "turn-world-roll"));
     }
@@ -71,8 +71,8 @@ public class GameWorldRollService {
         }
     }
 
-    private void validatePositive(final int value) {
-        if (value <= 0) {
+    private void validateNonNegative(final int value) {
+        if (value < 0) {
             throw new HomerunException(ErrorCode.WORLD_RESULT_INVALID);
         }
     }
