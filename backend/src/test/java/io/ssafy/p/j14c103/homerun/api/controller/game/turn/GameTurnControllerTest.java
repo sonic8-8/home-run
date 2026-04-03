@@ -522,4 +522,27 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                 basicErrorResponseFields()
             ));
     }
+
+    @DisplayName("커밋할 draft가 없으면 400을 반환한다.")
+    @Test
+    void commitWithoutDraft() throws Exception {
+        // given
+        given(commitTurnService.commitTurn(1L, 1001L))
+            .willThrow(new HomerunException(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", 1001L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getMessage()))
+            .andDo(document("game-turn/commit/draft-not-found",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                basicErrorResponseFields()
+            ));
+    }
 }

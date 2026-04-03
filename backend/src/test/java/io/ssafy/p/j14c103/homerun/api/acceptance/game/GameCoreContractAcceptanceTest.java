@@ -376,6 +376,97 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(jsonPath("$.data.news[0].headline").value("호황 꺾임 신호"));
     }
 
+    @DisplayName("커밋할 draft가 없으면 public 계약상 400을 반환해야 한다.")
+    @Test
+    void commitTurnWithoutDraftReturnsBadRequest() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-no-draft-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getMessage()));
+    }
+
+    @DisplayName("종료된 세션의 턴 커밋은 409와 GAME_SESSION_CLOSED를 반환한다.")
+    @Test
+    void commitTurnRejectsClosedSession() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-closed-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        fixture.session().markEnding(SessionStatus.TIMEOUT);
+        gameSessionRepository.saveAndFlush(fixture.session());
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_CLOSED.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_SESSION_CLOSED.getMessage()));
+    }
+
+    @DisplayName("다른 사용자의 턴 커밋은 403과 GAME_SESSION_FORBIDDEN을 반환한다.")
+    @Test
+    void commitTurnRejectsOtherUsersSession() throws Exception {
+        final SessionFixture ownerFixture = saveSessionFixture(
+            "turn-owner-commit@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        final User otherUser = saveUser("turn-requester-commit@example.com");
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", ownerFixture.session().getGameSessionId())
+                .header(AUTHORIZATION, bearer(otherUser)))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_SESSION_FORBIDDEN.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_SESSION_FORBIDDEN.getMessage()));
+    }
+
+    @DisplayName("같은 턴 커밋을 반복 호출해도 상태는 한 번만 반영되고 이후 호출은 400을 반환한다.")
+    @Test
+    void commitTurnRepeatKeepsSinglePersistedResult() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-repeat-commit-user@example.com",
+            12,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        saveGameStat(fixture.session(), 70, 20, 20, 50, 50, 12);
+        saveGameCareer(fixture.session(), 12, 31_000_000);
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/slots", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken())
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(turnSlotsRequest())))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getMessage()));
+
+        assertThat(gameTurnSlotRepository.findAllByGameSessionIdAndTurnNumberOrderBySlotIndex(
+            fixture.session().getGameSessionId(),
+            12
+        )).hasSize(3);
+        assertThat(settlementLogRepository.findAllByGameSessionIdAndTurnNumberOrderBySettlementLogIdAsc(
+            fixture.session().getGameSessionId(),
+            12
+        )).isNotEmpty();
+        assertThat(gameTimelineRepository.findAllByGameSessionIdOrderByTurnNumberAsc(
+            fixture.session().getGameSessionId()
+        )).hasSize(1);
+    }
+
     @DisplayName("다른 사용자의 턴 조회는 403으로 차단된다.")
     @Test
     void getTurnRejectsOtherUsersSession() throws Exception {
