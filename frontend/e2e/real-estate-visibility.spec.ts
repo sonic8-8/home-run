@@ -37,6 +37,40 @@ const PROVINCES_GEOJSON = {
         ]],
       },
     },
+    {
+      type: 'Feature',
+      properties: {
+        name: '세종특별자치시',
+        code: '29',
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [127.15, 36.42],
+          [127.34, 36.42],
+          [127.34, 36.58],
+          [127.15, 36.58],
+          [127.15, 36.42],
+        ]],
+      },
+    },
+    {
+      type: 'Feature',
+      properties: {
+        name: '부산광역시',
+        code: '26',
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [129.00, 35.03],
+          [129.20, 35.03],
+          [129.20, 35.22],
+          [129.00, 35.22],
+          [129.00, 35.03],
+        ]],
+      },
+    },
   ],
 };
 
@@ -193,6 +227,10 @@ test.describe('real estate visibility', () => {
     await expect(page.getByText('Real Estate Map')).toBeVisible();
     await expect(page.getByText('지역을 먼저 고르세요')).toBeVisible();
     await expect(page.getByText('지역 탐색 단계')).toBeVisible();
+    await expect(page.getByText('세종')).toBeVisible();
+    await expect(page.getByText('부산')).toBeVisible();
+    await expect(page.getByTestId('country-region-11')).toBeVisible();
+    await expect(page.getByTestId('country-region-29')).toBeVisible();
 
     await triggerMapSelection(page, 'country-region-11');
 
