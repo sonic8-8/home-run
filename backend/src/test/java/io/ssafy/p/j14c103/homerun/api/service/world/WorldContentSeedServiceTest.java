@@ -57,6 +57,11 @@ class WorldContentSeedServiceTest extends IntegrationTestSupport {
         // then
         assertThat(newsMasterRepository.count()).isEqualTo(29);
         assertThat(gameEventRepository.count()).isEqualTo(12);
+        assertThat(gameEventRepository.findAll())
+            .allSatisfy(event -> {
+                assertThat(event.getCreatedAt()).isNotNull();
+                assertThat(event.getUpdatedAt()).isNotNull();
+            });
         assertThat(newsMasterRepository.existsByEconomicCycleType("BOOM_TO_BOOM")).isTrue();
         assertThat(newsMasterRepository.existsByEconomicCycleType("BOOM_TO_CRISIS")).isTrue();
         assertThat(newsMasterRepository.existsByEconomicCycleType("BOOM_TO_RECOVERY")).isTrue();
