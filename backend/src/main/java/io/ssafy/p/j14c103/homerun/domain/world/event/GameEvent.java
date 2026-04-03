@@ -63,10 +63,10 @@ public class GameEvent {
     @Column(name = "active_yn", nullable = false)
     private boolean activeYn;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     private GameEvent(
@@ -95,6 +95,8 @@ public class GameEvent {
         this.receiverName = receiverName;
         this.description = description;
         this.activeYn = activeYn;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
     }
 
     public static GameEvent create(
