@@ -2,8 +2,31 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CountryMap } from './CountryMap';
 
+const mockState = vi.hoisted(() => ({
+  lastComposableMapProps: null as null | {
+    projection?: string;
+    projectionConfig?: {
+      scale?: number;
+      center?: [number, number];
+    };
+  },
+}));
+
 vi.mock('react-simple-maps', () => ({
-  ComposableMap: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ComposableMap: ({
+    children,
+    ...props
+  }: {
+    children: React.ReactNode;
+    projection?: string;
+    projectionConfig?: {
+      scale?: number;
+      center?: [number, number];
+    };
+  }) => {
+    mockState.lastComposableMapProps = props;
+    return <div>{children}</div>;
+  },
   Geographies: ({
     children,
   }: {
@@ -28,6 +51,7 @@ vi.mock('../WallLayers/WallLayers', () => ({
 
 describe('CountryMap', () => {
   it('서울과 광주만 국가 지도에서 노출한다', () => {
+    mockState.lastComposableMapProps = null;
     render(<CountryMap onRegionClick={vi.fn()} />);
 
     expect(screen.getByTestId('country-region-11')).toBeInTheDocument();
@@ -36,5 +60,18 @@ describe('CountryMap', () => {
     expect(screen.getByText('광주')).toBeInTheDocument();
     expect(screen.queryByText('세종')).not.toBeInTheDocument();
     expect(screen.queryByText('부산')).not.toBeInTheDocument();
+  });
+
+  it('활성 지역이 충분히 크게 보이도록 국가 지도 뷰포트를 집중시킨다', () => {
+    mockState.lastComposableMapProps = null;
+    render(<CountryMap onRegionClick={vi.fn()} />);
+
+    expect(mockState.lastComposableMapProps).toMatchObject({
+      projection: 'geoMercator',
+      projectionConfig: {
+        scale: 26000,
+        center: [126.92, 36.36],
+      },
+    });
   });
 });
