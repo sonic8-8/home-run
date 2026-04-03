@@ -73,6 +73,10 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             12,
             LocalDate.of(2026, 1, 1),
             TurnStateResponse.EconomicCycleResponse.of(CyclePhase.BOOM, "경기 호황기"),
+            TurnStateResponse.RuntimeSnapshotResponse.of(
+                TurnStateResponse.AssetSummaryResponse.of(2_300_000L, 18_700_000L),
+                TurnStateResponse.StatSummaryResponse.of(72, 28, 34, 61, 55)
+            ),
             List.of(
                 TurnStateResponse.NewsResponse.of(
                     "01500801.20200519071906001",
@@ -98,6 +102,13 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.data.month").value(1))
             .andExpect(jsonPath("$.data.economicCycle.phase").value("BOOM"))
             .andExpect(jsonPath("$.data.economicCycle.description").value("경기 호황기"))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.cashBalance").value(2300000))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.netWorth").value(18700000))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.health").value(72))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.fatigue").value(28))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.stress").value(34))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.happiness").value(61))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.knowledge").value(55))
             .andExpect(jsonPath("$.data.news").isArray())
             .andExpect(jsonPath("$.data.news.length()").value(1))
             .andExpect(jsonPath("$.data.news[0].newsId").value("01500801.20200519071906001"))
@@ -119,6 +130,16 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                     fieldWithPath("economicCycle").type(JsonFieldType.OBJECT).description("경제 사이클 정보"),
                     fieldWithPath("economicCycle.phase").type(JsonFieldType.STRING).description("경제 사이클 단계"),
                     fieldWithPath("economicCycle.description").type(JsonFieldType.STRING).description("경제 사이클 설명"),
+                    fieldWithPath("runtimeSnapshot").type(JsonFieldType.OBJECT).description("게임 메인 HUD용 현재 상태 스냅샷"),
+                    fieldWithPath("runtimeSnapshot.assets").type(JsonFieldType.OBJECT).description("현재 자산 요약"),
+                    fieldWithPath("runtimeSnapshot.assets.cashBalance").type(JsonFieldType.NUMBER).description("현재 현금"),
+                    fieldWithPath("runtimeSnapshot.assets.netWorth").type(JsonFieldType.NUMBER).description("현재 순자산"),
+                    fieldWithPath("runtimeSnapshot.stats").type(JsonFieldType.OBJECT).description("현재 스탯 요약"),
+                    fieldWithPath("runtimeSnapshot.stats.health").type(JsonFieldType.NUMBER).description("현재 체력"),
+                    fieldWithPath("runtimeSnapshot.stats.fatigue").type(JsonFieldType.NUMBER).description("현재 피로"),
+                    fieldWithPath("runtimeSnapshot.stats.stress").type(JsonFieldType.NUMBER).description("현재 스트레스"),
+                    fieldWithPath("runtimeSnapshot.stats.happiness").type(JsonFieldType.NUMBER).description("현재 행복"),
+                    fieldWithPath("runtimeSnapshot.stats.knowledge").type(JsonFieldType.NUMBER).description("현재 지식"),
                     fieldWithPath("news").type(JsonFieldType.ARRAY).description("턴 뉴스 목록"),
                     fieldWithPath("news[].newsId").type(JsonFieldType.STRING).description("뉴스 식별자"),
                     fieldWithPath("news[].headline").type(JsonFieldType.STRING).description("뉴스 제목"),

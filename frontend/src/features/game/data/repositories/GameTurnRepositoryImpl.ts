@@ -11,6 +11,7 @@ import type { TurnActionModel } from '@features/game/data/models/GameTurnModel'
 import type { IGameTurnRepository } from '@features/game/domain/repositories/IGameTurnRepository'
 import type {
   GameTurn,
+  GameTurnRuntimeSnapshot,
   EconomicCyclePhase,
   EconomicCycleType,
   GameEventPresentationType,
@@ -57,6 +58,7 @@ export class GameTurnRepositoryImpl implements IGameTurnRepository {
         phase: this.toEconomicCyclePhase(model.economicCycle.phase),
         description: model.economicCycle.description,
       },
+      runtimeSnapshot: this.toRuntimeSnapshot(model.runtimeSnapshot),
     }
   }
 
@@ -225,6 +227,52 @@ export class GameTurnRepositoryImpl implements IGameTurnRepository {
       happiness: statChanges.happiness,
       knowledge: statChanges.knowledge,
     }
+  }
+
+  private toRuntimeSnapshot(snapshot: unknown): GameTurnRuntimeSnapshot {
+    if (typeof snapshot !== 'object' || snapshot === null) {
+      throw new ResponseMappingError('유효한 runtimeSnapshot 응답이 아닙니다.')
+    }
+
+    const candidate = snapshot as {
+      assets?: {
+        cashBalance?: unknown
+        netWorth?: unknown
+      }
+      stats?: {
+        health?: unknown
+        fatigue?: unknown
+        stress?: unknown
+        happiness?: unknown
+        knowledge?: unknown
+      }
+    }
+
+    if (candidate.assets === undefined || candidate.stats === undefined) {
+      throw new ResponseMappingError('유효한 runtimeSnapshot 응답이 아닙니다.')
+    }
+
+    return {
+      assets: {
+        cashBalance: this.toFiniteNumber(candidate.assets.cashBalance, 'runtimeSnapshot.assets.cashBalance'),
+        netWorth: this.toFiniteNumber(candidate.assets.netWorth, 'runtimeSnapshot.assets.netWorth'),
+      },
+      stats: {
+        health: this.toFiniteNumber(candidate.stats.health, 'runtimeSnapshot.stats.health'),
+        fatigue: this.toFiniteNumber(candidate.stats.fatigue, 'runtimeSnapshot.stats.fatigue'),
+        stress: this.toFiniteNumber(candidate.stats.stress, 'runtimeSnapshot.stats.stress'),
+        happiness: this.toFiniteNumber(candidate.stats.happiness, 'runtimeSnapshot.stats.happiness'),
+        knowledge: this.toFiniteNumber(candidate.stats.knowledge, 'runtimeSnapshot.stats.knowledge'),
+      },
+    }
+  }
+
+  private toFiniteNumber(value: unknown, field: string): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new ResponseMappingError(`유효한 ${field} 응답이 아닙니다.`)
+    }
+
+    return value
   }
 
   private toDate(value: string): Date {

@@ -21,11 +21,30 @@ export interface EconomicCycle {
   readonly description: string
 }
 
+export interface GameTurnAssetSnapshot {
+  readonly cashBalance: number
+  readonly netWorth: number
+}
+
+export interface GameTurnStatSnapshot {
+  readonly health: number
+  readonly fatigue: number
+  readonly stress: number
+  readonly happiness: number
+  readonly knowledge: number
+}
+
+export interface GameTurnRuntimeSnapshot {
+  readonly assets: GameTurnAssetSnapshot
+  readonly stats: GameTurnStatSnapshot
+}
+
 export interface GameTurn {
   readonly turnNumber: number
   readonly currentDate: Date
   readonly month: number
   readonly economicCycle: EconomicCycle
+  readonly runtimeSnapshot: GameTurnRuntimeSnapshot
 }
 
 export interface TurnStatChanges {

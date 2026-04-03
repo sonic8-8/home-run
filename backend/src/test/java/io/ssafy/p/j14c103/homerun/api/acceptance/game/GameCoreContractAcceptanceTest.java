@@ -270,6 +270,7 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             12,
             CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
         );
+        saveGameStat(fixture.session(), 70, 20, 20, 50, 50, 12);
         newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
             "NEWS-001",
             "부동산 시장 과열 경고",
@@ -296,6 +297,13 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.turnNumber").value(12))
             .andExpect(jsonPath("$.data.economicCycle.phase").value("BOOM"))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.cashBalance").value(2_000_000))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.netWorth").value(2_000_000))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.health").value(70))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.fatigue").value(20))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.stress").value(20))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.happiness").value(50))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.knowledge").value(50))
             .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-001"))
             .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 과열 경고"));
 
@@ -315,6 +323,7 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             0,
             CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
         );
+        saveGameStat(fixture.session(), 70, 20, 20, 50, 50, 0);
         newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
             "NEWS-000",
             "부동산 시장 안정세",
@@ -333,6 +342,13 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
                 .header(AUTHORIZATION, fixture.bearerToken()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.turnNumber").value(0))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.cashBalance").value(2_000_000))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.netWorth").value(2_000_000))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.health").value(70))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.fatigue").value(20))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.stress").value(20))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.happiness").value(50))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.knowledge").value(50))
             .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-000"))
             .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 안정세"));
 
@@ -391,6 +407,13 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
                 .header(AUTHORIZATION, bearer(user)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.turnNumber").value(0))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.cashBalance").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.netWorth").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.health").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.fatigue").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.stress").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.happiness").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.knowledge").isNumber())
             .andExpect(jsonPath("$.data.news[0].newsId").value(latestNewsId))
             .andExpect(jsonPath("$.data.news[0].headline").value(latestHeadline));
     }
@@ -480,6 +503,13 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.turnNumber").value(13))
             .andExpect(jsonPath("$.data.economicCycle.phase").value("CRISIS"))
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.cashBalance").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.assets.netWorth").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.health").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.fatigue").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.stress").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.happiness").isNumber())
+            .andExpect(jsonPath("$.data.runtimeSnapshot.stats.knowledge").isNumber())
             .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-COMMIT-001"))
             .andExpect(jsonPath("$.data.news[0].headline").value("호황 꺾임 신호"));
     }

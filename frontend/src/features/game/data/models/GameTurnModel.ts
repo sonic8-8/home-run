@@ -3,11 +3,30 @@ export interface EconomicCycleModel {
   description: string
 }
 
+export interface GameTurnAssetSnapshotModel {
+  cashBalance: number
+  netWorth: number
+}
+
+export interface GameTurnStatSnapshotModel {
+  health: number
+  fatigue: number
+  stress: number
+  happiness: number
+  knowledge: number
+}
+
+export interface GameTurnRuntimeSnapshotModel {
+  assets: GameTurnAssetSnapshotModel
+  stats: GameTurnStatSnapshotModel
+}
+
 export interface GameTurnResponseModel {
   turnNumber: number
   currentDate: string
   month: number
   economicCycle: EconomicCycleModel
+  runtimeSnapshot: GameTurnRuntimeSnapshotModel
 }
 
 export interface TurnActionEffectModel {

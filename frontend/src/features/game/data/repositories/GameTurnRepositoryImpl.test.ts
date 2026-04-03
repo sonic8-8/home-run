@@ -48,6 +48,19 @@ describe('GameTurnRepositoryImpl', () => {
         phase: 'BOOM',
         description: '경기 호황기',
       },
+      runtimeSnapshot: {
+        assets: {
+          cashBalance: 2_300_000,
+          netWorth: 18_700_000,
+        },
+        stats: {
+          health: 72,
+          fatigue: 28,
+          stress: 34,
+          happiness: 61,
+          knowledge: 55,
+        },
+      },
     });
 
     const result = await repository.getTurn(101);
@@ -60,6 +73,19 @@ describe('GameTurnRepositoryImpl', () => {
       economicCycle: {
         phase: 'BOOM',
         description: '경기 호황기',
+      },
+      runtimeSnapshot: {
+        assets: {
+          cashBalance: 2_300_000,
+          netWorth: 18_700_000,
+        },
+        stats: {
+          health: 72,
+          fatigue: 28,
+          stress: 34,
+          happiness: 61,
+          knowledge: 55,
+        },
       },
     });
   });
@@ -380,6 +406,19 @@ describe('GameTurnRepositoryImpl', () => {
         phase: 'UNKNOWN',
         description: '알 수 없는 상태',
       },
+      runtimeSnapshot: {
+        assets: {
+          cashBalance: 2_300_000,
+          netWorth: 18_700_000,
+        },
+        stats: {
+          health: 72,
+          fatigue: 28,
+          stress: 34,
+          happiness: 61,
+          knowledge: 55,
+        },
+      },
     });
 
     await expect(repository.getTurn(101)).rejects.toThrowError(ResponseMappingError);
@@ -394,7 +433,34 @@ describe('GameTurnRepositoryImpl', () => {
         phase: 'BOOM',
         description: '경기 호황기',
       },
+      runtimeSnapshot: {
+        assets: {
+          cashBalance: 2_300_000,
+          netWorth: 18_700_000,
+        },
+        stats: {
+          health: 72,
+          fatigue: 28,
+          stress: 34,
+          happiness: 61,
+          knowledge: 55,
+        },
+      },
     });
+
+    await expect(repository.getTurn(101)).rejects.toThrowError(ResponseMappingError);
+  });
+
+  it('throws when the turn state omits the runtime snapshot contract', async () => {
+    vi.mocked(dataSource.getTurn).mockResolvedValue({
+      turnNumber: 12,
+      currentDate: '2026-01-01',
+      month: 1,
+      economicCycle: {
+        phase: 'BOOM',
+        description: '경기 호황기',
+      },
+    } as unknown as GameTurnResponseModel);
 
     await expect(repository.getTurn(101)).rejects.toThrowError(ResponseMappingError);
   });

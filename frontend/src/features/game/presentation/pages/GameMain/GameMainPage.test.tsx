@@ -77,6 +77,19 @@ describe('GameMainPage', () => {
           phase: 'BOOM',
           description: '경기 호황기',
         },
+        runtimeSnapshot: {
+          assets: {
+            cashBalance: 2_300_000,
+            netWorth: 18_700_000,
+          },
+          stats: {
+            health: 72,
+            fatigue: 28,
+            stress: 34,
+            happiness: 61,
+            knowledge: 55,
+          },
+        },
       },
       news: null,
       currentPendingEvent: null,
@@ -132,6 +145,11 @@ describe('GameMainPage', () => {
     fireEvent.click(screen.getByRole('button', { name: '이번 달 활동 진행' }));
     fireEvent.click(screen.getByRole('button', { name: '월 활동 닫기' }));
 
+    expect(screen.getByText('현재 상태')).toBeInTheDocument();
+    expect(screen.getByText('2,300,000 원')).toBeInTheDocument();
+    expect(screen.getByText('18,700,000 원')).toBeInTheDocument();
+    expect(screen.getByText('체력')).toBeInTheDocument();
+    expect(screen.getByText('스트레스')).toBeInTheDocument();
     expect(openNews).toHaveBeenCalledTimes(1);
     expect(mockedGuideToggle).toHaveBeenCalledWith('main');
     expect(closeNews).toHaveBeenCalledTimes(1);
@@ -152,6 +170,19 @@ describe('GameMainPage', () => {
         economicCycle: {
           phase: 'BOOM',
           description: '경기 호황기',
+        },
+        runtimeSnapshot: {
+          assets: {
+            cashBalance: 2_300_000,
+            netWorth: 18_700_000,
+          },
+          stats: {
+            health: 72,
+            fatigue: 28,
+            stress: 34,
+            happiness: 61,
+            knowledge: 55,
+          },
         },
       },
       news: null,
