@@ -61,7 +61,7 @@ describe('LoanProductsPanel', () => {
     );
 
     expect(screen.getByTestId('active-loan-card')).toBeInTheDocument();
-    expect(screen.getByText('현재 대출 현황')).toBeInTheDocument();
+    expect(screen.getByText('확정된 대출')).toBeInTheDocument();
     expect(screen.getByText('1,000,000원')).toBeInTheDocument();
     expect(screen.getByText('42,000원')).toBeInTheDocument();
   });
@@ -87,7 +87,7 @@ describe('LoanProductsPanel', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('상환 금액 입력'), {
+    fireEvent.change(screen.getByPlaceholderText('상환할 금액 입력'), {
       target: { value: '200000' },
     });
     fireEvent.click(screen.getByRole('button', { name: '상환하기' }));

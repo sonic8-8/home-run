@@ -103,7 +103,7 @@ export function RealEstatePage() {
     };
   }, [hasPreSelected, requestLoanReview, selectedProperty]);
 
-  if (mode !== 'new-game' && sessionId === undefined) {
+  if (mode === 'loan-apply' && sessionId === undefined) {
     return <div>세션 정보를 확인하지 못했습니다.</div>;
   }
 

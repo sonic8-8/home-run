@@ -287,6 +287,43 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 과열 경고"));
     }
 
+    @DisplayName("currentTurn이 0인 새 세션도 턴과 최신 뉴스 조회를 500 없이 처리해야 한다.")
+    @Test
+    void getTurnAndLatestNewsForFreshInProgressSession() throws Exception {
+        final SessionFixture fixture = saveSessionFixture(
+            "turn-zero-user@example.com",
+            0,
+            CycleState.of(CyclePhase.BOOM, CycleType.CYCLE_BOOM, 1)
+        );
+        newsMasterRepository.saveAndFlush(NewsMaster.createAiNews(
+            "NEWS-000",
+            "부동산 시장 안정세",
+            "neutral",
+            "테스트 언론",
+            "currentTurn 0 세션도 최신 뉴스를 읽을 수 있어야 한다.",
+            "BOOM_TO_BOOM",
+            "테스트 이유",
+            null,
+            null,
+            null,
+            null
+        ));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(0))
+            .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-000"))
+            .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 안정세"));
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", fixture.session().getGameSessionId())
+                .header(AUTHORIZATION, fixture.bearerToken()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(0))
+            .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-000"))
+            .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 안정세"));
+    }
+
     @DisplayName("턴 커밋은 world result에서 생성한 뉴스와 이벤트를 다음 턴 조회 계약에 materialize한다.")
     @Test
     void commitTurnMaterializesWorldResultIntoNewsAndPendingReadBack() throws Exception {
