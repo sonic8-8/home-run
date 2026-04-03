@@ -20,6 +20,7 @@ if [ -n "${K6_PROMETHEUS_RW_SERVER_URL:-}" ]; then
   RUN_ARGS+=(-o experimental-prometheus-rw)
 fi
 K6_DOCKER_NETWORK_VALUE="${K6_DOCKER_NETWORK:-}"
+ADD_HOST_GATEWAY="${K6_DOCKER_ADD_HOST_GATEWAY:-false}"
 CONTAINER_ROOTDIR="/tmp"
 CONTAINER_SUMMARY_DIR="/tmp/k6-results"
 SCRIPT_PATH="$1"
@@ -36,7 +37,7 @@ env_args=(
 
 while IFS='=' read -r key value; do
   if [[ "$key" == K6_* ]]; then
-    if [[ "$key" == "K6_SUMMARY_DIR" || "$key" == "K6_DOCKER_NETWORK" ]]; then
+    if [[ "$key" == "K6_SUMMARY_DIR" || "$key" == "K6_DOCKER_NETWORK" || "$key" == "K6_DOCKER_ADD_HOST_GATEWAY" ]]; then
       continue
     fi
     env_args+=(-e "$key=$value")
@@ -73,6 +74,10 @@ docker_args=(
 
 if [ -n "$K6_DOCKER_NETWORK_VALUE" ]; then
   docker_args+=(--network "$K6_DOCKER_NETWORK_VALUE")
+fi
+
+if [ "$ADD_HOST_GATEWAY" = "true" ]; then
+  docker_args+=(--add-host host.docker.internal:host-gateway)
 fi
 
 command_args=(
