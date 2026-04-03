@@ -25,6 +25,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnRespo
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnPreviewResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -419,6 +420,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
         // given
         final CommitTurnResponse response = CommitTurnResponse.of(
             12,
+            SessionStatus.TIMEOUT,
             List.of(
                 CommitTurnResponse.SettlementLogItemResponse.of(
                     "MARKET_UPDATE",
@@ -447,6 +449,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.status").value(200))
             .andExpect(jsonPath("$.message").value("OK"))
             .andExpect(jsonPath("$.data.turnNumber").value(12))
+            .andExpect(jsonPath("$.data.endingStatus").value("TIMEOUT"))
             .andExpect(jsonPath("$.data.settlementLog.length()").value(2))
             .andExpect(jsonPath("$.data.settlementLog[0].phase").value("MARKET_UPDATE"))
             .andExpect(jsonPath("$.data.settlementLog[1].cashChange").value(430000))
@@ -464,6 +467,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                 apiResponseFields(
                     "턴 커밋 결과",
                     fieldWithPath("turnNumber").type(JsonFieldType.NUMBER).description("커밋된 턴 번호"),
+                    fieldWithPath("endingStatus").type(JsonFieldType.STRING).description("이번 턴 커밋 직후 세션 종료 상태"),
                     fieldWithPath("settlementLog").type(JsonFieldType.ARRAY).description("턴 커밋 skeleton 기준 정산 로그"),
                     fieldWithPath("settlementLog[].phase").type(JsonFieldType.STRING).description("정산 단계 식별자"),
                     fieldWithPath("settlementLog[].description").type(JsonFieldType.STRING).description("정산 단계 설명"),

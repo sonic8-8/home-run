@@ -139,6 +139,7 @@ public class CommitTurnService {
 
             final CommitTurnResponse response = CommitTurnResponse.of(
                 committedTurn,
+                settlementResult.getEndingStatus(),
                 buildSettlementLog(settlementResult),
                 CommitTurnResponse.UpdatedAssetsResponse.of(
                     toLong(settlementResult.getFinalCash()),
