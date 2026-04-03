@@ -43,13 +43,16 @@ class SettlementOrchestratorServiceTest extends IntegrationTestSupport {
         final long statusTimerCountBefore = settlementPhaseTimerCount(SettlementPhaseType.STATUS_UPDATE);
         final SettlementOrchestratorRequest request = SettlementOrchestratorRequest.of(
             101L,
+            1001L,
             12,
             Money.of(2_000_000L),
             Money.of(300_000L),
+            Money.zero(),
             Money.of(100_000L),
             Money.zero(),
             Map.of(),
             "경기 회복기",
+            false,
             false,
             false
         );

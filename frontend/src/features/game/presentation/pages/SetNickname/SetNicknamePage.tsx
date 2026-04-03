@@ -49,6 +49,7 @@ export function SetNicknamePage() {
       <div className={styles.formSection}>
         <span className={styles.label}>닉네임 설정</span>
         <input
+          data-guide="game-nickname-input"
           className={styles.input}
           type="text"
           placeholder="닉네임을 입력해주세요."

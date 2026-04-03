@@ -1,0 +1,298 @@
+{
+  "generated_on": "2026-03-21",
+  "format_version": "eulgu_quiz_v1",
+  "source_reference": "V1/등기부등본.pdf",
+  "sample_count": 8,
+  "rendering_rules": {
+    "sale_price_source": "listing.sale_price",
+    "money_placeholder_style": "{token_name}",
+    "money_ratio_storage": "integer_percent",
+    "money_rounding_unit": "만원",
+    "render_on_output": true,
+    "description": "금액성 문구는 JSON에 고정 금액을 저장하지 않고, 매매가 기준 비율 메타로 저장한 뒤 출력 시 실제 금액으로 치환한다."
+  },
+  "samples": [
+    {
+      "id": "normal_01_clean_eulgu",
+      "pattern": "clean_eulgu",
+      "pattern_label": "권리 없음 정상형",
+      "type_label": "정상",
+      "quiz_verdict": "정상",
+      "eulgu_rows": [],
+      "issue_summary": "을구에 현재 유효한 근저당권, 전세권, 임차권이 보이지 않아 매수인 기준으로는 가장 기본적인 정상형에 가까운 사례입니다.",
+      "key_points": [
+        "을구에 현재 살아 있는 담보권이나 임차 관련 권리가 없습니다.",
+        "설정과 말소가 반복된 복잡한 이력도 보이지 않습니다.",
+        "현재 보이는 정보만 기준으로는 비교적 깨끗한 을구입니다."
+      ],
+      "feedback_correct": "맞았습니다. 이 사례는 을구만 보면 정상으로 판단하는 편이 자연스럽습니다.",
+      "feedback_wrong": "이번 사례는 위험보다 정상에 가깝습니다. 을구에 현재 유효한 부담 권리가 없어 기본형에 가까운 샘플입니다."
+    },
+    {
+      "id": "normal_02_low_ratio_single_mortgage",
+      "pattern": "low_ratio_single_mortgage",
+      "pattern_label": "저비율 근저당권 단독형",
+      "type_label": "정상",
+      "quiz_verdict": "정상",
+      "eulgu_rows": [
+        {
+          "rank_no": "1",
+          "purpose": "근저당권설정",
+          "receipt": "2025년 1월 17일",
+          "reason": "2025년 1월 10일 설정계약",
+          "details": "채권최고액 {max_claim_amount} 채무자 김도윤 근저당권자 주식회사 한울저축은행",
+          "rendering": {
+            "max_claim_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 15,
+              "rounding_unit": "만원"
+            }
+          }
+        }
+      ],
+      "issue_summary": "현재 근저당권 1건이 보이지만 채권최고액이 매매가 대비 매우 낮고 다른 을구 권리가 없어 본 퀴즈 기준으로는 정상에 가까운 사례입니다.",
+      "key_points": [
+        "현재 유효한 을구 권리는 근저당권 1건뿐입니다.",
+        "채권최고액은 매매가 대비 매우 낮은 비율로 설계되었습니다.",
+        "전세권, 임차권, 반복된 말소 이력이 함께 보이지 않습니다."
+      ],
+      "feedback_correct": "맞았습니다. 이 샘플은 단독 근저당권이 남아 있지만 부담 비율이 매우 낮고 다른 권리가 없어 정상형으로 분류한 사례입니다.",
+      "feedback_wrong": "이번 사례는 위험보다 정상에 가깝습니다. 근저당권이 있더라도 비율이 매우 낮고 다른 부담 권리가 없으면 본 퀴즈 기준에서는 정상형으로 봅니다."
+    },
+    {
+      "id": "risk_01_high_ratio_single_mortgage",
+      "pattern": "high_ratio_single_mortgage",
+      "pattern_label": "고비율 근저당권 단독형",
+      "type_label": "을구이상만",
+      "quiz_verdict": "위험",
+      "eulgu_rows": [
+        {
+          "rank_no": "1",
+          "purpose": "근저당권설정",
+          "receipt": "2025년 2월 21일",
+          "reason": "2025년 2월 12일 설정계약",
+          "details": "채권최고액 {max_claim_amount} 채무자 박서진 근저당권자 주식회사 새론저축은행",
+          "rendering": {
+            "max_claim_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 90,
+              "rounding_unit": "만원"
+            }
+          }
+        }
+      ],
+      "issue_summary": "현재 근저당권은 1건이지만 채권최고액이 매매가 대비 매우 높아 매수인이 부담 규모를 크게 의식해야 하는 사례입니다.",
+      "key_points": [
+        "현재 살아 있는 근저당권이 확인됩니다.",
+        "채권최고액이 매매가 대비 매우 높은 비율로 설정돼 있습니다.",
+        "단독 권리여도 부담 규모만으로 위험 신호가 충분히 분명합니다."
+      ],
+      "feedback_correct": "맞았습니다. 이 사례는 현재 근저당권 1건만 있더라도 채권최고액 비율이 매우 높아 위험으로 보는 것이 맞습니다.",
+      "feedback_wrong": "이번 사례는 정상으로 보기 어렵습니다. 단독 근저당권이어도 채권최고액이 과도하게 높으면 매수인이 주의해야 하는 위험 사례입니다."
+    },
+    {
+      "id": "risk_02_multiple_mortgages",
+      "pattern": "multiple_mortgages",
+      "pattern_label": "복수 근저당권 병존형",
+      "type_label": "을구이상만",
+      "quiz_verdict": "위험",
+      "eulgu_rows": [
+        {
+          "rank_no": "1",
+          "purpose": "근저당권설정",
+          "receipt": "2024년 11월 8일",
+          "reason": "2024년 11월 1일 설정계약",
+          "details": "채권최고액 {first_max_claim_amount} 채무자 김예준 근저당권자 주식회사 다온저축은행",
+          "rendering": {
+            "first_max_claim_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 50,
+              "rounding_unit": "만원"
+            }
+          }
+        },
+        {
+          "rank_no": "2",
+          "purpose": "근저당권설정",
+          "receipt": "2025년 1월 23일",
+          "reason": "2025년 1월 15일 설정계약",
+          "details": "채권최고액 {second_max_claim_amount} 채무자 김예준 근저당권자 주식회사 미래자산대부",
+          "rendering": {
+            "second_max_claim_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 30,
+              "rounding_unit": "만원"
+            }
+          }
+        }
+      ],
+      "issue_summary": "현재 근저당권이 2건 병존하고 있어 을구 부담 관계가 단순하지 않은 사례입니다.",
+      "key_points": [
+        "선순위와 후순위 근저당권이 함께 남아 있습니다.",
+        "현재 권리가 하나가 아니라 둘 이상 겹쳐 있어 정리 부담이 큽니다.",
+        "을구만 보더라도 단순한 대출 1건 수준으로 보기 어렵습니다."
+      ],
+      "feedback_correct": "맞았습니다. 근저당권이 복수로 병존하는 경우는 현재 부담 관계가 복잡하므로 위험 신호로 보는 편이 맞습니다.",
+      "feedback_wrong": "이번 사례는 정상으로 보기 어렵습니다. 여러 근저당권이 함께 남아 있으면 매수인은 권리 정리 가능성을 더 신중하게 확인해야 합니다."
+    },
+    {
+      "id": "risk_03_active_leasehold",
+      "pattern": "active_leasehold",
+      "pattern_label": "전세권 현재 존속형",
+      "type_label": "을구이상만",
+      "quiz_verdict": "위험",
+      "eulgu_rows": [
+        {
+          "rank_no": "1",
+          "purpose": "전세권설정",
+          "receipt": "2025년 2월 10일",
+          "reason": "2025년 2월 1일 설정계약",
+          "details": "전세금 {jeonse_amount} 전세권자 오하린",
+          "rendering": {
+            "jeonse_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 70,
+              "rounding_unit": "만원"
+            }
+          }
+        }
+      ],
+      "issue_summary": "현재 전세권이 그대로 남아 있어 매수인이 권리관계를 먼저 확인해야 하는 사례입니다.",
+      "key_points": [
+        "을구에 현재 유효한 전세권이 기재되어 있습니다.",
+        "전세권은 단독으로도 매수인에게 명확한 부담 신호가 됩니다.",
+        "다른 권리가 없더라도 현재 전세권 존속만으로 주의가 필요합니다."
+      ],
+      "feedback_correct": "맞았습니다. 현재 전세권이 남아 있는 경우는 매수인이 그대로 지나치기 어려운 대표적인 위험 신호입니다.",
+      "feedback_wrong": "이번 사례는 정상으로 보기 어렵습니다. 전세권이 현재 살아 있으면 을구만 봐도 권리관계 확인이 필요한 위험 사례입니다."
+    },
+    {
+      "id": "risk_04_active_tenant_right",
+      "pattern": "active_tenant_right",
+      "pattern_label": "임차권등기 현재 존속형",
+      "type_label": "을구이상만",
+      "quiz_verdict": "위험",
+      "eulgu_rows": [
+        {
+          "rank_no": "1",
+          "purpose": "임차권등기",
+          "receipt": "2025년 3월 4일",
+          "reason": "2025년 2월 25일 임차권등기명령",
+          "details": "임차보증금 {deposit_amount} 임차권자 정시윤",
+          "rendering": {
+            "deposit_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 60,
+              "rounding_unit": "만원"
+            }
+          }
+        }
+      ],
+      "issue_summary": "현재 임차권등기가 남아 있어 보증금 반환 관련 부담을 의심해야 하는 사례입니다.",
+      "key_points": [
+        "임차권등기가 현재 유효하게 보입니다.",
+        "임차권은 매수인에게 직접적인 보증금 반환 이슈를 떠올리게 합니다.",
+        "을구만 보더라도 거래를 서두르기보다 현재 권리 정리를 먼저 확인해야 합니다."
+      ],
+      "feedback_correct": "맞았습니다. 임차권등기가 현재 남아 있는 경우는 매수인 기준에서 매우 직접적인 위험 신호입니다.",
+      "feedback_wrong": "이번 사례는 정상으로 보기 어렵습니다. 임차권등기가 남아 있다는 점만으로도 매수인은 보증금 반환 문제를 먼저 의심해야 합니다."
+    },
+    {
+      "id": "risk_05_mortgage_plus_tenant_right",
+      "pattern": "mortgage_plus_tenant_right",
+      "pattern_label": "근저당권과 임차권 병존형",
+      "type_label": "을구이상만",
+      "quiz_verdict": "위험",
+      "eulgu_rows": [
+        {
+          "rank_no": "1",
+          "purpose": "근저당권설정",
+          "receipt": "2024년 10월 18일",
+          "reason": "2024년 10월 9일 설정계약",
+          "details": "채권최고액 {max_claim_amount} 채무자 윤도현 근저당권자 주식회사 청명저축은행",
+          "rendering": {
+            "max_claim_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 35,
+              "rounding_unit": "만원"
+            }
+          }
+        },
+        {
+          "rank_no": "2",
+          "purpose": "임차권등기",
+          "receipt": "2025년 2월 28일",
+          "reason": "2025년 2월 19일 임차권등기명령",
+          "details": "임차보증금 {deposit_amount} 임차권자 강세아",
+          "rendering": {
+            "deposit_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 45,
+              "rounding_unit": "만원"
+            }
+          }
+        }
+      ],
+      "issue_summary": "근저당권과 임차권등기가 함께 남아 있어 을구 부담 관계가 복합적인 사례입니다.",
+      "key_points": [
+        "담보권과 임차 관련 권리가 동시에 보입니다.",
+        "각 권리가 따로 있을 때보다 매수인이 확인해야 할 범위가 더 넓습니다.",
+        "을구만 봐도 단순한 정상 매물로 보기 어려운 구조입니다."
+      ],
+      "feedback_correct": "맞았습니다. 근저당권과 임차권이 함께 남아 있는 경우는 매수인이 특히 보수적으로 접근해야 하는 위험 사례입니다.",
+      "feedback_wrong": "이번 사례는 정상으로 보기 어렵습니다. 현재 담보권과 임차권이 병존하면 권리 정리 부담이 분명히 커집니다."
+    },
+    {
+      "id": "risk_06_repeated_mortgage_history",
+      "pattern": "repeated_mortgage_history",
+      "pattern_label": "반복 설정·말소 후 재설정형",
+      "type_label": "을구이상만",
+      "quiz_verdict": "위험",
+      "eulgu_rows": [
+        {
+          "rank_no": "1",
+          "purpose": "근저당권설정",
+          "receipt": "2024년 6월 28일",
+          "reason": "2024년 6월 20일 설정계약",
+          "details": "채권최고액 {first_max_claim_amount} 채무자 최이준 근저당권자 주식회사 선일저축은행",
+          "rendering": {
+            "first_max_claim_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 20,
+              "rounding_unit": "만원"
+            }
+          }
+        },
+        {
+          "rank_no": "2",
+          "purpose": "1번근저당권설정등기말소",
+          "receipt": "2024년 9월 2일",
+          "reason": "해제",
+          "details": "2024년 6월 28일 접수 근저당권설정등기 말소"
+        },
+        {
+          "rank_no": "3",
+          "purpose": "근저당권설정",
+          "receipt": "2025년 1월 31일",
+          "reason": "2025년 1월 23일 설정계약",
+          "details": "채권최고액 {second_max_claim_amount} 채무자 최이준 근저당권자 주식회사 대영저축은행",
+          "rendering": {
+            "second_max_claim_amount": {
+              "source": "sale_price_ratio",
+              "ratio_percent": 85,
+              "rounding_unit": "만원"
+            }
+          }
+        }
+      ],
+      "issue_summary": "근저당권이 한 차례 말소된 뒤 다시 높은 비율로 재설정되어 을구 이력이 불안정하게 보이는 사례입니다.",
+      "key_points": [
+        "근저당권 설정과 말소 이력이 짧은 기간 안에 반복됩니다.",
+        "후속 근저당권은 매매가 대비 매우 높은 비율로 다시 설정돼 있습니다.",
+        "현재 권리 상태와 과거 이력을 함께 보면 안정적인 을구로 보기 어렵습니다."
+      ],
+      "feedback_correct": "맞았습니다. 반복된 설정·말소 뒤 다시 높은 비율의 근저당권이 잡힌 경우는 매수인이 경계해야 하는 위험 사례입니다.",
+      "feedback_wrong": "이번 사례는 정상으로 보기 어렵습니다. 근저당권이 반복해서 정리되고 다시 크게 설정된 흐름은 을구 이력 자체로도 불안 신호입니다."
+    }
+  ]
+}

@@ -44,11 +44,13 @@ class TurnDraftRepositoryTest extends RedisContainerTestSupport {
             101L,
             12,
             List.of(
-                TurnDraftSlot.of(0, ActionType.STUDY),
-                TurnDraftSlot.of(1, ActionType.NETWORKING),
-                TurnDraftSlot.of(2, ActionType.REST)
+                TurnDraftSlot.of(0, ActionType.STUDY, false),
+                TurnDraftSlot.of(1, ActionType.NETWORKING, false),
+                TurnDraftSlot.of(2, ActionType.REST, true)
             ),
             Money.of(150_000L),
+            Money.of(150_000L),
+            Money.of(300_000L),
             Map.of(
                 "health", 5,
                 "knowledge", 8
@@ -64,16 +66,56 @@ class TurnDraftRepositoryTest extends RedisContainerTestSupport {
         assertThat(found.getSessionId()).isEqualTo(101L);
         assertThat(found.getTurnNumber()).isEqualTo(12);
         assertThat(found.getSlots())
-            .extracting(TurnDraftSlot::getSlotIndex, TurnDraftSlot::getActionType)
+            .extracting(TurnDraftSlot::getSlotIndex, TurnDraftSlot::getActionType, TurnDraftSlot::isForcedAction)
             .containsExactly(
-                org.assertj.core.groups.Tuple.tuple(0, ActionType.STUDY),
-                org.assertj.core.groups.Tuple.tuple(1, ActionType.NETWORKING),
-                org.assertj.core.groups.Tuple.tuple(2, ActionType.REST)
+                org.assertj.core.groups.Tuple.tuple(0, ActionType.STUDY, false),
+                org.assertj.core.groups.Tuple.tuple(1, ActionType.NETWORKING, false),
+                org.assertj.core.groups.Tuple.tuple(2, ActionType.REST, true)
             );
         assertThat(found.getPreviewCashChange()).isEqualTo(Money.of(150_000L));
+        assertThat(found.getPreviewCashMinChange()).isEqualTo(Money.of(150_000L));
+        assertThat(found.getPreviewCashMaxChange()).isEqualTo(Money.of(300_000L));
         assertThat(found.getPreviewStatChanges()).containsEntry("health", 5);
         assertThat(found.getPreviewStatChanges()).containsEntry("knowledge", 8);
         assertThat(stringRedisTemplate.hasKey("session:101:turn")).isTrue();
+    }
+
+    @DisplayName("구 스키마 TurnDraft payload도 min/max를 previewCashChange로 보정해 읽는다.")
+    @Test
+    void findBySessionIdWithLegacyPayload() {
+        // given
+        stringRedisTemplate.opsForValue().set(
+            "session:404:turn",
+            """
+                {
+                  "sessionId":404,
+                  "turnNumber":8,
+                  "slots":[
+                    {"slotIndex":0,"actionType":"REST","forcedAction":true},
+                    {"slotIndex":1,"actionType":"STUDY","forcedAction":false},
+                    {"slotIndex":2,"actionType":"REST","forcedAction":true}
+                  ],
+                  "previewCashChangeAmount":120000,
+                  "previewStatChanges":{"health":6,"stress":-10}
+                }
+                """
+        );
+
+        // when
+        final TurnDraft found = turnDraftRepository.findBySessionId(404L)
+            .orElseThrow();
+
+        // then
+        assertThat(found.getPreviewCashChange()).isEqualTo(Money.of(120_000L));
+        assertThat(found.getPreviewCashMinChange()).isEqualTo(Money.of(120_000L));
+        assertThat(found.getPreviewCashMaxChange()).isEqualTo(Money.of(120_000L));
+        assertThat(found.getSlots())
+            .extracting(TurnDraftSlot::getSlotIndex, TurnDraftSlot::getActionType, TurnDraftSlot::isForcedAction)
+            .containsExactly(
+                org.assertj.core.groups.Tuple.tuple(0, ActionType.REST, true),
+                org.assertj.core.groups.Tuple.tuple(1, ActionType.STUDY, false),
+                org.assertj.core.groups.Tuple.tuple(2, ActionType.REST, true)
+            );
     }
 
     @DisplayName("같은 세션의 TurnDraft를 다시 저장하면 기존 값을 덮어쓴다.")
@@ -147,11 +189,33 @@ class TurnDraftRepositoryTest extends RedisContainerTestSupport {
         final Money previewCashChange,
         final Map<String, Integer> previewStatChanges
     ) {
+        return createTurnDraft(
+            sessionId,
+            turnNumber,
+            slots,
+            previewCashChange,
+            previewCashChange,
+            previewCashChange,
+            previewStatChanges
+        );
+    }
+
+    private TurnDraft createTurnDraft(
+        final Long sessionId,
+        final Integer turnNumber,
+        final List<TurnDraftSlot> slots,
+        final Money previewCashChange,
+        final Money previewCashMinChange,
+        final Money previewCashMaxChange,
+        final Map<String, Integer> previewStatChanges
+    ) {
         return TurnDraft.of(
             sessionId,
             turnNumber,
             slots,
             previewCashChange,
+            previewCashMinChange,
+            previewCashMaxChange,
             previewStatChanges
         );
     }

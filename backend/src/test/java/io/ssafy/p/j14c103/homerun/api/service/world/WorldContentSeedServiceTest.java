@@ -48,15 +48,29 @@ class WorldContentSeedServiceTest extends IntegrationTestSupport {
         newsMasterRepository.deleteAllInBatch();
     }
 
-    @DisplayName("seed를 실행하면 뉴스 20건과 이벤트 12건이 적재된다")
+    @DisplayName("seed를 실행하면 일반 뉴스 20건과 cycle 뉴스 9건, 이벤트 12건이 적재된다")
     @Test
     void seedWorldContents() {
         // when
         worldContentSeedService.seed();
 
         // then
-        assertThat(newsMasterRepository.count()).isEqualTo(20);
+        assertThat(newsMasterRepository.count()).isEqualTo(29);
         assertThat(gameEventRepository.count()).isEqualTo(12);
+        assertThat(gameEventRepository.findAll())
+            .allSatisfy(event -> {
+                assertThat(event.getCreatedAt()).isNotNull();
+                assertThat(event.getUpdatedAt()).isNotNull();
+            });
+        assertThat(newsMasterRepository.existsByEconomicCycleType("BOOM_TO_BOOM")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("BOOM_TO_CRISIS")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("BOOM_TO_RECOVERY")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("CRISIS_TO_CRISIS")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("CRISIS_TO_RECOVERY")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("CRISIS_TO_BOOM")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("RECOVERY_TO_RECOVERY")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("RECOVERY_TO_CRISIS")).isTrue();
+        assertThat(newsMasterRepository.existsByEconomicCycleType("RECOVERY_TO_BOOM")).isTrue();
     }
 
     @DisplayName("같은 seed를 다시 실행해도 뉴스와 이벤트 수가 증가하지 않는다")

@@ -84,6 +84,8 @@ class RedisTurnDraftRepository implements TurnDraftRepository {
         Integer turnNumber,
         List<TurnDraftSlotCacheValue> slots,
         Long previewCashChangeAmount,
+        Long previewCashMinChangeAmount,
+        Long previewCashMaxChangeAmount,
         Map<String, Integer> previewStatChanges
     ) {
 
@@ -95,6 +97,8 @@ class RedisTurnDraftRepository implements TurnDraftRepository {
                     .map(TurnDraftSlotCacheValue::from)
                     .toList(),
                 turnDraft.getPreviewCashChange().getAmount().longValueExact(),
+                turnDraft.getPreviewCashMinChange().getAmount().longValueExact(),
+                turnDraft.getPreviewCashMaxChange().getAmount().longValueExact(),
                 turnDraft.getPreviewStatChanges()
             );
         }
@@ -107,25 +111,43 @@ class RedisTurnDraftRepository implements TurnDraftRepository {
                     .map(TurnDraftSlotCacheValue::toDomain)
                     .toList(),
                 Money.of(previewCashChangeAmount),
+                Money.of(resolvePreviewCashMinChangeAmount()),
+                Money.of(resolvePreviewCashMaxChangeAmount()),
                 previewStatChanges
             );
+        }
+
+        private Long resolvePreviewCashMinChangeAmount() {
+            if (previewCashMinChangeAmount != null) {
+                return previewCashMinChangeAmount;
+            }
+            return previewCashChangeAmount;
+        }
+
+        private Long resolvePreviewCashMaxChangeAmount() {
+            if (previewCashMaxChangeAmount != null) {
+                return previewCashMaxChangeAmount;
+            }
+            return previewCashChangeAmount;
         }
     }
 
     private record TurnDraftSlotCacheValue(
         Integer slotIndex,
-        ActionType actionType
+        ActionType actionType,
+        boolean forcedAction
     ) {
 
         private static TurnDraftSlotCacheValue from(final TurnDraftSlot turnDraftSlot) {
             return new TurnDraftSlotCacheValue(
                 turnDraftSlot.getSlotIndex(),
-                turnDraftSlot.getActionType()
+                turnDraftSlot.getActionType(),
+                turnDraftSlot.isForcedAction()
             );
         }
 
         private TurnDraftSlot toDomain() {
-            return TurnDraftSlot.of(slotIndex, actionType);
+            return TurnDraftSlot.of(slotIndex, actionType, forcedAction);
         }
     }
 }

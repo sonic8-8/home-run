@@ -9,6 +9,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.session.request.CreateGameSes
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.CreateGameSessionResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionDetailResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.session.response.GameSessionListResponse;
+import io.ssafy.p.j14c103.homerun.api.service.game.stock.StockTradingService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.CommitTurnService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.SubmitTurnSlotsService;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.request.SubmitTurnSlotsServiceRequest;
@@ -33,6 +34,9 @@ import io.ssafy.p.j14c103.homerun.domain.financial.UserFinancialSummaryRepositor
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSessionRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarket;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarketRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.GameStockMarketStateRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.ActionType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraft;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.TurnDraftRepository;
@@ -91,6 +95,9 @@ class GameSessionServiceTest extends IntegrationTestSupport {
     private CommitTurnService commitTurnService;
 
     @Autowired
+    private StockTradingService stockTradingService;
+
+    @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @MockitoSpyBean
@@ -133,6 +140,12 @@ class GameSessionServiceTest extends IntegrationTestSupport {
     private UserFinancialSummaryRepository userFinancialSummaryRepository;
 
     @Autowired
+    private GameStockMarketStateRepository gameStockMarketStateRepository;
+
+    @Autowired
+    private StockMarketRepository stockMarketRepository;
+
+    @Autowired
     private TurnDraftRepositoryTestSupport turnDraftRepositoryTestSupport;
 
     @MockitoBean
@@ -147,9 +160,11 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         userAssetCardSpendRepository.deleteAllInBatch();
         userAssetOtherIncomeRepository.deleteAllInBatch();
         userAssetProfileRepository.deleteAllInBatch();
+        gameStockMarketStateRepository.deleteAllInBatch();
         gameCareerRepository.deleteAllInBatch();
         gameStatRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
+        stockMarketRepository.deleteAllInBatch();
         realEstatePropertyRepository.deleteAllInBatch();
         housingDistrictRepository.deleteAllInBatch();
         housingRegionRepository.deleteAllInBatch();
@@ -251,6 +266,7 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         // given
         final User user = saveUser("create-profile@example.com");
         final RealEstateProperty property = saveTargetProperty("11", "11680");
+        seedStockMarkets();
         final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
             1,
             CharacterType.FEMALE,
@@ -273,6 +289,10 @@ class GameSessionServiceTest extends IntegrationTestSupport {
             JobType.MID_BIZ,
             SeedType.PROFILE
         );
+        assertThat(gameStockMarketStateRepository.findAllByGameSessionId(response.getSessionId()))
+            .isNotEmpty();
+        assertThat(stockTradingService.getMarket(response.getSessionId()).getStocks())
+            .isNotEmpty();
     }
 
     @DisplayName("PROFILE 세션 생성 직후 턴 슬롯 제출과 턴 커밋이 가능하다.")
@@ -281,6 +301,7 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         // given
         final User user = saveUser("create-profile-turn-flow@example.com");
         final RealEstateProperty property = saveTargetProperty("11", "11680");
+        seedStockMarkets();
         final CreateGameSessionServiceRequest request = CreateGameSessionServiceRequest.of(
             1,
             CharacterType.FEMALE,
@@ -292,8 +313,6 @@ class GameSessionServiceTest extends IntegrationTestSupport {
             false
         );
         final CreateGameSessionResponse response = gameSessionService.create(user.getId(), request);
-        ensureActionMasterForeignKey();
-        jdbcTemplate.update("delete from action_masters");
 
         // when
         final TurnPreviewResponse previewResponse = submitTurnSlotsService.submitTurnSlots(
@@ -310,13 +329,6 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         assertThat(previewResponse.getSlots()).hasSize(3);
         assertThat(commitTurnResponse.getTurnNumber()).isEqualTo(0);
         assertThat(commitTurnResponse.getSettlementLog()).isNotEmpty();
-        assertThat(
-            jdbcTemplate.queryForObject(
-                "select count(*) from action_masters where action_type = ?",
-                Integer.class,
-                "REST"
-            )
-        ).isEqualTo(1);
     }
 
     @DisplayName("MY_DATA 세션 생성은 온보딩 자산연동의 직업과 자본 상태로 초기화한다.")
@@ -685,6 +697,25 @@ class GameSessionServiceTest extends IntegrationTestSupport {
         ));
     }
 
+    private void seedStockMarkets() {
+        stockMarketRepository.save(StockMarket.create(
+            "BIO",
+            "바이오주",
+            "068270",
+            "바이오",
+            100_000,
+            new BigDecimal("0.15")
+        ));
+        stockMarketRepository.save(StockMarket.create(
+            "SEMI",
+            "반도체주",
+            "005930",
+            "반도체",
+            72_000,
+            new BigDecimal("0.10")
+        ));
+    }
+
     private void assertCharacterBootstrap(
         final Long sessionId,
         final CharacterType characterType,
@@ -730,30 +761,6 @@ class GameSessionServiceTest extends IntegrationTestSupport {
                 SubmitTurnSlotsServiceRequest.TurnSlotRequest.of(2, ActionType.REST)
             )
         );
-    }
-
-    private void ensureActionMasterForeignKey() {
-        final Integer constraintCount = jdbcTemplate.queryForObject(
-            """
-                select count(*)
-                  from information_schema.table_constraints
-                 where lower(table_name) = lower(?)
-                   and lower(constraint_name) = lower(?)
-                """,
-            Integer.class,
-            "game_turn_slots",
-            "fk_game_turn_slots__action_master"
-        );
-
-        if (constraintCount != null && constraintCount > 0) {
-            return;
-        }
-
-        jdbcTemplate.execute("""
-            alter table game_turn_slots
-            add constraint fk_game_turn_slots__action_master
-            foreign key (action_type) references action_masters (action_type)
-            """);
     }
 
     private GameSession createGameSession(

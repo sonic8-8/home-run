@@ -13,13 +13,18 @@ import {
 import { matchRegion, getName, getShortName, computeCentroid, getLabelOffset } from '../../utils/geoUtils';
 import { WallLayers } from '../WallLayers/WallLayers';
 
+const COUNTRY_MAP_VIEWPORT = {
+  scale: 10000,
+  center: [127.5, 35.8] as [number, number],
+};
+
 export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, data: RegionData) => void }) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   return (
     <ComposableMap
       projection="geoMercator"
-      projectionConfig={{ scale: 10000, center: [127.5, 35.8] }}
+      projectionConfig={COUNTRY_MAP_VIEWPORT}
       width={1100}
       height={1200}
       style={{ width: '100%', height: '100%' }}

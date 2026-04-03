@@ -8,6 +8,7 @@ import { MonthlyActivityModal } from '@features/game/presentation/components/Mon
 import { LoanProductsPanel } from '@features/game/presentation/components/LoanProductsPanel/LoanProductsPanel';
 import { CardRecommendPanel } from '@features/game/presentation/components/CardRecommendPanel/CardRecommendPanel';
 import { StockTradingPanel } from '@features/game/presentation/components/StockTradingPanel';
+import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import { formatKoreanDate } from '@shared/utils/formatter';
 import sceneRoad from '@assets/images/game_back_road.png';
 import styles from './GameMainPage.module.css';
@@ -19,6 +20,7 @@ const CHARACTER_IMAGE: Record<CharacterType, string> = {
 
 function GameMainPageContent() {
   const navigate = useNavigate();
+  const { getTriggerLabel, toggleFlow } = useGameGuide();
   const {
     sessionId,
     turn,
@@ -134,6 +136,7 @@ function GameMainPageContent() {
                 className={styles.actionButton}
                 onClick={openMonthlyActivity}
                 disabled={sessionId === null}
+                data-guide="game-turn-action"
               >
                 이번 달 활동 진행
               </button>
@@ -148,6 +151,7 @@ function GameMainPageContent() {
                 <button
                   className={leftView === 'loan' ? styles.menuButtonActive : styles.menuButton}
                   onClick={() => setLeftView(leftView === 'loan' ? 'scene' : 'loan')}
+                  data-guide="game-loan"
                 >
                   대출/상환
                 </button>
@@ -162,32 +166,36 @@ function GameMainPageContent() {
                       state: { sessionId, mode: 'browse' },
                     });
                   }}
+                  data-guide="game-property"
                 >
                   부동산 알아보기
                 </button>
                 <button
                   className={leftView === 'card' ? styles.menuButtonActive : styles.menuButton}
                   onClick={() => setLeftView(leftView === 'card' ? 'scene' : 'card')}
+                  data-guide="game-card"
                 >
                   카드 추천
                 </button>
                 <button
                   className={leftView === 'stock' ? styles.menuButtonActive : styles.menuButton}
                   onClick={() => setLeftView(leftView === 'stock' ? 'scene' : 'stock')}
+                  data-guide="game-stock-launch"
                 >
                   주식 투자
                 </button>
                 <button
                   className={styles.menuButton}
                   onClick={openNews}
+                  data-guide="game-news"
                 >
                   이달의 뉴스
                 </button>
                 <button
                   className={styles.menuButton}
-                  onClick={() => navigate(ROUTES.GAME_GUIDE, { state: { from: 'main' as const } })}
+                  onClick={() => toggleFlow('main')}
                 >
-                  게임 가이드
+                  {getTriggerLabel('main')}
                 </button>
                 <button
                   className={styles.menuButton}

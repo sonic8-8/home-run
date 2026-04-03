@@ -58,7 +58,7 @@ public enum ErrorCode {
     GAME_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "GAME_004", "존재하지 않는 게임 세션입니다."),
     ENDING_REPORT_NOT_READY(HttpStatus.CONFLICT, "GAME_005", "엔딩 리포트가 아직 생성되지 않았습니다."),
     GAME_TURN_ALREADY_COMMITTED(HttpStatus.CONFLICT, "GAME_006", "이미 커밋된 턴입니다."),
-    GAME_TURN_DRAFT_NOT_FOUND(HttpStatus.CONFLICT, "GAME_007", "커밋할 턴 draft가 없습니다."),
+    GAME_TURN_DRAFT_NOT_FOUND(HttpStatus.BAD_REQUEST, "GAME_007", "커밋할 턴 draft가 없습니다."),
     GAME_TURN_DRAFT_MISMATCH(HttpStatus.CONFLICT, "GAME_008", "현재 세션 턴과 draft 턴이 일치하지 않습니다."),
 
     SCHEDULE_ACTION_TYPE_INVALID(HttpStatus.BAD_REQUEST, "SCHEDULE_003", "행동 유형이 올바르지 않습니다."),

@@ -1,0 +1,162 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 16, 31, 0.58);
+  pointer-events: none;
+  z-index: 1200;
+}
+
+.panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-lg);
+  z-index: 1300;
+}
+
+.header {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.eyebrow,
+.launcherEyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: #5f6f86;
+}
+
+.title,
+.launcherTitle {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #0f172a;
+}
+
+.progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #e9f2ff;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.description,
+.hint,
+.launcherText {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.hint {
+  color: #4f6480;
+}
+
+.actions,
+.launcherActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.primaryButton,
+.secondaryButton,
+.resumeButton {
+  border: none;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton {
+  padding: 12px 18px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0f6ad8 0%, #0f172a 100%);
+}
+
+.secondaryButton {
+  padding: 12px 18px;
+  color: #24507d;
+  background: #e8eef7;
+}
+
+.launcherCard {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(10, 24, 43, 0.96);
+  box-shadow: var(--shadow-lg);
+  z-index: 1250;
+}
+
+.launcherEyebrow,
+.launcherTitle,
+.launcherText {
+  color: #ffffff;
+}
+
+.launcherText {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.resumeButton {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  padding: 12px 18px;
+  color: #ffffff;
+  background: rgba(15, 106, 216, 0.96);
+  box-shadow: var(--shadow-md);
+  z-index: 1250;
+}
+
+:global([data-guide-active='true']) {
+  position: relative;
+  z-index: 1210;
+  outline: 3px solid rgba(255, 240, 176, 0.98);
+  box-shadow: 0 0 0 8px rgba(255, 227, 128, 0.22), var(--shadow-lg);
+}
+
+@media (max-width: 640px) {
+  .panel,
+  .launcherCard {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+  }
+
+  .resumeButton {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .header,
+  .actions,
+  .launcherActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

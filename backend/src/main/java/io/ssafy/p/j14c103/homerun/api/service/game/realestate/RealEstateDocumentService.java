@@ -93,25 +93,83 @@ public class RealEstateDocumentService {
     }
 
     private RealEstateDocument selectGapguDocument(final Long propertyId) {
-        final List<RealEstateDocument> gapguDocuments = realEstateDocumentRepository
-            .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
-                propertyId,
-                REGISTRY_DOCUMENT_TYPE,
-                RealEstateRegistrySection.GAPGU
-            );
+        final List<RealEstateDocument> gapguDocuments = resolveSampleDocuments(
+            propertyId,
+            RealEstateRegistrySection.GAPGU
+        );
         validateSamplePool(gapguDocuments);
         return gapguDocuments.get(realEstateRegistryRandomService.nextGapguIndex(gapguDocuments.size()));
     }
 
     private RealEstateDocument selectEulguDocument(final Long propertyId) {
-        final List<RealEstateDocument> eulguDocuments = realEstateDocumentRepository
+        final List<RealEstateDocument> eulguDocuments = resolveSampleDocuments(
+            propertyId,
+            RealEstateRegistrySection.EULGU
+        );
+        validateSamplePool(eulguDocuments);
+        return eulguDocuments.get(realEstateRegistryRandomService.nextEulguIndex(eulguDocuments.size()));
+    }
+
+    private List<RealEstateDocument> resolveSampleDocuments(
+        final Long propertyId,
+        final RealEstateRegistrySection registrySection
+    ) {
+        final List<RealEstateDocument> propertyDocuments = realEstateDocumentRepository
             .findAllByPropertyIdAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
                 propertyId,
                 REGISTRY_DOCUMENT_TYPE,
-                RealEstateRegistrySection.EULGU
+                registrySection
             );
-        validateSamplePool(eulguDocuments);
-        return eulguDocuments.get(realEstateRegistryRandomService.nextEulguIndex(eulguDocuments.size()));
+        final List<RealEstateDocument> globalDocuments = realEstateDocumentRepository
+            .findAllByPropertyIdIsNullAndDocumentTypeAndRegistrySectionOrderByRealEstateDocumentIdAsc(
+                REGISTRY_DOCUMENT_TYPE,
+                registrySection
+            );
+
+        final List<RealEstateDocument> propertyDocumentsWithQuizSample = filterQuizSampleDocuments(propertyDocuments);
+        if (!propertyDocumentsWithQuizSample.isEmpty()) {
+            return propertyDocumentsWithQuizSample;
+        }
+
+        final List<RealEstateDocument> globalDocumentsWithQuizSample = filterQuizSampleDocuments(globalDocuments);
+        if (!globalDocumentsWithQuizSample.isEmpty()) {
+            return globalDocumentsWithQuizSample;
+        }
+
+        if (!propertyDocuments.isEmpty()) {
+            return propertyDocuments;
+        }
+
+        return globalDocuments;
+    }
+
+    private List<RealEstateDocument> filterQuizSampleDocuments(final List<RealEstateDocument> documents) {
+        return documents.stream()
+            .filter(this::hasUsableQuizSample)
+            .toList();
+    }
+
+    private boolean hasUsableQuizSample(final RealEstateDocument document) {
+        final RealEstateRegistryQuizSample quizSamplePayload = document.getQuizSamplePayload();
+        if (quizSamplePayload == null) {
+            return false;
+        }
+        if (quizSamplePayload.getRows() == null) {
+            return false;
+        }
+        if (quizSamplePayload.getKeyPoints() == null) {
+            return false;
+        }
+        if (quizSamplePayload.getIssueSummary() == null) {
+            return false;
+        }
+        if (quizSamplePayload.getFeedbackCorrect() == null) {
+            return false;
+        }
+        if (quizSamplePayload.getFeedbackWrong() == null) {
+            return false;
+        }
+        return true;
     }
 
     private void validateSamplePool(final List<RealEstateDocument> documents) {

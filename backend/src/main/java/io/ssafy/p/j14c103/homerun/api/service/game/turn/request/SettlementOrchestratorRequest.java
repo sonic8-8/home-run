@@ -10,90 +10,112 @@ import lombok.Getter;
 public class SettlementOrchestratorRequest {
 
     private final Long sessionId;
+    private final Long userId;
     private final Integer nextTurnNumber;
     private final Money currentCash;
     private final Money currentStockValue;
+    private final Money currentRealEstateValue;
     private final Money currentLoanBalance;
     private final Money previewCashChange;
     private final Map<String, Integer> previewStatChanges;
     private final String cycleDescription;
     private final boolean hasEventCandidate;
     private final boolean targetPropertyOwned;
+    private final boolean foreclosureTriggered;
 
     private SettlementOrchestratorRequest(
         final Long sessionId,
+        final Long userId,
         final Integer nextTurnNumber,
         final Money currentCash,
         final Money currentStockValue,
+        final Money currentRealEstateValue,
         final Money currentLoanBalance,
         final Money previewCashChange,
         final Map<String, Integer> previewStatChanges,
         final String cycleDescription,
         final boolean hasEventCandidate,
-        final boolean targetPropertyOwned
+        final boolean targetPropertyOwned,
+        final boolean foreclosureTriggered
     ) {
         validate(
             sessionId,
+            userId,
             nextTurnNumber,
             currentCash,
             currentStockValue,
+            currentRealEstateValue,
             currentLoanBalance,
             previewCashChange,
             previewStatChanges,
             cycleDescription
         );
         this.sessionId = sessionId;
+        this.userId = userId;
         this.nextTurnNumber = nextTurnNumber;
         this.currentCash = currentCash;
         this.currentStockValue = currentStockValue;
+        this.currentRealEstateValue = currentRealEstateValue;
         this.currentLoanBalance = currentLoanBalance;
         this.previewCashChange = previewCashChange;
         this.previewStatChanges = Map.copyOf(previewStatChanges);
         this.cycleDescription = cycleDescription;
         this.hasEventCandidate = hasEventCandidate;
         this.targetPropertyOwned = targetPropertyOwned;
+        this.foreclosureTriggered = foreclosureTriggered;
     }
 
     public static SettlementOrchestratorRequest of(
         final Long sessionId,
+        final Long userId,
         final Integer nextTurnNumber,
         final Money currentCash,
         final Money currentStockValue,
+        final Money currentRealEstateValue,
         final Money currentLoanBalance,
         final Money previewCashChange,
         final Map<String, Integer> previewStatChanges,
         final String cycleDescription,
         final boolean hasEventCandidate,
-        final boolean targetPropertyOwned
+        final boolean targetPropertyOwned,
+        final boolean foreclosureTriggered
     ) {
         return new SettlementOrchestratorRequest(
             sessionId,
+            userId,
             nextTurnNumber,
             currentCash,
             currentStockValue,
+            currentRealEstateValue,
             currentLoanBalance,
             previewCashChange,
             previewStatChanges,
             cycleDescription,
             hasEventCandidate,
-            targetPropertyOwned
+            targetPropertyOwned,
+            foreclosureTriggered
         );
     }
 
     private static void validate(
         final Long sessionId,
+        final Long userId,
         final Integer nextTurnNumber,
         final Money currentCash,
         final Money currentStockValue,
+        final Money currentRealEstateValue,
         final Money currentLoanBalance,
         final Money previewCashChange,
         final Map<String, Integer> previewStatChanges,
         final String cycleDescription
     ) {
-        if (sessionId == null || nextTurnNumber == null || nextTurnNumber < 1) {
+        if (sessionId == null || userId == null || nextTurnNumber == null || nextTurnNumber < 1) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
-        if (currentCash == null || currentStockValue == null || currentLoanBalance == null
+        if (currentCash == null
+            || currentStockValue == null
+            || currentRealEstateValue == null
+            || currentLoanBalance == null
             || previewCashChange == null) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }

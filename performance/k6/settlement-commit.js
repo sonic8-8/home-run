@@ -2,12 +2,14 @@ import http from 'k6/http';
 import { Trend, Rate } from 'k6/metrics';
 
 import {
+  DEFAULT_FAILURE_RATE_LIMIT,
   buildThresholds,
   createJsonParams,
   createOptions,
   createSummaryHandler,
   getBaseUrl,
   getNumberEnv,
+  waitForNonEmptyArray,
 } from './common.js';
 
 const SCRIPT_NAME = 'settlement-commit';
@@ -25,10 +27,10 @@ export const options = createOptions({
     latencyMetricName: COMMIT_DURATION_METRIC,
     latencyP95Ms: getNumberEnv('K6_SETTLEMENT_COMMIT_P95_MS', 2000),
     failureMetricName: COMMIT_FAILURE_METRIC,
-    maxFailureRate: getNumberEnv('K6_MAX_FAILURE_RATE', 0.01),
+    maxFailureRate: getNumberEnv('K6_MAX_FAILURE_RATE', DEFAULT_FAILURE_RATE_LIMIT),
     includeFailureRate: true,
     extraThresholds: {
-      http_req_failed: [`rate<${getNumberEnv('K6_HTTP_FAILURE_RATE', 0.01)}`],
+      http_req_failed: [`rate<${getNumberEnv('K6_HTTP_FAILURE_RATE', DEFAULT_FAILURE_RATE_LIMIT)}`],
     },
   }),
 });
@@ -65,31 +67,34 @@ function bootstrapSettlementFixture() {
   const refreshToken = requireField(loginData, 'refreshToken', 'login');
   const accessToken = refresh(refreshToken);
 
-  const regions = getDataArray(
-    http.get(
+  const regions = waitForNonEmptyArray('regions', function fetchRegions() {
+    const response = http.get(
       `${baseUrl}/api/games/regions`,
       createJsonParams('regions', accessToken)
-    ),
-    'regions'
-  );
+    );
+    const data = getDataObject(response, 'regions', 200);
+    return getNestedArray(data, 'regions', 'regions');
+  });
   const regionCode = requireField(regions[0], 'regionCode', 'regions[0]');
 
-  const districts = getDataArray(
-    http.get(
+  const districts = waitForNonEmptyArray('districts', function fetchDistricts() {
+    const response = http.get(
       `${baseUrl}/api/games/regions/${regionCode}/districts`,
       createJsonParams('districts', accessToken)
-    ),
-    'districts'
-  );
+    );
+    const data = getDataObject(response, 'districts', 200);
+    return getNestedArray(data, 'districts', 'districts');
+  });
   const districtCode = requireField(districts[0], 'districtCode', 'districts[0]');
 
-  const properties = getDataArray(
-    http.get(
+  const properties = waitForNonEmptyArray('properties', function fetchProperties() {
+    const response = http.get(
       `${baseUrl}/api/games/regions/${regionCode}/districts/${districtCode}/properties`,
       createJsonParams('properties', accessToken)
-    ),
-    'properties'
-  );
+    );
+    const data = getDataObject(response, 'properties', 200);
+    return getNestedArray(data, 'properties', 'properties');
+  });
   const propertyId = requireField(properties[0], 'propertyId', 'properties[0]');
 
   const sessionData = getDataObject(
@@ -184,20 +189,6 @@ function refresh(refreshToken) {
   return requireField(refreshData, 'accessToken', 'refresh');
 }
 
-function getDataArray(response, label) {
-  const data = getDataObject(response, label, 200);
-
-  if (!Array.isArray(data)) {
-    throw new Error(`${label} data must be an array.`);
-  }
-
-  if (data.length === 0) {
-    throw new Error(`${label} data must not be empty.`);
-  }
-
-  return data;
-}
-
 function getDataObject(response, label, expectedStatus) {
   ensureStatus(response, label, expectedStatus);
   const payload = parseBody(response, label);
@@ -211,6 +202,16 @@ function getDataObject(response, label, expectedStatus) {
   }
 
   return payload.data;
+}
+
+function getNestedArray(source, key, label) {
+  const values = source && source[key];
+
+  if (!Array.isArray(values)) {
+    throw new Error(`${label} payload is missing ${key}.`);
+  }
+
+  return values;
 }
 
 function ensureStatus(response, label, expectedStatus) {

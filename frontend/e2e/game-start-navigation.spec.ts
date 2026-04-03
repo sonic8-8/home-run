@@ -152,16 +152,18 @@ test.describe('game start navigation', () => {
     await expect(page.getByRole('button', { name: '슬롯 3 새 게임 시작' })).toBeVisible();
   });
 
-  test('opens the guide page from the game start screen', async ({ page }) => {
+  test('opens the guide overlay from the game start screen', async ({ page }) => {
     await seedAuthenticatedUser(page);
     await page.goto('/game/start');
 
     await page.getByRole('button', { name: '게임 가이드' }).click();
 
-    await expect(page).toHaveURL(/\/game\/guide$/);
-    await expect(page.getByRole('heading', { name: '홈런 플레이 가이드' })).toBeVisible();
-    await page.getByRole('button', { name: '게임 시작 화면으로 돌아가기' }).click();
     await expect(page).toHaveURL(/\/game\/start$/);
+    await expect(page.getByRole('heading', { name: '새로하기부터 시작' })).toBeVisible();
+    await expect(page.getByText('1 / 5')).toBeVisible();
+    await page.getByRole('button', { name: '닫기', exact: true }).click();
+    await expect(page).toHaveURL(/\/game\/start$/);
+    await expect(page.getByRole('heading', { name: '새로하기부터 시작' })).toHaveCount(0);
   });
 
   test('skips job selection when starting with my data', async ({ page }) => {

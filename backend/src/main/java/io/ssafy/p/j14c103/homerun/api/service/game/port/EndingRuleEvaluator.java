@@ -16,37 +16,47 @@ public interface EndingRuleEvaluator {
         private final Integer nextTurnNumber;
         private final Money cashBalance;
         private final Money stockValue;
+        private final Money realEstateValue;
         private final Money loanBalance;
         private final boolean targetPropertyOwned;
+        private final boolean foreclosureTriggered;
 
         private EndingRuleContext(
             final Integer nextTurnNumber,
             final Money cashBalance,
             final Money stockValue,
+            final Money realEstateValue,
             final Money loanBalance,
-            final boolean targetPropertyOwned
+            final boolean targetPropertyOwned,
+            final boolean foreclosureTriggered
         ) {
-            validate(nextTurnNumber, cashBalance, stockValue, loanBalance);
+            validate(nextTurnNumber, cashBalance, stockValue, realEstateValue, loanBalance);
             this.nextTurnNumber = nextTurnNumber;
             this.cashBalance = cashBalance;
             this.stockValue = stockValue;
+            this.realEstateValue = realEstateValue;
             this.loanBalance = loanBalance;
             this.targetPropertyOwned = targetPropertyOwned;
+            this.foreclosureTriggered = foreclosureTriggered;
         }
 
         public static EndingRuleContext of(
             final Integer nextTurnNumber,
             final Money cashBalance,
             final Money stockValue,
+            final Money realEstateValue,
             final Money loanBalance,
-            final boolean targetPropertyOwned
+            final boolean targetPropertyOwned,
+            final boolean foreclosureTriggered
         ) {
             return new EndingRuleContext(
                 nextTurnNumber,
                 cashBalance,
                 stockValue,
+                realEstateValue,
                 loanBalance,
-                targetPropertyOwned
+                targetPropertyOwned,
+                foreclosureTriggered
             );
         }
 
@@ -54,12 +64,16 @@ public interface EndingRuleEvaluator {
             final Integer nextTurnNumber,
             final Money cashBalance,
             final Money stockValue,
+            final Money realEstateValue,
             final Money loanBalance
         ) {
             if (nextTurnNumber == null || nextTurnNumber < 1) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
-            if (cashBalance == null || stockValue == null || loanBalance == null) {
+            if (cashBalance == null
+                || stockValue == null
+                || realEstateValue == null
+                || loanBalance == null) {
                 throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
             }
         }

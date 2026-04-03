@@ -25,6 +25,7 @@ import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.CommitTurnRespo
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnPreviewResponse;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.docs.RestDocsTestSupport;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.domain.world.cycle.CyclePhase;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
@@ -323,6 +324,8 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                 TurnPreviewResponse.PreviewSlotResponse.of(2, "SIDE_JOB", false)
             ),
             430_000L,
+            430_000L,
+            790_000L,
             TurnPreviewResponse.PreviewStatChangesResponse.of(3, -14, -8, 4, 8)
         );
         given(submitTurnSlotsService.submitTurnSlots(eq(1L), eq(1001L), any()))
@@ -341,6 +344,8 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.data.slots[0].slotIndex").value(0))
             .andExpect(jsonPath("$.data.slots[0].actionType").value("STUDY"))
             .andExpect(jsonPath("$.data.previewCashChange").value(430000))
+            .andExpect(jsonPath("$.data.previewCashMinChange").value(430000))
+            .andExpect(jsonPath("$.data.previewCashMaxChange").value(790000))
             .andExpect(jsonPath("$.data.previewStatChanges.health").value(3))
             .andExpect(jsonPath("$.data.previewStatChanges.knowledge").value(8))
             .andDo(document("game-turn/slots/success",
@@ -359,7 +364,9 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                     fieldWithPath("slots[].slotIndex").type(JsonFieldType.NUMBER).description("슬롯 인덱스"),
                     fieldWithPath("slots[].actionType").type(JsonFieldType.STRING).description("preview 행동 타입"),
                     fieldWithPath("slots[].forcedAction").type(JsonFieldType.BOOLEAN).description("강제 행동 여부"),
-                    fieldWithPath("previewCashChange").type(JsonFieldType.NUMBER).description("예상 현금 변화량"),
+                    fieldWithPath("previewCashChange").type(JsonFieldType.NUMBER).description("기존 호환용 예상 현금 변화량"),
+                    fieldWithPath("previewCashMinChange").type(JsonFieldType.NUMBER).description("예상 현금 최소 변화량"),
+                    fieldWithPath("previewCashMaxChange").type(JsonFieldType.NUMBER).description("예상 현금 최대 변화량"),
                     fieldWithPath("previewStatChanges").type(JsonFieldType.OBJECT).description("예상 스탯 변화량"),
                     fieldWithPath("previewStatChanges.health").type(JsonFieldType.NUMBER).description("체력 변화량"),
                     fieldWithPath("previewStatChanges.fatigue").type(JsonFieldType.NUMBER).description("피로 변화량"),
@@ -413,6 +420,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
         // given
         final CommitTurnResponse response = CommitTurnResponse.of(
             12,
+            SessionStatus.TIMEOUT,
             List.of(
                 CommitTurnResponse.SettlementLogItemResponse.of(
                     "MARKET_UPDATE",
@@ -441,6 +449,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.status").value(200))
             .andExpect(jsonPath("$.message").value("OK"))
             .andExpect(jsonPath("$.data.turnNumber").value(12))
+            .andExpect(jsonPath("$.data.endingStatus").value("TIMEOUT"))
             .andExpect(jsonPath("$.data.settlementLog.length()").value(2))
             .andExpect(jsonPath("$.data.settlementLog[0].phase").value("MARKET_UPDATE"))
             .andExpect(jsonPath("$.data.settlementLog[1].cashChange").value(430000))
@@ -458,6 +467,7 @@ class GameTurnControllerTest extends RestDocsTestSupport {
                 apiResponseFields(
                     "턴 커밋 결과",
                     fieldWithPath("turnNumber").type(JsonFieldType.NUMBER).description("커밋된 턴 번호"),
+                    fieldWithPath("endingStatus").type(JsonFieldType.STRING).description("이번 턴 커밋 직후 세션 종료 상태"),
                     fieldWithPath("settlementLog").type(JsonFieldType.ARRAY).description("턴 커밋 skeleton 기준 정산 로그"),
                     fieldWithPath("settlementLog[].phase").type(JsonFieldType.STRING).description("정산 단계 식별자"),
                     fieldWithPath("settlementLog[].description").type(JsonFieldType.STRING).description("정산 단계 설명"),
@@ -505,6 +515,29 @@ class GameTurnControllerTest extends RestDocsTestSupport {
             .andExpect(jsonPath("$.code").value(ErrorCode.GAME_TURN_ALREADY_COMMITTED.getCode()))
             .andExpect(jsonPath("$.message").value(ErrorCode.GAME_TURN_ALREADY_COMMITTED.getMessage()))
             .andDo(document("game-turn/commit/already-committed",
+                requestHeaders(authorizationHeader()),
+                pathParameters(
+                    parameterWithName("sessionId").description("게임 세션 ID")
+                ),
+                basicErrorResponseFields()
+            ));
+    }
+
+    @DisplayName("커밋할 draft가 없으면 400을 반환한다.")
+    @Test
+    void commitWithoutDraft() throws Exception {
+        // given
+        given(commitTurnService.commitTurn(1L, 1001L))
+            .willThrow(new HomerunException(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", 1001L)
+                .with(currentUser())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer access-token"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(ErrorCode.GAME_TURN_DRAFT_NOT_FOUND.getMessage()))
+            .andDo(document("game-turn/commit/draft-not-found",
                 requestHeaders(authorizationHeader()),
                 pathParameters(
                     parameterWithName("sessionId").description("게임 세션 ID")

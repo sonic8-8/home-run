@@ -2,6 +2,7 @@ export interface RegionData {
   color: string;
   sideColor: string;
   code: string;
+  geoCode: string;
   center: [number, number];
   scale: number;
   label: string;
@@ -17,6 +18,7 @@ export const ACTIVE_REGIONS: Record<string, RegionData> = {
     color: '#60a5fa',
     sideColor: '#3b82f6',
     code: '11',
+    geoCode: '11',
     center: [126.98, 37.56],
     scale: 160000,
     label: '서울',
@@ -24,7 +26,8 @@ export const ACTIVE_REGIONS: Record<string, RegionData> = {
   광주광역시: {
     color: '#60a5fa',
     sideColor: '#3b82f6',
-    code: '24',
+    code: '29',
+    geoCode: '24',
     center: [126.855, 35.16],
     scale: 260000,
     label: '광주',
@@ -40,9 +43,46 @@ export const NAME_TO_REGION: Record<string, string> = {
   Gwangju: '광주광역시',
 };
 
-export const CODE_TO_REGION: Record<string, string> = {
+export const TOPOJSON_PROVINCE_CODE_TO_REGION: Record<string, string> = {
   '11': '서울특별시',
   '24': '광주광역시',
+};
+
+export const DISTRICT_CODE_BY_REGION: Record<string, Record<string, string>> = {
+  '11': {
+    종로구: '11110',
+    중구: '11140',
+    용산구: '11170',
+    성동구: '11200',
+    광진구: '11215',
+    동대문구: '11230',
+    중랑구: '11260',
+    성북구: '11290',
+    강북구: '11305',
+    도봉구: '11320',
+    노원구: '11350',
+    은평구: '11380',
+    서대문구: '11410',
+    마포구: '11440',
+    양천구: '11470',
+    강서구: '11500',
+    구로구: '11530',
+    금천구: '11545',
+    영등포구: '11560',
+    동작구: '11590',
+    관악구: '11620',
+    서초구: '11650',
+    강남구: '11680',
+    송파구: '11710',
+    강동구: '11740',
+  },
+  '29': {
+    동구: '29110',
+    서구: '29140',
+    남구: '29155',
+    북구: '29170',
+    광산구: '29200',
+  },
 };
 
 export const LABEL_OFFSETS: Record<string, [number, number]> = {

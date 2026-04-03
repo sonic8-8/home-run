@@ -49,7 +49,7 @@ export function SelectStartMethodPage() {
         />
       </div>
 
-      <div className={styles.formSection}>
+      <div className={styles.formSection} data-guide="game-start-method-options">
         <span className={styles.label}>시작 방법을 선택해주세요</span>
 
         <button

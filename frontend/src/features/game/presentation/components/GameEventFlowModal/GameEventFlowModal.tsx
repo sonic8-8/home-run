@@ -114,7 +114,11 @@ export function GameEventFlowModal({
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(modalEvent) => modalEvent.stopPropagation()}>
+      <div
+        className={styles.modal}
+        onClick={(modalEvent) => modalEvent.stopPropagation()}
+        data-guide="game-event-modal"
+      >
         {isLoading ? (
           <div className={styles.statusPanel}>
             <strong>이벤트를 불러오는 중입니다.</strong>

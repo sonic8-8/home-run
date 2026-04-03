@@ -80,10 +80,12 @@ class SubmitTurnSlotsServiceTest extends IntegrationTestSupport {
             .willReturn(TurnPreviewCalculator.TurnPreviewResult.of(
                 List.of(
                     TurnPreviewCalculator.PreviewSlot.of(0, ActionType.STUDY, false),
-                    TurnPreviewCalculator.PreviewSlot.of(1, ActionType.REST, false),
+                    TurnPreviewCalculator.PreviewSlot.of(1, ActionType.REST, true),
                     TurnPreviewCalculator.PreviewSlot.of(2, ActionType.SIDE_JOB, false)
                 ),
                 Money.of(430_000L),
+                Money.of(430_000L),
+                Money.of(790_000L),
                 Map.of(
                     "health", 3,
                     "fatigue", -14,
@@ -103,6 +105,8 @@ class SubmitTurnSlotsServiceTest extends IntegrationTestSupport {
         // then
         assertThat(response.getSlots()).hasSize(3);
         assertThat(response.getPreviewCashChange()).isEqualTo(430_000L);
+        assertThat(response.getPreviewCashMinChange()).isEqualTo(430_000L);
+        assertThat(response.getPreviewCashMaxChange()).isEqualTo(790_000L);
         assertThat(response.getPreviewStatChanges().getKnowledge()).isEqualTo(8);
         final ArgumentCaptor<TurnDraft> turnDraftCaptor = ArgumentCaptor.forClass(TurnDraft.class);
         then(turnDraftRepository).should().save(turnDraftCaptor.capture());
@@ -110,13 +114,15 @@ class SubmitTurnSlotsServiceTest extends IntegrationTestSupport {
         assertThat(savedDraft.getSessionId()).isEqualTo(gameSession.getGameSessionId());
         assertThat(savedDraft.getTurnNumber()).isEqualTo(12);
         assertThat(savedDraft.getSlots())
-            .extracting(TurnDraftSlot::getSlotIndex, TurnDraftSlot::getActionType)
+            .extracting(TurnDraftSlot::getSlotIndex, TurnDraftSlot::getActionType, TurnDraftSlot::isForcedAction)
             .containsExactly(
-                org.assertj.core.groups.Tuple.tuple(0, ActionType.STUDY),
-                org.assertj.core.groups.Tuple.tuple(1, ActionType.REST),
-                org.assertj.core.groups.Tuple.tuple(2, ActionType.SIDE_JOB)
+                org.assertj.core.groups.Tuple.tuple(0, ActionType.STUDY, false),
+                org.assertj.core.groups.Tuple.tuple(1, ActionType.REST, true),
+                org.assertj.core.groups.Tuple.tuple(2, ActionType.SIDE_JOB, false)
             );
         assertThat(savedDraft.getPreviewCashChange()).isEqualTo(Money.of(430_000L));
+        assertThat(savedDraft.getPreviewCashMinChange()).isEqualTo(Money.of(430_000L));
+        assertThat(savedDraft.getPreviewCashMaxChange()).isEqualTo(Money.of(790_000L));
         assertThat(savedDraft.getPreviewStatChanges()).containsEntry("stress", -8);
     }
 

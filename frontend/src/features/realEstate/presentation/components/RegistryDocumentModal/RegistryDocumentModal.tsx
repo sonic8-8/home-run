@@ -120,7 +120,7 @@ export function RegistryDocumentModal({
 
   return (
     <div className={styles.overlay}>
-      <div className={styles.page}>
+      <div className={styles.page} data-guide="property-registry-modal">
         <div
           ref={stageRef}
           className={styles.paperStage}

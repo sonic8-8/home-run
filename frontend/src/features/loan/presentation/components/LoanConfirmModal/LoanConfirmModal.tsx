@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
+import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import styles from './LoanConfirmModal.module.css';
 
 interface LoanConfirmModalProps {
@@ -30,11 +31,18 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
   error = null,
 }) => {
   const [rawInput, setRawInput] = useState('');
+  const {
+    activeFlowId,
+    closeGuide,
+    isOverlayVisible,
+    startFlowAtStep,
+  } = useGameGuide();
 
   if (!isOpen) return null;
 
   const requestedAmount = Number(rawInput.replace(/,/g, ''));
   const isValid = requestedAmount > 0 && requestedAmount <= maxLoanAmount;
+  const isLoanGuideOpen = activeFlowId === 'propertyLoan' && isOverlayVisible;
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/[^0-9]/g, '');
@@ -48,7 +56,11 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.modal}
+        onClick={(e) => e.stopPropagation()}
+        data-guide="property-loan-confirm"
+      >
 
         {/* 제목 */}
         <h2 className={styles.title}>대출 심사 이력 및 상세</h2>
@@ -114,6 +126,19 @@ export const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
 
         {/* 버튼 */}
         <div className={styles.buttonGroup}>
+          <button
+            className={styles.secondaryButton}
+            onClick={() => {
+              if (isLoanGuideOpen) {
+                closeGuide();
+                return;
+              }
+
+              startFlowAtStep('propertyLoan', 'property-loan-confirm');
+            }}
+          >
+            {isLoanGuideOpen ? '가이드 닫기' : '대출 가이드'}
+          </button>
           <button
             className={styles.primaryButton}
             onClick={handleConfirm}

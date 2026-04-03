@@ -46,6 +46,9 @@ class LatestTurnNewsServiceTest extends IntegrationTestSupport {
     @MockitoBean
     private LatestTurnNewsPhaseService latestTurnNewsPhaseService;
 
+    @MockitoBean
+    private GameWorldRollService gameWorldRollService;
+
     @AfterEach
     void tearDown() {
         gameNewsLogRepository.deleteAllInBatch();
@@ -86,6 +89,7 @@ class LatestTurnNewsServiceTest extends IntegrationTestSupport {
         assertThat(response.getNews().get(0).getHeadline()).isEqualTo("저장된 뉴스");
         assertThat(response.getNews().get(0).getEconomicCycleType()).isEqualTo("BOOM_TO_CRISIS");
         then(latestTurnNewsPhaseService).shouldHaveNoInteractions();
+        then(gameWorldRollService).shouldHaveNoInteractions();
     }
 
     @DisplayName("같은 턴 저장 뉴스가 없으면 phase를 계산해 뉴스를 고르고 로그를 저장한다")
@@ -96,7 +100,9 @@ class LatestTurnNewsServiceTest extends IntegrationTestSupport {
             createGameSession(12, LocalDate.of(2026, 1, 1), CyclePhase.BOOM)
         );
         newsMasterRepository.saveAndFlush(createNewsMaster("NEWS-001", "BOOM_TO_CRISIS", "과열 경고"));
-        given(latestTurnNewsPhaseService.resolve(CyclePhase.BOOM))
+        given(gameWorldRollService.resolveTurnRoll(gameSession.getGameSessionId(), 12))
+            .willReturn(60);
+        given(latestTurnNewsPhaseService.resolve(CyclePhase.BOOM, 60))
             .willReturn(LatestTurnNewsPhaseService.PhaseResolution.of(
                 CyclePhase.BOOM,
                 CyclePhase.CRISIS,
@@ -130,7 +136,9 @@ class LatestTurnNewsServiceTest extends IntegrationTestSupport {
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
             createGameSession(12, LocalDate.of(2026, 1, 1), null)
         );
-        given(latestTurnNewsPhaseService.resolve(null))
+        given(gameWorldRollService.resolveTurnRoll(gameSession.getGameSessionId(), 12))
+            .willReturn(60);
+        given(latestTurnNewsPhaseService.resolve(null, 60))
             .willThrow(new HomerunException(ErrorCode.WORLD_CYCLE_STATE_INVALID));
 
         // when
@@ -148,7 +156,9 @@ class LatestTurnNewsServiceTest extends IntegrationTestSupport {
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
             createGameSession(12, LocalDate.of(2026, 1, 1), CyclePhase.BOOM)
         );
-        given(latestTurnNewsPhaseService.resolve(CyclePhase.BOOM))
+        given(gameWorldRollService.resolveTurnRoll(gameSession.getGameSessionId(), 12))
+            .willReturn(60);
+        given(latestTurnNewsPhaseService.resolve(CyclePhase.BOOM, 60))
             .willReturn(LatestTurnNewsPhaseService.PhaseResolution.of(
                 CyclePhase.BOOM,
                 CyclePhase.CRISIS,

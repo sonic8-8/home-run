@@ -166,7 +166,7 @@ export function LoanProductsPanel({
   };
 
   return (
-    <div className={styles.panel}>
+    <div className={styles.panel} data-guide="game-loan-panel">
       <h2 className={styles.title}>대출/상환</h2>
 
       {activeLoan !== null && (

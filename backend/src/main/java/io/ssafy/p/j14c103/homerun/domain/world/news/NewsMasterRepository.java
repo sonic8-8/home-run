@@ -5,5 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NewsMasterRepository extends JpaRepository<NewsMaster, String> {
 
+    boolean existsByEconomicCycleType(String economicCycleType);
+
     List<NewsMaster> findAllByEconomicCycleTypeOrderByNewsIdAsc(String economicCycleType);
 }

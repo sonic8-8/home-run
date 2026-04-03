@@ -13,7 +13,7 @@ class MvpEndingRuleEvaluatorServiceTest {
     private final MvpEndingRuleEvaluatorService mvpEndingRuleEvaluator =
         new MvpEndingRuleEvaluatorService();
 
-    @DisplayName("MVP 엔딩 규칙은 현금과 주식에서 대출을 차감해 순자산을 계산한다.")
+    @DisplayName("MVP 엔딩 규칙은 현금, 주식, 부동산에서 대출을 차감해 순자산을 계산한다.")
     @Test
     void calculateNetWorth() {
         // given
@@ -22,6 +22,8 @@ class MvpEndingRuleEvaluatorServiceTest {
             Money.of(2_000_000L),
             Money.of(300_000L),
             Money.of(500_000L),
+            Money.of(500_000L),
+            false,
             false
         );
 
@@ -29,7 +31,7 @@ class MvpEndingRuleEvaluatorServiceTest {
         final EndingRuleEvaluator.EndingEvaluation evaluation = mvpEndingRuleEvaluator.evaluate(context);
 
         // then
-        assertThat(evaluation.getNetWorth()).isEqualTo(Money.of(1_800_000L));
+        assertThat(evaluation.getNetWorth()).isEqualTo(Money.of(2_300_000L));
         assertThat(evaluation.getSessionStatus()).isEqualTo(SessionStatus.IN_PROGRESS);
     }
 
@@ -41,8 +43,10 @@ class MvpEndingRuleEvaluatorServiceTest {
             120,
             Money.of(100_000L),
             Money.of(0L),
+            Money.of(0L),
             Money.of(300_000L),
-            true
+            true,
+            false
         );
 
         // when
@@ -61,7 +65,9 @@ class MvpEndingRuleEvaluatorServiceTest {
             45,
             Money.of(200_000L),
             Money.of(100_000L),
+            Money.of(0L),
             Money.of(300_000L),
+            false,
             false
         );
 
@@ -81,7 +87,9 @@ class MvpEndingRuleEvaluatorServiceTest {
             360,
             Money.of(2_000_000L),
             Money.of(500_000L),
+            Money.of(700_000L),
             Money.of(100_000L),
+            false,
             false
         );
 
@@ -90,6 +98,28 @@ class MvpEndingRuleEvaluatorServiceTest {
 
         // then
         assertThat(evaluation.getSessionStatus()).isEqualTo(SessionStatus.TIMEOUT);
-        assertThat(evaluation.getNetWorth()).isEqualTo(Money.of(2_400_000L));
+        assertThat(evaluation.getNetWorth()).isEqualTo(Money.of(3_100_000L));
+    }
+
+    @DisplayName("주거 상실 압류 신호가 있으면 파산이나 타임아웃보다 압류 엔딩을 우선한다.")
+    @Test
+    void foreclosureWhenTriggered() {
+        // given
+        final EndingRuleEvaluator.EndingRuleContext context = EndingRuleEvaluator.EndingRuleContext.of(
+            360,
+            Money.of(200_000L),
+            Money.of(100_000L),
+            Money.of(0L),
+            Money.of(300_000L),
+            false,
+            true
+        );
+
+        // when
+        final EndingRuleEvaluator.EndingEvaluation evaluation = mvpEndingRuleEvaluator.evaluate(context);
+
+        // then
+        assertThat(evaluation.getSessionStatus()).isEqualTo(SessionStatus.FORECLOSURE);
+        assertThat(evaluation.getNetWorth()).isEqualTo(Money.zero());
     }
 }

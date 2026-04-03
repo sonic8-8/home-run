@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import { NewsArticle } from '@features/game/presentation/components/NewsArticle';
 import { useGameNewsPage } from '@features/game/presentation/hooks/useGameNewsPage';
 import { formatIsoDate } from '@shared/utils/formatter';
@@ -6,6 +7,12 @@ import styles from './NewsPage.module.css';
 
 export function NewsPage() {
   const navigate = useNavigate();
+  const {
+    activeFlowId,
+    closeGuide,
+    isOverlayVisible,
+    startFlowAtStep,
+  } = useGameGuide();
   const {
     news,
     newsHistory,
@@ -20,6 +27,8 @@ export function NewsPage() {
     return null;
   }
 
+  const isNewsGuideOpen = activeFlowId === 'main' && isOverlayVisible;
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -32,7 +41,22 @@ export function NewsPage() {
             </div>
           )}
         </div>
-        <div className={styles.headerRight} />
+        <div className={styles.headerRight}>
+          <button
+            type="button"
+            className={styles.guideBtn}
+            onClick={() => {
+              if (isNewsGuideOpen) {
+                closeGuide();
+                return;
+              }
+
+              startFlowAtStep('main', 'main-news-archive');
+            }}
+          >
+            {isNewsGuideOpen ? '가이드 닫기' : '뉴스 가이드'}
+          </button>
+        </div>
       </header>
 
       <div className={styles.mastheadLine} />
@@ -47,7 +71,7 @@ export function NewsPage() {
           <NewsArticle key={item.newsId} item={item} />
         ))}
 
-        <section className={styles.historySection}>
+        <section className={styles.historySection} data-guide="game-news-archive">
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>지난 턴 헤드라인</h2>
             <p className={styles.sectionDescription}>

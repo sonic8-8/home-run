@@ -14,10 +14,14 @@ public class MvpEndingRuleEvaluatorService implements EndingRuleEvaluator {
     public EndingEvaluation evaluate(final EndingRuleContext context) {
         final Money netWorth = context.getCashBalance()
             .add(context.getStockValue())
+            .add(context.getRealEstateValue())
             .subtract(context.getLoanBalance());
 
         if (context.isTargetPropertyOwned()) {
             return EndingEvaluation.of(netWorth, SessionStatus.CLEAR);
+        }
+        if (context.isForeclosureTriggered()) {
+            return EndingEvaluation.of(netWorth, SessionStatus.FORECLOSURE);
         }
         if (netWorth.getAmount().signum() <= 0) {
             return EndingEvaluation.of(netWorth, SessionStatus.BANKRUPT);

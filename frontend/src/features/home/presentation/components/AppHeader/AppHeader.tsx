@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@core/store/authStore';
+import { removeSessionStorage } from '@shared/utils/sessionStorage';
 import { ROUTES } from '@app/routes';
 import styles from './AppHeader.module.css';
 
@@ -23,6 +24,8 @@ export const AppHeader: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
+    removeSessionStorage('game:sessionId');
+    removeSessionStorage('game:characterType');
     clearAuth();
     navigate(ROUTES.LOGIN, { replace: true });
   };

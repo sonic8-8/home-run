@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import { container } from '@core/di/container';
+import { toErrorMessage } from '@core/error/AppError';
 import type { CharacterType } from '@features/game/domain/entities/CharacterOption';
-import type { JobType } from '@features/game/domain/entities/GameSlot';
+import type { GameSlot, JobType } from '@features/game/domain/entities/GameSlot';
 import type { PendingGameEvent } from '@features/game/domain/entities/GameTurn';
+import { GetGameSlotsUseCase } from '@features/game/domain/usecases/GetGameSlotsUseCase';
 import { GetGameSessionDetailUseCase } from '@features/game/domain/usecases/GetGameSessionDetailUseCase';
 import { useGameTurn } from '@features/game/presentation/hooks/useGameTurn';
 import type { LoanConfirmResult } from '@features/loan/domain/entities/ActiveLoan';
@@ -30,6 +32,20 @@ function readStoredSessionId(): number | null {
 function readStoredCharacterType(): CharacterType | null {
   const raw = readSessionStorage(CHARACTER_TYPE_KEY);
   return raw === 'MALE' || raw === 'FEMALE' ? raw : null;
+}
+
+function selectActiveSessionId(slots: readonly GameSlot[]): number | null {
+  const activeSlots = slots
+    .filter((slot) => slot.status === 'IN_PROGRESS' && slot.sessionId !== null)
+    .sort((left, right) => {
+      if (left.createdAt && right.createdAt) {
+        return right.createdAt.localeCompare(left.createdAt);
+      }
+
+      return left.slotNumber - right.slotNumber;
+    });
+
+  return activeSlots[0]?.sessionId ?? null;
 }
 
 interface LocationState {
@@ -194,9 +210,46 @@ export const useGameMain = () => {
     };
 
     if (!isCompleteNewSessionState(createState)) {
-      if (!isCancelled) {
-        setError('세션 생성 정보가 부족합니다.');
-      }
+      const recoverActiveSession = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+          const getGameSlotsUseCase = container.resolve(GetGameSlotsUseCase);
+          const slots = await getGameSlotsUseCase.execute();
+
+          if (isCancelled) {
+            return;
+          }
+
+          const recoveredSessionId = selectActiveSessionId(slots);
+          if (recoveredSessionId === null) {
+            navigate(ROUTES.GAME_START, { replace: true });
+            return;
+          }
+
+          setSessionId(recoveredSessionId);
+          navigate(ROUTES.GAME, {
+            replace: true,
+            state: {
+              sessionId: recoveredSessionId,
+            },
+          });
+        } catch (recoverError) {
+          if (isCancelled) {
+            return;
+          }
+
+          setError(toErrorMessage(recoverError));
+        } finally {
+          if (!isCancelled) {
+            setIsLoading(false);
+          }
+        }
+      };
+
+      void recoverActiveSession();
+
       return () => {
         isCancelled = true;
       };
