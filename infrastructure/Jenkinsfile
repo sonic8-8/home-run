@@ -69,6 +69,7 @@ pipeline {
         PUBLIC_BASE_URL = 'https://j14c103.p.ssafy.io'
         K6_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/k6'
         MONITORING_EVIDENCE_ARTIFACT_ROOT = '.agent/private/codex/release-readiness/artifacts/monitoring-evidence'
+        K6_RESULTS_ARTIFACT_ROOT = 'performance/k6/results'
         POSTGRES_DB = 'homerun'
         POSTGRES_USER = 'homerun_user'
         POSTGRES_PASSWORD = credentials('homerun-postgres-password')
@@ -377,6 +378,29 @@ BACKEND_IMAGE=${env.BACKEND_IMAGE}
                     K6_SUMMARY_DIR=${K6_SETTLEMENT_ARTIFACT_DIR} \
                     bash infrastructure/scripts/run-k6-settlement-gate.sh
                 '''
+            }
+        }
+
+        stage('k6 External Report') {
+            steps {
+                script {
+                    env.PIPELINE_STAGE = 'k6 External Report'
+                }
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    sh '''
+                        K6_EXTERNAL_ARTIFACT_DIR=${K6_ARTIFACT_ROOT}/external-home
+                        rm -rf ${K6_EXTERNAL_ARTIFACT_DIR}
+                        mkdir -p ${K6_EXTERNAL_ARTIFACT_DIR}
+
+                        BUILD_NUMBER=${BUILD_NUMBER} \
+                        GIT_COMMIT_SHORT=${GIT_COMMIT_SHORT} \
+                        K6_BASE_URL=http://backend:8080 \
+                        K6_DOCKER_NETWORK=homerun-runtime_web_net \
+                        K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write \
+                        K6_SUMMARY_DIR=${K6_EXTERNAL_ARTIFACT_DIR} \
+                        bash performance/k6/run.sh performance/k6/external-home.js
+                    '''
+                }
             }
         }
 
