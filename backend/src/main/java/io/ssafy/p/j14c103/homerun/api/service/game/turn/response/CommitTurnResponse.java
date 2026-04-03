@@ -1,6 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.turn.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.SessionStatus;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
 import io.ssafy.p.j14c103.homerun.global.HomerunException;
 import java.util.List;
@@ -13,6 +14,7 @@ import lombok.Getter;
 public class CommitTurnResponse {
 
     private final Integer turnNumber;
+    private final SessionStatus endingStatus;
     private final List<SettlementLogItemResponse> settlementLog;
     private final UpdatedAssetsResponse updatedAssets;
     private final StatChangesResponse statChanges;
@@ -21,16 +23,18 @@ public class CommitTurnResponse {
     @Builder(access = AccessLevel.PRIVATE)
     private CommitTurnResponse(
         final Integer turnNumber,
+        final SessionStatus endingStatus,
         final List<SettlementLogItemResponse> settlementLog,
         final UpdatedAssetsResponse updatedAssets,
         final StatChangesResponse statChanges,
         final FlagsResponse flags
     ) {
-        if (turnNumber == null || settlementLog == null || updatedAssets == null
+        if (turnNumber == null || endingStatus == null || settlementLog == null || updatedAssets == null
             || statChanges == null || flags == null) {
             throw new HomerunException(ErrorCode.GLOBAL_CONFIGURATION_INVALID);
         }
         this.turnNumber = turnNumber;
+        this.endingStatus = endingStatus;
         this.settlementLog = List.copyOf(settlementLog);
         this.updatedAssets = updatedAssets;
         this.statChanges = statChanges;
@@ -39,6 +43,7 @@ public class CommitTurnResponse {
 
     public static CommitTurnResponse of(
         final Integer turnNumber,
+        final SessionStatus endingStatus,
         final List<SettlementLogItemResponse> settlementLog,
         final UpdatedAssetsResponse updatedAssets,
         final StatChangesResponse statChanges,
@@ -46,6 +51,7 @@ public class CommitTurnResponse {
     ) {
         return CommitTurnResponse.builder()
             .turnNumber(turnNumber)
+            .endingStatus(endingStatus)
             .settlementLog(settlementLog)
             .updatedAssets(updatedAssets)
             .statChanges(statChanges)

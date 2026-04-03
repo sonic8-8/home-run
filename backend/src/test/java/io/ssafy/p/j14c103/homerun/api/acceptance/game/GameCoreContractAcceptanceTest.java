@@ -346,6 +346,7 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
                 .header(AUTHORIZATION, fixture.bearerToken()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.turnNumber").value(12))
+            .andExpect(jsonPath("$.data.endingStatus").value("IN_PROGRESS"))
             .andExpect(jsonPath("$.data.flags.hasEvent").value(true));
 
         mockMvc.perform(get("/api/games/sessions/{sessionId}/news/history", fixture.session().getGameSessionId())
@@ -745,6 +746,7 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
         mockMvc.perform(post("/api/games/sessions/{sessionId}/turn/commit", fixture.session().getGameSessionId())
                 .header(AUTHORIZATION, fixture.bearerToken()))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.endingStatus").value("TIMEOUT"))
             .andExpect(jsonPath("$.data.updatedAssets.cash").value(3_695_000))
             .andExpect(jsonPath("$.data.updatedAssets.loan").value(1_200_000))
             .andExpect(jsonPath("$.data.updatedAssets.netAssets").value(7_495_000))

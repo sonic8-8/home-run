@@ -503,6 +503,7 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
 
         // then
         assertThat(response.getTurnNumber()).isEqualTo(359);
+        assertThat(response.getEndingStatus()).isEqualTo(SessionStatus.TIMEOUT);
         assertThat(response.getSettlementLog()).hasSize(13);
         assertThat(response.getFlags().isBankrupt()).isFalse();
         assertThat(response.getFlags().isCleared()).isFalse();
@@ -566,6 +567,7 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
         );
 
         // then
+        assertThat(response.getEndingStatus()).isEqualTo(SessionStatus.CLEAR);
         assertThat(response.getFlags().isCleared()).isTrue();
         assertThat(response.getFlags().isBankrupt()).isFalse();
 
@@ -618,9 +620,13 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
             ));
 
         // when
-        commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId());
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            user.getId(),
+            gameSession.getGameSessionId()
+        );
 
         // then
+        assertThat(response.getEndingStatus()).isEqualTo(SessionStatus.FORECLOSURE);
         final GameSession updated = gameSessionRepository.findById(gameSession.getGameSessionId())
             .orElseThrow();
         assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.FORECLOSURE);
@@ -661,9 +667,13 @@ class CommitTurnServiceTest extends IntegrationTestSupport {
             ));
 
         // when
-        commitTurnService.commitTurn(user.getId(), gameSession.getGameSessionId());
+        final CommitTurnResponse response = commitTurnService.commitTurn(
+            user.getId(),
+            gameSession.getGameSessionId()
+        );
 
         // then
+        assertThat(response.getEndingStatus()).isEqualTo(SessionStatus.FORECLOSURE);
         final GameSession updated = gameSessionRepository.findById(gameSession.getGameSessionId())
             .orElseThrow();
         assertThat(updated.getSessionStatus()).isEqualTo(SessionStatus.FORECLOSURE);
