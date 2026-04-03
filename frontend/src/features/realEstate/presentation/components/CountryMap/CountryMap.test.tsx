@@ -41,7 +41,7 @@ vi.mock('react-simple-maps', () => ({
         { rsmKey: 'busan', properties: { name: '부산광역시' }, geometry: { coordinates: [[[129.0, 35.1]]] } },
       ],
     }),
-  Geography: () => <div />,
+  Geography: ({ geography }: { geography: { rsmKey: string } }) => <div data-testid={`geo-${geography.rsmKey}`} />,
   Marker: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
@@ -50,27 +50,31 @@ vi.mock('../WallLayers/WallLayers', () => ({
 }));
 
 describe('CountryMap', () => {
-  it('서울과 광주만 국가 지도에서 노출한다', () => {
+  it('대한민국 전체 배경은 유지하고 서울과 광주만 선택 가능하게 노출한다', () => {
     mockState.lastComposableMapProps = null;
     render(<CountryMap onRegionClick={vi.fn()} />);
 
+    expect(screen.getAllByTestId('geo-seoul').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('geo-gwangju').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('geo-sejong')).toBeInTheDocument();
+    expect(screen.getByTestId('geo-busan')).toBeInTheDocument();
     expect(screen.getByTestId('country-region-11')).toBeInTheDocument();
     expect(screen.getAllByTestId('country-region-29')).toHaveLength(1);
     expect(screen.getByText('서울')).toBeInTheDocument();
     expect(screen.getByText('광주')).toBeInTheDocument();
-    expect(screen.queryByText('세종')).not.toBeInTheDocument();
-    expect(screen.queryByText('부산')).not.toBeInTheDocument();
+    expect(screen.getByText('세종')).toBeInTheDocument();
+    expect(screen.getByText('부산')).toBeInTheDocument();
   });
 
-  it('활성 지역이 충분히 크게 보이도록 국가 지도 뷰포트를 집중시킨다', () => {
+  it('대한민국 전체 지도가 보이도록 국가 지도 기본 뷰포트를 유지한다', () => {
     mockState.lastComposableMapProps = null;
     render(<CountryMap onRegionClick={vi.fn()} />);
 
     expect(mockState.lastComposableMapProps).toMatchObject({
       projection: 'geoMercator',
       projectionConfig: {
-        scale: 26000,
-        center: [126.92, 36.36],
+        scale: 10000,
+        center: [127.5, 35.8],
       },
     });
   });
