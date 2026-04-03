@@ -9,7 +9,7 @@ import { LoanProductsPanel } from '@features/game/presentation/components/LoanPr
 import { CardRecommendPanel } from '@features/game/presentation/components/CardRecommendPanel/CardRecommendPanel';
 import { StockTradingPanel } from '@features/game/presentation/components/StockTradingPanel';
 import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
-import { formatKoreanDate } from '@shared/utils/formatter';
+import { formatKoreanDate, formatMoney } from '@shared/utils/formatter';
 import sceneRoad from '@assets/images/game_back_road.png';
 import styles from './GameMainPage.module.css';
 
@@ -17,6 +17,14 @@ const CHARACTER_IMAGE: Record<CharacterType, string> = {
   MALE: '/assets/images/bcharac.png',
   FEMALE: '/assets/images/gcharac.png',
 };
+
+const STAT_LABELS = {
+  health: '체력',
+  fatigue: '피로',
+  stress: '스트레스',
+  happiness: '행복',
+  knowledge: '지식',
+} as const;
 
 function GameMainPageContent() {
   const navigate = useNavigate();
@@ -67,6 +75,7 @@ function GameMainPageContent() {
   } = useGameMain();
 
   const characterImage = CHARACTER_IMAGE[characterType];
+  const runtimeSnapshot = turn?.runtimeSnapshot ?? null;
 
   if (isLoading && currentDate === null) {
     return (
@@ -122,6 +131,47 @@ function GameMainPageContent() {
 
           <div className={styles.panel}>
             <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>현재 상태</h2>
+              {runtimeSnapshot === null ? (
+                <div className={styles.inlineError}>현재 상태를 불러오는 중입니다.</div>
+              ) : (
+                <>
+                  <div className={styles.assetList}>
+                    <div className={styles.assetRow}>
+                      <span className={styles.assetLabelBold}>현금</span>
+                      <span className={styles.assetValueBold}>
+                        {formatMoney(runtimeSnapshot.assets.cashBalance)} 원
+                      </span>
+                    </div>
+                    <div className={styles.assetRow}>
+                      <span className={styles.assetLabelBold}>순자산</span>
+                      <span className={styles.assetValueBold}>
+                        {formatMoney(runtimeSnapshot.assets.netWorth)} 원
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.statList}>
+                    {Object.entries(runtimeSnapshot.stats).map(([key, value]) => (
+                      <div key={key} className={styles.statRow}>
+                        <span className={styles.statLabel}>
+                          {STAT_LABELS[key as keyof typeof STAT_LABELS]}
+                        </span>
+                        <div className={styles.statBarTrack}>
+                          <div
+                            className={styles.statBarFill}
+                            style={{ width: `${Math.max(0, Math.min(value, 100))}%` }}
+                          />
+                        </div>
+                        <span className={styles.statValue}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section className={styles.section}>
               <h2 className={styles.sectionTitle}>이번 달 진행</h2>
               <div className={styles.turnCard}>
                 <div className={styles.turnCardLabel}>턴</div>
@@ -129,7 +179,9 @@ function GameMainPageContent() {
                   {turn === null ? '-' : `${turn.turnNumber}번째 달`}
                 </div>
                 <div className={styles.turnCardMeta}>
-                  {turn === null ? '경제 흐름을 불러오는 중입니다.' : turn.economicCycle.description}
+                  {turn === null
+                    ? '경제 흐름을 불러오는 중입니다.'
+                    : `${turn.economicCycle.description} · ${formatKoreanDate(turn.currentDate)}`}
                 </div>
               </div>
               <button

@@ -34,6 +34,19 @@ describe('GameTurnRemoteDataSource', () => {
             phase: 'BOOM',
             description: '경기 호황기',
           },
+          runtimeSnapshot: {
+            assets: {
+              cashBalance: 2_300_000,
+              netWorth: 18_700_000,
+            },
+            stats: {
+              health: 72,
+              fatigue: 28,
+              stress: 34,
+              happiness: 61,
+              knowledge: 55,
+            },
+          },
         },
       },
     });
@@ -43,6 +56,7 @@ describe('GameTurnRemoteDataSource', () => {
 
     expect(get).toHaveBeenCalledWith('/games/sessions/33/turn');
     expect(result.turnNumber).toBe(12);
+    expect(result.runtimeSnapshot.assets.cashBalance).toBe(2_300_000);
   });
 
   it('uses the latest turn news endpoint', async () => {

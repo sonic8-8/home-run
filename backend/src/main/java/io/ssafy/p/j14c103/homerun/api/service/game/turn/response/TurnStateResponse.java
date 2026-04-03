@@ -16,6 +16,7 @@ public class TurnStateResponse {
     private final LocalDate currentDate;
     private final Integer month;
     private final EconomicCycleResponse economicCycle;
+    private final RuntimeSnapshotResponse runtimeSnapshot;
     private final List<NewsResponse> news;
 
     @Builder(access = AccessLevel.PRIVATE)
@@ -23,12 +24,14 @@ public class TurnStateResponse {
         final Integer turnNumber,
         final LocalDate currentDate,
         final EconomicCycleResponse economicCycle,
+        final RuntimeSnapshotResponse runtimeSnapshot,
         final List<NewsResponse> news
     ) {
         this.turnNumber = Objects.requireNonNull(turnNumber, "turnNumber는 null일 수 없습니다.");
         this.currentDate = Objects.requireNonNull(currentDate, "currentDate는 null일 수 없습니다.");
         this.month = this.currentDate.getMonthValue();
         this.economicCycle = Objects.requireNonNull(economicCycle, "economicCycle은 null일 수 없습니다.");
+        this.runtimeSnapshot = Objects.requireNonNull(runtimeSnapshot, "runtimeSnapshot은 null일 수 없습니다.");
         this.news = List.copyOf(Objects.requireNonNull(news, "news는 null일 수 없습니다."));
     }
 
@@ -36,14 +39,103 @@ public class TurnStateResponse {
         final Integer turnNumber,
         final LocalDate currentDate,
         final EconomicCycleResponse economicCycle,
+        final RuntimeSnapshotResponse runtimeSnapshot,
         final List<NewsResponse> news
     ) {
         return TurnStateResponse.builder()
             .turnNumber(turnNumber)
             .currentDate(currentDate)
             .economicCycle(economicCycle)
+            .runtimeSnapshot(runtimeSnapshot)
             .news(news)
             .build();
+    }
+
+    @Getter
+    public static class RuntimeSnapshotResponse {
+
+        private final AssetSummaryResponse assets;
+        private final StatSummaryResponse stats;
+
+        @Builder(access = AccessLevel.PRIVATE)
+        private RuntimeSnapshotResponse(
+            final AssetSummaryResponse assets,
+            final StatSummaryResponse stats
+        ) {
+            this.assets = Objects.requireNonNull(assets, "assets는 null일 수 없습니다.");
+            this.stats = Objects.requireNonNull(stats, "stats는 null일 수 없습니다.");
+        }
+
+        public static RuntimeSnapshotResponse of(
+            final AssetSummaryResponse assets,
+            final StatSummaryResponse stats
+        ) {
+            return RuntimeSnapshotResponse.builder()
+                .assets(assets)
+                .stats(stats)
+                .build();
+        }
+    }
+
+    @Getter
+    public static class AssetSummaryResponse {
+
+        private final Long cashBalance;
+        private final Long netWorth;
+
+        @Builder(access = AccessLevel.PRIVATE)
+        private AssetSummaryResponse(final Long cashBalance, final Long netWorth) {
+            this.cashBalance = Objects.requireNonNull(cashBalance, "cashBalance는 null일 수 없습니다.");
+            this.netWorth = Objects.requireNonNull(netWorth, "netWorth는 null일 수 없습니다.");
+        }
+
+        public static AssetSummaryResponse of(final Long cashBalance, final Long netWorth) {
+            return AssetSummaryResponse.builder()
+                .cashBalance(cashBalance)
+                .netWorth(netWorth)
+                .build();
+        }
+    }
+
+    @Getter
+    public static class StatSummaryResponse {
+
+        private final Integer health;
+        private final Integer fatigue;
+        private final Integer stress;
+        private final Integer happiness;
+        private final Integer knowledge;
+
+        @Builder(access = AccessLevel.PRIVATE)
+        private StatSummaryResponse(
+            final Integer health,
+            final Integer fatigue,
+            final Integer stress,
+            final Integer happiness,
+            final Integer knowledge
+        ) {
+            this.health = Objects.requireNonNull(health, "health는 null일 수 없습니다.");
+            this.fatigue = Objects.requireNonNull(fatigue, "fatigue는 null일 수 없습니다.");
+            this.stress = Objects.requireNonNull(stress, "stress는 null일 수 없습니다.");
+            this.happiness = Objects.requireNonNull(happiness, "happiness는 null일 수 없습니다.");
+            this.knowledge = Objects.requireNonNull(knowledge, "knowledge는 null일 수 없습니다.");
+        }
+
+        public static StatSummaryResponse of(
+            final Integer health,
+            final Integer fatigue,
+            final Integer stress,
+            final Integer happiness,
+            final Integer knowledge
+        ) {
+            return StatSummaryResponse.builder()
+                .health(health)
+                .fatigue(fatigue)
+                .stress(stress)
+                .happiness(happiness)
+                .knowledge(knowledge)
+                .build();
+        }
     }
 
     @Getter

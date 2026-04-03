@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.game.turn;
 
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
 import io.ssafy.p.j14c103.homerun.api.service.game.turn.response.TurnStateResponse;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.api.service.world.GameTurnWorldStateService;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GameTurnStateService {
 
     private final GameSessionRepository gameSessionRepository;
+    private final GameStatRepository gameStatRepository;
     private final UserAuthContextService userAuthContextService;
     private final GameTurnWorldStateService gameTurnWorldStateService;
     private final LatestTurnNewsService latestTurnNewsService;
@@ -27,6 +30,8 @@ public class GameTurnStateService {
     public TurnStateResponse getTurnState(final Long userId, final Long sessionId) {
         userAuthContextService.getContext(userId);
         final GameSession gameSession = getOwnedGameSession(userId, sessionId);
+        final GameStat gameStat = gameStatRepository.findById(Math.toIntExact(sessionId))
+            .orElseThrow(() -> new HomerunException(ErrorCode.CHARACTER_STATE_UNINITIALIZED));
         final GameTurnWorldStateResponse turnWorldState = gameTurnWorldStateService.getWorldState(
             gameSession
         );
@@ -40,6 +45,19 @@ public class GameTurnStateService {
             TurnStateResponse.EconomicCycleResponse.of(
                 turnWorldState.getPhase(),
                 turnWorldState.getDescription()
+            ),
+            TurnStateResponse.RuntimeSnapshotResponse.of(
+                TurnStateResponse.AssetSummaryResponse.of(
+                    gameSession.getCashBalance().getAmount().longValue(),
+                    gameSession.getNetWorth().getAmount().longValue()
+                ),
+                TurnStateResponse.StatSummaryResponse.of(
+                    gameStat.getHealth(),
+                    gameStat.getFatigue(),
+                    gameStat.getStress(),
+                    gameStat.getHappiness(),
+                    gameStat.getKnowledge()
+                )
             ),
             TurnStateResponse.NewsResponse.from(latestTurnNews.getNews())
         );

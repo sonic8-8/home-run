@@ -123,6 +123,19 @@ describe('GameMainPage direct entry', () => {
                 phase: 'BOOM',
                 description: '경기 호황기',
               },
+              runtimeSnapshot: {
+                assets: {
+                  cashBalance: 2_300_000,
+                  netWorth: 18_700_000,
+                },
+                stats: {
+                  health: 72,
+                  fatigue: 28,
+                  stress: 34,
+                  happiness: 61,
+                  knowledge: 55,
+                },
+              },
             },
       news: null,
       newsHistory: [],
@@ -145,7 +158,26 @@ describe('GameMainPage direct entry', () => {
       eventError: null,
       scheduleError: null,
       fetchTurn: vi.fn().mockResolvedValue({
+        turnNumber: 7,
+        month: 3,
         currentDate: new Date('2026-03-01T00:00:00'),
+        economicCycle: {
+          phase: 'BOOM',
+          description: '경기 호황기',
+        },
+        runtimeSnapshot: {
+          assets: {
+            cashBalance: 2_300_000,
+            netWorth: 18_700_000,
+          },
+          stats: {
+            health: 72,
+            fatigue: 28,
+            stress: 34,
+            happiness: 61,
+            knowledge: 55,
+          },
+        },
       }),
       fetchLatestNews: vi.fn(),
       fetchNewsHistory: vi.fn().mockResolvedValue([]),
@@ -168,6 +200,8 @@ describe('GameMainPage direct entry', () => {
     });
 
     expect(screen.queryByText('세션 생성 정보가 부족합니다.')).not.toBeInTheDocument();
+    expect(screen.getByText('현재 상태')).toBeInTheDocument();
+    expect(screen.getByText('2,300,000 원')).toBeInTheDocument();
     expect(screen.getByText('이번 달 진행')).toBeInTheDocument();
     expect(screen.getByText('1번째 달')).toBeInTheDocument();
   });

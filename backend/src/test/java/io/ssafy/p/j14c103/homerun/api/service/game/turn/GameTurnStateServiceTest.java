@@ -12,6 +12,8 @@ import io.ssafy.p.j14c103.homerun.api.service.world.GameTurnWorldStateService;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.GameTurnWorldStateResponse;
 import io.ssafy.p.j14c103.homerun.api.service.world.response.LatestTurnNewsResponse;
 import io.ssafy.p.j14c103.homerun.domain.character.CharacterType;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStat;
+import io.ssafy.p.j14c103.homerun.domain.character.GameStatRepository;
 import io.ssafy.p.j14c103.homerun.domain.character.career.JobType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.DataSourceType;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.GameSession;
@@ -41,6 +43,9 @@ class GameTurnStateServiceTest extends IntegrationTestSupport {
     private GameSessionRepository gameSessionRepository;
 
     @Autowired
+    private GameStatRepository gameStatRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @MockitoBean
@@ -51,6 +56,7 @@ class GameTurnStateServiceTest extends IntegrationTestSupport {
 
     @AfterEach
     void tearDown() {
+        gameStatRepository.deleteAllInBatch();
         gameSessionRepository.deleteAllInBatch();
         userRepository.deleteAllInBatch();
     }
@@ -62,6 +68,9 @@ class GameTurnStateServiceTest extends IntegrationTestSupport {
         final User user = saveUser("turn-state-user@example.com");
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
             createGameSession(user.getId(), 12, LocalDate.of(2026, 1, 1), CyclePhase.BOOM)
+        );
+        gameStatRepository.saveAndFlush(
+            GameStat.create(Math.toIntExact(gameSession.getGameSessionId()), 72, 28, 34, 61, 55, 12)
         );
         given(gameTurnWorldStateService.getWorldState(any(GameSession.class)))
             .willReturn(GameTurnWorldStateResponse.of(CyclePhase.BOOM, "경기 호황기"));
@@ -93,6 +102,13 @@ class GameTurnStateServiceTest extends IntegrationTestSupport {
         assertThat(response.getMonth()).isEqualTo(1);
         assertThat(response.getEconomicCycle().getPhase()).isEqualTo(CyclePhase.BOOM);
         assertThat(response.getEconomicCycle().getDescription()).isEqualTo("경기 호황기");
+        assertThat(response.getRuntimeSnapshot().getAssets().getCashBalance()).isEqualTo(2_000_000L);
+        assertThat(response.getRuntimeSnapshot().getAssets().getNetWorth()).isEqualTo(2_000_000L);
+        assertThat(response.getRuntimeSnapshot().getStats().getHealth()).isEqualTo(72);
+        assertThat(response.getRuntimeSnapshot().getStats().getFatigue()).isEqualTo(28);
+        assertThat(response.getRuntimeSnapshot().getStats().getStress()).isEqualTo(34);
+        assertThat(response.getRuntimeSnapshot().getStats().getHappiness()).isEqualTo(61);
+        assertThat(response.getRuntimeSnapshot().getStats().getKnowledge()).isEqualTo(55);
         assertThat(response.getNews()).hasSize(1);
         assertThat(response.getNews().get(0).getNewsId()).isEqualTo("01500801.20200519071906001");
         assertThat(response.getNews().get(0).getHeadline()).isEqualTo("부동산 시장 과열 경고");
@@ -112,6 +128,9 @@ class GameTurnStateServiceTest extends IntegrationTestSupport {
         final GameSession gameSession = gameSessionRepository.saveAndFlush(
             createGameSession(user.getId(), 12, LocalDate.of(2026, 1, 1), CyclePhase.BOOM)
         );
+        gameStatRepository.saveAndFlush(
+            GameStat.create(Math.toIntExact(gameSession.getGameSessionId()), 65, 24, 19, 58, 44, 12)
+        );
         given(gameTurnWorldStateService.getWorldState(any(GameSession.class)))
             .willReturn(GameTurnWorldStateResponse.of(CyclePhase.BOOM, "경기 호황기"));
         given(latestTurnNewsService.getLatestTurnNews(gameSession.getGameSessionId()))
@@ -129,6 +148,7 @@ class GameTurnStateServiceTest extends IntegrationTestSupport {
 
         // then
         assertThat(response.getNews()).isEmpty();
+        assertThat(response.getRuntimeSnapshot().getStats().getHealth()).isEqualTo(65);
         then(latestTurnNewsService).should().getLatestTurnNews(gameSession.getGameSessionId());
     }
 
