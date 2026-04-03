@@ -224,7 +224,7 @@ export const useGameMain = () => {
 
           const recoveredSessionId = selectActiveSessionId(slots);
           if (recoveredSessionId === null) {
-            setError('세션 생성 정보가 부족합니다.');
+            navigate(ROUTES.GAME_START, { replace: true });
             return;
           }
 
