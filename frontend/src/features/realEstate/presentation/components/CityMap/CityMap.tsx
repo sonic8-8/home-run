@@ -4,7 +4,14 @@ import { useState } from 'react';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 import type { RegionData } from '../../constants/regions';
 import { GEO_MUNICIPALITIES, LIFT_HEIGHT, TRANSITION, TRANSITION_FADE } from '../../constants/regions';
-import { matchByCode, getName, getCode, computeCentroid, getGuLabelOffset } from '../../utils/geoUtils';
+import {
+  matchByCode,
+  getName,
+  getCode,
+  computeCentroid,
+  getGuLabelOffset,
+  resolveDistrictCode,
+} from '../../utils/geoUtils';
 import { WallLayers } from '../WallLayers/WallLayers';
 
 export function CityMap({
@@ -53,7 +60,7 @@ export function CityMap({
             <>
               {filtered.map((geo) => {
                 const name = getName(geo.properties);
-                const code = getCode(geo.properties);
+                const code = resolveDistrictCode(data.code, getCode(geo.properties), name);
                 return (
                   <g
                     key={geo.rsmKey}
