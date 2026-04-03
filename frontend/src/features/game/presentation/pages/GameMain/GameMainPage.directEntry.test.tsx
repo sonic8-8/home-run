@@ -54,6 +54,7 @@ function renderPage() {
     <MemoryRouter initialEntries={[ROUTES.GAME]}>
       <Routes>
         <Route path={ROUTES.GAME} element={<GameMainPage />} />
+        <Route path={ROUTES.GAME_START} element={<div>게임 시작 화면</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -169,5 +170,40 @@ describe('GameMainPage direct entry', () => {
     expect(screen.queryByText('세션 생성 정보가 부족합니다.')).not.toBeInTheDocument();
     expect(screen.getByText('이번 달 진행')).toBeInTheDocument();
     expect(screen.getByText('1번째 달')).toBeInTheDocument();
+  });
+
+  it('redirects to the game start page when there is no active session to recover', async () => {
+    vi.mocked(container.resolve).mockImplementation((token) => {
+      if (token === GetGameSlotsUseCase) {
+        return {
+          execute: vi.fn().mockResolvedValue([
+            {
+              slotNumber: 1,
+              sessionId: null,
+              status: 'EMPTY',
+              createdAt: null,
+            },
+          ]),
+        };
+      }
+
+      if (token === GetGameSessionDetailUseCase) {
+        return {
+          execute: vi.fn(),
+        };
+      }
+
+      return {
+        execute: vi.fn(),
+      };
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('게임 시작 화면')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('세션 생성 정보가 부족합니다.')).not.toBeInTheDocument();
   });
 });

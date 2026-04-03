@@ -34,24 +34,22 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
 
           return (
             <>
-              {geographies.map((geo: any) => {
-                const keyword = matchRegion(geo);
-                const isActive = keyword !== null;
+              {activeGeos.map(({ geo, keyword }) => {
                 return (
                   <g
                     key={geo.rsmKey}
-                    onMouseEnter={() => isActive && setHoveredKey(geo.rsmKey)}
-                    onMouseLeave={() => isActive && setHoveredKey(null)}
+                    onMouseEnter={() => setHoveredKey(geo.rsmKey)}
+                    onMouseLeave={() => setHoveredKey(null)}
                     onClick={() => { if (keyword) onRegionClick(keyword, ACTIVE_REGIONS[keyword]); }}
-                    data-testid={keyword ? `country-region-${ACTIVE_REGIONS[keyword].code}` : undefined}
-                    style={{ cursor: isActive ? 'pointer' : 'default' }}
+                    data-testid={`country-region-${ACTIVE_REGIONS[keyword].code}`}
+                    style={{ cursor: 'pointer' }}
                   >
                     <Geography
                       geography={geo}
                       style={{
-                        default: { fill: isActive ? '#ffffff' : '#f3f4f6', stroke: '#d0d2d8', strokeWidth: 0.7, outline: 'none' },
-                        hover:   { fill: isActive ? '#ffffff' : '#f3f4f6', stroke: isActive ? '#b8bac0' : '#d0d2d8', strokeWidth: isActive ? 0.8 : 0.7, outline: 'none' },
-                        pressed: { fill: isActive ? '#ffffff' : '#f3f4f6', stroke: isActive ? '#b8bac0' : '#d0d2d8', strokeWidth: isActive ? 0.8 : 0.7, outline: 'none' },
+                        default: { fill: '#ffffff', stroke: '#d0d2d8', strokeWidth: 0.7, outline: 'none' },
+                        hover:   { fill: '#ffffff', stroke: '#b8bac0', strokeWidth: 0.8, outline: 'none' },
+                        pressed: { fill: '#ffffff', stroke: '#b8bac0', strokeWidth: 0.8, outline: 'none' },
                       }}
                     />
                   </g>
@@ -86,10 +84,8 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
                 );
               })}
 
-              {geographies.map((geo: any) => {
-                const keyword = matchRegion(geo);
-                const isActive = keyword !== null;
-                const raised = isActive && geo.rsmKey === hoveredKey;
+              {activeGeos.map(({ geo }) => {
+                const raised = geo.rsmKey === hoveredKey;
                 const name = getShortName(getName(geo.properties));
                 const center = computeCentroid(geo);
                 const offset = getLabelOffset(name);
@@ -101,9 +97,9 @@ export function CountryMap({ onRegionClick }: { onRegionClick: (region: string, 
                         dominantBaseline="central"
                         style={{
                           fontFamily: "'Pretendard', 'Apple SD Gothic Neo', sans-serif",
-                          fontSize: isActive ? 18 : 12,
-                          fontWeight: isActive ? 600 : 300,
-                          fill: raised ? '#ffffff' : isActive ? '#374151' : '#c4c7cd',
+                          fontSize: 18,
+                          fontWeight: 600,
+                          fill: raised ? '#ffffff' : '#374151',
                           paintOrder: 'stroke',
                           stroke: raised ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.8)',
                           strokeWidth: raised ? 3.5 : 3,
