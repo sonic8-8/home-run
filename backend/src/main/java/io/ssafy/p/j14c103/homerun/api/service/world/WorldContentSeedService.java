@@ -1,5 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.world;
 
+import io.ssafy.p.j14c103.homerun.domain.world.WorldAiNewsSeedPolicy;
+import io.ssafy.p.j14c103.homerun.domain.world.WorldAiNewsSeedPolicy.AiNewsSeed;
 import io.ssafy.p.j14c103.homerun.domain.world.WorldContentSeedPolicy;
 import io.ssafy.p.j14c103.homerun.domain.world.WorldContentSeedPolicy.EventChoiceSeed;
 import io.ssafy.p.j14c103.homerun.domain.world.WorldContentSeedPolicy.EventConditionSeed;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class WorldContentSeedService {
 
+    private final WorldAiNewsSeedPolicy worldAiNewsSeedPolicy;
     private final WorldContentSeedPolicy worldContentSeedPolicy;
     private final NewsMasterRepository newsMasterRepository;
     private final GameEventRepository gameEventRepository;
@@ -43,6 +46,7 @@ public class WorldContentSeedService {
         final EventConditionRepository eventConditionRepository,
         final EventEffectRepository eventEffectRepository
     ) {
+        this.worldAiNewsSeedPolicy = new WorldAiNewsSeedPolicy();
         this.worldContentSeedPolicy = new WorldContentSeedPolicy();
         this.newsMasterRepository = newsMasterRepository;
         this.gameEventRepository = gameEventRepository;
@@ -54,6 +58,7 @@ public class WorldContentSeedService {
     public void seed() {
         final WorldContentSeedPlan seedPlan = worldContentSeedPolicy.calculate();
         seedNews(seedPlan.newsSeeds());
+        seedFallbackAiNews(worldAiNewsSeedPolicy.calculate());
         seedEvents(seedPlan.eventSeeds());
     }
 
@@ -76,6 +81,32 @@ public class WorldContentSeedService {
                 newsSeed.exchangeRateImpact(),
                 newsSeed.realEstateImpact(),
                 newsSeed.jobImpact()
+            )
+        );
+    }
+
+    private void seedFallbackAiNews(final List<AiNewsSeed> aiNewsSeeds) {
+        aiNewsSeeds.forEach(this::seedFallbackAiNews);
+    }
+
+    private void seedFallbackAiNews(final AiNewsSeed aiNewsSeed) {
+        if (newsMasterRepository.existsByEconomicCycleType(aiNewsSeed.economicCycleType())) {
+            return;
+        }
+
+        newsMasterRepository.save(
+            NewsMaster.createAiNews(
+                aiNewsSeed.newsId(),
+                aiNewsSeed.title(),
+                aiNewsSeed.sentiment(),
+                aiNewsSeed.sourceName(),
+                aiNewsSeed.articleText(),
+                aiNewsSeed.economicCycleType(),
+                aiNewsSeed.reason(),
+                null,
+                null,
+                null,
+                null
             )
         );
     }

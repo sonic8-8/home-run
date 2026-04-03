@@ -43,6 +43,8 @@ import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameReportRepository
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimeline;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.report.GameTimelineRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.settlement.SettlementLogRepository;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarket;
+import io.ssafy.p.j14c103.homerun.domain.gamesession.stock.StockMarketRepository;
 import io.ssafy.p.j14c103.homerun.domain.gamesession.turn.GameSessionTurnSlotRepository;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistory;
 import io.ssafy.p.j14c103.homerun.domain.history.GameplayHistoryRepository;
@@ -71,6 +73,12 @@ import io.ssafy.p.j14c103.homerun.domain.world.event.GameEvent;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GameEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.event.GamePendingEventRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingType;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrict;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingDistrictRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegion;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.HousingRegionRepository;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstateProperty;
+import io.ssafy.p.j14c103.homerun.domain.world.housing.RealEstatePropertyRepository;
 import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMaster;
 import io.ssafy.p.j14c103.homerun.domain.world.news.NewsMasterRepository;
 import io.ssafy.p.j14c103.homerun.global.ErrorCode;
@@ -169,6 +177,9 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
     private GameLoanRepository gameLoanRepository;
 
     @Autowired
+    private StockMarketRepository stockMarketRepository;
+
+    @Autowired
     private GameplayHistoryRepository gameplayHistoryRepository;
 
     @Autowired
@@ -200,6 +211,15 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
 
     @Autowired
     private NewsMasterRepository newsMasterRepository;
+
+    @Autowired
+    private HousingRegionRepository housingRegionRepository;
+
+    @Autowired
+    private HousingDistrictRepository housingDistrictRepository;
+
+    @Autowired
+    private RealEstatePropertyRepository realEstatePropertyRepository;
 
     @MockitoBean
     private GameWorldRollService gameWorldRollService;
@@ -322,6 +342,57 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
             .andExpect(jsonPath("$.data.turnNumber").value(0))
             .andExpect(jsonPath("$.data.news[0].newsId").value("NEWS-000"))
             .andExpect(jsonPath("$.data.news[0].headline").value("부동산 시장 안정세"));
+    }
+
+    @DisplayName("실제 세션 생성 직후 currentTurn 0 세션도 턴과 최신 뉴스 조회를 500 없이 처리해야 한다.")
+    @Test
+    void createSessionThenReadTurnAndLatestNewsForFreshSession() throws Exception {
+        final User user = saveUser("fresh-session-http-user@example.com");
+        final RealEstateProperty property = saveTargetProperty("11", "11680");
+        seedStockMarkets();
+        worldContentSeedService.seed();
+
+        final MvcResult createResult = mockMvc.perform(post("/api/games/sessions")
+                .header(AUTHORIZATION, bearer(user))
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "slotNumber", 1,
+                    "characterType", "FEMALE",
+                    "characterName", "윤서",
+                    "jobType", "STARTUP",
+                    "regionCode", "11",
+                    "districtCode", "11680",
+                    "targetPropertyId", property.getPropertyId(),
+                    "useMyData", false
+                ))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.data.currentTurn").value(0))
+            .andReturn();
+
+        final JsonNode createBody = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        final long sessionId = createBody.path("data").path("sessionId").asLong();
+        org.mockito.Mockito.doCallRealMethod()
+            .when(gameWorldRollService)
+            .resolveTurnRoll(sessionId, 0);
+
+        final MvcResult latestNewsResult = mockMvc.perform(get("/api/games/sessions/{sessionId}/news/latest", sessionId)
+                .header(AUTHORIZATION, bearer(user)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(0))
+            .andExpect(jsonPath("$.data.news").isArray())
+            .andExpect(jsonPath("$.data.news.length()").value(1))
+            .andReturn();
+
+        final JsonNode latestNewsBody = objectMapper.readTree(latestNewsResult.getResponse().getContentAsString());
+        final String latestNewsId = latestNewsBody.path("data").path("news").get(0).path("newsId").asText();
+        final String latestHeadline = latestNewsBody.path("data").path("news").get(0).path("headline").asText();
+
+        mockMvc.perform(get("/api/games/sessions/{sessionId}/turn", sessionId)
+                .header(AUTHORIZATION, bearer(user)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.turnNumber").value(0))
+            .andExpect(jsonPath("$.data.news[0].newsId").value(latestNewsId))
+            .andExpect(jsonPath("$.data.news[0].headline").value(latestHeadline));
     }
 
     @DisplayName("턴 커밋은 world result에서 생성한 뉴스와 이벤트를 다음 턴 조회 계약에 materialize한다.")
@@ -1028,6 +1099,45 @@ class GameCoreContractAcceptanceTest extends HttpIntegrationTestSupport {
                 Map.of("slotIndex", 2, "actionType", "REST")
             )
         );
+    }
+
+    private RealEstateProperty saveTargetProperty(final String regionCode, final String districtCode) {
+        housingRegionRepository.saveAndFlush(HousingRegion.create(regionCode, "서울특별시"));
+        housingDistrictRepository.saveAndFlush(
+            HousingDistrict.create(districtCode, regionCode, "강남구", "1168000000")
+        );
+
+        return realEstatePropertyRepository.saveAndFlush(RealEstateProperty.create(
+            "provider-" + regionCode + districtCode,
+            "테스트 매물",
+            "서울특별시 강남구",
+            regionCode,
+            districtCode,
+            Money.of(375_000_000L),
+            BigDecimal.valueOf(37.5172),
+            BigDecimal.valueOf(127.0473),
+            HousingType.STUDIO,
+            List.of()
+        ));
+    }
+
+    private void seedStockMarkets() {
+        stockMarketRepository.saveAndFlush(StockMarket.create(
+            "BIO",
+            "바이오주",
+            "068270",
+            "바이오",
+            100_000,
+            new BigDecimal("0.15")
+        ));
+        stockMarketRepository.saveAndFlush(StockMarket.create(
+            "SEMI",
+            "반도체주",
+            "005930",
+            "반도체",
+            72_000,
+            new BigDecimal("0.10")
+        ));
     }
 
     private void saveUserAssetProfile(
