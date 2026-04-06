@@ -1,47 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function seedAuthenticatedUser(page: Page) {
-  await page.route('**/auth/refresh', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        status: 200,
-        message: 'OK',
-        data: {
-          accessToken: 'refreshed-access-token',
-          accessTokenExpiresIn: 1800,
-        },
-      }),
-    });
-  });
-
-  await page.addInitScript(() => {
-    window.localStorage.setItem(
-      'auth',
-      JSON.stringify({
-        state: {
-          isAuthenticated: true,
-          accessToken: 'access-token',
-          refreshToken: 'refresh-token',
-          nickname: '테스터',
-          accessTokenExpiresAt: Date.now() + 3_600_000,
-        },
-        version: 0,
-      }),
-    );
-  });
-}
-
-async function mockExternalScripts(page: Page) {
-  await page.route('**/openapi/v3/maps.js*', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/javascript',
-      body: '',
-    });
-  });
-}
+import {
+  mockExternalScripts,
+  seedAuthenticatedUser,
+  seedRouteState,
+} from './support/runtimeFixtures';
 
 async function mockGameSlots(page: Page) {
   await page.route('**/api/games/sessions', async (route) => {
@@ -112,16 +75,14 @@ async function mockJobTypes(page: Page) {
 }
 
 function seedSelectStartMethodRouteState(page: Page) {
-  return page.addInitScript((state) => {
-    window.history.replaceState(
-      { usr: state, key: 'game-start-method-test', idx: 0 },
-      '',
-      '/game/select-start-method',
-    );
-  }, {
-    slotNumber: 3,
-    characterType: 'FEMALE',
-    characterName: '테스터',
+  return seedRouteState(page, {
+    pathname: '/game/select-start-method',
+    key: 'game-start-method-test',
+    state: {
+      slotNumber: 3,
+      characterType: 'FEMALE',
+      characterName: '테스터',
+    },
   });
 }
 
