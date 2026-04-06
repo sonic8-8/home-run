@@ -14,16 +14,18 @@ vi.mock('@features/game/presentation/hooks/useGameGuide', () => ({
   useGameGuide: vi.fn(),
 }));
 
-function renderPage() {
+function renderPage(state?: unknown) {
   return render(
     <MemoryRouter
       initialEntries={[
         {
           pathname: ROUTES.GAME_NEWS(44),
+          state,
         },
       ]}
     >
       <Routes>
+        <Route path={ROUTES.GAME} element={<div>게임 메인 화면</div>} />
         <Route path={ROUTES.GAME_NEWS_PATTERN} element={<NewsPage />} />
       </Routes>
     </MemoryRouter>,
@@ -127,5 +129,26 @@ describe('NewsPage', () => {
     expect(screen.getByText('채용 한파 심화')).toBeInTheDocument();
     fireEvent.click(screen.getByText('부동산 시장 과열 경고'));
     expect(screen.getByText('시장 과열 신호가 확인됐다.')).toBeInTheDocument();
+  });
+
+  it('returns to the explicit game route instead of relying on browser history', async () => {
+    renderPage({
+      returnTo: {
+        pathname: ROUTES.GAME,
+        state: {
+          sessionId: 44,
+        },
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '← 돌아가기' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '← 돌아가기' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('게임 메인 화면')).toBeInTheDocument();
+    });
   });
 });

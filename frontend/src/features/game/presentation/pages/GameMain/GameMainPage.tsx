@@ -317,7 +317,16 @@ function GameMainPageContent() {
           loading={isNewsLoading}
           error={newsError}
           onOpenArchive={() => {
-            navigate(ROUTES.GAME_NEWS(sessionId));
+            navigate(ROUTES.GAME_NEWS(sessionId), {
+              state: {
+                returnTo: {
+                  pathname: ROUTES.GAME,
+                  state: {
+                    sessionId,
+                  },
+                },
+              },
+            });
           }}
         />
       )}

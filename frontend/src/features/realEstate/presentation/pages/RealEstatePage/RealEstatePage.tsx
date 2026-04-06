@@ -33,6 +33,10 @@ interface LocationState {
   preSelectedPropertyName?: string;
   preSelectedPropertyPrice?: number;
   confirmedLoan?: LoanConfirmResult;
+  returnTo?: {
+    pathname: string;
+    state?: unknown;
+  };
 }
 
 interface SelectedProperty {
@@ -106,6 +110,38 @@ export function RealEstatePage({ mode: routeMode }: RealEstatePageProps = {}) {
         }
       : null,
   );
+
+  const navigateBackToGame = useCallback(() => {
+    if (state.returnTo !== undefined) {
+      navigate(state.returnTo.pathname, {
+        state: state.returnTo.state,
+      });
+      return;
+    }
+
+    if (sessionId !== undefined) {
+      navigate(ROUTES.GAME, {
+        state: {
+          sessionId,
+          openLoan: mode === 'loan-apply',
+          preSelectedPropertyId: state.preSelectedPropertyId,
+          preSelectedPropertyName: state.preSelectedPropertyName,
+          preSelectedPropertyPrice: state.preSelectedPropertyPrice,
+        },
+      });
+      return;
+    }
+
+    navigate(ROUTES.GAME_START);
+  }, [
+    mode,
+    navigate,
+    sessionId,
+    state.preSelectedPropertyId,
+    state.preSelectedPropertyName,
+    state.preSelectedPropertyPrice,
+    state.returnTo,
+  ]);
 
   const requestLoanReview = useCallback(async (selection: SelectedProperty) => {
     if (sessionId === undefined || state.productId === undefined) {
@@ -200,7 +236,7 @@ export function RealEstatePage({ mode: routeMode }: RealEstatePageProps = {}) {
       return (
         <div>
           <div>{error}</div>
-          <button type="button" onClick={() => navigate(-1)}>뒤로 가기</button>
+          <button type="button" onClick={navigateBackToGame}>뒤로 가기</button>
         </div>
       );
     }
@@ -226,7 +262,7 @@ export function RealEstatePage({ mode: routeMode }: RealEstatePageProps = {}) {
         <>
           <LoanReviewResultModal
             isOpen={reviewOpen}
-            onClose={() => navigate(-1)}
+            onClose={navigateBackToGame}
             onGoToProperty={() => {
               setReviewOpen(false);
               setConfirmOpen(true);
@@ -237,7 +273,7 @@ export function RealEstatePage({ mode: routeMode }: RealEstatePageProps = {}) {
           />
           <LoanConfirmModal
             isOpen={confirmOpen}
-            onClose={() => navigate(-1)}
+            onClose={navigateBackToGame}
             onConfirm={(amount) => {
               void (async () => {
                 const confirmedLoan = await confirm(loanApplication.applicationId, amount);
