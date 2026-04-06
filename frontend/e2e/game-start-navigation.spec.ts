@@ -176,7 +176,7 @@ test.describe('game start navigation', () => {
     await page.getByRole('button', { name: '자산 연결해서 시작하기' }).click();
     await page.getByRole('button', { name: 'NEXT >' }).click();
 
-    await expect(page).toHaveURL(/\/property$/);
+    await expect(page).toHaveURL(/\/property\/new-game$/);
   });
 
   test('keeps job selection when starting with profile', async ({ page }) => {

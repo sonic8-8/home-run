@@ -28,8 +28,8 @@ export function SelectStartMethodPage() {
   const handleNext = () => {
     if (!method) return;
     if (method === 'mydata') {
-      navigate(ROUTES.REAL_ESTATE, {
-        state: { ...state, useMyData: true, mode: 'new-game' },
+      navigate(ROUTES.REAL_ESTATE_NEW_GAME, {
+        state: { ...state, useMyData: true },
       });
       return;
     }

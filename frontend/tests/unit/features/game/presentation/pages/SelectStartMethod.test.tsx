@@ -35,7 +35,7 @@ function renderPage() {
           }
         />
         <Route
-          path={ROUTES.REAL_ESTATE}
+          path={ROUTES.REAL_ESTATE_NEW_GAME}
           element={
             <div>
               <span>property-page</span>
@@ -49,7 +49,7 @@ function renderPage() {
 }
 
 describe('SelectStartMethod', () => {
-  it('routes MY_DATA starts directly to the property page', () => {
+  it('routes MY_DATA starts directly to the new-game property route', () => {
     renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: '자산 연결해서 시작하기' }));
@@ -62,7 +62,6 @@ describe('SelectStartMethod', () => {
         characterType: 'FEMALE',
         characterName: '테스터',
         useMyData: true,
-        mode: 'new-game',
       }),
     );
   });

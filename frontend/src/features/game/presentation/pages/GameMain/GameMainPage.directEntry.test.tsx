@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ROUTES } from '@app/routes';
 import { container } from '@core/di/container';
@@ -55,6 +55,7 @@ function renderPage() {
       <Routes>
         <Route path={ROUTES.GAME} element={<GameMainPage />} />
         <Route path={ROUTES.GAME_START} element={<div>게임 시작 화면</div>} />
+        <Route path={ROUTES.GAME_SAVE} element={<div>세이브 슬롯 화면</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -192,21 +193,29 @@ describe('GameMainPage direct entry', () => {
     }));
   });
 
-  it('does not stop at the missing-session creation error on direct entry', async () => {
+  it('shows a recovery screen first and lets the player resume the latest active session', async () => {
     renderPage();
 
     await waitFor(() => {
       expect(container.resolve).toHaveBeenCalledWith(GetGameSlotsUseCase);
     });
 
+    expect(screen.getByText('최근 진행 중인 게임이 있습니다.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '최근 세션 이어하기' })).toBeInTheDocument();
     expect(screen.queryByText('세션 생성 정보가 부족합니다.')).not.toBeInTheDocument();
-    expect(screen.getByText('현재 상태')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '최근 세션 이어하기' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('현재 상태')).toBeInTheDocument();
+    });
+
     expect(screen.getByText('2,300,000 원')).toBeInTheDocument();
     expect(screen.getByText('이번 달 진행')).toBeInTheDocument();
     expect(screen.getByText('1번째 달')).toBeInTheDocument();
   });
 
-  it('redirects to the game start page when there is no active session to recover', async () => {
+  it('shows explicit start and continue actions when there is no active session to recover', async () => {
     vi.mocked(container.resolve).mockImplementation((token) => {
       if (token === GetGameSlotsUseCase) {
         return {
@@ -235,9 +244,17 @@ describe('GameMainPage direct entry', () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText('게임 시작 화면')).toBeInTheDocument();
+      expect(screen.getByText('진행 중인 게임 세션이 없습니다.')).toBeInTheDocument();
     });
 
     expect(screen.queryByText('세션 생성 정보가 부족합니다.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '새로하기' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '이어하기 선택' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '이어하기 선택' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('세이브 슬롯 화면')).toBeInTheDocument();
+    });
   });
 });

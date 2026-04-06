@@ -185,9 +185,8 @@ export function LoanDetailPanel({ product, sessionId, onBack, preSelectedPropert
         className={styles.applyButton}
         type="button"
         onClick={() => {
-          navigate(ROUTES.REAL_ESTATE, {
+          navigate(ROUTES.REAL_ESTATE_LOAN_APPLY, {
             state: {
-              mode: 'loan-apply',
               productId: detail.productId,
               sessionId,
               preSelectedPropertyId,
