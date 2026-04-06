@@ -23,6 +23,16 @@ function renderPage() {
   );
 }
 
+function renderPageWithRoute(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path={path} element={<RealEstatePage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 describe('RealEstatePage direct entry', () => {
   beforeEach(() => {
     vi.mocked(useLoan).mockReturnValue({
@@ -50,5 +60,21 @@ describe('RealEstatePage direct entry', () => {
     });
 
     expect(screen.getByText('Real Estate Map')).toBeInTheDocument();
+  });
+
+  it('shows an explicit guard when the new-game property route is opened without game setup state', async () => {
+    renderPageWithRoute('/property/new-game');
+
+    await waitFor(() => {
+      expect(screen.getByText('새 게임 시작 정보를 확인하지 못했습니다.')).toBeInTheDocument();
+    });
+  });
+
+  it('shows the loan-apply guard when the loan property route is opened without session state', async () => {
+    renderPageWithRoute('/property/loan-apply');
+
+    await waitFor(() => {
+      expect(screen.getByText('세션 정보를 확인하지 못했습니다.')).toBeInTheDocument();
+    });
   });
 });

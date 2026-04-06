@@ -152,13 +152,17 @@ function seedRealEstateRouteState(page: Page) {
     window.history.replaceState(
       {
         usr: {
-          mode: 'new-game',
+          slotNumber: 1,
+          characterType: 'MALE',
+          characterName: '테스터',
+          jobType: 'LARGE_BIZ',
+          useMyData: false,
         },
         key: 'real-estate-visibility-test',
         idx: 0,
       },
       '',
-      '/property',
+      '/property/new-game',
     );
   });
 }
@@ -250,7 +254,7 @@ test.describe('real estate visibility', () => {
     await seedRealEstateRouteState(page);
     await mockMapGeographies(page);
 
-    await page.goto('/property');
+    await page.goto('/property/new-game');
 
     await expect(page.getByText('Real Estate Map')).toBeVisible();
     await expect(page.getByText('지역을 먼저 고르세요')).toBeVisible();
@@ -271,7 +275,7 @@ test.describe('real estate visibility', () => {
     await seedRealEstateRouteState(page);
     await mockMapGeographies(page);
 
-    await page.goto('/property');
+    await page.goto('/property/new-game');
 
     for (const label of ['세종', '부산']) {
       const provinceLabel = page.locator('svg text').filter({ hasText: label }).first();
@@ -288,7 +292,7 @@ test.describe('real estate visibility', () => {
     await mockMapGeographies(page);
     await mockDistrictProperties(page);
 
-    await page.goto('/property');
+    await page.goto('/property/new-game');
 
     await triggerMapSelection(page, 'country-region-11');
     await triggerMapSelection(page, 'city-gu-11680');

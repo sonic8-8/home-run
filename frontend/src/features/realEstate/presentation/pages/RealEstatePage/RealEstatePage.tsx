@@ -41,11 +41,48 @@ interface SelectedProperty {
   propertyPrice: number;
 }
 
-export function RealEstatePage() {
+interface RealEstatePageProps {
+  mode?: MapMode;
+}
+
+function isValidSlotNumber(slotNumber: number | undefined): slotNumber is 1 | 2 | 3 {
+  return slotNumber === 1 || slotNumber === 2 || slotNumber === 3;
+}
+
+function hasNewGameEntryState(state: LocationState): boolean {
+  if (
+    !isValidSlotNumber(state.slotNumber) ||
+    state.characterType === undefined ||
+    state.characterName === undefined ||
+    state.useMyData === undefined
+  ) {
+    return false;
+  }
+
+  if (state.useMyData) {
+    return true;
+  }
+
+  return state.jobType !== undefined;
+}
+
+function resolveModeFromPath(pathname: string): MapMode {
+  if (pathname === ROUTES.REAL_ESTATE_NEW_GAME) {
+    return 'new-game';
+  }
+
+  if (pathname === ROUTES.REAL_ESTATE_LOAN_APPLY) {
+    return 'loan-apply';
+  }
+
+  return 'browse';
+}
+
+export function RealEstatePage({ mode: routeMode }: RealEstatePageProps = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
-  const mode = state.mode ?? 'browse';
+  const mode = routeMode ?? state.mode ?? resolveModeFromPath(location.pathname);
   const sessionId = state.sessionId;
   const { apply, confirm, loading, error } = useLoan(sessionId ?? 0);
   const autoApplyRequestedRef = useRef(false);
@@ -102,6 +139,10 @@ export function RealEstatePage() {
       window.clearTimeout(timeoutId);
     };
   }, [hasPreSelected, requestLoanReview, selectedProperty]);
+
+  if (mode === 'new-game' && !hasNewGameEntryState(state)) {
+    return <div>새 게임 시작 정보를 확인하지 못했습니다.</div>;
+  }
 
   if (mode === 'loan-apply' && sessionId === undefined) {
     return <div>세션 정보를 확인하지 못했습니다.</div>;

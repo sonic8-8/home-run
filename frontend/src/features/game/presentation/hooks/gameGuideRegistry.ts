@@ -200,7 +200,7 @@ const PROPERTY_FLOW_STEPS: readonly GameGuideStep[] = [
   {
     id: 'property-map-stage',
     flowId: 'property',
-    path: ROUTES.REAL_ESTATE,
+    path: ROUTES.REAL_ESTATE_PATTERN,
     anchor: 'property-map-stage',
     title: '지역과 구역부터 좁혀 보기',
     description: '부동산 화면은 지역 선택에서 시작해 구 단위 지도와 실제 매물 목록까지 단계적으로 좁혀집니다.',
@@ -209,7 +209,7 @@ const PROPERTY_FLOW_STEPS: readonly GameGuideStep[] = [
   {
     id: 'property-detail-panel',
     flowId: 'property',
-    path: ROUTES.REAL_ESTATE,
+    path: ROUTES.REAL_ESTATE_PATTERN,
     anchor: 'property-detail-panel',
     title: '매물 상세와 다음 행동',
     description: '마커나 카드 목록을 누르면 상세 패널에서 가격, 면적, 대출 신청, 구매하기 같은 다음 행동을 고를 수 있습니다.',
@@ -218,7 +218,7 @@ const PROPERTY_FLOW_STEPS: readonly GameGuideStep[] = [
   {
     id: 'property-registry-modal',
     flowId: 'property',
-    path: ROUTES.REAL_ESTATE,
+    path: ROUTES.REAL_ESTATE_PATTERN,
     anchor: 'property-registry-modal',
     title: '등기부등본 미니게임',
     description: '체크리스트로 위험 요소를 골라 제출하면 계약 판정과 해설이 나오는 미니게임입니다.',
@@ -230,7 +230,7 @@ const PROPERTY_LOAN_FLOW_STEPS: readonly GameGuideStep[] = [
   {
     id: 'property-loan-review',
     flowId: 'propertyLoan',
-    path: ROUTES.REAL_ESTATE,
+    path: ROUTES.REAL_ESTATE_PATTERN,
     anchor: 'property-loan-review',
     title: '대출 심사 결과 읽기',
     description: '심사 모달에서는 최대 가능 금액과 심사 결과를 보고 실제 계약 단계로 넘어갈 수 있습니다.',
@@ -239,7 +239,7 @@ const PROPERTY_LOAN_FLOW_STEPS: readonly GameGuideStep[] = [
   {
     id: 'property-loan-confirm',
     flowId: 'propertyLoan',
-    path: ROUTES.REAL_ESTATE,
+    path: ROUTES.REAL_ESTATE_PATTERN,
     anchor: 'property-loan-confirm',
     title: '대출 신청 금액 확정',
     description: '최대 한도 안에서 실제 신청 금액을 입력하고 계약서를 확인한 뒤 확정합니다.',
@@ -265,7 +265,7 @@ export const GAME_GUIDE_FLOWS: Record<GameGuideFlowId, GameGuideFlow> = {
   },
   propertyLoan: {
     id: 'propertyLoan',
-    entryPath: ROUTES.REAL_ESTATE,
+    entryPath: ROUTES.REAL_ESTATE_LOAN_APPLY,
     steps: PROPERTY_LOAN_FLOW_STEPS,
   },
 };

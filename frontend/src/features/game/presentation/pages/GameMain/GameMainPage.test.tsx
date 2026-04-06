@@ -69,6 +69,7 @@ describe('GameMainPage', () => {
 
     vi.mocked(useGameMain).mockReturnValue({
       sessionId: 7,
+      directEntryRecovery: null,
       turn: {
         turnNumber: 7,
         month: 3,
@@ -163,6 +164,7 @@ describe('GameMainPage', () => {
 
     vi.mocked(useGameMain).mockReturnValue({
       sessionId: 7,
+      directEntryRecovery: null,
       turn: {
         turnNumber: 7,
         month: 3,

@@ -26,8 +26,8 @@ export function SelectJobPage() {
 
   const handleStart = () => {
     if (!currentJob) return;
-    navigate(ROUTES.REAL_ESTATE, {
-      state: { ...state, jobType: currentJob.jobType, mode: 'new-game' },
+    navigate(ROUTES.REAL_ESTATE_NEW_GAME, {
+      state: { ...state, jobType: currentJob.jobType },
     });
   };
 

@@ -31,6 +31,7 @@ function GameMainPageContent() {
   const { getTriggerLabel, toggleFlow } = useGameGuide();
   const {
     sessionId,
+    directEntryRecovery,
     turn,
     currentDate,
     characterType,
@@ -89,6 +90,53 @@ function GameMainPageContent() {
     return (
       <div className={styles.page}>
         <div className={styles.container}>{error}</div>
+      </div>
+    );
+  }
+
+  if (directEntryRecovery !== null) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.recoveryShell}>
+          <div className={styles.recoveryCard}>
+            <div className={styles.recoveryEyebrow}>Game Recovery</div>
+            <h1 className={styles.recoveryTitle}>
+              {directEntryRecovery.latestActiveSessionId !== null
+                ? '최근 진행 중인 게임이 있습니다.'
+                : '진행 중인 게임 세션이 없습니다.'}
+            </h1>
+            <p className={styles.recoveryDescription}>
+              {directEntryRecovery.latestActiveSessionId !== null
+                ? '바로 이어서 플레이하거나, 저장 슬롯을 다시 고르거나, 새 게임부터 시작할 수 있습니다.'
+                : '세션 정보 없이 /game 으로 들어왔습니다. 새 게임부터 시작하거나, 이어할 슬롯을 먼저 고를 수 있습니다.'}
+            </p>
+            <div className={styles.recoveryActions}>
+              {directEntryRecovery.latestActiveSessionId !== null && (
+                <button
+                  type="button"
+                  className={styles.recoveryPrimaryButton}
+                  onClick={directEntryRecovery.resumeLatestSession}
+                >
+                  최근 세션 이어하기
+                </button>
+              )}
+              <button
+                type="button"
+                className={styles.recoverySecondaryButton}
+                onClick={directEntryRecovery.openContinueSelection}
+              >
+                이어하기 선택
+              </button>
+              <button
+                type="button"
+                className={styles.recoverySecondaryButton}
+                onClick={directEntryRecovery.openGameStart}
+              >
+                새로하기
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -215,7 +263,7 @@ function GameMainPageContent() {
                     }
 
                     navigate(ROUTES.REAL_ESTATE, {
-                      state: { sessionId, mode: 'browse' },
+                      state: { sessionId },
                     });
                   }}
                   data-guide="game-property"

@@ -65,6 +65,10 @@ interface LocationState {
   confirmedLoan?: LoanConfirmResult;
 }
 
+interface DirectEntryRecoveryState {
+  latestActiveSessionId: number | null;
+}
+
 type NewSessionLocationState =
   | {
       slotNumber: 1 | 2 | 3;
@@ -138,6 +142,7 @@ export const useGameMain = () => {
   const [leftView, setLeftView] = useState<'scene' | 'loan' | 'card' | 'stock'>(
     openLoan ? 'loan' : 'scene',
   );
+  const [directEntryRecovery, setDirectEntryRecovery] = useState<DirectEntryRecoveryState | null>(null);
   const createSessionPromiseRef = useRef<Promise<GameSessionCreation> | null>(null);
   const endingRedirectedRef = useRef(false);
 
@@ -179,6 +184,7 @@ export const useGameMain = () => {
   useEffect(() => {
     if (sessionId !== null) {
       writeSessionStorage(SESSION_ID_KEY, String(sessionId));
+      setDirectEntryRecovery(null);
     }
   }, [sessionId]);
 
@@ -213,6 +219,7 @@ export const useGameMain = () => {
       const recoverActiveSession = async () => {
         setIsLoading(true);
         setError(null);
+        setDirectEntryRecovery(null);
 
         try {
           const getGameSlotsUseCase = container.resolve(GetGameSlotsUseCase);
@@ -223,17 +230,8 @@ export const useGameMain = () => {
           }
 
           const recoveredSessionId = selectActiveSessionId(slots);
-          if (recoveredSessionId === null) {
-            navigate(ROUTES.GAME_START, { replace: true });
-            return;
-          }
-
-          setSessionId(recoveredSessionId);
-          navigate(ROUTES.GAME, {
-            replace: true,
-            state: {
-              sessionId: recoveredSessionId,
-            },
+          setDirectEntryRecovery({
+            latestActiveSessionId: recoveredSessionId,
           });
         } catch (recoverError) {
           if (isCancelled) {
@@ -292,6 +290,7 @@ export const useGameMain = () => {
         }
 
         setSessionId(createdSession.sessionId);
+        setDirectEntryRecovery(null);
         navigate(ROUTES.GAME, {
           replace: true,
           state: {
@@ -498,8 +497,40 @@ export const useGameMain = () => {
     }
   }, [closeGameEvent, dismissResolvedEvent, pendingEvents.length]);
 
+  const handleResumeLatestSession = useCallback(() => {
+    if (directEntryRecovery?.latestActiveSessionId === null || directEntryRecovery === null) {
+      return;
+    }
+
+    setDirectEntryRecovery(null);
+    setSessionId(directEntryRecovery.latestActiveSessionId);
+    navigate(ROUTES.GAME, {
+      replace: true,
+      state: {
+        sessionId: directEntryRecovery.latestActiveSessionId,
+      },
+    });
+  }, [directEntryRecovery, navigate]);
+
+  const openContinueSelection = useCallback(() => {
+    navigate(ROUTES.GAME_SAVE_WITH_MODE('continue'));
+  }, [navigate]);
+
+  const openGameStart = useCallback(() => {
+    navigate(ROUTES.GAME_START);
+  }, [navigate]);
+
   return {
     sessionId,
+    directEntryRecovery:
+      directEntryRecovery === null
+        ? null
+        : {
+            latestActiveSessionId: directEntryRecovery.latestActiveSessionId,
+            resumeLatestSession: handleResumeLatestSession,
+            openContinueSelection,
+            openGameStart,
+          },
     turn,
     news,
     currentPendingEvent,
