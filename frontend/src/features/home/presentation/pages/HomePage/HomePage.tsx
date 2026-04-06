@@ -9,7 +9,25 @@ import { GameBanner } from '../../components/GameBanner/GameBanner';
 import { CreditScoreWidget } from '../../components/CreditScoreWidget/CreditScoreWidget';
 import { AssetLinkPage } from '../../components/AssetLinkPage/AssetLinkPage';
 import { useHomePage } from '../../hooks/useHomePage';
+import { readSessionStorage } from '@shared/utils/sessionStorage';
 import styles from './HomePage.module.css';
+
+const GAME_SESSION_ID_KEY = 'game:sessionId';
+
+function readActiveGameSessionId(): number | null {
+  const raw = readSessionStorage(GAME_SESSION_ID_KEY);
+
+  if (raw === null) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
 
 export const HomePage: React.FC = () => {
   const {
@@ -30,6 +48,7 @@ export const HomePage: React.FC = () => {
     handleLinkAssets,
     loading,
   } = useHomePage();
+  const activeGameSessionId = readActiveGameSessionId();
 
   if (loading && isAssetLinked === null) return null;
 
@@ -60,7 +79,9 @@ export const HomePage: React.FC = () => {
             {/* Right column */}
             <div className={styles.rightCol}>
               {seedMoney && <SeedMoneyWidget account={seedMoney} spending={spending} />}
-              <GameBanner />
+              <GameBanner
+                activeGameSessionId={activeGameSessionId}
+              />
               <CreditScoreWidget creditScore={creditScore} />
             </div>
           </div>

@@ -1,12 +1,23 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ROUTES } from '@app/routes';
 import { useGameGuide } from '@features/game/presentation/hooks/useGameGuide';
 import { NewsArticle } from '@features/game/presentation/components/NewsArticle';
 import { useGameNewsPage } from '@features/game/presentation/hooks/useGameNewsPage';
 import { formatIsoDate } from '@shared/utils/formatter';
 import styles from './NewsPage.module.css';
 
+interface NewsPageLocationState {
+  returnTo?: {
+    pathname: string;
+    state?: unknown;
+  };
+}
+
 export function NewsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>();
+  const locationState = (location.state as NewsPageLocationState | null) ?? null;
   const {
     activeFlowId,
     closeGuide,
@@ -23,6 +34,31 @@ export function NewsPage() {
     hasValidSessionId,
   } = useGameNewsPage();
 
+  const resolvedSessionId =
+    sessionIdParam !== undefined && Number.isInteger(Number(sessionIdParam)) && Number(sessionIdParam) > 0
+      ? Number(sessionIdParam)
+      : null;
+
+  const handleBack = () => {
+    if (locationState?.returnTo !== undefined) {
+      navigate(locationState.returnTo.pathname, {
+        state: locationState.returnTo.state,
+      });
+      return;
+    }
+
+    if (resolvedSessionId !== null) {
+      navigate(ROUTES.GAME, {
+        state: {
+          sessionId: resolvedSessionId,
+        },
+      });
+      return;
+    }
+
+    navigate(ROUTES.GAME_START);
+  };
+
   if (!hasValidSessionId) {
     return null;
   }
@@ -32,7 +68,7 @@ export function NewsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <button className={styles.backBtn} onClick={() => navigate(-1)}>← 돌아가기</button>
+        <button className={styles.backBtn} onClick={handleBack}>← 돌아가기</button>
         <div className={styles.headerCenter}>
           <div className={styles.headerTitle}>홈런 경제 신문</div>
           {news && (

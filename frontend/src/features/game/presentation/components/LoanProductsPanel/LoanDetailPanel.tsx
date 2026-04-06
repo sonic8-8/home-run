@@ -192,6 +192,13 @@ export function LoanDetailPanel({ product, sessionId, onBack, preSelectedPropert
               preSelectedPropertyId,
               preSelectedPropertyName,
               preSelectedPropertyPrice,
+              returnTo: {
+                pathname: ROUTES.GAME,
+                state: {
+                  sessionId,
+                  openLoan: true,
+                },
+              },
             },
           });
         }}
