@@ -14,11 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class WorldContentBootstrapService implements ApplicationRunner {
 
+    private final WorldHousingSeedService worldHousingSeedService;
     private final WorldContentSeedService worldContentSeedService;
 
     @Override
     @Transactional
     public void run(final ApplicationArguments args) {
+        worldHousingSeedService.seed();
         worldContentSeedService.seed();
         log.info("World content bootstrap completed.");
     }

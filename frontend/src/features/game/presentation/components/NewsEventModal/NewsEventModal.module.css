@@ -38,7 +38,7 @@
   font-weight: 900;
   letter-spacing: 4px;
   color: #1a1a1a;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .mastheadSub {
@@ -136,7 +136,7 @@
   color: #1a1a1a;
   line-height: 1.4;
   margin: 0 0 10px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .content {
@@ -145,6 +145,7 @@
   line-height: 1.75;
   white-space: pre-wrap;
   word-break: keep-all;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 /* ── 로딩 / 빈 상태 ──────────────────────────── */

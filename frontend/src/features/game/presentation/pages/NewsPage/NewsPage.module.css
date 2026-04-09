@@ -40,7 +40,7 @@
   font-weight: 900;
   letter-spacing: 4px;
   color: #1a1a1a;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .headerSub {
@@ -105,7 +105,7 @@
   font-size: 20px;
   font-weight: 800;
   color: #1a1a1a;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .sectionDescription {
@@ -214,7 +214,7 @@
   color: #1a1a1a;
   line-height: 1.45;
   margin: 0 0 10px;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .content {
@@ -226,6 +226,7 @@
   margin: 0 0 12px;
   border-top: 1px solid #ede7d8;
   padding-top: 12px;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .toggleBtn {

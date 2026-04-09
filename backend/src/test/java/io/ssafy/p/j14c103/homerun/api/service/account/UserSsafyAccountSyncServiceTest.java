@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
@@ -213,6 +214,49 @@ class UserSsafyAccountSyncServiceTest extends IntegrationTestSupport {
                 .isEqualTo(500000);
         assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.SEEDMONEY).orElseThrow()
                 .getBalanceSnapshot()).isEqualTo(500000);
+    }
+
+    @DisplayName("로컬 mock SSAFY 키를 쓰는 사용자는 외부 계좌 sync를 건너뛴다.")
+    @Test
+    void syncLinkedAccountsSkipsExternalCallsForLocalMockUserKey() {
+        // given
+        final User user = User.register(
+                Email.of("local-sync@example.com"),
+                "홍길동",
+                "encoded-password"
+        );
+        user.linkSsafy("local-mock-user-1", LocalDateTime.now());
+        final User savedUser = userRepository.saveAndFlush(user);
+        final UserAccount mainAccount = UserAccount.create(
+                savedUser.getId(),
+                AccountType.MAIN,
+                "001",
+                "한국은행",
+                "LOCAL-MAIN-" + savedUser.getId(),
+                100_000
+        );
+        mainAccount.initializeSsafySync(null);
+        userAccountRepository.save(mainAccount);
+
+        final UserAccount seedmoneyAccount = UserAccount.create(
+                savedUser.getId(),
+                AccountType.SEEDMONEY,
+                "001",
+                "한국은행",
+                "LOCAL-SEEDMONEY-" + savedUser.getId(),
+                20_000
+        );
+        seedmoneyAccount.initializeSsafySync(null);
+        userAccountRepository.save(seedmoneyAccount);
+
+        // when
+        userSsafyAccountSyncService.syncLinkedAccounts(savedUser.getId());
+
+        // then
+        verifyNoInteractions(ssafyDemandDepositClient);
+        assertThat(userAccountTransactionRepository.findAll()).isEmpty();
+        assertThat(userAccountRepository.findByUserIdAndAccountType(savedUser.getId(), AccountType.SEEDMONEY))
+                .isPresent();
     }
 
     private User saveLinkedUser(final String email) {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppHeader } from '../AppHeader/AppHeader';
 import type { AssetLinkInput, JobType, CardSpendCategory } from '../../../domain/entities/AssetLinkInput';
+import { toErrorMessage } from '@core/error/AppError';
 import { formatNumericInput, parseNumericInput } from '../../utils/money';
 import styles from './AssetLinkPage.module.css';
 
@@ -106,8 +107,8 @@ export function AssetLinkPage({ onLink }: AssetLinkPageProps) {
         paymentTypes,
       };
       await onLink(input);
-    } catch {
-      setError('마이데이터 연동에 실패했습니다. 다시 시도해 주세요.');
+    } catch (error) {
+      setError(toErrorMessage(error));
     } finally {
       setLoading(false);
     }

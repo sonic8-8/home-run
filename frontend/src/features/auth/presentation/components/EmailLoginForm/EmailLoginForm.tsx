@@ -64,9 +64,9 @@ export const EmailLoginForm: React.FC<EmailLoginFormProps> = ({
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          <button type="button" className={styles.forgotPassword}>
-            비밀번호를 잊으셨나요?
-          </button>
+          <p className={styles.forgotPasswordHint}>
+            비밀번호 찾기는 아직 준비 중입니다.
+          </p>
         </div>
 
         {error && <p className={styles.error}>{error}</p>}

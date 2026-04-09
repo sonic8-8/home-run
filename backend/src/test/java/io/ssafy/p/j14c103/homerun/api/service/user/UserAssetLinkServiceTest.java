@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import io.ssafy.p.j14c103.homerun.api.service.user.request.UserAssetLinkServiceRequest;
 import io.ssafy.p.j14c103.homerun.api.service.user.response.UserAssetLinkResponse;
@@ -374,6 +375,66 @@ class UserAssetLinkServiceTest extends IntegrationTestSupport {
         // then
         assertThat(response.isAssetLinked()).isTrue();
         assertThat(userRepository.findById(user.getId()).orElseThrow().getSsafyUserKey()).isEqualTo("fallback-user-key");
+    }
+
+    @DisplayName("SSAFY 회원 생성과 조회가 모두 네트워크 실패면 로컬 mock 연동으로 대체한다.")
+    @Test
+    void linkAssetsWithLocalMockFallbackWhenSsafyMemberApisFail() {
+        // given
+        final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
+        given(ssafyMemberClient.createMember("user@example.com"))
+                .willThrow(new RestClientException("create failed"));
+        given(ssafyMemberClient.searchMember("user@example.com"))
+                .willThrow(new RestClientException("search failed"));
+
+        // when
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
+
+        // then
+        assertThat(response.isAssetLinked()).isTrue();
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getSsafyUserKey())
+                .isEqualTo("local-mock-user-" + user.getId());
+        assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN))
+                .isPresent()
+                .get()
+                .extracting(UserAccount::getAccountNumber, UserAccount::getBalanceSnapshot)
+                .containsExactly("LOCAL-MAIN-" + user.getId(), request.getMainAccountBalanceAmount());
+        assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.SEEDMONEY))
+                .isPresent()
+                .get()
+                .extracting(UserAccount::getAccountNumber)
+                .isEqualTo("LOCAL-SEEDMONEY-" + user.getId());
+        verifyNoInteractions(ssafyDemandDepositClient);
+    }
+
+    @DisplayName("SSAFY 계좌 생성이 네트워크 실패면 로컬 mock 계좌로 대체한다.")
+    @Test
+    void linkAssetsWithLocalMockFallbackWhenAccountProvisionFails() {
+        // given
+        final User user = saveUser("user@example.com");
+        final UserAssetLinkServiceRequest request = assetLinkRequest();
+        given(ssafyMemberClient.createMember("user@example.com"))
+                .willReturn(Map.of("userKey", "remote-user-key"));
+        given(ssafyDemandDepositClient.createDemandDepositAccount("remote-user-key", "test-account-type"))
+                .willThrow(new RestClientException("account create failed"));
+
+        // when
+        final UserAssetLinkResponse response = userAssetLinkService.linkAssets(user.getId(), request);
+
+        // then
+        assertThat(response.isAssetLinked()).isTrue();
+        assertThat(userRepository.findById(user.getId()).orElseThrow().getSsafyUserKey()).isEqualTo("remote-user-key");
+        assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.MAIN))
+                .isPresent()
+                .get()
+                .extracting(UserAccount::getAccountNumber)
+                .isEqualTo("LOCAL-MAIN-" + user.getId());
+        assertThat(userAccountRepository.findByUserIdAndAccountType(user.getId(), AccountType.SEEDMONEY))
+                .isPresent()
+                .get()
+                .extracting(UserAccount::getAccountNumber)
+                .isEqualTo("LOCAL-SEEDMONEY-" + user.getId());
     }
 
     @DisplayName("이미 연동된 사용자는 계좌를 중복 생성하지 않는다.")

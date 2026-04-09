@@ -34,6 +34,7 @@ test.describe('sign-up flow', () => {
     await page.getByRole('button', { name: '회원가입' }).click();
 
     const request = await signUpRequest;
+    expect(new URL(request.url()).origin).toBe(new URL(page.url()).origin);
     expect(JSON.parse(request.postData() ?? '{}')).toEqual({
       name: '테스터',
       email: 'tester@example.com',
