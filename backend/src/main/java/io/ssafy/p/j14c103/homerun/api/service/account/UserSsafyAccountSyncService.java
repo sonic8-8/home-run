@@ -1,6 +1,7 @@
 package io.ssafy.p.j14c103.homerun.api.service.account;
 
 import io.ssafy.p.j14c103.homerun.api.service.seedmoney.SeedmoneyAccountProjectionService;
+import io.ssafy.p.j14c103.homerun.api.service.user.SsafyLinkSupport;
 import io.ssafy.p.j14c103.homerun.api.service.user.UserAuthContextService;
 import io.ssafy.p.j14c103.homerun.client.ssafy.SsafyDemandDepositClient;
 import io.ssafy.p.j14c103.homerun.domain.account.AccountTransactionType;
@@ -51,6 +52,12 @@ public class UserSsafyAccountSyncService {
         }
 
         final String userKey = userAuthContextService.getRequiredSsafyUserKey(userId);
+        if (SsafyLinkSupport.isLocalMockUserKey(userKey)) {
+            linkedAccounts.stream()
+                    .filter(account -> account.getAccountType() == AccountType.SEEDMONEY)
+                    .forEach(seedmoneyAccountProjectionService::syncFromUserAccount);
+            return;
+        }
         final List<Map<String, Object>> accountSnapshots = ssafyDemandDepositClient.inquireAccountList(userKey);
         final Map<String, Map<String, Object>> snapshotByAccountNumber = accountSnapshots.stream()
                 .filter(snapshot -> toText(snapshot.get("accountNo")) != null)

@@ -78,7 +78,7 @@
   color: var(--news-text-primary);
   line-height: 1.45;
   margin: 0 0 var(--news-space-sm);
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .content {
@@ -90,6 +90,7 @@
   margin: 0 0 var(--news-space-md);
   border-top: 1px solid var(--news-divider);
   padding-top: var(--news-space-md);
+  font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 .toggleBtn {

@@ -6,6 +6,7 @@ const viteCacheDir = path.resolve(
   process.env.TMPDIR ?? process.env.TEMP ?? process.env.TMP ?? '/tmp',
   's14p21c103-frontend-vite',
 )
+const defaultApiProxyTarget = process.env.VITE_DEV_API_PROXY_TARGET ?? 'http://127.0.0.1:8081'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -22,7 +23,7 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': 'https://j14c103.p.ssafy.io',
+      '/api': defaultApiProxyTarget,
     },
   },
   resolve: {

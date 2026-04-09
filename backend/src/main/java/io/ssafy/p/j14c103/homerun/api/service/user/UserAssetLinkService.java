@@ -182,16 +182,33 @@ public class UserAssetLinkService {
             return extractUserKey(ssafyMemberClient.createMember(email));
         } catch (final RestClientException exception) {
             log.warn("SSAFY 회원 생성 실패로 회원 조회를 시도합니다. userId={}", userId, exception);
-            return extractUserKey(ssafyMemberClient.searchMember(email));
+            return searchMemberOrFallbackToLocal(userId, email);
         } catch (final HomerunException exception) {
             if (exception.getErrorCode() != ErrorCode.GLOBAL_EXTERNAL_RESPONSE_INVALID) {
                 throw exception;
             }
             log.warn("SSAFY 회원 생성 응답이 올바르지 않아 회원 조회를 시도합니다. userId={}", userId, exception);
-            return extractUserKey(ssafyMemberClient.searchMember(email));
+            return searchMemberOrFallbackToLocal(userId, email);
         } catch (final RuntimeException exception) {
             log.warn("SSAFY 회원 생성 중 예기치 않은 오류로 회원 조회를 시도합니다. userId={}", userId, exception);
+            return searchMemberOrFallbackToLocal(userId, email);
+        }
+    }
+
+    private String searchMemberOrFallbackToLocal(
+            final Long userId,
+            final String email
+    ) {
+        try {
             return extractUserKey(ssafyMemberClient.searchMember(email));
+        } catch (final HomerunException exception) {
+            throw exception;
+        } catch (final RestClientException exception) {
+            log.warn("SSAFY 회원 조회 실패로 로컬 mock 연동으로 대체합니다. userId={}", userId, exception);
+            return createLocalMockSsafyUserKey(userId);
+        } catch (final RuntimeException exception) {
+            log.warn("SSAFY 회원 조회 중 예기치 않은 오류로 로컬 mock 연동으로 대체합니다. userId={}", userId, exception);
+            return createLocalMockSsafyUserKey(userId);
         }
     }
 
@@ -281,51 +298,105 @@ public class UserAssetLinkService {
             final String ssafyUserKey,
             final long initialBalance
     ) {
-        final Map<String, Object> response = ssafyDemandDepositClient.createDemandDepositAccount(
-                ssafyUserKey,
-                ssafyAccountProperties.getAccountTypeUniqueNo()
-        );
-        final String accountNumber = extractAccountNumber(response);
+        if (SsafyLinkSupport.isLocalMockUserKey(ssafyUserKey)) {
+            createLocalMainAccount(userId, initialBalance);
+            return;
+        }
 
+        try {
+            final Map<String, Object> response = ssafyDemandDepositClient.createDemandDepositAccount(
+                    ssafyUserKey,
+                    ssafyAccountProperties.getAccountTypeUniqueNo()
+            );
+            final String accountNumber = extractAccountNumber(response);
+
+            final UserAccount account = UserAccount.create(
+                    userId,
+                    AccountType.MAIN,
+                    ssafyAccountProperties.getBankCode(),
+                    ssafyAccountProperties.getBankName(),
+                    accountNumber,
+                    initialBalance
+            );
+            if (initialBalance > 0) {
+                final Map<String, Object> depositResponse = ssafyDemandDepositClient.depositAccount(
+                        ssafyUserKey,
+                        accountNumber,
+                        initialBalance
+                );
+                account.initializeSsafySync(extractTransactionUniqueNo(depositResponse));
+            } else {
+                account.initializeSsafySync(null);
+            }
+            userAccountRepository.save(account);
+        } catch (final RestClientException exception) {
+            log.warn("SSAFY 주계좌 생성 실패로 로컬 mock 주계좌를 생성합니다. userId={}", userId, exception);
+            createLocalMainAccount(userId, initialBalance);
+        }
+    }
+
+    private void createLocalMainAccount(
+            final Long userId,
+            final long initialBalance
+    ) {
         final UserAccount account = UserAccount.create(
                 userId,
                 AccountType.MAIN,
                 ssafyAccountProperties.getBankCode(),
                 ssafyAccountProperties.getBankName(),
-                accountNumber,
+                SsafyLinkSupport.createLocalMockAccountNumber(userId, AccountType.MAIN),
                 initialBalance
         );
-        if (initialBalance > 0) {
-            final Map<String, Object> depositResponse = ssafyDemandDepositClient.depositAccount(
-                    ssafyUserKey,
-                    accountNumber,
-                    initialBalance
-            );
-            account.initializeSsafySync(extractTransactionUniqueNo(depositResponse));
-        } else {
-            account.initializeSsafySync(null);
-        }
+        account.initializeSsafySync(null);
         userAccountRepository.save(account);
     }
 
     private void createSeedmoneyAccount(final Long userId, final String ssafyUserKey) {
-        final Map<String, Object> response = ssafyDemandDepositClient.createDemandDepositAccount(
-                ssafyUserKey,
-                ssafyAccountProperties.getAccountTypeUniqueNo()
-        );
-        final String accountNumber = extractAccountNumber(response);
+        if (SsafyLinkSupport.isLocalMockUserKey(ssafyUserKey)) {
+            createLocalSeedmoneyAccount(userId);
+            return;
+        }
 
+        try {
+            final Map<String, Object> response = ssafyDemandDepositClient.createDemandDepositAccount(
+                    ssafyUserKey,
+                    ssafyAccountProperties.getAccountTypeUniqueNo()
+            );
+            final String accountNumber = extractAccountNumber(response);
+
+            final UserAccount account = UserAccount.create(
+                    userId,
+                    AccountType.SEEDMONEY,
+                    ssafyAccountProperties.getBankCode(),
+                    ssafyAccountProperties.getBankName(),
+                    accountNumber,
+                    0L
+            );
+            account.initializeSsafySync(null);
+            userAccountRepository.save(account);
+            seedmoneyAccountProjectionService.syncFromUserAccount(account);
+        } catch (final RestClientException exception) {
+            log.warn("SSAFY 시드머니 계좌 생성 실패로 로컬 mock 시드머니 계좌를 생성합니다. userId={}", userId, exception);
+            createLocalSeedmoneyAccount(userId);
+        }
+    }
+
+    private void createLocalSeedmoneyAccount(final Long userId) {
         final UserAccount account = UserAccount.create(
                 userId,
                 AccountType.SEEDMONEY,
                 ssafyAccountProperties.getBankCode(),
                 ssafyAccountProperties.getBankName(),
-                accountNumber,
+                SsafyLinkSupport.createLocalMockAccountNumber(userId, AccountType.SEEDMONEY),
                 0L
         );
         account.initializeSsafySync(null);
         userAccountRepository.save(account);
         seedmoneyAccountProjectionService.syncFromUserAccount(account);
+    }
+
+    private String createLocalMockSsafyUserKey(final Long userId) {
+        return SsafyLinkSupport.createLocalMockUserKey(userId);
     }
 
     private String extractAccountNumber(final Map<String, Object> response) {
